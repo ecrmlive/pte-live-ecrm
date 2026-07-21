@@ -1,0 +1,58 @@
+# 功能点清单（各端 → 页面 → 按钮/操作 → CRUD）
+
+按你的要求：功能点梳理到**各端**、**具体功能**、**落实到按钮**，增删改查尽量落全。
+
+## 怎么读
+
+| 符号 | 含义 |
+| --- | --- |
+| C | 创建 / 新增 / 导入 / 提交 / 上传等 |
+| R | 列表 / 详情 / 导出 / 统计等 |
+| U | 编辑 / 状态开关 / 审核 / 排序等 |
+| D | 删除 / 取消 / 清空 / 退款关闭等 |
+| O | 特殊操作（支付回调、扫码登录等） |
+
+后台以「菜单按钮权限」为主；缺按钮时用同页路由 `_path` 补全（文档内标注来源）。  
+用户端 / 商户手机端 / 客服端以「一条 API 路由 = 一个操作」落实（等同按钮）。
+
+## 分端文档
+
+| 端 | 文档 | 页面/模块 | 操作数（约） |
+| --- | --- | ---: | ---: |
+| 平台后台 | [01-platform-admin.md](./01-platform-admin.md) | 238 页 | 1295 |
+| 商户后台 | [02-merchant-admin.md](./02-merchant-admin.md) | 102 页 | 600 |
+| 用户端（C 端 API） | [03-user-app.md](./03-user-app.md) | 183 小程序页附录 | 342 |
+| 商户手机端 / 店员 | [04-merchant-mobile.md](./04-merchant-mobile.md) | manager API | 95 |
+| 客服端 | [05-customer-service.md](./05-customer-service.md) | service API | 18 |
+| OpenAPI | [06-openapi.md](./06-openapi.md) | openapi | 6 |
+| 路由按菜单路径补全 | [07-route-crud-by-menu-path.md](./07-route-crud-by-menu-path.md) | 对照用 | — |
+| 缺口清单 | [08-gaps.md](./08-gaps.md) | 无操作/CRUD不全 | 待核对 |
+
+机器可读总表：[`../generated/features-master.tsv`](../generated/features-master.tsv)（约 2400+ 行）
+
+## 数据来源
+
+1. `eb_system_menu`（2419 节点：导航 + 按钮权限）  
+2. `route/admin`、`route/merchant`（带 `_alias` / `_path`）  
+3. `route/api/*.php`、`route/service.php`、`route/openapi*`  
+4. 小程序 `extend/mp-weixin/v4.0/app.json` 页面树  
+
+外部源码根：`~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0`
+
+## 完整度说明
+
+- **已做到**：各端拆分；后台到按钮权限名；用户/客服/店员到接口操作；每条操作带 CRUD 分类；总表可检索。  
+- **仍需你方核对**：  
+  1. `08-gaps.md` 里「无任何操作」的页面  
+  2. 只读配置页是否允许无 C/D  
+  3. 用户端 UI 按钮文案与 API 操作的一一人工贴标（目前是接口级完整，页面级附录在 03）  
+  4. 配送员 / 服务人员若有独立接口，需在 manager/api 中再点名归类  
+
+在 `08-gaps.md` 清零并经你确认前，**不写业务代码**。
+
+## 建议核对顺序
+
+1. 平台后台：商品 / 订单 / 商户 / 财务 / 营销  
+2. 商户后台：商品 / 订单 / 营销 / 财务  
+3. 用户端：登录、地址、购物车、下单支付、售后、分销  
+4. 清缺口 → 你确认「功能基线锁定」  

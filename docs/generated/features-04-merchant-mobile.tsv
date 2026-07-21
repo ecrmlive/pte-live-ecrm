@@ -1,0 +1,96 @@
+portal	group	module	action	crud	method	path	handler	name
+商户手机端/店员	manager	history	chat History (history/:id)	R	GET	history/:id	api.store.service.Service/chatHistory	
+商户手机端/店员	manager	list	get List (list)	R	GET	list	api.store.service.Service/getList	
+商户手机端/店员	manager	mer_history	service History (mer_history/:merId/:id)	R	GET	mer_history/:merId/:id	api.store.service.Service/serviceHistory	
+商户手机端/店员	manager	user_list	service User List (user_list/:merId)	R	GET	user_list/:merId	api.store.service.Service/serviceUserList	
+商户手机端/店员	manager	scan_login	客服扫码登录	C	POST	scan_login/:key	api.store.service.Service/scanLogin	
+商户手机端/店员	manager	user	user (user/:merId/:uid)	R	GET	user/:merId/:uid	api.store.service.Service/user	
+商户手机端/店员	manager	mark	mark (mark/:merId/:uid)	U	POST	mark/:merId/:uid	api.store.service.Service/mark	
+商户手机端/店员	manager	product/create	添加	C	POST	:merId/product/create	StoreProduct/create	
+商户手机端/店员	manager	product/update	编辑	U	POST	:merId/product/update/:id	StoreProduct/update	
+商户手机端/店员	manager	product/detail	detail (:merId/product/detail/:id)	R	GET	:merId/product/detail/:id	StoreProduct/detail	
+商户手机端/店员	manager	product/delete	delete (:merId/product/delete/:id)	D	POST	:merId/product/delete/:id	StoreProduct/delete	
+商户手机端/店员	manager	product/status	switch Status (:merId/product/status/:id)	U	POST	:merId/product/status/:id	StoreProduct/switchStatus	
+商户手机端/店员	manager	product/lst	lst (:merId/product/lst)	R	GET	:merId/product/lst	StoreProduct/lst	
+商户手机端/店员	manager	product/title	title (:merId/product/title)	R	GET	:merId/product/title	StoreProduct/title	
+商户手机端/店员	manager	product/restore	restore (:merId/product/restore/:id)	C	POST	:merId/product/restore/:id	StoreProduct/restore	
+商户手机端/店员	manager	product/destory	destory (:merId/product/destory/:id)	C	POST	:merId/product/destory/:id	StoreProduct/destory	
+商户手机端/店员	manager	product/good	update Good (:merId/product/good/:id)	U	POST	:merId/product/good/:id	StoreProduct/updateGood	
+商户手机端/店员	manager	product/config	config (:merId/product/config)	R	GET	:merId/product/config	StoreProduct/config	
+商户手机端/店员	manager	product/edit_cate	修改分类	U	POST	:merId/product/edit_cate/:id	StoreProduct/editCate	
+商户手机端/店员	manager	product/edit_mer_cate	edit Mer Cate (:merId/product/edit_mer_cate/:id)	U	POST	:merId/product/edit_mer_cate/:id	StoreProduct/editMerCate	
+商户手机端/店员	manager	product/value	get Value (:merId/product/value/:id)	R	GET	:merId/product/value/:id	StoreProduct/getValue	
+商户手机端/店员	manager	product/value	set Value (:merId/product/value/:id)	U	POST	:merId/product/value/:id	StoreProduct/setValue	
+商户手机端/店员	manager	category/lst	商品分类	R	GET	:merId/category/lst	StoreCategory/lst	
+商户手机端/店员	manager	category/create	create (:merId/category/create)	C	POST	:merId/category/create	StoreCategory/create	
+商户手机端/店员	manager	category/update	update (:merId/category/update/:id)	U	POST	:merId/category/update/:id	StoreCategory/update	
+商户手机端/店员	manager	category/detail	detail (:merId/category/detail/:id)	R	GET	:merId/category/detail/:id	StoreCategory/detail	
+商户手机端/店员	manager	category/status	switch Status (:merId/category/status/:id)	U	POST	:merId/category/status/:id	StoreCategory/switchStatus	
+商户手机端/店员	manager	category/delete	delete (:merId/category/delete/:id)	D	POST	:merId/category/delete/:id	StoreCategory/delete	
+商户手机端/店员	manager	category/list	get List (:merId/category/list)	R	GET	:merId/category/list	StoreCategory/getList	
+商户手机端/店员	manager	category/select	get Tree List (:merId/category/select)	R	GET	:merId/category/select	StoreCategory/getTreeList	
+商户手机端/店员	manager	category/brandlist	Brand List (:merId/category/brandlist)	R	GET	:merId/category/brandlist	StoreCategory/BrandList	
+商户手机端/店员	manager	template/lst	运费模板	R	GET	:merId/template/lst	ShippingTemplate/lst	
+商户手机端/店员	manager	template/create	create (:merId/template/create)	C	POST	:merId/template/create	ShippingTemplate/create	
+商户手机端/店员	manager	template/update	update (:merId/template/update/:id)	U	POST	:merId/template/update/:id	ShippingTemplate/update	
+商户手机端/店员	manager	template/select	get List (:merId/template/select)	R	GET	:merId/template/select	ShippingTemplate/getList	
+商户手机端/店员	manager	template/detail	detail (:merId/template/detail/:id)	R	GET	:merId/template/detail/:id	ShippingTemplate/detail	
+商户手机端/店员	manager	template/delete	batch Delete (:merId/template/delete)	D	POST	:merId/template/delete	ShippingTemplate/batchDelete	
+商户手机端/店员	manager	attr/lst	品牌管理	R	GET	:merId/attr/lst	StoreProductAttrTemplate/lst	
+商户手机端/店员	manager	attr/create	create (:merId/attr/create)	C	POST	:merId/attr/create	StoreProductAttrTemplate/create	
+商户手机端/店员	manager	attr/update	update (:merId/attr/update/:id)	U	POST	:merId/attr/update/:id	StoreProductAttrTemplate/update	
+商户手机端/店员	manager	attr/detail	detail (:merId/attr/detail/:id)	R	GET	:merId/attr/detail/:id	StoreProductAttrTemplate/detail	
+商户手机端/店员	manager	attr/delete	batch Delete (:merId/attr/delete)	D	POST	:merId/attr/delete	StoreProductAttrTemplate/batchDelete	
+商户手机端/店员	manager	attr/detail	detail (:merId/attr/detail/:id)	R	GET	:merId/attr/detail/:id	StoreProductAttrTemplate/detail	
+商户手机端/店员	manager	attr/list	getlist (:merId/attr/list)	R	GET	:merId/attr/list	StoreProductAttrTemplate/getlist	
+商户手机端/店员	manager	statistics	order Statistics (:merId/statistics)	R	GET	:merId/statistics	/orderStatistics	
+商户手机端/店员	manager	order_price	order Detail (:merId/order_price)	R	GET	:merId/order_price	/orderDetail	
+商户手机端/店员	manager	order_list	order List (:merId/order_list)	R	GET	:merId/order_list	/orderList	
+商户手机端/店员	manager	order	order (:merId/order/:id)	R	GET	:merId/order/:id	/order	
+商户手机端/店员	manager	mark	mark (:merId/mark/:id)	U	POST	:merId/mark/:id	/mark	
+商户手机端/店员	manager	price	price (:merId/price/:id)	C	POST	:merId/price/:id	/price	
+商户手机端/店员	manager	delivery	delivery (:merId/delivery/:id)	D	POST	:merId/delivery/:id	/delivery	
+商户手机端/店员	manager	verify	verify (:merId/verify/:id)	U	POST	:merId/verify/:id	/verify	
+商户手机端/店员	manager	pay_price	pay Price (:merId/pay_price)	CR	GET	:merId/pay_price	/payPrice	
+商户手机端/店员	manager	pay_number	pay Number (:merId/pay_number)	CR	GET	:merId/pay_number	/payNumber	
+商户手机端/店员	manager	mer_form	get Form Data (:merId/mer_form)	R	GET	:merId/mer_form	/getFormData	
+商户手机端/店员	manager	dump_temp	get Form Data (:merId/dump_temp)	R	GET	:merId/dump_temp	/getFormData	
+商户手机端/店员	manager	delivery_config	get Delivery Config (:merId/delivery_config)	R	GET	:merId/delivery_config	/getDeliveryConfig	
+商户手机端/店员	manager	delivery_options	get Delivery Options (:merId/delivery_options)	R	GET	:merId/delivery_options	/getDeliveryOptions	
+商户手机端/店员	manager	delivery/options	options (:merId/delivery/options)	R	GET	:merId/delivery/options	/options	
+商户手机端/店员	manager	offline	offline (:merId/offline/:id)	C	POST	:merId/offline/:id	/offline	
+商户手机端/店员	manager	reservation/staffs	预约	R	GET	:merId/reservation/staffs	/staffList	
+商户手机端/店员	manager	reservationdispatch	reservation Dispatch (:merId/reservationdispatch/:id)	C	POST	:merId/reservationdispatch/:id	/reservationDispatch	
+商户手机端/店员	manager	reservationupdateDispatch	reservation Update Dispatch (:merId/reservationupdateDispatch/:id)	U	POST	:merId/reservationupdateDispatch/:id	/reservationUpdateDispatch	
+商户手机端/店员	manager	reservationreschedule	reservation Reschedule (:merId/reservationreschedule/:id)	C	POST	:merId/reservationreschedule/:id	/reservationReschedule	
+商户手机端/店员	manager	reservationverify	reservation Verify (:merId/reservationverify/:id)	U	POST	:merId/reservationverify/:id	/reservationVerify	
+商户手机端/店员	manager	reservationconfig	reservation Config (:merId/reservationconfig)	R	GET	:merId/reservationconfig	/reservationConfig	
+商户手机端/店员	manager	delivery/person	同城配送	R	GET	:merId/delivery/person	/deliveryPersonList	
+商户手机端/店员	manager	delivery/dispatch	delivery Dispatch (:merId/delivery/dispatch/:id)	D	POST	:merId/delivery/dispatch/:id	/deliveryDispatch	
+商户手机端/店员	manager	delivery/updateDispatch	delivery Update Dispatch (:merId/delivery/updateDispatch/:id)	UD	POST	:merId/delivery/updateDispatch/:id	/deliveryUpdateDispatch	
+商户手机端/店员	manager	delivery/confirm	delivery Confirm (:merId/delivery/confirm/:id)	UD	POST	:merId/delivery/confirm/:id	/deliveryConfirm	
+商户手机端/店员	manager	refund/check	退款单	R	GET	:merId/refund/check/:id	/check	
+商户手机端/店员	manager	refund/create	create (:merId/refund/create)	CD	POST	:merId/refund/create	/create	
+商户手机端/店员	manager	refund/compute	compute (:merId/refund/compute)	D	POST	:merId/refund/compute	/compute	
+商户手机端/店员	manager	refund/lst	lst (:merId/refund/lst)	R	GET	:merId/refund/lst	/lst	
+商户手机端/店员	manager	refund/detail	detail (:merId/refund/detail/:id)	R	GET	:merId/refund/detail/:id	/detail	
+商户手机端/店员	manager	refund/get	get Refund Price (:merId/refund/get/:id)	R	GET	:merId/refund/get/:id	/getRefundPrice	
+商户手机端/店员	manager	refund/confirm	refund Price (:merId/refund/confirm/:id)	UD	POST	:merId/refund/confirm/:id	/refundPrice	
+商户手机端/店员	manager	refund/express	express (:merId/refund/express/:id)	R	GET	:merId/refund/express/:id	/express	
+商户手机端/店员	manager	refund/status	switch Status (:merId/refund/status/:id)	UD	POST	:merId/refund/status/:id	/switchStatus	
+商户手机端/店员	manager	refund/mark	mark (:merId/refund/mark/:id)	UD	POST	:merId/refund/mark/:id	/mark	
+商户手机端/店员	manager	order	detail (/:merId/order/:id)	R	GET	/:merId/order/:id	/detail	
+商户手机端/店员	manager	manager	verify (/:merId/:id)	U	POST	/:merId/:id	/verify	
+商户手机端/店员	manager	order_lst	order_lst (order_lst)	R	GET	order_lst	/order_lst	
+商户手机端/店员	manager	order	order Detail (order/:id)	R	GET	order/:id	/orderDetail	
+商户手机端/店员	manager	order/dispatch	reservation Dispatch (order/:id/dispatch)	C	POST	order/:id/dispatch	/reservationDispatch	
+商户手机端/店员	manager	order/verifier	verify (order/:id/verifier)	U	POST	order/:id/verifier	/verify	
+商户手机端/店员	manager	order/check	check In (order/:id/check)	U	POST	order/:id/check	/checkIn	
+商户手机端/店员	manager	order/trace	add Trace (order/:id/trace)	C	POST	order/:id/trace	/addTrace	
+商户手机端/店员	manager	order/mark	mark (order/:id/mark)	U	POST	order/:id/mark	/mark	
+商户手机端/店员	manager	reservation/config	reservation Config (reservation/config)	R	GET	reservation/config	/reservationConfig	
+商户手机端/店员	manager	order_lst	order_lst (order_lst)	R	GET	order_lst	/order_lst	deliveryOrderLst
+商户手机端/店员	manager	order	order Detail (order/:id)	R	GET	order/:id	/orderDetail	deliveryOrderDetail
+商户手机端/店员	manager	order/receive	receive (order/:id/receive)	C	POST	order/:id/receive	/receive	
+商户手机端/店员	manager	order/confirm	confirm (order/:id/confirm)	U	POST	order/:id/confirm	/confirm	
+商户手机端/店员	manager	order/mark	mark (order/:id/mark)	U	POST	order/:id/mark	/mark	

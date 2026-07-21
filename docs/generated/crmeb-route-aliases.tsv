@@ -1,0 +1,1403 @@
+file	name	alias	path	auth
+admin/accounts.php	systemMerchantApplymentsLst	分账商户申请列表		
+admin/accounts.php	systemMerchantApplymentsDetail	分账商户申请详情		
+admin/accounts.php	systemMerchantApplymentsStatus	分账商户申请审核		
+admin/accounts.php	systemMerchantApplymentsGet	分账商户审核查询		false
+admin/accounts.php	systemMerchantApplymentsMarrk	分账商户申请备注表单		false
+admin/accounts.php	systemMerchantApplymentsMarrkSave	分账商户申请备注		
+admin/accounts.php	systemOrderProfitsharingLst	列表		
+admin/accounts.php	systemOrderProfitsharingAgain	重新分账		
+admin/accounts.php	systemOrderProfitsharingExport	导出		
+admin/accounts.php	systemOrderProfitsharingGetConfig	配置信息		
+admin/accounts.php	systemOrderProfitsharingSetConfig	配置保存		
+admin/accounts.php	systemUserExtractLst	申请列表		
+admin/accounts.php	systemUserExtractSwitchStatusForm	审核表单		false
+admin/accounts.php	systemUserExtractSwitchStatus	审核		
+admin/accounts.php	systemUserExtractExport	导出		
+admin/accounts.php	systemUserExtractDetail	详情		
+admin/accounts.php	systemOrderReceiptList	列表		
+admin/accounts.php	systemOrderReceiptDetail	详情		
+admin/accounts.php	systemUserRechargeList	列表		
+admin/accounts.php	systemUserRechargeTotal	统计		
+admin/accounts.php	systemUserBillList	列表		
+admin/accounts.php	systemUserBillExport	导出		
+admin/accounts.php	systemFinancialRecordLst	列表		
+admin/accounts.php	systemFinancialRecordTitle	统计		
+admin/accounts.php	systemFinancialRecordDetail	详情		
+admin/accounts.php	systemFinancialRecordDetailExport	导出		
+admin/accounts.php	systemFinancialRecordMerLst	商户列表		
+admin/accounts.php	systemFinancialRecordMerAcountsLst	商户统计		
+admin/accounts.php	systemFinancialRecordMerTitle	商户财务头部统计		
+admin/accounts.php	systemFinancialRecordMerDetail	商户财务详情		
+admin/accounts.php	systemFinancialRecordMerExcel	商户财务导出		
+admin/accounts.php	systemFinancialRecordList	列表		
+admin/accounts.php	systemFinancialRecordExport	导出		
+admin/accounts.php	systemFinancialCount	统计		
+admin/accounts.php	systemFinancialList	列表		
+admin/accounts.php	systemFinancialDetail	详情		
+admin/accounts.php	systemFinancialUpdate	编辑		
+admin/accounts.php	systemFinancialMarkForm	备注表单		false
+admin/accounts.php	systemFinancialMark	备注		
+admin/accounts.php	systemFinancialTitle	统计		
+admin/accounts.php	systemFinancialExport	导出		
+admin/analytics.php	systemAnalyticsOrderTop	顶部统计		
+admin/analytics.php	systemAnalyticsOrderLineChart	折线图统计		
+admin/analytics.php	systemAnalyticsOrderTypePieChart	折线图统计		
+admin/analytics.php	systemAnalyticsProductTop	顶部统计		
+admin/analytics.php	systemAnalyticsProductLineChart	折线图统计		
+admin/analytics.php	systemAnalyticsProductTypePieChart	折线图统计		
+admin/analytics.php	systemAnalyticsUserTop	顶部统计		
+admin/analytics.php	systemAnalyticsUserLineChart	折线图统计		
+admin/analytics.php	systemAnalyticsUserTypePieChart	折线图统计		
+admin/article.php	systemArticleCategoryCreateForm	文章分类添加表单		false
+admin/article.php	systemArticleCategoryLst	文章分类列表		
+admin/article.php	systemArticleCategoryCreate	文章分类添加		
+admin/article.php	systemArticleCategoryUpdateForm	文章分类编辑表单		false
+admin/article.php	systemArticleCategoryUpdate	文章分类编辑		
+admin/article.php	systemArticleCategoryStatus	文章分类修改状态		
+admin/article.php	systemArticleCategoryDelete	文章分类删除		
+admin/article.php	systemArticleCategoryDetail	文章分类详情		
+admin/article.php	systemArticlArticleLst	文章列表		
+admin/article.php	systemArticleArticleCreate	文章添加		
+admin/article.php	systemArticArticleleUpdate	文章编辑		
+admin/article.php	systemArticArticleleDelete	文章删除		
+admin/article.php	systemArticArticleleDetail	文章详情		
+admin/article.php	systemArticlArticlStatus	文章修改状态		
+admin/attachment.php	uploadImage	上传图片	/config/picture	
+admin/attachment.php	systemAttachmentScanQrcode	上传二维码		
+admin/attachment.php	systemAttachmentScanImage	扫码上传图片		
+admin/attachment.php	systemAttachmentScanImageSave	扫码上传保存		
+admin/attachment.php	systemAttachmentOnline	在线图片		
+admin/attachment.php	systemAttachmentLst	素材列表		
+admin/attachment.php	systemAttachmentDelete	素材删除		
+admin/attachment.php	systemAttachmentBatchChangeCategory	批量移动		
+admin/attachment.php	systemAttachmentUpdateForm	素材编辑表单		false
+admin/attachment.php	systemAttachmentUpdate	素材编辑		
+admin/attachment.php	systemAttachmentCategoryGetFormatList	素材分类列表		
+admin/attachment.php	systemAttachmentCategoryCreateForm	素材分类添加表单		false
+admin/attachment.php	systemAttachmentCategoryUpdateForm	素材分类编辑表单		false
+admin/attachment.php	systemAttachmentCategoryCreate	素材分类添加		
+admin/attachment.php	systemAttachmentCategoryUpdate	素材编辑		
+admin/attachment.php	systemAttachmentCategoryDelete	素材删除		
+admin/circle.php	systemCircleList	商圈列表		
+admin/circle.php	systemCircleDetail	商圈详情		
+admin/circle.php	systemCircleCreate	商圈添加		
+admin/circle.php	systemCircleUpdate	商圈编辑		
+admin/circle.php	systemCircleDelete	商圈删除		
+admin/circle.php	systemCircleSwitch	商圈状态切换		
+admin/circle.php	systemCircleMerchantList	关联商户列表		
+admin/circle.php	systemCircleAgentList	商圈代理列表		
+admin/circle.php	systemCircleAgentDetail	商圈代理详情		
+admin/circle.php	systemCircleAgentCreate	商圈代理添加		
+admin/circle.php	systemCircleAgentUpdate	商圈代理编辑		
+admin/circle.php	systemCircleAgentDelete	商圈代理删除		
+admin/circle.php	systemCircleAgentMerchant	关联商户列表		
+admin/circle.php	systemCircleAgentOptions	代理选项		
+admin/circle.php	systemCircleAgentResetPassword	重置密码		
+admin/circle.php	systemCircleAgentAudit	商圈代理审核		
+admin/circle.php	systemCircleAgentGetSettlementMethod	结算方式get		
+admin/circle.php	systemCircleAgentSetSettlementMethod	结算方式post		
+admin/circle.php	systemCircleCheckoutList	结算记录列表		
+admin/circle.php	systemCircleCheckoutDetail	结算记录详情		
+admin/circle.php	systemCircleCheckoutAudit	平台结算审核		
+admin/circle.php	systemCircleCheckoutTransfer	平台转账		
+admin/circle.php	systemCircleCheckoutPlatformRemark	平台备注		
+admin/circle.php	systemCircleCheckoutCreate	商圈申请结算获取余额		
+admin/circle.php	systemCircleCheckoutSave	商圈申请结算提交		
+admin/circle.php	systemCircleCheckoutRevoke	商圈撤销结算		
+admin/circle.php	systemCircleCheckoutRemark	商圈备注		
+admin/circle.php	systemCircleFinancialRecordList	商圈提成流水列表		
+admin/community.php	systemCommunityLst	文章列表		
+admin/community.php	systemCommunityDetail	文章详情		
+admin/community.php	systemCommunityUpdateForm	文章编辑表单		false
+admin/community.php	systemCommunityUpdate	文章编辑		
+admin/community.php	systemCommunityDelete	文章删除		
+admin/community.php	systemCommunityStatusForm	修改状态表单		false
+admin/community.php	systemCommunityStatus	修改状态		
+admin/community.php	systemCommunityShow	文章详情		
+admin/community.php	systemCommunityTitle	统计		
+admin/community.php	systemCommunityCategoryLst	社区分类状态		
+admin/community.php	systemCommunityCategoryCreateForm	社区分类添加表单		false
+admin/community.php	systemCommunityCategoryCreate	社区分类添加		
+admin/community.php	systemCommunityCategoryUpdateForm	社区分类编辑表单		false
+admin/community.php	systemCommunityCategoryUpdate	社区分类编辑		
+admin/community.php	systemCommunityCategoryDetail	社区分类详情		
+admin/community.php	systemCommunityCategoryDelete	社区分类删除		
+admin/community.php	systemCommunityCategoryStatus	社区分类修改状态		
+admin/community.php	systemCommunityTopicLst	社区话题		
+admin/community.php	systemCommunityTopicCreateForm	社区话题添加表单		false
+admin/community.php	systemCommunityTopicCreate	社区话题添加		
+admin/community.php	systemCommunityTopicUpdateForm	社区话题编辑表单		false
+admin/community.php	systemCommunityTopicUpdate	社区话题编辑		
+admin/community.php	systemCommunityTopicDetail	社区话题详情 		
+admin/community.php	systemCommunityTopicDelete	社区话题删除		
+admin/community.php	systemCommunityTopicStatus	社区话题修改状态		
+admin/community.php	systemCommunityTopicHot	社区话题推荐		
+admin/community.php	systemCommunityReplyLst	社区评论列表		
+admin/community.php	systemCommunityReply	内容评论列表		
+admin/community.php	systemCommunityReplyDelete	社区评论删除		
+admin/community.php	systemCommunityReplyStatusForm	社区评论审核表单		false
+admin/community.php	systemCommunityReplyStatus	社区评论审核		
+admin/config.php	configForm	获取配置信息		false
+admin/config.php	configSave	编辑配置信息		true
+admin/config.php	configForm	获取配置		false
+admin/config.php	configClassifyCreateForm	配置分类添加表单		false
+admin/config.php	configClassifyCreate	配置分类添加		
+admin/config.php	configClassifyDelete	配置分类删除		
+admin/config.php	configClassifyUpdate	配置分类编辑		
+admin/config.php	configClassifyUpdateForm	配置分类编辑表单		false
+admin/config.php	configClassifySwitchStatus	配置分类修改状态		
+admin/config.php	configClassifyLst	配置分类列表		
+admin/config.php	configSettingCreateForm	配置添加表单		false
+admin/config.php	configSettingCreate	配置添加		
+admin/config.php	configSettingUpdate	配置编辑		
+admin/config.php	configSettingUpdateForm	配置编辑表单		false
+admin/config.php	configSettingSwitchStatus	配置修改状态		
+admin/config.php	configSettingLst	配置列表		
+admin/config.php	configSettingDelete	配置删除		
+admin/coupon.php	systemStoreCouponLst	列表		
+admin/coupon.php	systemCouponIssue	使用记录	/marketing/coupon/user	
+admin/coupon.php	systemCouponDetail	详情		
+admin/coupon.php	systemCouponProduct	商品列表		
+admin/coupon.php	systemCouponCreateForm	添加表单		false
+admin/coupon.php	systemCouponCreate	添加		
+admin/coupon.php	systemCouponUpdateForm	编辑表单		false
+admin/coupon.php	systemCouponUpdate	编辑		
+admin/coupon.php	systemCouponDelete	删除		
+admin/coupon.php	systemCouponStatus	修改状态		
+admin/coupon.php	systemCouponList	列表		
+admin/coupon.php	systemCouponShow	详情		
+admin/coupon.php	systemCouponIssue	使用记录	/marketing/platform_coupon/couponRecord	
+admin/coupon.php	systemCouponCloneForm	复制表单		false
+admin/coupon.php	systemCouponShowLst	详情关联列表		
+admin/coupon.php	systemCouponSend	发送优惠券	/user/list	true
+admin/coupon.php	systemCouponSendLst	发送记录	/marketing/platform_coupon/couponSend	
+admin/delivery.php	systemDeliveryConfigForm	配置表单		false
+admin/delivery.php	systemDeliveryConfigSave	编辑配置	/systemForm/delivery	
+admin/delivery.php	systemDeliveryStationlst	门店列表	/delivery/station	
+admin/delivery.php	systemDeliveryStationDetail	门店详情	/delivery/station	
+admin/delivery.php	systemStoreDeliveryOptions	门店筛选		false
+admin/delivery.php	systemDeliveryStationGetRecharge	充值		false
+admin/delivery.php	systemDeliveryOrderLst	配送记录	/delivery/usage_record	
+admin/delivery.php	systemDeliveryOrderDetail	配送详情	/delivery/usage_record	
+admin/delivery.php	systemDeliveryStationPaayyLst	充值记录	/delivery/recharge_record	
+admin/delivery.php	systemDeliveryOrderTitle	统计	/delivery/recharge_record	
+admin/delivery.php	systemDeliveryStationGetBalance	余额	/delivery/recharge_record	
+admin/delivery.php	systemExpressLst	列表		
+admin/delivery.php	systemExpressSwitchStatus	修改状态		
+admin/delivery.php	systemExpressUpdateForm	编辑表单		false
+admin/delivery.php	systemExpressUpdate	编辑		
+admin/delivery.php	systemExpressDelete	删除		
+admin/delivery.php	systemExpressSync	同步		
+admin/delivery.php	systemCityAreaLst	列表		
+admin/delivery.php	systemCityAreaCreateForm	编辑表单		false
+admin/delivery.php	systemCityAreaCreate	编辑		
+admin/delivery.php	systemCityAreaUpdateForm	编辑表单		false
+admin/delivery.php	systemCityAreaUpdate	编辑		
+admin/delivery.php	systemCityAreaDelete	删除		
+admin/diy.php	systemGetChangeColor	一键换色	/setting/theme_style	false
+admin/diy.php	systemSetChangeColor	一键换色保存	/setting/theme_style	true
+admin/diy.php	systemDiyPageCategroyLst	列表 		
+admin/diy.php	systemDiyPageCategroyCreateForm	添加表单		false
+admin/diy.php	systemDiyPageCategroyCreate	添加		
+admin/diy.php	systemDiyPageCategroyUpdateForm	编辑表单		false
+admin/diy.php	systemDiyPageCategroyUpdate	编辑		
+admin/diy.php	systemDiyPageCategroyStatus	编辑状态		
+admin/diy.php	systemDiyPageCategroyDelete	删除		
+admin/diy.php	systemDiyPageMerCategroyLst	列表 		
+admin/diy.php	systemDiyPageMerCategroyCreateForm	添加表单		false
+admin/diy.php	systemDiyPageMerCategroyCreate	添加		
+admin/diy.php	systemDiyPageMerCategroyUpdateForm	编辑表单		false
+admin/diy.php	systemDiyPageMerCategroyUpdate	编辑		
+admin/diy.php	systemDiyPageMerCategroyStatus	编辑状态		
+admin/diy.php	systemDiyPageMerCategroyDelete	删除		
+admin/diy.php	systemDiyPageLinkLst	列表		
+admin/diy.php	systemDiyPageLinkCreateForm	添加表单		false
+admin/diy.php	systemDiyPageLinkCreate	添加		
+admin/diy.php	systemDiyPageLinkUpdateForm	编辑表单		false
+admin/diy.php	systemDiyPageLinkUpdate	编辑		
+admin/diy.php	systemDiyPageLinkDelete	删除		
+admin/diy.php	systemDiyPageLinkStatus	修改状态		
+admin/diy.php	systemDiyPageLinkMerLst	列表		
+admin/diy.php	systemDiyPageLinkMerCreateForm	添加表单		false
+admin/diy.php	systemDiyPageLinkMerCreate	添加		
+admin/diy.php	systemDiyPageLinkMerUpdateForm	编辑表单		false
+admin/diy.php	systemDiyPageLinkMerUpdate	编辑		
+admin/diy.php	systemDiyPageLinkMerDelete	删除		
+admin/diy.php	systemDiyPageLinkMerStatus	修改状态		
+admin/diy.php	systemDiyGetProductDetail	商品详情 		
+admin/diy.php	systemDiySaveProductDetail	商品详情保存 		
+admin/diy.php	systemDiyLst	列表 		
+admin/diy.php	systemDiyDetail	详情 		
+admin/diy.php	systemDiyCreate	添加/编辑		
+admin/diy.php	systemDiyStatus	使用模板		
+admin/diy.php	systemDiySetDefault	设置默认		
+admin/diy.php	systemDiyRecovery	重置		
+admin/diy.php	systemDiyDelete	删除		
+admin/diy.php	systemDiyProductLst	商品列表		
+admin/diy.php	systemDiyCopy	复制		
+admin/diy.php	systemVisualUserInfo	个人中心装修		
+admin/diy.php	systemVisualUserInfoSave	个人中心装修		false
+admin/diy.php	systemVisualStoreStreet	店铺街装修		
+admin/diy.php	systemVisualStoreStreetSave	店铺街装修		false
+admin/diy.php	systemVisualStoreGetThemeKey	可视化列表		
+admin/diy.php	systemVisualStoreGetTheme	可视化详情		
+admin/diy.php	systemVisualSetTheme	可视化保存		
+admin/diy.php	systemDiyMicroLst	列表 		
+admin/diy.php	systemDiyMicroDetail	详情 		
+admin/diy.php	systemDiyMicroCreate	添加/编辑		
+admin/diy.php	systemDiyMicroRecovery	重置		
+admin/diy.php	systemDiyMicroDelete	删除		
+admin/diy.php	systemMerDiyLst	列表 		
+admin/diy.php	systemMerDiyDetail	详情 		
+admin/diy.php	systemMerDiyCreate	添加/编辑		
+admin/diy.php	systemMerDiySetDefault	设置默认		
+admin/diy.php	systemMerDiyRecovery	重置		
+admin/diy.php	systemMerDiyDelete	删除		
+admin/diy.php	systemMerDiyCopy	复制		
+admin/diy.php	systemMerDiyGetScope	保存适用范围		
+admin/diy.php	systemMerDiySetScope	保存适用范围		
+admin/diy.php	systemDiyFabInfo	悬浮按钮信息		
+admin/diy.php	systemDiyFabSave	保存悬浮按钮		
+admin/diy.php	systemDiyProductCategoryInfo	商品分类信息		
+admin/diy.php	systemDiyProductCategorySave	保存商品分类		
+admin/form.php	systemFormCreate	添加		true
+admin/form.php	systemFormUpdate	编辑		true
+admin/form.php	systemFormStatusSwitch	编辑状态		true
+admin/form.php	systemFormDelete	删除		true
+admin/form.php	systemFormDetail	详情		true
+admin/form.php	systemFormLst	列表		true
+admin/form.php	systemFormExcel	导出		true
+admin/form.php	systemFormUserLst	表单提交记录		true
+admin/group.php	groupLst	组合数据配置列表		
+admin/group.php	groupCreate	组合数据配置添加		
+admin/group.php	groupUpdate	组合数据配置编辑		
+admin/group.php	groupCreateForm	组合数据配置添加表单		false
+admin/group.php	groupUpdateForm	组合数据配置编辑表单		false
+admin/group.php	groupDetail	详情		
+admin/group.php	groupDataLst	列表		
+admin/group.php	groupDataCreateForm	添加表单		false
+admin/group.php	groupDataCreate	添加		
+admin/group.php	groupDataUpdateForm	编辑表单		false
+admin/group.php	groupDataUpdate	编辑		
+admin/group.php	groupDataDelete	删除		
+admin/group.php	groupDataChangeStatus	修改状态		
+admin/marketing.php	systemUserIntegralConfig	积分配置获取		false
+admin/marketing.php	systemUserIntegralConfigSave	积分配置保存		
+admin/marketing.php	systemUserIntegralTitle	积分统计		
+admin/marketing.php	systemUserIntegralLst	积分日志		
+admin/marketing.php	systemUserIntegralExcel	积分导出		
+admin/marketing.php	systemStoreProductPresellLst	列表		
+admin/marketing.php	systemStoreProductPresellShow	显示/隐藏		
+admin/marketing.php	systemStoreProductPresellDetail	详情		
+admin/marketing.php	systemStoreProductPresellGet	编辑数据		
+admin/marketing.php	systemStoreProductPresellUpdate	编辑		
+admin/marketing.php	systemStoreProductPresellSwitchStatus	审核		
+admin/marketing.php	systemStoreProductPresellLabels	设置标签		
+admin/marketing.php	systemStoreProductAssistLst	列表		
+admin/marketing.php	systemStoreProductAssistShow	显示/隐藏		
+admin/marketing.php	systemStoreProductAssistDetail	详情		
+admin/marketing.php	systemStoreProductAssistProductUpdate	编辑		
+admin/marketing.php	systemStoreProductAssistStatus	审核		
+admin/marketing.php	systemStoreProductAssistGet	编辑数据		
+admin/marketing.php	systemStoreProductAssistLabels	设置标签		
+admin/marketing.php	systemStoreProductAssistSetLst	列表		
+admin/marketing.php	systemStoreProductAssistSetDetail	详情		
+admin/marketing.php	systemStoreProductGroupLst	列表		
+admin/marketing.php	systemStoreProductGroupShow	显示/隐藏		
+admin/marketing.php	systemStoreProductGroupDetail	详情		
+admin/marketing.php	systemStoreProductGroupProductUpdate	编辑		
+admin/marketing.php	systemStoreProductGroupStatus	审核		
+admin/marketing.php	systemStoreProductGroupGet	编辑数据		
+admin/marketing.php	systemStoreProductGroupSort	排序		
+admin/marketing.php	systemStoreProductGroupLabels	设置标签		
+admin/marketing.php	systemStoreProductGroupBuyingLst	列表		
+admin/marketing.php	systemStoreProductGroupBuyingDetail	详情		
+admin/marketing.php	configOthersGroupBuyingDetail	配置信息		false
+admin/marketing.php	configOthersGroupBuyingUpdate	配置保存		
+admin/marketing.php	systemBroadcastRoomLst	列表		
+admin/marketing.php	systemBroadcastRoomDetail	详情		
+admin/marketing.php	systemBroadcastRoomApplyForm	申请审核表单		false
+admin/marketing.php	systemBroadcastRoomApply	申请		
+admin/marketing.php	systemBroadcastRoomChangeStatus	修改状态		
+admin/marketing.php	systemBroadcastRoomSort	排序		
+admin/marketing.php	systemBroadcastRoomChangeLiveStatus	修改状态		
+admin/marketing.php	systemBroadcastRoomDelete	删除		
+admin/marketing.php	systemBroadcastRoomGoods	商品列表		
+admin/marketing.php	systemBroadcastRoomCloseKf	客服开关		
+admin/marketing.php	systemBroadcastRoomCloseComment	禁言开关		
+admin/marketing.php	systemBroadcastRoomClosesFeeds	收录开关		
+admin/marketing.php	systemBroadcastGoodsLst	列表		
+admin/marketing.php	systemBroadcastGoodsDetail	详情		
+admin/marketing.php	systemBroadcastGoodsApplyForm	审核表单		false
+admin/marketing.php	systemBroadcastGoodsApply	审核		
+admin/marketing.php	systemBroadcastGoodsChangeStatus	修改状态		
+admin/marketing.php	systemBroadcastGoodsDelete	删除		
+admin/marketing.php	systemSeckillConfigLst	列表		
+admin/marketing.php	systemSeckillConfigCreateForm	添加表单		false
+admin/marketing.php	systemSeckillConfigCreate	添加		
+admin/marketing.php	systemSeckillConfigUpdateForm	编辑表单		false
+admin/marketing.php	systemSeckillConfigUpdate	编辑		
+admin/marketing.php	systemSeckillConfigStatus	排序		
+admin/marketing.php	systemSeckillConfigDelete	删除		
+admin/marketing.php	systemSeckillActiveGetActiveList	列表		
+admin/marketing.php	systemSeckillActiveGetActiveInfo	详情		
+admin/marketing.php	systemSeckillActiveGetActiveAll	列表		false
+admin/marketing.php	systemSeckillActiveCreateActive	创建		
+admin/marketing.php	systemSeckillActiveUpdateActive	编辑		
+admin/marketing.php	systemSeckillActiveUpdateActiveStatus	编辑状态		
+admin/marketing.php	systemSeckillActiveDeleteActive	删除		
+admin/marketing.php	systemSeckillActiveChartPanel	活动统计数据面板		
+admin/marketing.php	systemSeckillActiveChartPeople	活动参与人统计列表		
+admin/marketing.php	systemSeckillActiveChartOrder	活动订单统计列表		
+admin/marketing.php	systemSeckillActiveChartProduct	活动商品统计列表		
+admin/marketing.php	systemStoreSeckillProductLstFilter	统计		
+admin/marketing.php	systemStoreSeckillProductPageLst	列表		
+admin/marketing.php	systemStoreSeckillProductLst	列表		
+admin/marketing.php	systemStoreSeckillProductDetail	详情		
+admin/marketing.php	systemStoreSeckillProductUpdate	编辑		
+admin/marketing.php	systemStoreSeckillProductSwitchStatus	审核		
+admin/marketing.php	systemStoreSeckillProductSwitchStatusForm	审核表单		false
+admin/marketing.php	systemStoreSeckillProductChangeUsed	显示/隐藏		
+admin/marketing.php	systemStoreSeckillProductLabels	设置标签		
+admin/marketing.php	systemStoreSeckillProductDelete	加入回收站		
+admin/marketing.php	systemStoreSeckillProductDestory	删除		
+admin/marketing.php	downProductStatusForm	强制下架表单		false
+admin/marketing.php	systemActivityAtmosphereCreate	添加		
+admin/marketing.php	systemActivityAtmosphereLst	列表		
+admin/marketing.php	systemActivityAtmosphereUpdate	编辑		
+admin/marketing.php	systemActivityAtmosphereDetail	详情		
+admin/marketing.php	systemActivityAtmosphereDelete	删除		
+admin/marketing.php	systemActivityAtmosphereStatus	修改状态		
+admin/marketing.php	systemActivityBorderCreate	添加		
+admin/marketing.php	systemActivityBorderLst	列表		
+admin/marketing.php	systemActivityBorderUpdate	编辑		
+admin/marketing.php	systemActivityBorderDetail	详情		
+admin/marketing.php	systemActivityBorderDelete	删除		
+admin/marketing.php	systemActivityBorderStatus	修改状态		
+admin/marketing.php	systemActivityFormCreate	添加		
+admin/marketing.php	systemActivityFormLst	列表		
+admin/marketing.php	systemActivityFormUpdate	编辑		
+admin/marketing.php	systemActivityFormDetail	详情		
+admin/marketing.php	systemActivityFormDelete	删除		
+admin/marketing.php	systemActivityFormStatus	修改状态		
+admin/marketing.php	systemFormActivUserLst	活动记录		true
+admin/marketing.php	systemFormActivUserExcel	活动记录导出		true
+admin/marketing.php	systemActivityCateFormCreate	添加表单		
+admin/marketing.php	systemActivityCateCreate	添加		
+admin/marketing.php	systemActivityCateLst	列表		
+admin/marketing.php	systemActivityCateFormUpdate	编辑表单		
+admin/marketing.php	systemActivityCateUpdate	编辑		
+admin/marketing.php	systemActivityCateDelete	删除		
+admin/marketing.php	systemActivityCateSelect			false
+admin/marketing.php	systemActivityLabelCreate	添加		
+admin/marketing.php	systemActivityLabelLst	列表		
+admin/marketing.php	systemActivityLabelUpdate	编辑		
+admin/marketing.php	systemActivityLabelDelete	删除		
+admin/marketing.php	systemActivityLabelDetail	详情		
+admin/marketing.php	systemActivityLabelUpdate	编辑		
+admin/marketing.php	systemActivityLabelOptions	下拉列表		
+admin/member.php	systemUserSvipLst	列表		
+admin/member.php	systemUserSvipCreate	添加		
+admin/member.php	systemUserSvipUpdateForm	编辑表单		
+admin/member.php	systemUserSvipTypeUpdate	编辑		
+admin/member.php	systemUserSvipDelete	删除		
+admin/member.php	systemUserSvipStatus	修改状态		
+admin/member.php	systemUserSvipPayLst	列表	/user/member/record	
+admin/member.php	systemUserSvipCountInfo	统计	/user/member/record	
+admin/member.php	systemUserSvipInterestsLst	列表		
+admin/member.php	systemUserSvipInterestsUpdateForm	编辑		false
+admin/member.php	systemUserSvipInterestsUpdate	编辑		
+admin/member.php	systemUserSvipInterestsStatus	编辑状态		
+admin/member.php	systemUserMemberLst	普通会员等级列表		
+admin/member.php	systemUserMemberCreateForm	普通会员等级添加表单		false
+admin/member.php	systemUserMemberCreate	普通会员等级添加		
+admin/member.php	systemUserMemberUpdateForm	普通会员等级编辑表单		false
+admin/member.php	systemUserMemberUpdate	普通会员等级编辑		
+admin/member.php	systemUserMemberDelete	普通会员等级删除		
+admin/member.php	systemUserMemberInterestsLst	会员权益		
+admin/member.php	systemUserMemberInterestsCreateForm	会员权益添加表单		false
+admin/member.php	systemUserMemberInterestsCreate	会员权益添加		
+admin/member.php	systemUserMemberInterestsUpdateForm	会员权益编辑表单		false
+admin/member.php	systemUserMemberInterestsUpdate	会员权益编辑		
+admin/member.php	systemUserMemberInterestsDelete	会员权益删除		
+admin/menu.php	systemMenuGetLst	平台菜单/权限列表		
+admin/menu.php	systemMenuCreateForm	平台菜单/权限添加表单		false
+admin/menu.php	systemMenuUpdateForm	平台菜单/权限编辑表单		false
+admin/menu.php	systemMenuCreate	平台菜单/权限添加		
+admin/menu.php	systemMenuUpdate	平台菜单/权限编辑		
+admin/menu.php	systemMenuDelete	平台菜单/权限删除		
+admin/merchant.php	systemStoreGroupLst	列表		
+admin/merchant.php	systemStoreGroupDetail	详情		
+admin/merchant.php	systemStoreGroupCreate	添加		
+admin/merchant.php	systemStoreGroupUpdate	编辑		
+admin/merchant.php	systemStoreGroupDelete	删除		
+admin/merchant.php	systemStoreGroupSwitchStatus	状态切换		
+admin/merchant.php	systemStoreGroupSetTemplate	设置店铺分组模板		
+admin/merchant.php	systemStoreGroupStores	关联店铺列表		
+admin/merchant.php	systemMerchantCategoryLst	店铺分类列表		
+admin/merchant.php	systemMerchantCategoryCreate	店铺分类添加		
+admin/merchant.php	systemMerchantCategoryCreateForm	店铺分类添加表单		false
+admin/merchant.php	systemMerchantCategoryDelete	店铺分类删除		
+admin/merchant.php	systemMerchantCategoryUpdate	店铺分类编辑		
+admin/merchant.php	systemMerchantCategoryUpdateForm	店铺分类编辑表单		false
+admin/merchant.php	systemMerchantIntentionLst	列表		
+admin/merchant.php	systemMerchantIntentionStatus	审核		
+admin/merchant.php	systemMerchantIntentionDelete	删除		
+admin/merchant.php	systemMerchantIntentionMarkForm	备注		false
+admin/merchant.php	systemMerchantIntentionStatusForm	申请店铺		false
+admin/merchant.php	systemMerchantIntentionMark	备注		
+admin/merchant.php	systemMerchantCareFictiForm	虚拟关注量表单		false
+admin/merchant.php	systemMerchantCareFicti	虚拟关注量		true
+admin/merchant.php	systemMerchantCreateForm	店铺列表		
+admin/merchant.php	systemMerchantCount	店铺列表统计		
+admin/merchant.php	systemMerchantLst	店铺列表		
+admin/merchant.php	systemMerchantCreate	店铺添加		
+admin/merchant.php	systemMerchantUpdateForm	店铺编辑表单		false
+admin/merchant.php	systemMerchantUpdate	店铺编辑		
+admin/merchant.php	systemMerchantStatus	店铺修改推荐		
+admin/merchant.php	systemMerchantClose	店铺开启/关闭		
+admin/merchant.php	systemMerchantDeleteForm	店铺删除		false
+admin/merchant.php	systemMerchantDelete	店铺删除		
+admin/merchant.php	systemMerchantAdminPassword	店铺修改密码		
+admin/merchant.php	systemMerchantAdminPasswordForm	店铺修改密码表单		false
+admin/merchant.php	systemMerchantLogin	店铺登录		
+admin/merchant.php	systemMerchantChangeCopyForm	修改采集商品次数表单		false
+admin/merchant.php	systemMerchantChangeCopy	修改采集商品次数		
+admin/merchant.php	systemMerchantDetail	详情		
+admin/merchant.php	systemMerchantOperateList	操作日志		
+admin/merchant.php	systemMerchantBusinessCreate	商户添加店铺		
+admin/merchant.php	systemMerchantTypeLst	列表		
+admin/merchant.php	systemMerchantTypeCreate	添加		
+admin/merchant.php	systemMerchantTypeUpdate	编辑		
+admin/merchant.php	systemMerchantTypeDelete	删除		
+admin/merchant.php	systemMerchantTypeMarkForm	备注		false
+admin/merchant.php	systemMerchantTypeMark	备注		
+admin/merchant.php	systemMerchantTypeDetail	备注		
+admin/merchant.php	systemMerchantMarginLst	缴纳记录		
+admin/merchant.php	systemMarginList	扣费记录		
+admin/merchant.php	systemMarginSetForm	扣除保证金表单		false
+admin/merchant.php	systemMarginSet	扣除保证金		
+admin/merchant.php	systemMarginRefundList	退款申请列表		
+admin/merchant.php	systemMarginRefundShow	退款申请详情		
+admin/merchant.php	systemMarginRefundSwitchStatusForm	审核表单		false
+admin/merchant.php	systemMarginRefundMarkForm	备注表单		false
+admin/merchant.php	systemMarginRefundMark	备注		
+admin/merchant.php	systemMarginMakeUpMarginLst	待缴列表		
+admin/merchant.php	systemMarginLocalForm	扣除保证金表单		false
+admin/merchant.php	systemMarginLocalSet	扣除保证金表单		false
+admin/notice.php	systemNoticeList	系统公告列表		
+admin/notice.php	systemNoticeCreate	系统公告发布		
+admin/notice.php	systemNoticeUpdate	系统公告编辑		
+admin/notice.php	systemNoticeSwitchStatus	系统公告修改状态		
+admin/notice.php	systemNoticeDetail	系统公告详情		
+admin/notice.php	systemNoticeDelete	系统公告删除		
+admin/notice.php	systemNoticeConfigLst	消息配置列表		
+admin/notice.php	systemNoticeConfigCreateForm	消息配置添加表单		false
+admin/notice.php	systemNoticeConfigCreate	消息配置添加		
+admin/notice.php	systemNoticeConfigUpdateForm	消息配置编辑表单		false
+admin/notice.php	systemNoticeConfigUpdate	消息配置编辑		
+admin/notice.php	systemNoticeConfigDetail	消息配置详情		
+admin/notice.php	systemNoticeConfigDelete	消息配置删除		
+admin/notice.php	systemNoticeConfigStatus	消息配置修改状态		
+admin/notice.php	systemNoticeConfigGetChangeTempId	消息配置修改模板ID		
+admin/notice.php	systemNoticeConfigSetChangeTempId	消息配置修改模板ID		
+admin/order.php	systemSpreadOrderLst	列表		
+admin/order.php	systemSpreadOrderStat	金额统计		
+admin/order.php	systemSpreadOrderExpress	快递查询		
+admin/order.php	systemSpreadOrderTitle	头部统计		
+admin/order.php	systemSpreadOrderDetail	详情		
+admin/order.php	systemSpreadOrderExcel	导出		
+admin/order.php	systemSpreadOrderStatus	记录		
+admin/order.php	systemSpreadOrderChildrenList	关联订单		
+admin/order.php	systemOrderLst	列表		
+admin/order.php	systemOrderStat	金额统计		
+admin/order.php	systemOrderExpress	快递查询		
+admin/order.php	systemOrderTitle	头部统计		
+admin/order.php	systemOrderDetail	详情		
+admin/order.php	systemOrderExcel	导出		
+admin/order.php	systemOrderStatus	记录		
+admin/order.php	systemOrderChildrenList	关联订单		
+admin/order.php	systemOrderTakeStat	核销		
+admin/order.php	systemTakeOrderLst	核销订单		
+admin/order.php	systemTakeOrderTitle	头部统计		
+admin/order.php	systemRefundOrderLst	列表		
+admin/order.php	systemRefundOrderDetail	详情		
+admin/order.php	systemRefundOrderLog	日志		
+admin/order.php	systemRefundOrderApprove	审核		
+admin/order.php	systemRefundOrderExcel	导出		
+admin/points.php	pointsCateLst	列表		
+admin/points.php	pointsCateDetail	详情		
+admin/points.php	pointsCateCreate	添加		
+admin/points.php	pointsCateUpdate	编辑		
+admin/points.php	pointsCateCreateForm	添加表单		false
+admin/points.php	pointsCateUpdateForm	编辑表单		false
+admin/points.php	pointsCateStatus	修改状态		
+admin/points.php	pointsCateStatus	修改状态		
+admin/points.php	pointsProductLst	列表		
+admin/points.php	pointsCateFormatAttr	获取规格		
+admin/points.php	pointsProductDetail	编辑		
+admin/points.php	pointsProductCreate	添加		
+admin/points.php	pointsProductUpdate	编辑		
+admin/points.php	pointsProductStatus	修改状态		
+admin/points.php	pointsProductStatus	修改状态		
+admin/points.php	pointsProductPreview	预览		
+admin/points.php	pointsOrderLst	列表		
+admin/points.php	pointsOrderDetail	编辑		
+admin/points.php	pointsOrderDelivery	发货		
+admin/points.php	pointsOrderBatchDelivery	批量发货		
+admin/points.php	pointsOrderExpress	快递查询		
+admin/points.php	pointsOrderExcel	导出		
+admin/points.php	pointsOrderMarkForm	备注表单		false
+admin/points.php	pointsOrderMark	备注		
+admin/points.php	pointsOrderStatus	记录		
+admin/points.php	pointsOrderDelete	删除		
+admin/product.php	systemStoreParameterTemplateLst	平台参数列表		
+admin/product.php	systemStoreParameterTemplateMerLst	商户参数模板	/product/merSpecs	
+admin/product.php	systemStoreParameterTemplateDetail	详情		
+admin/product.php	systemStoreParameterTemplateDelete	删除		
+admin/product.php	systemStoreParameterTemplateCreate	添加		
+admin/product.php	systemStoreParameterTemplateUpdate	编辑		
+admin/product.php	systemStoreCategoryCreateForm	添加表单		false
+admin/product.php	systemStoreCategoryUpdateForm	编辑表单		false
+admin/product.php	systemStoreCategoryUpdate	编辑		
+admin/product.php	systemStoreCategoryLst	列表		
+admin/product.php	systemStoreCategoryDtailt	详情		
+admin/product.php	systemStoreCategoryCreate	添加		
+admin/product.php	systemStoreCategoryDelete	删除		
+admin/product.php	systemStoreCategorySwitchStatus	修改状态		
+admin/product.php	systemStoreCategorySwitchIsHot	修改推荐		
+admin/product.php	systemStoreBrandCategoryCreateForm	添加表单		false
+admin/product.php	systemStoreBrandCategoryUpdateForm	编辑表单		false
+admin/product.php	systemStoreBrandCategoryUpdate	编辑		
+admin/product.php	systemStoreBrandCategoryLst	列表		
+admin/product.php	systemStoreBrandCategoryDtailt	详情		
+admin/product.php	systemStoreBrandCategoryCreate	添加		
+admin/product.php	systemStoreBrandCategoryDelete	删除		
+admin/product.php	systemStoreBrandCategorySwitchStatus	修改状态		
+admin/product.php	systemStoreBrandCreateForm	添加表单		false
+admin/product.php	systemStoreBrandUpdateForm	编辑表单		false
+admin/product.php	systemStoreBrandLst	列表		
+admin/product.php	systemStoreBrandSwithStatus	修改状态		
+admin/product.php	systemStoreBrandCreate	添加		
+admin/product.php	systemStoreBrandUpdate	编辑		
+admin/product.php	systemStoreBrandDelete	删除		
+admin/product.php	systemStoreProductLstFilter	统计		
+admin/product.php	systemStoreProductLst	列表		
+admin/product.php	systemStoreProductDetail	详情		
+admin/product.php	systemStoreProductUpdate	编辑		
+admin/product.php	systemStoreProductSwitchStatus	上下架		
+admin/product.php	systemStoreProductSwitchBatchStatus	批量上下架		
+admin/product.php	systemStoreProductSwitchBatchLabels	批量设置标签		
+admin/product.php	systemStoreProductSwitchBatchHot	批量设置推荐		
+admin/product.php	systemStoreProductSwitchBatchCateHot	批量设置分类推荐		
+admin/product.php	systemStoreProductCheck	分销状态变更商品检测		
+admin/product.php	systemStoreProductChangeUsed	显示/隐藏		
+admin/product.php	systemStoreProductAddFictiForm	虚拟销量表单		false
+admin/product.php	systemStoreProductAddFicti	虚拟销量		
+admin/product.php	systemStoreProductLabels	设置标签		
+admin/product.php	systemStoreProductGetOperateList	获取商品操作记录		
+admin/product.php	systemStoreProductGetSelfProductList	获取自营商品列表		
+admin/product.php	systemStoreProductBatchCopy	批量复制商品到店铺		
+admin/product.php	systemProductReplyLst	列表		
+admin/product.php	systemProductReplyCreateForm	添加虚拟评论表单		false
+admin/product.php	systemProductReplyCreate	添加虚拟评论		
+admin/product.php	systemProductReplySort	排序		
+admin/product.php	systemProductReplyDelete	删除		
+admin/product.php	systemGuaranteeLst	列表		
+admin/product.php	systemGuaranteeCreateForm	添加表单		false
+admin/product.php	systemGuaranteeCreate	添加		
+admin/product.php	systemGuaranteeUpdateForm	编辑表单		false
+admin/product.php	systemGuaranteeUpdate	编辑		
+admin/product.php	systemGuaranteeDetail	详情		
+admin/product.php	systemGuaranteeDelete	删除		
+admin/product.php	systemGuaranteeSort	排序		
+admin/product.php	systemGuaranteeStatus	修改状态		
+admin/product.php	systemStoreProductLabelLst	列表		
+admin/product.php	systemStoreProductLabelCreateForm	添加表单		false
+admin/product.php	systemStoreProductLabelCreate	添加		
+admin/product.php	systemStoreProductLabelUpdateForm	编辑表单		false
+admin/product.php	systemStoreProductLabelUpdate	编辑		
+admin/product.php	systemStoreProductLabelDetail	详情		
+admin/product.php	systemStoreProductLabelDelete	删除		
+admin/product.php	systemStoreProductLabelStatus	修改状态		
+admin/product.php	systemStoreDiscountsLst	优惠套餐列表		
+admin/product.php	systemStoreDiscountsDetail	优惠套餐详情		
+admin/product.php	systemStoreDiscountsStatus	优惠套餐修改状态		
+admin/product.php	systemPriceRuleLst	价格说明列表		
+admin/product.php	systemPriceRuleCreate	添加价格说明		
+admin/product.php	systemPriceRuleUpdate	修改价格说明		
+admin/product.php	systemPriceRuleStatus	价格说明修改状态		
+admin/product.php	systemPriceRuleDelete	删除价格说明		
+admin/role.php	systemRoleGetList	身份列表		
+admin/role.php	systemRoleCreate	身份添加		
+admin/role.php	systemRoleCreateForm	身份添加表单		false
+admin/role.php	systemRoleUpdate	身份编辑		
+admin/role.php	systemRoleUpdateForm	身份编辑表单		false
+admin/role.php	systemRoleStatus	身份修改状态		
+admin/role.php	systemRoleDelete	身份删除		
+admin/role.php	systemAdminLst	管理员列表		
+admin/role.php	systemAdminStatus	管理员修改状态		
+admin/role.php	systemAdminCreateForm	管理员添加表单		false
+admin/role.php	systemAdminCreate	管理员添加		
+admin/role.php	systemAdminUpdateForm	管理员编辑表单		false
+admin/role.php	systemAdminUpdate	管理员编辑		
+admin/role.php	systemAdminPasswordForm	管理员修改密码表单		false
+admin/role.php	systemAdminPassword	管理员修改密码		
+admin/role.php	systemAdminDelete	管理员删除		
+admin/role.php	systemAdminLog	操作日志	/setting/systemLog	
+admin/role.php	systemAdminEditForm	修改信息表单		false
+admin/role.php	systemAdminEdit	修改信息		
+admin/role.php	systemAdminEditPasswordForm	修改密码表单		false
+admin/role.php	systemAdminEditPassword	修改密码		
+admin/service.php	adminServiceLst	列表		
+admin/service.php	adminServiceLogin	登录		
+admin/service.php	adminServiceCreate	添加		
+admin/service.php	adminServiceCreateForm	添加表单		false
+admin/service.php	adminServiceUpdate	编辑		
+admin/service.php	adminServiceUpdateForm	编辑表单		false
+admin/service.php	adminServiceSwitchStatus	修改状态		
+admin/service.php	adminServiceDelete	删除		
+admin/service.php	adminServiceServiceUserList	客服的全部用户 		
+admin/service.php	adminServiceServiceUserLogLst	用户与客服聊天记录		
+admin/service.php	adminServiceServiceMerchantUserList	客服的聊天用户列表		
+admin/service.php	adminServiceMerchantUserLogLst	用户与商户聊天记录		
+admin/service.php	adminServiceReplyLst	列表		
+admin/service.php	adminServiceReplyCreate	添加		
+admin/service.php	adminServiceReplyUpdate	编辑		
+admin/service.php	adminServiceReplyStatus	切换状态		
+admin/service.php	adminServiceReplyDelete	删除		
+admin/spread.php	systemPromoterUserLst	分销员列表		
+admin/spread.php	systemPromoterUserCount	分销员统计		
+admin/spread.php	systemUserSpreadForm	修改分销员等级表单		false
+admin/spread.php	systemUserSpreadSave	修改分销员等级		
+admin/spread.php	systemUserBrokerageLst	分销员等级列表		
+admin/spread.php	systemUserBrokerageCreate	分销员等级添加		
+admin/spread.php	systemUserBrokerageUpdate	分销员等级编辑		
+admin/spread.php	systemUserBrokerageDelete	分销员等级删除		
+admin/spread.php	systemUserSpreadLst	推广人列表		
+admin/spread.php	systemUserSpreadOrder	推广人订单		
+admin/spread.php	systemUserSpreadClear	清除推广人		
+admin/spread.php	systemStoreBagLstFilter	统计		
+admin/spread.php	systemStoreBagLst	列表		
+admin/spread.php	systemStoreBagDetail	详情		
+admin/spread.php	systemStoreBagUpdate	编辑		
+admin/spread.php	systemStoreBagSwitchStatus	修改状态		
+admin/spread.php	systemStoreBagChangeUsed	显示/隐藏		
+admin/spread.php	configOthersSettingUpdate	配置保存		
+admin/storage.php	systemStorageGetConfig	配置信息		
+admin/storage.php	systemStorageSetConfig	提交配置		
+admin/storage.php	systemStorageConfigForm	获取云存储配置表单		false
+admin/storage.php	systemStorageUpdate	保存云存储配置		
+admin/storage.php	systemStorageSync	同步存储空间		
+admin/storage.php	systemStorageLstRegion	存储空间列表		
+admin/storage.php	systemStorageCreateRegionForm	添加存储空间表单		false
+admin/storage.php	systemStorageCreateRegion	添加存储空间		
+admin/storage.php	systemStorageDeleteRegion	删除存储空间		
+admin/storage.php	systemStorageRegionSwtichStatus	使用存储空间		
+admin/storage.php	systemStorageUpdateDomainForm	修改存储空间名称表单		false
+admin/storage.php	systemStorageUpdateDomain	修改存储空间名称		
+admin/system.php	systemStoreExcelLst	列表		
+admin/system.php	systemStoreExcelDownload	下载		
+admin/system.php	systemStatisticsMain	主要数据		
+admin/system.php	systemStatisticsOrder	当日订单		
+admin/system.php	systemStatisticsOrderNum	当日订单数		
+admin/system.php	systemStatisticsOrderUser	当日支付人数		
+admin/system.php	systemStatisticsMerchantStock	商户销量		
+admin/system.php	systemStatisticsMerchantRate	商户访问量		
+admin/system.php	systemStatisticsMerchantVisit	商户销售额		
+admin/system.php	systemStatisticsUserData	用户数据		
+admin/system.php	systemStatisticsAdminCount	未处理业务统计		
+admin/system.php	systemStatisticsAdminTodo	待办事项		
+admin/system.php	systemStatisticsMerchantTop	商户销量排行		
+admin/system.php	systemStatisticsUser	成交用户	/dashboard	true
+admin/system.php	systemStatisticsUserRate	成交用户占比	/dashboard	true
+admin/system.php	systemSafetyDatabaseLst	数据库列表		
+admin/system.php	systemSafetyDatabaseFileList	数据库备份列表		
+admin/system.php	systemSafetyDatabaseDetail	数据库备份详情		
+admin/system.php	systemSafetyDatabaseBackups	备份		
+admin/system.php	systemSafetyDatabaseOptimize	数据库优化		
+admin/system.php	systemSafetyDatabaseRepair	数据库维护		
+admin/system.php	systemSafetyDatabaseDownloadFile	数据库备份下载		
+admin/system.php	systemSafetyDatabaseDeleteFile	数据库备份删除		
+admin/system.php	systemClearCache	清除缓存	/maintain/cache	true
+admin/system.php	systemAttachmentReplaceHost	替换素材域名	/maintain/cache	true
+admin/system.php	systemUploadConfig	上传配置		false
+admin/system.php	systemSaveUploadConfig	上传配置保存	/systemForm/Basics/upload	true
+admin/system.php	systemSaveUploadTempKey	上传视屏KEY		false
+admin/system.php	systemDataScreen	数据大屏	/data-screen/index	true
+admin/system.php	systemAgreeKeyLsy	协议列表		
+admin/system.php	systemAgreeDetail	协议		false
+admin/system.php	systemAgreeSave	协议保存		
+admin/system.php	systemCopyright	获取去版权信息		
+admin/system.php	systemAuthCopyright	获取授权信息		
+admin/system.php	systemSaveCopyright	保存去版权信息		
+admin/user.php	systemUserInfolst	列表		
+admin/user.php	systemUserInfoCreateFrom	添加表单		false
+admin/user.php	systemUserInfoCreate	添加		
+admin/user.php	systemUserInfoSaveAll	保存信息		
+admin/user.php	systemUserInfoType	类型		false
+admin/user.php	systemUserInfoDelete	删除		
+admin/user.php	systemUserGetSelectList	下拉列表		false
+admin/user.php	systemUserRegisterConfig	保存注册配置		true
+admin/user.php	systemUserRegisterCoupon	新人礼优惠券列表		true
+admin/user.php	systemUserFieldSaveForm	扩展信息表单		
+admin/user.php	systemUserInfoFieldSave	添加或编辑		
+admin/user.php	systemUserLabelLst	用户标签列表		
+admin/user.php	systemUserLabelCreate	用户标签添加		
+admin/user.php	systemUserLabelCreateForm	用户标签添加表单		false
+admin/user.php	systemUserLabelDelete	用户标签删除		
+admin/user.php	systemUserLabelUpdate	用户标签编辑		
+admin/user.php	systemUserLabelUpdateForm	用户标签编辑表单		false
+admin/user.php	systemUserLst	用户列表		
+admin/user.php	systemUserUpdateForm	用户编辑表单		false
+admin/user.php	systemUserUpdate	用户编辑		
+admin/user.php	systemUserChangeNowMoneyForm	用户修改余额表单		false
+admin/user.php	systemUserChangeNowMoney	用户修改余额		
+admin/user.php	systemUserChangeIntegralForm	用户修改积分表单		false
+admin/user.php	systemUserChangeIntegral	用户修改积分		
+admin/user.php	systemWechatUserSendNews	用户发送图文		
+admin/user.php	systemUserDetail	用户详情		
+admin/user.php	systemUserOrder	用户消费记录		
+admin/user.php	systemUserCoupon	用户持有优惠券		
+admin/user.php	systemUserBill	用户余额变动列表		
+admin/user.php	systemUserSpreadLog	推荐人修改记录		
+admin/user.php	systemUserSpreadChangeForm	修改推荐人表单		false
+admin/user.php	systemUserSpreadChange	修改推荐人		
+admin/user.php	systemUserMemberForm	用户修改会员等级表单		false
+admin/user.php	systemUserMemberSave	用户修改会员等级		
+admin/user.php	systemUserCreateForm	用户添加表单		false
+admin/user.php	systemUserGetFields	用户扩展信息表单		false
+admin/user.php	systemUserCreate	用户添加		
+admin/user.php	systemUserChangePasswordForm	用户修改密码表单		false
+admin/user.php	systemUserChangePassword	用户修改密码		
+admin/user.php	systemUserChangeGroupForm	用户分组编辑表单		false
+admin/user.php	systemUserBatchChangeGroupForm	用户分组批量编辑表单		false
+admin/user.php	systemUserChangeGroup	用户分组编辑		
+admin/user.php	systemUserBatchChangeGroup	用户分组批量编辑		
+admin/user.php	systemUserChangeLabelForm	用户标签编辑表单		false
+admin/user.php	systemUserBatchChangeLabelForm	用户标签批量编辑表单		false
+admin/user.php	systemUserChangeLabel	用户标签编辑		
+admin/user.php	systemUserBatchChangeLabel	用户标签批量编辑		
+admin/user.php	systemUserSvipForm			false
+admin/user.php	systemUserSvipUpdate	用户标签编辑		
+admin/user.php	systemUserIntegralList	积分记录		
+admin/user.php	systemUserSginLog	签到记录		
+admin/user.php	systemUserHistory	浏览记录		
+admin/user.php	systemUserExcel	用户信息导出		
+admin/user.php	getMemberLevelSelectList	获取用户的等级下拉列表		false
+admin/user.php	getMemberLevelBatchSpreadForm			false
+admin/user.php	getMemberLevelBatchSpread	批量设置分销员		
+admin/user.php	systemUserSearchLog	用户搜索记录		
+admin/user.php	systemUserClearSearchLog	清除用户搜索记录		
+admin/user.php	systemUserExportSearchLog	用户搜索记录导出		
+admin/user.php	systemUserSearchLog	用户搜索记录		
+admin/user.php	systemUserGroupLst	用户分组列表		
+admin/user.php	systemUserGroupCreate	用户分组添加		
+admin/user.php	systemUserGroupCreateForm	用户分组添加表单		false
+admin/user.php	systemUserGroupDelete	用户分组删除		
+admin/user.php	systemUserGroupUpdate	用户分组编辑		
+admin/user.php	systemUserGroupUpdateForm	用户分组编辑表单		false
+admin/user.php	systemUserFeedBackCategoryLst	列表		
+admin/user.php	systemUserFeedBackCategoryCreateForm	添加表单		false
+admin/user.php	systemUserFeedBackCategoryCreate	添加		
+admin/user.php	systemUserFeedBackCategoryUpdateForm	编辑表单		false
+admin/user.php	systemUserFeedBackCategoryUpdate	编辑		
+admin/user.php	systemUserFeedBackCategorySwitchStatus	修改状态		
+admin/user.php	systemUserFeedBackCategoryDelete	删除		
+admin/user.php	systemUserFeedBackLst	列表		
+admin/user.php	systemUserFeedBackDetail	详情		
+admin/user.php	systemUserFeedBackReplyForm	回复表单		false
+admin/user.php	systemUserFeedBackReply	回复		
+admin/user.php	systemUserFeedBackDelete	删除		
+admin/wechat.php	configUpload	上传文件		
+admin/wechat.php	configUploadName	上传原名文件		
+admin/wechat.php	configWechatUploadForm	微信校验文件上传表单		false
+admin/wechat.php	configWechatUploadSet	微信校验文件上传		
+admin/wechat.php	configRoutineConfig	小程序配置		
+admin/wechat.php	configRoutineDownload	小程序下载	/app/routine/download	
+admin/wechat.php	wechatMenu	微信菜单配置		
+admin/wechat.php	saveWechatMenu	保存微信菜单配置		
+admin/wechat.php	wechatReplyInfo	详情		
+admin/wechat.php	saveWechatReply	编辑		
+admin/wechat.php	createWechatReply	添加		
+admin/wechat.php	updateWechatReply	修改		
+admin/wechat.php	wechatReplyLst	列表		
+admin/wechat.php	wechatReplyDelete	删除		
+admin/wechat.php	wechatReplyStatus	修改状态		
+admin/wechat.php	wechatUploadImage	上传图片		
+admin/wechat.php	wechatUploadVoice	上传语音		
+admin/wechat.php	systemWechatNewsCreate	添加		
+admin/wechat.php	systemWechatNewsUpdate	编辑		
+admin/wechat.php	systemWechatNewsDelete	删除		
+admin/wechat.php	systemWechatNewsLst	列表		
+admin/wechat.php	systemWechatNewsUpdate	编辑		
+admin/wechat.php	systemWechatNewsDelete	删除		
+admin/wechat.php	systemWechatNewsDetail	详情		
+admin/wechat.php	systemTemplateMessageLst	列表		
+admin/wechat.php	systemTemplateMessageCreateForm	添加表单		false
+admin/wechat.php	systemTemplateMessageCreate	添加		
+admin/wechat.php	systemTemplateMessageUpdateForm	编辑表单		false
+admin/wechat.php	systemTemplateMessageUpdate	编辑		
+admin/wechat.php	systemTemplateMessageDelete	删除		
+admin/wechat.php	systemTemplateMessageSwitchStatus	修改状态		
+admin/wechat.php	systemTemplateMessageMinList	列表 		
+admin/wechat.php	systemTemplateMessageMinCreateForm	添加表单		false
+admin/wechat.php	systemTemplateMessageMinCreate	添加		
+admin/wechat.php	systemTemplateMessageMinUpdateForm	编辑表单		false
+admin/wechat.php	systemTemplateMessageMinUpdate	编辑		
+admin/wechat.php	systemTemplateMessageMinDelete	删除		
+admin/wechat.php	systemTemplateMessageMinSwitchStatus	修改状态		
+admin/yihaotong.php	systemStoreProductCopyLst	使用记录	/setting/sms/sms_config/index	true
+admin/yihaotong.php	smsRecord	短信发送记录		
+admin/yihaotong.php	smsLogout	退出登录		
+admin/yihaotong.php	systemServeCaptcha	获取验证码		
+admin/yihaotong.php	systemServeCaptchaCheck	验证码校验		
+admin/yihaotong.php	systemServeRegister	注册		
+admin/yihaotong.php	systemServeLogin	登录		
+admin/yihaotong.php	systemServeChangePassword	修改密码		
+admin/yihaotong.php	systemServeChangePhone	修改手机号		
+admin/yihaotong.php	systemServeIsLogin	检测登录状态		
+admin/yihaotong.php	systemServeUserInfo	账号信息		false
+admin/yihaotong.php	systemServeRecordLst	使用记录		
+admin/yihaotong.php	systemServeMealLst	套餐列表		
+admin/yihaotong.php	systemServePayMeal	购买套餐		
+admin/yihaotong.php	systemServeOpenServe	开通服务		
+admin/yihaotong.php	systemServeChangeSign	修改签名		
+admin/yihaotong.php	systemServePayLst	购买记录	/service/purchase	
+admin/yihaotong.php	systemServeMerPayLst	商户购买记录	/service/purchase	
+admin/yihaotong.php	systemServeMerLst	商户结余	/service/balance_record	
+admin/yihaotong.php	systemServeMerMealLst	列表		
+admin/yihaotong.php	systemServeMealDetail	详情		
+admin/yihaotong.php	systemServeMealCreateForm	添加表单		false
+admin/yihaotong.php	systemServeMealCreate	添加		
+admin/yihaotong.php	systemServeMealUpdateForm	编辑表单		false
+admin/yihaotong.php	systemServeMealUpdate	编辑		
+admin/yihaotong.php	systemServeMealDelete	删除		
+admin/yihaotong.php	systemServeMealStatus	修改状态		
+admin/yihaotong.php	systemServeExportLst	列表	/freight/express	
+admin/yihaotong.php	systemServeExportTemps	模板	/setting/sms/sms_config/index	
+admin/yihaotong.php	systemServeExportDumpLst	使用记录	/setting/sms/sms_config/index	
+admin/yihaotong.php	systemServeSmsTemps	短信模板	/sms/template	
+admin/yihaotong.php	systemServeSmsApply	申请模板	/sms/template	
+admin/yihaotong.php	systemServeSmsApplyRecord	申请记录	/sms/applyList	
+merchant/accounts.php	merchantFinancialRefundMargin	退保证金检测		
+merchant/accounts.php	merchantFinancialRefundMarginApply	退保证金申请		
+merchant/accounts.php	merchantFinancialAccountForm	收款方式表单		false
+merchant/accounts.php	merchantFinancialAccountSave	收款方式		
+merchant/accounts.php	merchantFinancialLst	转账记录		
+merchant/accounts.php	merchantFinancialDetail	详情		
+merchant/accounts.php	merchantFinancialCreateForm	申请表单		false
+merchant/accounts.php	merchantFinancialCreateSave	申请		
+merchant/accounts.php	merchantFinancialDelete	删除		
+merchant/accounts.php	merchantFinancialMarkForm	备注表单		false
+merchant/accounts.php	merchantFinancialMark	备注		
+merchant/accounts.php	merchantFinancialExport	导出		
+merchant/accounts.php	merchantFinancialRefundMargin	列表		
+merchant/accounts.php	merchantFinancialRecordList	列表		
+merchant/accounts.php	merchantFinancialRecordExport	导出		
+merchant/accounts.php	merchantFinancialCount	统计		
+merchant/accounts.php	merchantFinanciaRecordlLst	列表		
+merchant/accounts.php	merchantFinancialTitle	统计		
+merchant/accounts.php	merchantFinancialRecordDetail	详情		
+merchant/accounts.php	merchantFinancialRecordDetailExport	导出		
+merchant/accounts.php	merchantOrderReceiptLst	列表		
+merchant/accounts.php	merchantOrderReceiptDetail	详情		
+merchant/accounts.php	merchantOrderReceiptSetRecipt	开发票		
+merchant/accounts.php	merchantOrderReceiptSave	保存发票		
+merchant/accounts.php	merchantOrderReceiptMarkForm	备注表单		false
+merchant/accounts.php	merchantOrderReceiptMark	备注		
+merchant/accounts.php	merchantOrderReceiptUpdate	编辑		
+merchant/accounts.php	merchantOrderProfitsharingLst	列表		
+merchant/accounts.php	merchantOrderProfitsharingExport	导出		
+merchant/accounts.php	merchantApplymentsCreate	申请		
+merchant/accounts.php	merchantApplymentsDetail	详情		
+merchant/accounts.php	merchantApplymentsUpdate	编辑		
+merchant/accounts.php	merchantApplymentsUpload	上传图片		
+merchant/accounts.php	merchantApplymentsUploadVideo	上传视频		
+merchant/accounts.php	merchantApplymentsCheck	查询审核结果		false
+merchant/analytics.php	merchantAnalyticsOrderTop	顶部统计		
+merchant/analytics.php	merchantAnalyticsOrderLineChart	折线图统计		
+merchant/analytics.php	merchantAnalyticsOrderTypePieChart	折线图统计		
+merchant/analytics.php	merchantAnalyticsProductTop	顶部统计		
+merchant/analytics.php	merchantAnalyticsProductLineChart	折线图统计		
+merchant/analytics.php	merchantAnalyticsProductTypePieChart	折线图统计		
+merchant/attachment.php	merchantAttachmentScanQrcode	上传二维码		
+merchant/attachment.php	merchantAttachmentScanImage	扫码上传图片		
+merchant/attachment.php	merchantAttachmentScanImageSave	扫码上传保存		
+merchant/attachment.php	merchantAttachmentOnline	在线图片		
+merchant/attachment.php	merchantAttachmentLst	列表		
+merchant/attachment.php	merchantAttachmentDelete	删除		
+merchant/attachment.php	merchantAttachmentBatchChangeCategory	批量修改		
+merchant/attachment.php	merchantAttachmentUpdateForm	编辑表单的		false
+merchant/attachment.php	merchantAttachmentUpdate	编辑		
+merchant/attachment.php	merchantAttachmentCategoryGetFormatList	列表		
+merchant/attachment.php	merchantAttachmentCategoryCreateForm	添加表单		false
+merchant/attachment.php	merchantAttachmentCategoryUpdateForm	编辑表单		false
+merchant/attachment.php	merchantAttachmentCategoryCreate	添加		
+merchant/attachment.php	merchantAttachmentCategoryUpdate	编辑		
+merchant/attachment.php	merchantAttachmentCategoryDelete	删除		
+merchant/behalfcustomerorder.php	behalfProductCategory	商品分类		
+merchant/behalfcustomerorder.php	behalfProductList	商品列表		
+merchant/behalfcustomerorder.php	behalfProductDetail	商品规格详情		
+merchant/behalfcustomerorder.php	behalfUserQuery	会员查询		
+merchant/behalfcustomerorder.php	behalfUserInfo	会员详情		
+merchant/behalfcustomerorder.php	behalfUserCreate	会员添加		
+merchant/behalfcustomerorder.php	behalfUserAddressList	地址列表		
+merchant/behalfcustomerorder.php	behalfUserAddressCreate	地址添加		
+merchant/behalfcustomerorder.php	behalfCartList	购物车列表		
+merchant/behalfcustomerorder.php	behalfCartCreate	添加购物车		
+merchant/behalfcustomerorder.php	behalfCartChange	修改购物车数据		
+merchant/behalfcustomerorder.php	behalfCartDelete	删除购物数据		
+merchant/behalfcustomerorder.php	behalfCartClear	清空购物车		
+merchant/behalfcustomerorder.php	behalfCartCount	购物车总数量		
+merchant/behalfcustomerorder.php	behalfCartUpdatePrice	修改价格		
+merchant/behalfcustomerorder.php	behalfCartBatchUpdatePrice	批量修改价格		
+merchant/behalfcustomerorder.php	behalfCheck	校验订单		
+merchant/behalfcustomerorder.php	behalfPayConfig	支付配置		
+merchant/behalfcustomerorder.php	behalfCreate	创建订单		
+merchant/behalfcustomerorder.php	behalfPay	支付		
+merchant/behalfcustomerorder.php	behalfPayStatus	获取结果		
+merchant/behalfcustomerorder.php	behalfVerify	余额支付获取验证码		
+merchant/config.php	merchantConfigForm	配置获取	config	false
+merchant/config.php	merchantConfigSave	配置保存	config	false
+merchant/content.php	merchantCommunityCateLst	分类列表		
+merchant/content.php	merchantCommunityLst	列表		
+merchant/content.php	merchantCommunityCreate	添加		
+merchant/content.php	merchantCommunityDetail	详情		
+merchant/content.php	merchantCommunityUpdate	编辑		
+merchant/content.php	merchantCommunityDelete	删除		
+merchant/content.php	merchantCommunityReply	评论		
+merchant/coupon.php	merchantCouponProduct	优惠券可用商品	/user/list	true
+merchant/coupon.php	merchantCouponSendLst	发送优惠券记录	/marketing/coupon/send	true
+merchant/coupon.php	merchantCouponCreateForm	添加表单		false
+merchant/coupon.php	merchantCouponIssueCloneForm	复制表单		false
+merchant/coupon.php	merchantCouponCreate	添加		
+merchant/coupon.php	merchantCouponIssueChangeStatus	修改状态		
+merchant/coupon.php	merchantCouponLst	列表		
+merchant/coupon.php	merchantCouponIssue	使用记录	/marketing/coupon/user	
+merchant/coupon.php	merchantCouponDelete	删除		
+merchant/coupon.php	merchantCouponDetail	详情		
+merchant/coupon.php	systemCouponUpdateForm	编辑表单		false
+merchant/coupon.php	systemCouponUpdate	编辑		
+merchant/coupon.php	merchantCouponSendCoupon	发送优惠券	/user/list	true
+merchant/delivery.php	merchantServeExportLst	列表		
+merchant/delivery.php	merchantExpressPratnerUpdateForm	月结账号编辑表单		false
+merchant/delivery.php	merchantExpressPratnerUpdate	月结账号编辑		
+merchant/delivery.php	merchantExpressChangeMerStatus	修改状态		
+merchant/delivery.php	merchantStoreDeliveryBusiness	获取分类		
+merchant/delivery.php	merchantStoreDeliveryCreate	添加		
+merchant/delivery.php	merchantStoreDeliveryUpdate	编辑		
+merchant/delivery.php	merchantStoreDeliveryStatus	编辑状态		
+merchant/delivery.php	merchantStoreDeliveryLst	列表		
+merchant/delivery.php	merchantStoreDeliveryDetail	详情		
+merchant/delivery.php	merchantStoreDeliveryDelete	删除		
+merchant/delivery.php	merchantStoreDeliveryMarkForm	备注表单		false
+merchant/delivery.php	merchantStoreDeliveryMark	备注		
+merchant/delivery.php	merchantStoreDeliveryCityList	城市列表		
+merchant/delivery.php	merchantStoreDeliveryPayLst	充值记录	/delivery/recharge_record	
+merchant/delivery.php	merchantStoreDeliveryGetQrcode	充值二维码	/delivery/recharge_record	false
+merchant/delivery.php	merchantDeliveryServiceLst	列表		
+merchant/delivery.php	merchantDeliveryServiceStatus	修改状态		
+merchant/delivery.php	merchantDeliveryServiceCreateForm	添加表单		false
+merchant/delivery.php	merchantDeliveryServiceCreate	添加		
+merchant/delivery.php	merchantDeliveryServiceUpdateForm	编辑		false
+merchant/delivery.php	merchantDeliveryServiceUpdate	编辑		
+merchant/delivery.php	merchantDeliveryServiceDelete	删除		
+merchant/delivery.php	merchantDeliveryServiceStatisticsList	统计列表		
+merchant/delivery.php	merchantDeliveryServiceStatisticsDetail	统计详情		
+merchant/delivery.php	merchantStoreDeliveryOrderLst	列表		
+merchant/delivery.php	merchantStoreDeliveryOrderCancelForm	取消表单		false
+merchant/delivery.php	merchantStoreDeliveryOrderCancel	取消		
+merchant/delivery.php	merchantStoreDeliveryOrderDetail	详情		
+merchant/delivery.php	merchantStoreShippingTemplateLst	列表		false
+merchant/delivery.php	merchantStoreShippingTemplateCreate	添加 		
+merchant/delivery.php	merchantStoreShippingTemplateUpdate	编辑		
+merchant/delivery.php	merchantStoreShippingTemplateDetail	详情		
+merchant/delivery.php	merchantStoreShippingTemplateDelete	删除		
+merchant/delivery.php	merchantStoreShippingTemplateSetDefault	设置默认模板		
+merchant/delivery.php	merchantDeliveryConfigSettings	配送设置信息		
+merchant/delivery.php	merchantDeliveryConfigUpdate	更新配送设置信息		
+merchant/diy.php	merchantGetChangeColor	一键换色	/setting/theme_style	false
+merchant/diy.php	merchantDiyPageLinkLst	列表	/devise/diy/list	
+merchant/diy.php	merchantDiyLst	列表 		
+merchant/diy.php	merchantDefaultDiyLst	默认模板列表 		
+merchant/diy.php	merchantDiyDetail	详情 		
+merchant/diy.php	merchantDiyCreate	添加/编辑		
+merchant/diy.php	merchantDiyStatus	使用模板		
+merchant/diy.php	merchantDiySetDefault	使用模板		
+merchant/diy.php	merchantDiyRecovery	重置模板		
+merchant/diy.php	merchantDiyInfo	当前使用模板		
+merchant/diy.php	merchantDiyDelete	删除		
+merchant/diy.php	merchantDiyProductLst	店铺街装修		
+merchant/diy.php	merchantDiyCopy	复制		
+merchant/diy.php	merchantDiyProductCategoryInfo	商品分类信息		
+merchant/diy.php	merchantDiyProductCategorySave	保存商品分类		
+merchant/form.php	merFormCreate	添加		true
+merchant/form.php	merFormUpdate	编辑		true
+merchant/form.php	merFormDelete	删除		true
+merchant/form.php	merFormDetail	详情		true
+merchant/form.php	merFormLst	列表		true
+merchant/group.php	merchantGroupDetail	数据详情		
+merchant/group.php	merchantGroupDataLst	数据列表		
+merchant/group.php	merchantGroupDataCreateForm	数据添加表单		false
+merchant/group.php	merchantGroupDataCreate	数据添加		
+merchant/group.php	merchantGroupDataUpdateForm	数据编辑表单		false
+merchant/group.php	merchantGroupDataUpdate	数据编辑		
+merchant/group.php	merchantGroupDataDelete	数据删除		
+merchant/group.php	merchantGroupDataChangeStatus	数据修改状态		
+merchant/marketing.php	merchantStoreSeckillActiveGetActiveList	列表		
+merchant/marketing.php	merchantStoreSeckillActiveGetActiveInfo	详情		
+merchant/marketing.php	merchantStoreSeckillActiveGetActiveAll	列表		
+merchant/marketing.php	merchantStoreSeckillActiveChartPanel	活动统计数据面板		
+merchant/marketing.php	merchantStoreSeckillActiveChartPeople	活动参与人统计列表		
+merchant/marketing.php	merchantStoreSeckillActiveChartOrder	活动订单统计列表		
+merchant/marketing.php	merchantStoreSeckillActiveChartProduct	活动商品统计列表		
+merchant/marketing.php	merchantStoreSeckillProductPageLst	分页列表		
+merchant/marketing.php	merchantStoreSeckillProductLst	列表		
+merchant/marketing.php	merchantStoreSeckillProductGetProductList	商品列表		
+merchant/marketing.php	merchantStoreSeckillProductLstFilter	统计		
+merchant/marketing.php	merchantStoreSeckillProductCreate	添加 		
+merchant/marketing.php	merchantStoreSeckillProductDetail	详情		
+merchant/marketing.php	merchantStoreSeckillProductSwitchStatus	修改状态		
+merchant/marketing.php	merchantStoreSeckillProductSetLabels	设置标签		
+merchant/marketing.php	merchantStoreSeckillProductUpdate	修改商品		
+merchant/marketing.php	merchantStoreSeckillProductDelete	加入回收站		
+merchant/marketing.php	merchantStoreSeckillProductDestory	删除		
+merchant/marketing.php	merchantStoreSeckillProductRestore	恢复		
+merchant/marketing.php	merchantStoreSeckillProductUpdateSort	排序		
+merchant/marketing.php	merchantStoreSeckillProductPreview	预览		
+merchant/marketing.php	merchantStoreProductPresellLst	列表		
+merchant/marketing.php	merchantStoreProductPresellCreate	添加		
+merchant/marketing.php	merchantStoreProductPresellDetail	详情		
+merchant/marketing.php	merchantStoreProductPresellUpdate	编辑		
+merchant/marketing.php	merchantStoreProductPresellDelete	删除		
+merchant/marketing.php	merchantStoreProductPresellStatus	修改状态		
+merchant/marketing.php	merchantStoreProductPresellUpdateSort	排序		
+merchant/marketing.php	merchantStoreProductPresellPreview	预览		
+merchant/marketing.php	merchantStoreProductPreselltLabels	设置标签		
+merchant/marketing.php	merchantStoreProductAssistLst	列表 		
+merchant/marketing.php	merchantStoreProductAssistCreate	添加		
+merchant/marketing.php	merchantStoreProductAssistDetail	详情		
+merchant/marketing.php	merchantStoreProductAssistUpdate	编辑		
+merchant/marketing.php	merchantStoreProductAssistDelete	删除		
+merchant/marketing.php	merchantStoreProductAssistStatus	修改状态		
+merchant/marketing.php	merchantStoreProductAssistUpdateSort	排序		
+merchant/marketing.php	merchantStoreProductAssistPreview	预览		
+merchant/marketing.php	merchantStoreProductAssistLabels	设置标签		
+merchant/marketing.php	merchantStoreProductAssistSetLst	活动列表		
+merchant/marketing.php	merchantStoreProductAssistSetDetail	活动详情		
+merchant/marketing.php	merchantStoreProductGroupLst	列表		
+merchant/marketing.php	merchantStoreProductGroupCreate	添加		
+merchant/marketing.php	merchantStoreProductGroupDetail	详情		
+merchant/marketing.php	merchantStoreProductGroupUpdate	编辑		
+merchant/marketing.php	merchantStoreProductGroupDelete	删除		
+merchant/marketing.php	merchantStoreProductGroupStatus	修改状态		
+merchant/marketing.php	merchantStoreProductGroupSort	排序		
+merchant/marketing.php	merchantStoreProductGroupPreview	预览		
+merchant/marketing.php	merchantStoreProductGroupLabels	设置标签		
+merchant/marketing.php	merchantConfigGroupBuying	拼团配置	/marketing/combination/combination_goods	true
+merchant/marketing.php	merchantStoreProductGroupBuyingLst	活动列表 		
+merchant/marketing.php	merchantStoreProductGroupBuyingDetail	活动详情		
+merchant/marketing.php	merchantBroadcastRoomLst	列表 		
+merchant/marketing.php	merchantBroadcastRoomDetail	详情		
+merchant/marketing.php	merchantBroadcastRoomCreateForm	添加表单		false
+merchant/marketing.php	merchantBroadcastRoomCreate	添加		
+merchant/marketing.php	merchantBroadcastRoomUpdateForm	编辑表单		false
+merchant/marketing.php	merchantBroadcastRoomUpdate	编辑		
+merchant/marketing.php	merchantBroadcastRoomChangeStatus	修改状态		
+merchant/marketing.php	merchantBroadcastRoomExportGoods	导入商品		
+merchant/marketing.php	merchantBroadcastRoomRmExportGoods	删除商品		
+merchant/marketing.php	merchantBroadcastRoomMark	备注		
+merchant/marketing.php	merchantBroadcastRoomGoods	商品详情		
+merchant/marketing.php	merchantBroadcastRoomCloseKf	关闭客服		
+merchant/marketing.php	merchantBroadcastRoomCloseComment	禁言		
+merchant/marketing.php	merchantBroadcastRoomCloseFeeds	收录		
+merchant/marketing.php	merchantBroadcastOnSale	商品上下架		
+merchant/marketing.php	merchantBroadcastRoomDelete	删除		
+merchant/marketing.php	merchantBroadcastAddAssistantForm	添加客服表单		false
+merchant/marketing.php	merchantBroadcastAddAssistant	添加 客服		
+merchant/marketing.php	merchantBroadcastPushMessage	消息推送		
+merchant/marketing.php	merchantBroadcastAssistantLst	列表		
+merchant/marketing.php	merchantBroadcastAssistantCreateForm	添加表单		false
+merchant/marketing.php	merchantBroadcastAssistantCreate	添加		
+merchant/marketing.php	merchantBroadcastAssistantUpdateForm	编辑表单		false
+merchant/marketing.php	merchantBroadcastAssistantUpdate	编辑		
+merchant/marketing.php	merchantBroadcastAssistantMark	备注		
+merchant/marketing.php	merchantBroadcastAssistantDelete	删除		
+merchant/marketing.php	merchantBroadcastGoodsLst	列表		
+merchant/marketing.php	merchantBroadcastGoodsDetail	详情		
+merchant/marketing.php	merchantBroadcastGoodsCreateForm	添加表单		false
+merchant/marketing.php	merchantBroadcastGoodsCreate	添加		
+merchant/marketing.php	merchantBroadcastGoodsUpdateForm	编辑表单		false
+merchant/marketing.php	merchantBroadcastGoodsUpdate	编辑		
+merchant/marketing.php	merchantBroadcastGoodsChangeStatus	修改状态		
+merchant/marketing.php	merchantBroadcastGoodsMark	备注		
+merchant/marketing.php	merchantBroadcastGoodsDelete	删除		
+merchant/marketing.php	merchantBroadcastGoodsbatchCreate	批量添加		
+merchant/marketing.php	merchantIntegralList	列表		
+merchant/marketing.php	merchantIntegralTitle	统计		
+merchant/openapi.php	merchantOpenapiLst	列表		
+merchant/openapi.php	merchantOpenapiCreateForm	添加Form		false
+merchant/openapi.php	merchantOpenapiCreate	添加		
+merchant/openapi.php	merchantOpenapiUpdateForm	编辑Form		false
+merchant/openapi.php	merchantOpenapiUpdate	编辑		
+merchant/openapi.php	merchantOpenapiStatus	修改状态		
+merchant/openapi.php	merchantOpenapiDeleta	删除		
+merchant/openapi.php	merchantOpenapiGetSecretKey	查看		
+merchant/openapi.php	merchantOpenapiSetSecretKey	重置		
+merchant/order.php	merchantServeExportTemps	预览		
+merchant/order.php	merchantServeExportDumpLst	默认模板		
+merchant/order.php	merchantStoreOrderGetPrice	获取商家寄件价格		
+merchant/order.php	merchantStoreOrderShipmentList	获取商家寄件价格		
+merchant/order.php	merchantStoreOrderNote	配货单		
+merchant/order.php	merchantStoreOrderExcel	导出		
+merchant/order.php	merchantStoreOrderPrinter	打印小票		
+merchant/order.php	merchantStoreOrderTitle	统计		
+merchant/order.php	merchantStoreOrderFiltter	类型		false
+merchant/order.php	merchantStoreOrderLst	列表		
+merchant/order.php	merchantStoreOrderExpress	快递查询		
+merchant/order.php	merchantStoreOrderDelivery	发货		
+merchant/order.php	merchantStoreOrderBatchDelivery	批量发货		
+merchant/order.php	merchantStoreOrderRepeatDump	电子面单复打		
+merchant/order.php	merchantStoreOrderDeliveryExport	导出发货单		
+merchant/order.php	merchantStoreOrderStat	头部统计		
+merchant/order.php	merchantStoreOrderUpdateForm	编辑表单		false
+merchant/order.php	merchantStoreOrderUpdate	编辑		
+merchant/order.php	merchantStoreOrderDetail	详情		
+merchant/order.php	merchantStoreOrderLog	操作记录		
+merchant/order.php	merchantStoreOrderRemarkForm	备注表单		false
+merchant/order.php	merchantStoreOrderRemark	备注		
+merchant/order.php	merchantStoreOrderCollectCargoForm	修改收货信息表单		false
+merchant/order.php	merchantStoreOrderCollectCargo	修改收货信息		
+merchant/order.php	merchantStoreOrderVerifyDetail	核销详情		
+merchant/order.php	merchantStoreOrderVerify	核销		
+merchant/order.php	merchantStoreOrderDelete	删除		
+merchant/order.php	merchantStoreOrderChildrenList	关联订单		
+merchant/order.php	merchantStoreOrderOffline	线下支付		
+merchant/order.php	merchantStoreOrderReservationDispatch	预约订单派单		
+merchant/order.php	merchantStoreOrderReservationUpdateDispatch	预约订单改派		
+merchant/order.php	merchantStoreOrderReservationReschedule	预约订单改约		
+merchant/order.php	merchantStoreOrderReservationTime	单独修改预约时间		
+merchant/order.php	merchantStoreOrderReservationVerify	预约订单核销		
+merchant/order.php	merchantStoreOrderDeliveryDispatch	同城配送派单		
+merchant/order.php	merchantStoreOrderDeliveryUpdateDispatch	同城配送改派		
+merchant/order.php	merchantStoreOrderDeliveryConfirm	同城配送核销		
+merchant/order.php	merchantStoreOrderDeliverySync	同城配送再次同步		
+merchant/order.php	merchantStoreTakeOrderTitle	统计		false
+merchant/order.php	merchantStoreOrderTakeTitle	统计		
+merchant/order.php	merchantStoreTakeOrderLst	列表		
+merchant/order.php	merchantStoreRefundOrderCreate	创建		
+merchant/order.php	merchantStoreRefundOrderLst	列表		
+merchant/order.php	merchantStoreRefundOrderDetail	详情		
+merchant/order.php	merchantStoreRefundOrderSwitchStatusForm	审核表单		false
+merchant/order.php	merchantStoreRefundOrderSwitchStatus	审核		
+merchant/order.php	merchantStoreRefundOrderRefund	收到退回商品后确认退款		
+merchant/order.php	merchantStoreRefundDelete	删除		
+merchant/order.php	merchantStoreRefundMarkForm	备注表单		false
+merchant/order.php	merchantStoreRefundMark	备注		
+merchant/order.php	merchantStoreRefundLog	操作记录		
+merchant/order.php	merchantStoreRefundExpress	快递查询		
+merchant/order.php	merchantStoreRefundCreateExcel	导出		
+merchant/order.php	merchantStoreOrderDeliveryImport	导入		
+merchant/order.php	merchantStoreOrderDeliveryImportLst	导入记录		
+merchant/order.php	merchantStoreOrderDeliveryImportDetail	详情		
+merchant/order.php	merchantStoreOrderDeliveryImportExcel	导出发货记录		
+merchant/order.php	merchantReservationServiceList	预约日历		true
+merchant/product.php	merchantStoreParameterTemplateLst	列表		
+merchant/product.php	merchantStoreParameterTemplateDetail	详情		
+merchant/product.php	merchantStoreParameterTemplateDelete	删除		
+merchant/product.php	merchantStoreParameterTemplateCreate	添加		
+merchant/product.php	merchantStoreParameterTemplateUpdate	编辑		
+merchant/product.php	merchantStoreAttrTemplateLst	列表		
+merchant/product.php	merchantStoreAttrTemplateCreate	添加 		
+merchant/product.php	merchantStoreAttrTemplateDelete	删除		
+merchant/product.php	merchantStoreAttrTemplateUpdate	文件类型		
+merchant/product.php	merchantStoreCategoryCreateForm	添加表单		false
+merchant/product.php	merchantStoreCategoryUpdateForm	编辑表单		false
+merchant/product.php	merchantStoreCategoryUpdate	编辑		
+merchant/product.php	merchantStoreCategoryLst	列表		
+merchant/product.php	merchantStoreCategoryDtailt	详情		
+merchant/product.php	merchantStoreCategoryCreate	添加		
+merchant/product.php	merchantStoreCategoryDelete	删除		
+merchant/product.php	merchantStoreCategorySwitchStatus	修改状态		
+merchant/product.php	merchantStoreProductGetEdit	编辑商品获取信息		
+merchant/product.php	merchantStoreProductLstFilter	头部统计		
+merchant/product.php	merchantStoreProductLst	列表		
+merchant/product.php	merchantStoreProductCreate	添加		
+merchant/product.php	merchantStoreProductDetail	详情		
+merchant/product.php	merchantStoreProductTempKey	上传视频配置		
+merchant/product.php	merchantStoreProductUpdate	编辑		
+merchant/product.php	merchantStoreProductFreeTrial	免审编辑		
+merchant/product.php	merchantStoreProductDelete	加入回收站		
+merchant/product.php	merchantStoreProductBatchDelete	批量加入回收站		
+merchant/product.php	merchantStoreProductDestory	彻底删除		
+merchant/product.php	merchantStoreProductRestore	恢复		
+merchant/product.php	merchantStoreProductBatchRestore	批量恢复		
+merchant/product.php	merchantStoreProductSwitchStatus	上下架		
+merchant/product.php	merchantStoreProductSwitchBatchStatus	批量上下架		
+merchant/product.php	merchantStoreProductSwitchBatchTemplate	批量设置运费模板		
+merchant/product.php	merchantStoreProductBatchGuarantee	批量设置服务保障		
+merchant/product.php	merchantStoreProductSwitchBatchLabels	批量设置标签		
+merchant/product.php	merchantStoreProductSwitchBatchHot	批量设置推荐		
+merchant/product.php	merchantStoreProductSwitchBatchExtension	批量设置推荐		
+merchant/product.php	merchantStoreProductSwitchBatchSvipType	批量设置会员价		
+merchant/product.php	merchantStoreProductUpdateSort	排序		
+merchant/product.php	merchantStoreProductPreview	预览		
+merchant/product.php	merchantStoreProductLabels	标签		
+merchant/product.php	merchantStoreProductAttrValue	获取规格		
+merchant/product.php	merchantStoreProductFormatAttr	获取规格		
+merchant/product.php	merchantStoreProductGetBatchList	获取批量修改列表		
+merchant/product.php	merchantStoreProductSwitchBatchProcess	批量修改商品属性		
+merchant/product.php	merchantStoreProductGetOperateList	操作记录		
+merchant/product.php	merchantStoreProductUnbind	操作记录		
+merchant/product.php	merchantStoreProductCopyLst	列表		
+merchant/product.php	merchantStoreProductCopyGet	获取信息		
+merchant/product.php	merchantStoreProductCopyCount	统计		
+merchant/product.php	merchantStoreProductCopySave	保存		
+merchant/product.php	merchantProductReplyLst	列表		
+merchant/product.php	merchantProductReplyForm	回复表单		
+merchant/product.php	merchantProductReplyReply	回复		
+merchant/product.php	merchantProductReplySort	排序		
+merchant/product.php	merchantStoreProductLabelLst	列表		
+merchant/product.php	merchantStoreProductLabelCreateForm	添加表单		false
+merchant/product.php	merchantStoreProductLabelCreate	添加		
+merchant/product.php	merchantStoreProductLabelUpdateForm	编辑表单		false
+merchant/product.php	merchantStoreProductLabelUpdate	编辑		
+merchant/product.php	merchantStoreProductLabelDetail	详情		
+merchant/product.php	merchantStoreProductLabelDelete	删除		
+merchant/product.php	merchantStoreProductLabelStatus	修改状态		
+merchant/product.php	merchantStoreDiscountsCreate	添加		
+merchant/product.php	merchantStoreDiscountsUpdate	编辑		
+merchant/product.php	merchantStoreDiscountsLst	列表		
+merchant/product.php	merchantStoreDiscountsDetail	详情		
+merchant/product.php	merchantStoreDiscountsDelete	删除		
+merchant/product.php	merchantStoreDiscountsStatus	修改状态		
+merchant/product.php	merchantGuaranteeLst	列表		
+merchant/product.php	smerchantGuaranteeCreate	添加		
+merchant/product.php	merchantGuaranteeUpdate	编辑		
+merchant/product.php	merchantGuaranteeDetail	详情		
+merchant/product.php	merchantGuaranteeDelete	删除		
+merchant/product.php	merchantGuaranteeSort	排序		
+merchant/product.php	merchantGuaranteeStatus	修改状态		
+merchant/product.php	merchantStoreProductUnitLst	商品单位列表		
+merchant/product.php	merchantStoreProductUnitCreateForm	商品单位添加表单		false
+merchant/product.php	merchantStoreProductUnitCreate	商品单位添加		
+merchant/product.php	merchantStoreProductUnitUpdateForm	商品单位编辑表单		false
+merchant/product.php	merchantStoreProductUnitUpdate	商品单位编辑		
+merchant/product.php	merchantStoreProductUnitDelete	商品单位删除		
+merchant/product.php	merchantStoreProductCdkeyLibraryLst	列表		true
+merchant/product.php	merchantStoreProductCdkeyLibraryCreate	添加		true
+merchant/product.php	merchantStoreProductCdkeyLibraryUpdateForm	编辑表单		true
+merchant/product.php	merchantStoreProductCdkeyLibraryUpdate	编辑		true
+merchant/product.php	merchantStoreProductCdkeyLst	卡密列表		true
+merchant/product.php	merchantStoreProductCdkeyCreate	添加卡密		true
+merchant/product.php	merchantStoreProductCdkeyUpdate	编辑卡密		true
+merchant/product.php	merchantStoreProductCdkeyDelete	删除卡密		true
+merchant/product.php	merchantStoreReservationProductCreate	添加预约商品		true
+merchant/product.php	merchantStoreReservationProductEditInfo	获取预约商品		true
+merchant/product.php	merchantStoreReservationProductEdit	编辑预约商品		true
+merchant/product.php	merchantStoreReservationProductDetail	预约商品详情		true
+merchant/product.php	merchantStoreReservationProductEditStock	批量修改预约商品库存		true
+merchant/product.php	merchantStoreReservationProductShowMonth	商品日历month		false
+merchant/product.php	merchantStoreReservationProductShowDay	商品日历day		false
+merchant/role.php	merchantRoleGetList	列表		false
+merchant/role.php	merchantRoleCreate	添加		false
+merchant/role.php	merchantRoleCreateForm	添加表单		false
+merchant/role.php	merchantRoleUpdate	编辑		false
+merchant/role.php	merchantRoleUpdateForm	编辑表单		false
+merchant/role.php	merchantRoleStatus	修改状态		false
+merchant/role.php	merchantRoleDelete	删除		false
+merchant/role.php	merchantAdminLst	列表		
+merchant/role.php	merchantAdminStatus	修改状态		
+merchant/role.php	merchantAdminCreate	添加		
+merchant/role.php	merchantAdminCreateForm	添加表单		false
+merchant/role.php	merchantAdminUpdate	编辑		
+merchant/role.php	merchantAdminUpdateForm	编辑表单		false
+merchant/role.php	merchantAdminPassword	修改密码		
+merchant/role.php	merchantAdminPasswordForm	修改密码表单		false
+merchant/role.php	merchantAdminDelete	删除		
+merchant/role.php	merchantAdminLog	操作日志	/setting/systemLog	
+merchant/role.php	merchantAdminEditForm	修改信息表单		false
+merchant/role.php	merchantAdminEdit	修改信息		
+merchant/role.php	merchantAdminEditPasswordForm	修改密码表单		false
+merchant/role.php	merchantAdminEditPassword	修改密码		
+merchant/service.php	merchantServiceLst	列表		
+merchant/service.php	merchantServiceLogin	登录		
+merchant/service.php	merchantServiceCreate	添加		
+merchant/service.php	merchantServiceCreateForm	添加表单		false
+merchant/service.php	merchantServiceUpdate	编辑		
+merchant/service.php	merchantServiceUpdateForm	编辑表单		false
+merchant/service.php	merchantServiceSwitchStatus	修改状态		
+merchant/service.php	merchantServiceDelete	删除		
+merchant/service.php	merchantServiceServiceUserList	客服的全部用户 		
+merchant/service.php	merchantServiceServiceUserLogLst	用户与客服聊天记录		
+merchant/service.php	merchantServiceServiceMerchantUserList	客服的聊天用户列表		
+merchant/service.php	merchantServiceMerchantUserLogLst	用户与商户聊天记录		
+merchant/service.php	merchantServiceReplyLst	列表		
+merchant/service.php	merchantServiceReplyCreate	添加		
+merchant/service.php	merchantServiceReplyUpdate	编辑		
+merchant/service.php	merchantServiceReplyStatus	切换状态		
+merchant/service.php	merchantServiceReplyDelete	删除		
+merchant/staffs.php	merchantStaffsLst	列表		
+merchant/staffs.php	merchantStaffsCreate	添加		
+merchant/staffs.php	merchantStaffsCreateForm	添加表单		false
+merchant/staffs.php	merchantStaffsUpdate	编辑		
+merchant/staffs.php	merchantStaffsUpdateForm	编辑表单		false
+merchant/staffs.php	merchantStaffsSwitchStatus	修改状态		
+merchant/staffs.php	merchantStaffsDelete	删除		
+merchant/staffs.php	merchantStaffsStatisticsList	列表		
+merchant/staffs.php	merchantStaffsStatisticsDetail	详情		
+merchant/system.php	merchantStorePrinterLst	列表		
+merchant/system.php	merchantStorePrinterCreateForm	添加表单		false
+merchant/system.php	merchantStorePrinterCreate	添加		
+merchant/system.php	merchantStorePrinterCreate	编辑表单		false
+merchant/system.php	merchantStorePrinterUpdate	编辑		
+merchant/system.php	merchantStorePrinterStatus	取消		
+merchant/system.php	merchantStorePrinterDelete	删除		
+merchant/system.php	merchantStorePrinterGetContent	获取配置内容		
+merchant/system.php	merchantStorePrinterSetContent	保存打印机内容		
+merchant/system.php	merchantStorePrinterGetContent	获取配置内容		
+merchant/system.php	merchantStorePrinterSetContent	保存打印机内容		
+merchant/system.php	merchantStatisticsMain	所有数据		
+merchant/system.php	merchantStatisticsOrder	支付订单		
+merchant/system.php	merchantStatisticsUser	成交客户		
+merchant/system.php	merchantStatisticsUserRate	成交客户比		
+merchant/system.php	merchantStatisticsProduct	商品支付排行		
+merchant/system.php	merchantStatisticsProductVisit	商品访问排行		
+merchant/system.php	merchantStatisticsProductCart	商品加购排行		
+merchant/system.php	merchantStatisticsMerchantCount	首页未处理业务统计		
+merchant/system.php	merchantStatisticsMerchantTodo	待办事项		
+merchant/system.php	merchantStatisticsProductSalesPriceTop	获取商户代办统计		
+merchant/system.php	systemNoticeLogList	列表		
+merchant/system.php	systemNoticeLogRead	已读		
+merchant/system.php	systemNoticeLogDel	删除		
+merchant/system.php	systemNoticeLogDetail	详情		
+merchant/system.php	systemNoticeLogUnreadCount	未读统计		
+merchant/system.php	merchantUpdateForm	编辑		false
+merchant/system.php	merchantUpdate	资料更新		
+merchant/system.php	merchantTakeInfo	到店自提信息		false
+merchant/system.php	merchantTakeUpdate	保存到店自提信息		
+merchant/users.php	merchantUserSearchLog	搜索记录	/user/searchRecord	true
+merchant/users.php	merchantUserClearSearchLog	清除用户搜索记录		
+merchant/users.php	merchantUserLst	列表		
+merchant/users.php	merchantUserChangeLabelForm	修改标签表单		false
+merchant/users.php	merchantUserChangeLabel	修改标签		
+merchant/users.php	merchantUserOrder	订单列表		
+merchant/users.php	merchantUserCoupon	优惠券		
+merchant/users.php	merchantLabelRuleLst	列表		
+merchant/users.php	merchantLabelRuleCreate	添加		
+merchant/users.php	merchantLabelRuleUpdate	编辑		
+merchant/users.php	merchantLabelRuleDelete	删除		
+merchant/users.php	merchantLabelRuleSync	自动同步		
+merchant/users.php	merchantUserLabelLst	列表		
+merchant/users.php	merchantUserLabelCreate	添加		
+merchant/users.php	merchantUserLabelCreateForm	添加表单		false
+merchant/users.php	merchantUserLabelDelete	删除		
+merchant/users.php	merchantUserLabelUpdate	编辑		
+merchant/users.php	merchantUserLabelUpdateForm	编辑表单		false
+merchant/yihaotong.php	merchantServeMeal	套餐列表		
+merchant/yihaotong.php	merchantServeCode	支付二维码		
+merchant/yihaotong.php	merchantServeLst	购买记录		
+merchant/yihaotong.php	merchantServeDetail	详情		
+merchant/yihaotong.php	merchantServeExportDumpLst	使用记录	/setting/sms/sms_config/index	

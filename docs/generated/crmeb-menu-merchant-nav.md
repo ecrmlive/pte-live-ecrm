@@ -1,0 +1,104 @@
+# 商户后台可见菜单树
+
+> 节点数：100；根节点：10
+
+- 首页 `/dashboard`
+  - 控制台 `/dashboard`
+  - 商品统计 `/statistic/product`
+  - 订单统计 `/statistic/order`
+- 商品 `/product`
+  - 商品列表 `/product/list`
+  - 卡密列表 `/product/cdkey`
+  - 商品分类 `/product/classify`
+  - 商品规格 `/product/attr`
+  - 商品参数 `/product/specs`
+  - 商品单位 `/product/unit`
+  - 商品标签 `/product/label`
+  - 服务模板 `/config/guarantee`
+- 订单 `/order`
+  - 订单管理 `/order/list`
+  - 退款订单 `/order/refund`
+  - 核销记录 `/order/cancellation`
+  - 预约服务 `/order/reservation`
+  - 预约设置 `/product/reservation`
+  - 商品评价 `/product/reviews`
+  - 代客下单 `/order/customer`
+- 营销 `/marketing`
+  - 优惠券 `/marketing/coupon`
+    - 优惠券列表 `/marketing/coupon/list`
+    - 领取记录 `/marketing/coupon/user`
+    - 发送记录 `/marketing/coupon/send`
+  - 直播 `/`
+    - 直播间管理 `/marketing/studio/list`
+    - 直播商品管理 `/marketing/broadcast/list`
+    - 直播助手 `/marketing/studio/assistant`
+  - 秒杀 `/marketing/seckill/list`
+    - 秒杀活动 `/marketing/seckill/store_seckill/list`
+    - 秒杀商品 `/marketing/seckill/product/list`
+  - 预售 `/marketing/presell/list`
+  - 助力 `/assist`
+    - 助力商品 `/marketing/assist/list`
+    - 助力活动 `/marketing/assist/assist_set`
+  - 拼团 `/marketing/combination`
+    - 拼团商品列表 `/marketing/combination/combination_goods`
+    - 拼团活动列表 `/marketing/combination/combination_list`
+  - 积分 `/marketing/integral`
+    - 积分配置 `/marketing/integral/config`
+    - 积分日志 `/marketing/integral/log`
+  - 专场列表 `/group/topic/95`
+  - 优惠套餐 `/marketing/discounts/list`
+  - 逛逛社区 `/community/list`
+- 财务 `/accounts`
+  - 资金流水 `/accounts/capitalFlow`
+  - 发票管理 `/order/invoice`
+  - 转账记录 `/accounts/transManagement`
+  - 收款方式 `/accounts/payType`
+  - 账单管理 `/accounts/statement`
+  - 分账管理 `/systemForm/applyList`
+  - 申请分账商户 `/systemForm/applyments`
+- 用户 `/user`
+  - 标签管理 `/user/_label`
+    - 手动标签 `/user/label`
+    - 自动标签 `/user/maticlabel`
+  - 用户管理 `/user/list`
+  - 搜索记录 `/user/searchRecord`
+- 员工 `/server`
+  - 店员管理 `/server_manage`
+    - 店员列表 `/config/service`
+    - 自动回复 `/systemForm/customer_keyword`
+    - 店员配置 `/systemForm/Basics/mer_service_switch`
+  - 配送人员 `/delivery/personnel_manage/index`
+    - 配送员管理 `/delivery/personnel_manage`
+    - 配送统计 `/delivery/delivice_statistic`
+  - 服务人员 `/config/service_staff`
+    - 服务人员 `/config/service_staff`
+    - 服务统计 `/config/service_statistic`
+- 装修 `/devise/`
+  - 装修 `/devise/diy/list`
+  - 素材管理 `/config/picture`
+  - 系统表单 `/systemForm/form_list`
+  - 商品分类 `/devise/diy/product_category`
+- 设置 `/config`
+  - 店铺信息 `/systemForm/modifyStoreInfo`
+  - 店铺配置 `/systemForm/Basics/mer_base`
+  - 付费会员 `/systemForm/Basics/svip`
+  - 打印配置 `/setting/printer`
+    - 打印配置 `/systemForm/Basics/printer_tabs`
+    - 小票打印 `/setting/printer/list`
+  - 一号通 `/one_setting`
+    - 自有一号通 `/setting/sms/sms_account/index`
+    - 平台一号通 `/setting/sms/sms_config/index`
+    - 配置管理 `/setting/sms/dumpConfig`
+  - 快递配送 `/city`
+    - 运费模板 `/config/freight/shippingTemplates`
+    - 物流公司 `/config/freight/express`
+  - 权限管理 `/setting`
+    - 身份管理 `/setting/systemRole`
+    - 管理员管理 `/setting/systemAdmin`
+    - 操作日志 `/setting/systemLog`
+  - 开放账户 `/systemForm/openAuth/list`
+  - 同城配送 `/delivery`
+    - 配送记录 `/delivery/usage_record`
+    - 配送门店 `/delivery/delivery_point`
+    - 配送设置 `/setting/delivery`
+- 公告 `/station/notice`

@@ -1,0 +1,7 @@
+portal	method	path	name	alias	crud	menu_path	file	handler
+用户端API	ANY	notice/pay/alipay	alipayNotify		C		api/notLogin.php	api.Common/alipayNotify
+用户端API	GET	order/:id	deliveryOrderDetail		R		api/manager.php	/orderDetail
+用户端API	GET	order_lst	deliveryOrderLst		R		api/manager.php	/order_lst
+用户端API	ANY	getVersion	getVersion		R		api/notLogin.php	api.Common/getVersion
+用户端API	ANY	order_call_back	mchNotify		O		api/notLogin.php	api.Common/callBackNotify
+用户端API	ANY	notice/:type	wechatNotify		O		api/notLogin.php	api.Common/notify

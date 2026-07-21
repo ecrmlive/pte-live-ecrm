@@ -1,0 +1,56 @@
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+# macOS Finder custom icons（勿用裸 Icon，在大小写不敏感卷上会误匹配 static/icon/）
+Icon
+!**/static/icon/
+!**/static/icon/**
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# build output
+*/dist/
+dist/
+
+# local environment (keep *.example templates)
+.env
+.env.local
+!.env.example
+!.env.development
+!.env.production
+!.env.cos.example
+deploy.env
+scripts/release.env
+scripts/release.*.env
+
+# release 打包产物（结构与 compose 提交 git；密钥与二进制/静态产物忽略）
+app.yaml
+release/qixi-live-sports-*/config/local/compose.env
+release/qixi-live-sports-*/config/prod/compose.env
+release/qixi-live-sports-*/config/test/compose.env
+release/qixi-live-sports-*/config/test/app.yaml
+release/qixi-live-sports-*/bin/
+release/qixi-live-sports-*/dist/
+release/opts/qxkejiwl.top
+12_init_key.sql
+services/admin-api/.gocache
+services/client-api/.gocache
+build
+
+# node dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/

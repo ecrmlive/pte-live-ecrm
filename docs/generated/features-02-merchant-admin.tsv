@@ -1,0 +1,616 @@
+portal	module_path	page	page_route	action	crud	source	identifier
+商户后台	公告	公告	/station/notice	列表	R	菜单权限	systemNoticeLogList
+商户后台	公告	公告	/station/notice	已读	R	菜单权限	systemNoticeLogRead
+商户后台	公告	公告	/station/notice	删除	D	菜单权限	systemNoticeLogDel
+商户后台	公告	公告	/station/notice	未读统计	R	菜单权限	systemNoticeLogUnreadCount
+商户后台	公告	公告	/station/notice	详情	R	菜单权限	systemNoticeLogDetail
+商户后台	员工	员工	/server	(页面入口)	R	待补	
+商户后台	员工 / 店员管理	店员管理	/server_manage	(页面入口)	R	待补	
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	列表	R	菜单权限	merchantServiceLst
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	登录	O	菜单权限	merchantServiceLogin
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	添加	C	菜单权限	merchantServiceCreate
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	编辑	U	菜单权限	merchantServiceUpdate
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	修改状态	U	菜单权限	merchantServiceSwitchStatus
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	删除	D	菜单权限	merchantServiceDelete
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	客服的全部用户 	O	菜单权限	merchantServiceServiceUserList
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	用户与客服聊天记录	R	菜单权限	merchantServiceServiceUserLogLst
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	客服的聊天用户列表	R	菜单权限	merchantServiceServiceMerchantUserList
+商户后台	员工 / 店员管理 / 店员列表	店员列表	/config/service	用户与商户聊天记录	R	菜单权限	merchantServiceMerchantUserLogLst
+商户后台	员工 / 店员管理 / 店员配置	店员配置	/systemForm/Basics/mer_service_switch	(页面入口)	R	待补	
+商户后台	员工 / 店员管理 / 自动回复	自动回复	/systemForm/customer_keyword	列表	R	菜单权限	merchantServiceReplyLst
+商户后台	员工 / 店员管理 / 自动回复	自动回复	/systemForm/customer_keyword	添加	C	菜单权限	merchantServiceReplyCreate
+商户后台	员工 / 店员管理 / 自动回复	自动回复	/systemForm/customer_keyword	编辑	U	菜单权限	merchantServiceReplyUpdate
+商户后台	员工 / 店员管理 / 自动回复	自动回复	/systemForm/customer_keyword	切换状态	U	菜单权限	merchantServiceReplyStatus
+商户后台	员工 / 店员管理 / 自动回复	自动回复	/systemForm/customer_keyword	删除	D	菜单权限	merchantServiceReplyDelete
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	列表	R	菜单权限	merchantStaffsLst
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	添加	C	菜单权限	merchantStaffsCreate
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	编辑	U	菜单权限	merchantStaffsUpdate
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	修改状态	U	菜单权限	merchantStaffsSwitchStatus
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	删除	D	菜单权限	merchantStaffsDelete
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	列表	R	菜单权限	merchantStaffsStatisticsList
+商户后台	员工 / 服务人员	服务人员	/config/service_staff	详情	R	菜单权限	merchantStaffsStatisticsDetail
+商户后台	员工 / 服务人员 / 服务人员	服务人员	/config/service_staff	列表	R	路由	merchantStaffsStatisticsList
+商户后台	员工 / 服务人员 / 服务人员	服务人员	/config/service_staff	详情	R	路由	merchantStaffsStatisticsDetail
+商户后台	员工 / 服务人员 / 服务统计	服务统计	/config/service_statistic	客服的聊天用户列表	R	路由	merchantServiceServiceMerchantUserList
+商户后台	员工 / 服务人员 / 服务统计	服务统计	/config/service_statistic	用户与商户聊天记录	R	路由	merchantServiceMerchantUserLogLst
+商户后台	员工 / 服务人员 / 服务统计	服务统计	/config/service_statistic	列表	R	路由	merchantServiceReplyLst
+商户后台	员工 / 服务人员 / 服务统计	服务统计	/config/service_statistic	添加	C	路由	merchantServiceReplyCreate
+商户后台	员工 / 服务人员 / 服务统计	服务统计	/config/service_statistic	编辑	U	路由	merchantServiceReplyUpdate
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	列表	R	菜单权限	merchantDeliveryServiceLst
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	修改状态	U	菜单权限	merchantDeliveryServiceStatus
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	添加	C	菜单权限	merchantDeliveryServiceCreate
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	编辑	U	菜单权限	merchantDeliveryServiceUpdate
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	删除	D	菜单权限	merchantDeliveryServiceDelete
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	统计列表	R	菜单权限	merchantDeliveryServiceStatisticsList
+商户后台	员工 / 配送人员	配送人员	/delivery/personnel_manage/index	统计详情	R	菜单权限	merchantDeliveryServiceStatisticsDetail
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	列表	R	菜单权限	merchantDeliveryServiceLst
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	修改状态	U	菜单权限	merchantDeliveryServiceStatus
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	添加	C	菜单权限	merchantDeliveryServiceCreate
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	编辑	U	菜单权限	merchantDeliveryServiceUpdate
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	删除	D	菜单权限	merchantDeliveryServiceDelete
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	统计列表	R	菜单权限	merchantDeliveryServiceStatisticsList
+商户后台	员工 / 配送人员 / 配送员管理	配送员管理	/delivery/personnel_manage	统计详情	R	菜单权限	merchantDeliveryServiceStatisticsDetail
+商户后台	员工 / 配送人员 / 配送统计	配送统计	/delivery/delivice_statistic	(页面入口)	R	待补	
+商户后台	商品	商品	/product	列表	R	路由	merchantStoreAttrTemplateLst
+商户后台	商品	商品	/product	添加 	C	路由	merchantStoreAttrTemplateCreate
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	列表	R	菜单权限	merchantStoreProductCdkeyLibraryLst
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	列表	R	菜单权限	merchantStoreProductCdkeyLibraryDetail
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	添加	C	菜单权限	merchantStoreProductCdkeyLibraryCreate
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	编辑表单	U	菜单权限	merchantStoreProductCdkeyLibraryUpdateForm
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	编辑	U	菜单权限	merchantStoreProductCdkeyLibraryUpdate
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	删除	D	菜单权限	merchantStoreProductCdkeyLibraryDelete
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	导出	R	菜单权限	merchantStoreProductCdkeyLibraryExcel
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	批量导入	C	菜单权限	merchantStoreProductCdkeyLibraryImport
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	卡密列表	R	菜单权限	merchantStoreProductCdkeyLst
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	添加卡密	C	菜单权限	merchantStoreProductCdkeyCreate
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	编辑卡密	U	菜单权限	merchantStoreProductCdkeyUpdate
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	删除卡密	D	菜单权限	merchantStoreProductCdkeyDelete
+商户后台	商品 / 卡密列表	卡密列表	/product/cdkey	批量删除	D	菜单权限	merchantStoreProductCdkeyLibraryBatchDelete
+商户后台	商品 / 商品分类	商品分类	/product/classify	编辑	U	菜单权限	merchantStoreCategoryUpdate
+商户后台	商品 / 商品分类	商品分类	/product/classify	列表	R	菜单权限	merchantStoreCategoryLst
+商户后台	商品 / 商品分类	商品分类	/product/classify	详情	R	菜单权限	merchantStoreCategoryDtailt
+商户后台	商品 / 商品分类	商品分类	/product/classify	添加	C	菜单权限	merchantStoreCategoryCreate
+商户后台	商品 / 商品分类	商品分类	/product/classify	删除	D	菜单权限	merchantStoreCategoryDelete
+商户后台	商品 / 商品分类	商品分类	/product/classify	修改状态	U	菜单权限	merchantStoreCategorySwitchStatus
+商户后台	商品 / 商品分类	商品分类	/product/classify	上传图片	C	菜单权限	merchantUploadImage
+商户后台	商品 / 商品分类	商品分类	/product/classify	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	商品 / 商品列表	商品列表	/product/list	头部统计	R	菜单权限	merchantStoreProductLstFilter
+商户后台	商品 / 商品列表	商品列表	/product/list	列表	R	菜单权限	merchantStoreProductLst
+商户后台	商品 / 商品列表	商品列表	/product/list	添加	C	菜单权限	merchantStoreProductCreate
+商户后台	商品 / 商品列表	商品列表	/product/list	详情	R	菜单权限	merchantStoreProductDetail
+商户后台	商品 / 商品列表	商品列表	/product/list	上传视频配置	CU	菜单权限	merchantStoreProductTempKey
+商户后台	商品 / 商品列表	商品列表	/product/list	编辑	U	菜单权限	merchantStoreProductUpdate
+商户后台	商品 / 商品列表	商品列表	/product/list	删除	D	菜单权限	merchantStoreProductDelete
+商户后台	商品 / 商品列表	商品列表	/product/list	加入回收站	O	菜单权限	merchantStoreProductDestory
+商户后台	商品 / 商品列表	商品列表	/product/list	恢复	O	菜单权限	merchantStoreProductRestore
+商户后台	商品 / 商品列表	商品列表	/product/list	上下架	U	菜单权限	merchantStoreProductSwitchStatus
+商户后台	商品 / 商品列表	商品列表	/product/list	排序	U	菜单权限	merchantStoreProductUpdateSort
+商户后台	商品 / 商品列表	商品列表	/product/list	预览	R	菜单权限	merchantStoreProductPreview
+商户后台	商品 / 商品列表	商品列表	/product/list	标签	O	菜单权限	merchantStoreProductLabels
+商户后台	商品 / 商品列表	商品列表	/product/list	获取规格	R	菜单权限	merchantStoreProductAttrValue
+商户后台	商品 / 商品列表	商品列表	/product/list	列表	CR	菜单权限	merchantStoreProductCopyLst
+商户后台	商品 / 商品列表	商品列表	/product/list	获取信息	CR	菜单权限	merchantStoreProductCopyGet
+商户后台	商品 / 商品列表	商品列表	/product/list	统计	CR	菜单权限	merchantStoreProductCopyCount
+商户后台	商品 / 商品列表	商品列表	/product/list	保存	C	菜单权限	merchantStoreProductCopySave
+商户后台	商品 / 商品列表	商品列表	/product/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	商品 / 商品列表	商品列表	/product/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	商品 / 商品列表	商品列表	/product/list	免审编辑	U	菜单权限	merchantStoreProductFreeTrial
+商户后台	商品 / 商品列表	商品列表	/product/list	批量上下架	U	菜单权限	merchantStoreProductSwitchBatchStatus
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置运费模板	U	菜单权限	merchantStoreProductSwitchBatchTemplate
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置标签	U	菜单权限	merchantStoreProductSwitchBatchLabels
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置推荐	U	菜单权限	merchantStoreProductSwitchBatchHot
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置推荐	U	菜单权限	merchantStoreProductSwitchBatchExtension
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置会员价	U	菜单权限	merchantStoreProductSwitchBatchSvipType
+商户后台	商品 / 商品列表	商品列表	/product/list	获取规格	R	菜单权限	merchantStoreProductFormatAttr
+商户后台	商品 / 商品列表	商品列表	/product/list	获取批量修改列表	RU	菜单权限	merchantStoreProductGetBatchList
+商户后台	商品 / 商品列表	商品列表	/product/list	批量修改商品属性	U	菜单权限	merchantStoreProductSwitchBatchProcess
+商户后台	商品 / 商品列表	商品列表	/product/list	操作记录	R	菜单权限	merchantStoreProductGetOperateList
+商户后台	商品 / 商品列表	商品列表	/product/list	操作记录	R	菜单权限	merchantStoreProductUnbind
+商户后台	商品 / 商品列表	商品列表	/product/list	编辑商品获取信息	RU	菜单权限	merchantStoreProductGetEdit
+商户后台	商品 / 商品列表	商品列表	/product/list	添加预约商品	C	菜单权限	merchantStoreReservationProductCreate
+商户后台	商品 / 商品列表	商品列表	/product/list	获取预约商品	RU	菜单权限	merchantStoreReservationProductEditInfo
+商户后台	商品 / 商品列表	商品列表	/product/list	编辑预约商品	U	菜单权限	merchantStoreReservationProductEdit
+商户后台	商品 / 商品列表	商品列表	/product/list	预约商品详情	R	菜单权限	merchantStoreReservationProductDetail
+商户后台	商品 / 商品列表	商品列表	/product/list	批量修改预约商品库存	U	菜单权限	merchantStoreReservationProductEditStock
+商户后台	商品 / 商品列表	商品列表	/product/list	批量加入回收站	D	菜单权限	merchantStoreProductBatchDelete
+商户后台	商品 / 商品列表	商品列表	/product/list	批量恢复	O	菜单权限	merchantStoreProductBatchRestore
+商户后台	商品 / 商品列表	商品列表	/product/list	批量设置服务保障	U	菜单权限	merchantStoreProductBatchGuarantee
+商户后台	商品 / 商品单位	商品单位	/product/unit	商品单位列表	R	菜单权限	merchantStoreProductUnitLst
+商户后台	商品 / 商品单位	商品单位	/product/unit	商品单位添加	C	菜单权限	merchantStoreProductUnitCreate
+商户后台	商品 / 商品单位	商品单位	/product/unit	商品单位编辑	U	菜单权限	merchantStoreProductUnitUpdate
+商户后台	商品 / 商品单位	商品单位	/product/unit	商品单位删除	D	菜单权限	merchantStoreProductUnitDelete
+商户后台	商品 / 商品参数	商品参数	/product/specs	列表	R	菜单权限	merchantStoreParameterTemplateLst
+商户后台	商品 / 商品参数	商品参数	/product/specs	详情	R	菜单权限	merchantStoreParameterTemplateDetail
+商户后台	商品 / 商品参数	商品参数	/product/specs	删除	D	菜单权限	merchantStoreParameterTemplateDelete
+商户后台	商品 / 商品参数	商品参数	/product/specs	添加	C	菜单权限	merchantStoreParameterTemplateCreate
+商户后台	商品 / 商品参数	商品参数	/product/specs	编辑	U	菜单权限	merchantStoreParameterTemplateUpdate
+商户后台	商品 / 商品参数	商品参数	/product/specs	删除属性	D	菜单权限	merchantStoreParameterTemplateDeleteValue
+商户后台	商品 / 商品标签	商品标签	/product/label	列表	R	菜单权限	merchantStoreProductLabelLst
+商户后台	商品 / 商品标签	商品标签	/product/label	添加	C	菜单权限	merchantStoreProductLabelCreate
+商户后台	商品 / 商品标签	商品标签	/product/label	编辑	U	菜单权限	merchantStoreProductLabelUpdate
+商户后台	商品 / 商品标签	商品标签	/product/label	详情	R	菜单权限	merchantStoreProductLabelDetail
+商户后台	商品 / 商品标签	商品标签	/product/label	删除	D	菜单权限	merchantStoreProductLabelDelete
+商户后台	商品 / 商品标签	商品标签	/product/label	修改状态	U	菜单权限	merchantStoreProductLabelStatus
+商户后台	商品 / 商品规格	商品规格	/product/attr	列表	R	菜单权限	merchantStoreAttrTemplateLst
+商户后台	商品 / 商品规格	商品规格	/product/attr	添加 	C	菜单权限	merchantStoreAttrTemplateCreate
+商户后台	商品 / 商品规格	商品规格	/product/attr	删除	D	菜单权限	merchantStoreAttrTemplateDelete
+商户后台	商品 / 商品规格	商品规格	/product/attr	文件类型	U	菜单权限	merchantStoreAttrTemplateUpdate
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	列表	R	菜单权限	merchantGuaranteeLst
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	添加	C	菜单权限	smerchantGuaranteeCreate
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	编辑	U	菜单权限	merchantGuaranteeUpdate
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	详情	R	菜单权限	merchantGuaranteeDetail
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	删除	D	菜单权限	merchantGuaranteeDelete
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	排序	U	菜单权限	merchantGuaranteeSort
+商户后台	商品 / 服务模板	服务模板	/config/guarantee	修改状态	U	菜单权限	merchantGuaranteeStatus
+商户后台	用户	用户	/user	优惠券可用商品	R	路由	merchantCouponProduct
+商户后台	用户	用户	/user	订单列表	R	路由	merchantUserOrder
+商户后台	用户	用户	/user	优惠券	R	路由	merchantUserCoupon
+商户后台	用户	用户	/user	列表	R	路由	merchantLabelRuleLst
+商户后台	用户	用户	/user	添加	C	路由	merchantLabelRuleCreate
+商户后台	用户	用户	/user	编辑	U	路由	merchantLabelRuleUpdate
+商户后台	用户 / 搜索记录	搜索记录	/user/searchRecord	搜索记录	R	菜单权限	merchantUserSearchLog
+商户后台	用户 / 标签管理	标签管理	/user/_label	(页面入口)	R	待补	
+商户后台	用户 / 标签管理 / 手动标签	手动标签	/user/label	列表	R	菜单权限	merchantUserLabelLst
+商户后台	用户 / 标签管理 / 手动标签	手动标签	/user/label	添加	C	菜单权限	merchantUserLabelCreate
+商户后台	用户 / 标签管理 / 手动标签	手动标签	/user/label	删除	D	菜单权限	merchantUserLabelDelete
+商户后台	用户 / 标签管理 / 手动标签	手动标签	/user/label	编辑	U	菜单权限	merchantUserLabelUpdate
+商户后台	用户 / 标签管理 / 自动标签	自动标签	/user/maticlabel	列表	R	菜单权限	merchantLabelRuleLst
+商户后台	用户 / 标签管理 / 自动标签	自动标签	/user/maticlabel	添加	C	菜单权限	merchantLabelRuleCreate
+商户后台	用户 / 标签管理 / 自动标签	自动标签	/user/maticlabel	编辑	U	菜单权限	merchantLabelRuleUpdate
+商户后台	用户 / 标签管理 / 自动标签	自动标签	/user/maticlabel	删除	D	菜单权限	merchantLabelRuleDelete
+商户后台	用户 / 标签管理 / 自动标签	自动标签	/user/maticlabel	自动同步	U	菜单权限	merchantLabelRuleSync
+商户后台	用户 / 用户管理	用户管理	/user/list	优惠券可用商品	O	菜单权限	merchantCouponProduct
+商户后台	用户 / 用户管理	用户管理	/user/list	发送优惠券	C	菜单权限	merchantCouponSendCoupon
+商户后台	用户 / 用户管理	用户管理	/user/list	列表	R	菜单权限	merchantUserLst
+商户后台	用户 / 用户管理	用户管理	/user/list	修改标签	U	菜单权限	merchantUserChangeLabel
+商户后台	用户 / 用户管理	用户管理	/user/list	订单列表	R	菜单权限	merchantUserOrder
+商户后台	用户 / 用户管理	用户管理	/user/list	优惠券	O	菜单权限	merchantUserCoupon
+商户后台	营销	营销	/marketing	发送优惠券记录	CR	路由	merchantCouponSendLst
+商户后台	营销	营销	/marketing	添加表单	C	路由	merchantCouponCreateForm
+商户后台	营销	营销	/marketing	复制表单	C	路由	merchantCouponIssueCloneForm
+商户后台	营销	营销	/marketing	添加	C	路由	merchantCouponCreate
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据详情	R	菜单权限	merchantGroupDetail
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据列表	R	菜单权限	merchantGroupDataLst
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据添加	C	菜单权限	merchantGroupDataCreate
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据编辑	U	菜单权限	merchantGroupDataUpdate
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据删除	D	菜单权限	merchantGroupDataDelete
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	数据修改状态	U	菜单权限	merchantGroupDataChangeStatus
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	上传图片	C	菜单权限	uploadImage
+商户后台	营销 / 专场列表	专场列表	/group/topic/95	图片列表	R	菜单权限	systemAttachmentLst
+商户后台	营销 / 优惠券	优惠券	/marketing/coupon	发送优惠券记录	CR	路由	merchantCouponSendLst
+商户后台	营销 / 优惠券	优惠券	/marketing/coupon	添加表单	C	路由	merchantCouponCreateForm
+商户后台	营销 / 优惠券	优惠券	/marketing/coupon	复制表单	C	路由	merchantCouponIssueCloneForm
+商户后台	营销 / 优惠券	优惠券	/marketing/coupon	添加	C	路由	merchantCouponCreate
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	添加	C	菜单权限	merchantCouponCreate
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	修改状态	U	菜单权限	merchantCouponIssueChangeStatus
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	列表	R	菜单权限	merchantCouponLst
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	删除	D	菜单权限	merchantCouponDelete
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	详情	R	菜单权限	merchantCouponDetail
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	编辑	U	菜单权限	systemCouponUpdate
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 优惠券 / 发送记录	发送记录	/marketing/coupon/send	发送优惠券记录	CR	菜单权限	merchantCouponSendLst
+商户后台	营销 / 优惠券 / 领取记录	领取记录	/marketing/coupon/user	使用记录	R	菜单权限	merchantCouponIssue
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	添加	C	菜单权限	merchantStoreDiscountsCreate
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	编辑	U	菜单权限	merchantStoreDiscountsUpdate
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	列表	R	菜单权限	merchantStoreDiscountsLst
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	详情	R	菜单权限	merchantStoreDiscountsDetail
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	删除	D	菜单权限	merchantStoreDiscountsDelete
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	修改状态	U	菜单权限	merchantStoreDiscountsStatus
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 助力	助力	/assist	(页面入口)	R	待补	
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	列表 	R	菜单权限	merchantStoreProductAssistLst
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	添加	C	菜单权限	merchantStoreProductAssistCreate
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	详情	R	菜单权限	merchantStoreProductAssistDetail
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	编辑	U	菜单权限	merchantStoreProductAssistUpdate
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	删除	D	菜单权限	merchantStoreProductAssistDelete
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	修改状态	U	菜单权限	merchantStoreProductAssistStatus
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	排序	U	菜单权限	merchantStoreProductAssistUpdateSort
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	预览	R	菜单权限	merchantStoreProductAssistPreview
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	设置标签	U	菜单权限	merchantStoreProductAssistLabels
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 助力 / 助力商品	助力商品	/marketing/assist/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/assist_set	活动列表	R	菜单权限	merchantStoreProductAssistSetLst
+商户后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/assist_set	活动详情	R	菜单权限	merchantStoreProductAssistSetDetail
+商户后台	营销 / 拼团	拼团	/marketing/combination	预览	C	路由	merchantStoreProductGroupPreview
+商户后台	营销 / 拼团	拼团	/marketing/combination	设置标签	C	路由	merchantStoreProductGroupLabels
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	列表	R	菜单权限	merchantStoreProductGroupLst
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	添加	C	菜单权限	merchantStoreProductGroupCreate
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	详情	R	菜单权限	merchantStoreProductGroupDetail
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑	U	菜单权限	merchantStoreProductGroupUpdate
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	删除	D	菜单权限	merchantStoreProductGroupDelete
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	修改状态	U	菜单权限	merchantStoreProductGroupStatus
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	排序	U	菜单权限	merchantStoreProductGroupSort
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	预览	R	菜单权限	merchantStoreProductGroupPreview
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	设置标签	U	菜单权限	merchantStoreProductGroupLabels
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	拼团配置	U	菜单权限	merchantConfigGroupBuying
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	活动列表 	R	菜单权限	merchantStoreProductGroupBuyingLst
+商户后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	活动详情	R	菜单权限	merchantStoreProductGroupBuyingDetail
+商户后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 直播	直播	/	退保证金检测	C	路由	merchantFinancialRefundMargin
+商户后台	营销 / 直播	直播	/	退保证金申请	C	路由	merchantFinancialRefundMarginApply
+商户后台	营销 / 直播	直播	/	收款方式表单	R	路由	merchantFinancialAccountForm
+商户后台	营销 / 直播	直播	/	到店自提信息	R	路由	merchantTakeInfo
+商户后台	营销 / 直播	直播	/	保存到店自提信息	C	路由	merchantTakeUpdate
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	列表	R	菜单权限	merchantBroadcastAssistantLst
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	添加	C	菜单权限	merchantBroadcastAssistantCreate
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	编辑	U	菜单权限	merchantBroadcastAssistantUpdate
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	备注	U	菜单权限	merchantBroadcastAssistantMark
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	删除	D	菜单权限	merchantBroadcastAssistantDelete
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 直播 / 直播助手	直播助手	/marketing/studio/assistant	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	(页面入口)	R	待补	
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	列表 	R	菜单权限	merchantBroadcastRoomLst
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	详情	R	菜单权限	merchantBroadcastRoomDetail
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	添加	C	菜单权限	merchantBroadcastRoomCreate
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	编辑	U	菜单权限	merchantBroadcastRoomUpdate
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	修改状态	U	菜单权限	merchantBroadcastRoomChangeStatus
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	导入商品	CR	菜单权限	merchantBroadcastRoomExportGoods
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	删除商品	RD	菜单权限	merchantBroadcastRoomRmExportGoods
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	备注	U	菜单权限	merchantBroadcastRoomMark
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	商品详情	R	菜单权限	merchantBroadcastRoomGoods
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	关闭客服	O	菜单权限	merchantBroadcastRoomCloseKf
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	禁言	O	菜单权限	merchantBroadcastRoomCloseComment
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	收录	O	菜单权限	merchantBroadcastRoomCloseFeeds
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	商品上下架	U	菜单权限	merchantBroadcastOnSale
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	删除	D	菜单权限	merchantBroadcastRoomDelete
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	添加 客服	C	菜单权限	merchantBroadcastAddAssistant
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	消息推送	O	菜单权限	merchantBroadcastPushMessage
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	列表	R	菜单权限	merchantBroadcastGoodsLst
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	详情	R	菜单权限	merchantBroadcastGoodsDetail
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	添加	C	菜单权限	merchantBroadcastGoodsCreate
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	编辑	U	菜单权限	merchantBroadcastGoodsUpdate
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	修改状态	U	菜单权限	merchantBroadcastGoodsChangeStatus
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	备注	U	菜单权限	merchantBroadcastGoodsMark
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	删除	D	菜单权限	merchantBroadcastGoodsDelete
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	批量添加	C	菜单权限	merchantBroadcastGoodsbatchCreate
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 秒杀	秒杀	/marketing/seckill/list	(页面入口)	R	待补	
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	统计	R	菜单权限	merchantStoreSeckillProductLstFilter
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	列表	R	菜单权限	merchantStoreSeckillProductLst
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	添加 	C	菜单权限	merchantStoreSeckillProductCreate
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	详情	R	菜单权限	merchantStoreSeckillProductDetail
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	编辑	U	菜单权限	merchantStoreSeckillProductUpdate
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	删除	D	菜单权限	merchantStoreSeckillProductDelete
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	彻底删除	D	菜单权限	merchantStoreSeckillProductDestory
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	恢复	O	菜单权限	merchantStoreSeckillProductRestore
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	修改状态	U	菜单权限	merchantStoreSeckillProductSwitchStatus
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	排序	U	菜单权限	merchantStoreSeckillProductUpdateSort
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	预览	R	菜单权限	merchantStoreSeckillProductPreview
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	设置标签	U	菜单权限	merchantStoreSeckillProductLabels
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	分页列表	R	菜单权限	merchantStoreSeckillProductPageLst
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	商品列表	R	菜单权限	merchantStoreSeckillProductGetProductList
+商户后台	营销 / 秒杀 / 秒杀商品	秒杀商品	/marketing/seckill/product/list	设置标签	U	菜单权限	merchantStoreSeckillProductSetLabels
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	列表	R	菜单权限	merchantStoreSeckillActiveGetActiveList
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	详情	R	菜单权限	merchantStoreSeckillActiveGetActiveInfo
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	列表	R	菜单权限	merchantStoreSeckillActiveGetActiveAll
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动统计数据面板	R	菜单权限	merchantStoreSeckillActiveChartPanel
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动参与人统计列表	R	菜单权限	merchantStoreSeckillActiveChartPeople
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动订单统计列表	R	菜单权限	merchantStoreSeckillActiveChartOrder
+商户后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动商品统计列表	R	菜单权限	merchantStoreSeckillActiveChartProduct
+商户后台	营销 / 积分	积分	/marketing/integral	列表	R	路由	merchantIntegralList
+商户后台	营销 / 积分	积分	/marketing/integral	统计	R	路由	merchantIntegralTitle
+商户后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	列表	R	菜单权限	merchantIntegralList
+商户后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	统计	R	菜单权限	merchantIntegralTitle
+商户后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	配置获取	RU	菜单权限	merchantConfigForm
+商户后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	配置保存	CU	菜单权限	merchantConfigSave
+商户后台	营销 / 积分 / 积分配置	积分配置	/marketing/integral/config	(页面入口)	R	待补	
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	分类列表	R	菜单权限	merchantCommunityCateLst
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	列表	R	菜单权限	merchantCommunityLst
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	添加	C	菜单权限	merchantCommunityCreate
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	详情	R	菜单权限	merchantCommunityDetail
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	编辑	U	菜单权限	merchantCommunityUpdate
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	删除	D	菜单权限	merchantCommunityDelete
+商户后台	营销 / 逛逛社区	逛逛社区	/community/list	评论	O	菜单权限	merchantCommunityReply
+商户后台	营销 / 预售	预售	/marketing/presell/list	列表	R	菜单权限	merchantStoreProductPresellLst
+商户后台	营销 / 预售	预售	/marketing/presell/list	添加	C	菜单权限	merchantStoreProductPresellCreate
+商户后台	营销 / 预售	预售	/marketing/presell/list	详情	R	菜单权限	merchantStoreProductPresellDetail
+商户后台	营销 / 预售	预售	/marketing/presell/list	编辑	U	菜单权限	merchantStoreProductPresellUpdate
+商户后台	营销 / 预售	预售	/marketing/presell/list	删除	D	菜单权限	merchantStoreProductPresellDelete
+商户后台	营销 / 预售	预售	/marketing/presell/list	修改状态	U	菜单权限	merchantStoreProductPresellStatus
+商户后台	营销 / 预售	预售	/marketing/presell/list	排序	U	菜单权限	merchantStoreProductPresellUpdateSort
+商户后台	营销 / 预售	预售	/marketing/presell/list	预览	R	菜单权限	merchantStoreProductPresellPreview
+商户后台	营销 / 预售	预售	/marketing/presell/list	设置标签	U	菜单权限	merchantStoreProductPreselltLabels
+商户后台	营销 / 预售	预售	/marketing/presell/list	上传图片	C	菜单权限	merchantUploadImage
+商户后台	营销 / 预售	预售	/marketing/presell/list	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	装修	装修	/devise/	列表	R	路由	merchantDiyPageLinkLst
+商户后台	装修	装修	/devise/	列表 	R	路由	merchantDiyLst
+商户后台	装修	装修	/devise/	默认模板列表 	R	路由	merchantDefaultDiyLst
+商户后台	装修	装修	/devise/	详情 	R	路由	merchantDiyDetail
+商户后台	装修	装修	/devise/	添加/编辑	CU	路由	merchantDiyCreate
+商户后台	装修	装修	/devise/	使用模板	C	路由	merchantDiyStatus
+商户后台	装修	装修	/devise/	使用模板	C	路由	merchantDiySetDefault
+商户后台	装修	装修	/devise/	重置模板	R	路由	merchantDiyRecovery
+商户后台	装修	装修	/devise/	当前使用模板	R	路由	merchantDiyInfo
+商户后台	装修	装修	/devise/	删除	D	路由	merchantDiyDelete
+商户后台	装修	装修	/devise/	店铺街装修	R	路由	merchantDiyProductLst
+商户后台	装修	装修	/devise/	复制	C	路由	merchantDiyCopy
+商户后台	装修 / 商品分类	商品分类	/devise/diy/product_category	商品分类信息	R	菜单权限	merchantDiyProductCategoryInfo
+商户后台	装修 / 商品分类	商品分类	/devise/diy/product_category	保存商品分类	C	菜单权限	merchantDiyProductCategorySave
+商户后台	装修 / 系统表单	系统表单	/systemForm/form_list	添加	C	菜单权限	merFormCreate
+商户后台	装修 / 系统表单	系统表单	/systemForm/form_list	编辑	U	菜单权限	merFormUpdate
+商户后台	装修 / 系统表单	系统表单	/systemForm/form_list	删除	D	菜单权限	merFormDelete
+商户后台	装修 / 系统表单	系统表单	/systemForm/form_list	详情	R	菜单权限	merFormDetail
+商户后台	装修 / 系统表单	系统表单	/systemForm/form_list	列表	R	菜单权限	merFormLst
+商户后台	装修 / 素材管理	素材管理	/config/picture	列表	R	菜单权限	merchantAttachmentLst
+商户后台	装修 / 素材管理	素材管理	/config/picture	删除	D	菜单权限	merchantAttachmentDelete
+商户后台	装修 / 素材管理	素材管理	/config/picture	批量修改	U	菜单权限	merchantAttachmentBatchChangeCategory
+商户后台	装修 / 素材管理	素材管理	/config/picture	编辑	U	菜单权限	merchantAttachmentUpdate
+商户后台	装修 / 素材管理	素材管理	/config/picture	分类列表	R	菜单权限	merchantAttachmentCategoryGetFormatList
+商户后台	装修 / 素材管理	素材管理	/config/picture	添加	C	菜单权限	merchantAttachmentCategoryCreate
+商户后台	装修 / 素材管理	素材管理	/config/picture	编辑	U	菜单权限	merchantAttachmentCategoryUpdate
+商户后台	装修 / 素材管理	素材管理	/config/picture	删除	D	菜单权限	merchantAttachmentCategoryDelete
+商户后台	装修 / 素材管理	素材管理	/config/picture	上传二维码	C	菜单权限	merchantAttachmentScanQrcode
+商户后台	装修 / 素材管理	素材管理	/config/picture	扫码上传图片	C	菜单权限	merchantAttachmentScanImage
+商户后台	装修 / 素材管理	素材管理	/config/picture	扫码上传保存	C	菜单权限	merchantAttachmentScanImageSave
+商户后台	装修 / 素材管理	素材管理	/config/picture	在线图片	O	菜单权限	merchantAttachmentOnline
+商户后台	装修 / 装修	装修	/devise/diy/list	列表 	R	菜单权限	merchantDiyLst
+商户后台	装修 / 装修	装修	/devise/diy/list	添加/编辑	CU	菜单权限	merchantDiyCreate
+商户后台	装修 / 装修	装修	/devise/diy/list	使用模板	U	菜单权限	merchantDiyStatus
+商户后台	装修 / 装修	装修	/devise/diy/list	设置模版默认数据	U	菜单权限	merchantDiySetDefault
+商户后台	装修 / 装修	装修	/devise/diy/list	重置模板	O	菜单权限	merchantDiyRecovery
+商户后台	装修 / 装修	装修	/devise/diy/list	当前使用模板	R	菜单权限	merchantDiyInfo
+商户后台	装修 / 装修	装修	/devise/diy/list	删除	D	菜单权限	merchantDiyDelete
+商户后台	装修 / 装修	装修	/devise/diy/list	店铺街装修	R	菜单权限	merchantDiyProductLst
+商户后台	装修 / 装修	装修	/devise/diy/list	复制	C	菜单权限	merchantDiyCopy
+商户后台	装修 / 装修	装修	/devise/diy/list	上传图片	C	菜单权限	uploadImage
+商户后台	装修 / 装修	装修	/devise/diy/list	图片列表	R	菜单权限	systemAttachmentLst
+商户后台	装修 / 装修	装修	/devise/diy/list	默认模板列表 	R	菜单权限	merchantDefaultDiyLst
+商户后台	装修 / 装修	装修	/devise/diy/list	详情 	R	菜单权限	merchantDiyDetail
+商户后台	订单	订单	/order	备注	C	路由	merchantOrderReceiptMark
+商户后台	订单	订单	/order	编辑	U	路由	merchantOrderReceiptUpdate
+商户后台	订单 / 代客下单	代客下单	/order/customer	商品分类	O	菜单权限	behalfProductCategory
+商户后台	订单 / 代客下单	代客下单	/order/customer	商品列表	R	菜单权限	behalfProductList
+商户后台	订单 / 代客下单	代客下单	/order/customer	商品规格详情	R	菜单权限	behalfProductDetail
+商户后台	订单 / 代客下单	代客下单	/order/customer	会员查询	R	菜单权限	behalfUserQuery
+商户后台	订单 / 代客下单	代客下单	/order/customer	会员详情	R	菜单权限	behalfUserInfo
+商户后台	订单 / 代客下单	代客下单	/order/customer	会员添加	C	菜单权限	behalfUserCreate
+商户后台	订单 / 代客下单	代客下单	/order/customer	地址列表	CR	菜单权限	behalfUserAddressList
+商户后台	订单 / 代客下单	代客下单	/order/customer	地址添加	C	菜单权限	behalfUserAddressCreate
+商户后台	订单 / 代客下单	代客下单	/order/customer	购物车列表	R	菜单权限	behalfCartList
+商户后台	订单 / 代客下单	代客下单	/order/customer	添加购物车	C	菜单权限	behalfCartCreate
+商户后台	订单 / 代客下单	代客下单	/order/customer	修改购物车数据	U	菜单权限	behalfCartChange
+商户后台	订单 / 代客下单	代客下单	/order/customer	删除购物数据	D	菜单权限	behalfCartDelete
+商户后台	订单 / 代客下单	代客下单	/order/customer	清空购物车	D	菜单权限	behalfCartClear
+商户后台	订单 / 代客下单	代客下单	/order/customer	购物车总数量	O	菜单权限	behalfCartCount
+商户后台	订单 / 代客下单	代客下单	/order/customer	修改价格	U	菜单权限	behalfCartUpdatePrice
+商户后台	订单 / 代客下单	代客下单	/order/customer	批量修改价格	U	菜单权限	behalfCartBatchUpdatePrice
+商户后台	订单 / 代客下单	代客下单	/order/customer	校验订单	O	菜单权限	behalfCheck
+商户后台	订单 / 代客下单	代客下单	/order/customer	支付配置	U	菜单权限	behalfPayConfig
+商户后台	订单 / 代客下单	代客下单	/order/customer	创建订单	C	菜单权限	behalfCreate
+商户后台	订单 / 代客下单	代客下单	/order/customer	支付	O	菜单权限	behalfPay
+商户后台	订单 / 代客下单	代客下单	/order/customer	获取结果	RU	菜单权限	behalfPayStatus
+商户后台	订单 / 代客下单	代客下单	/order/customer	余额支付获取验证码	R	菜单权限	behalfVerify
+商户后台	订单 / 商品评价	商品评价	/product/reviews	列表	R	菜单权限	merchantProductReplyLst
+商户后台	订单 / 商品评价	商品评价	/product/reviews	回复表单	U	菜单权限	merchantProductReplyForm
+商户后台	订单 / 商品评价	商品评价	/product/reviews	回复	U	菜单权限	merchantProductReplyReply
+商户后台	订单 / 商品评价	商品评价	/product/reviews	排序	U	菜单权限	merchantProductReplySort
+商户后台	订单 / 商品评价	商品评价	/product/reviews	上传图片	C	菜单权限	merchantUploadImage
+商户后台	订单 / 商品评价	商品评价	/product/reviews	图片列表	R	菜单权限	merchantAttachmentLst
+商户后台	订单 / 核销记录	核销记录	/order/cancellation	统计	R	菜单权限	merchantStoreOrderTakeTitle
+商户后台	订单 / 核销记录	核销记录	/order/cancellation	列表	R	菜单权限	merchantStoreTakeOrderLst
+商户后台	订单 / 订单管理	订单管理	/order/list	预览	R	菜单权限	merchantServeExportTemps
+商户后台	订单 / 订单管理	订单管理	/order/list	默认模板	R	菜单权限	merchantServeExportDumpLst
+商户后台	订单 / 订单管理	订单管理	/order/list	导出	R	菜单权限	merchantStoreOrderExcel
+商户后台	订单 / 订单管理	订单管理	/order/list	打印小票	O	菜单权限	merchantStoreOrderPrinter
+商户后台	订单 / 订单管理	订单管理	/order/list	统计	R	菜单权限	merchantStoreOrderTitle
+商户后台	订单 / 订单管理	订单管理	/order/list	列表	R	菜单权限	merchantStoreOrderLst
+商户后台	订单 / 订单管理	订单管理	/order/list	快递查询	R	菜单权限	merchantStoreOrderExpress
+商户后台	订单 / 订单管理	订单管理	/order/list	发货	U	菜单权限	merchantStoreOrderDelivery
+商户后台	订单 / 订单管理	订单管理	/order/list	批量发货	U	菜单权限	merchantStoreOrderBatchDelivery
+商户后台	订单 / 订单管理	订单管理	/order/list	导出发货单	RU	菜单权限	merchantStoreOrderDeliveryExport
+商户后台	订单 / 订单管理	订单管理	/order/list	头部统计	R	菜单权限	merchantStoreOrderStat
+商户后台	订单 / 订单管理	订单管理	/order/list	编辑	U	菜单权限	merchantStoreOrderUpdate
+商户后台	订单 / 订单管理	订单管理	/order/list	详情	R	菜单权限	merchantStoreOrderDetail
+商户后台	订单 / 订单管理	订单管理	/order/list	操作记录	R	菜单权限	merchantStoreOrderLog
+商户后台	订单 / 订单管理	订单管理	/order/list	备注	U	菜单权限	merchantStoreOrderRemark
+商户后台	订单 / 订单管理	订单管理	/order/list	核销	U	菜单权限	merchantStoreOrderVerify
+商户后台	订单 / 订单管理	订单管理	/order/list	删除	D	菜单权限	merchantStoreOrderDelete
+商户后台	订单 / 订单管理	订单管理	/order/list	导入	C	菜单权限	merchantStoreOrderDeliveryImport
+商户后台	订单 / 订单管理	订单管理	/order/list	导入记录	CR	菜单权限	merchantStoreOrderDeliveryImportLst
+商户后台	订单 / 订单管理	订单管理	/order/list	详情	CR	菜单权限	merchantStoreOrderDeliveryImportDetail
+商户后台	订单 / 订单管理	订单管理	/order/list	导出发货记录	CRU	菜单权限	merchantStoreOrderDeliveryImportExcel
+商户后台	订单 / 订单管理	订单管理	/order/list	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	订单 / 订单管理	订单管理	/order/list	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	订单 / 订单管理	订单管理	/order/list	核销详情	RU	菜单权限	merchantStoreOrderVerifyDetail
+商户后台	订单 / 订单管理	订单管理	/order/list	关联订单	O	菜单权限	merchantStoreOrderChildrenList
+商户后台	订单 / 订单管理	订单管理	/order/list	线下支付	O	菜单权限	merchantStoreOrderOffline
+商户后台	订单 / 订单管理	订单管理	/order/list	电子面单复打	O	菜单权限	merchantStoreOrderRepeatDump
+商户后台	订单 / 订单管理	订单管理	/order/list	配货单	O	菜单权限	merchantStoreOrderNote
+商户后台	订单 / 订单管理	订单管理	/order/list	修改收货信息	U	菜单权限	merchantStoreOrderCollectCargo
+商户后台	订单 / 订单管理	订单管理	/order/list	预约订单派单	O	菜单权限	merchantStoreOrderReservationDispatch
+商户后台	订单 / 订单管理	订单管理	/order/list	预约订单改派	U	菜单权限	merchantStoreOrderReservationUpdateDispatch
+商户后台	订单 / 订单管理	订单管理	/order/list	预约订单改约	O	菜单权限	merchantStoreOrderReservationReschedule
+商户后台	订单 / 订单管理	订单管理	/order/list	单独修改预约时间	U	菜单权限	merchantStoreOrderReservationTime
+商户后台	订单 / 订单管理	订单管理	/order/list	预约订单核销	U	菜单权限	merchantStoreOrderReservationVerify
+商户后台	订单 / 订单管理	订单管理	/order/list	获取商家寄件价格	R	菜单权限	merchantStoreOrderGetPrice
+商户后台	订单 / 订单管理	订单管理	/order/list	获取商家寄件价格	R	菜单权限	merchantStoreOrderShipmentList
+商户后台	订单 / 订单管理	订单管理	/order/list	取消商家寄件	D	菜单权限	merchantStoreOrderCancelShipment
+商户后台	订单 / 订单管理	订单管理	/order/list	同城配送派单	O	菜单权限	merchantStoreOrderDeliveryDispatch
+商户后台	订单 / 订单管理	订单管理	/order/list	同城配送改派	U	菜单权限	merchantStoreOrderDeliveryUpdateDispatch
+商户后台	订单 / 订单管理	订单管理	/order/list	同城配送核销	U	菜单权限	merchantStoreOrderDeliveryConfirm
+商户后台	订单 / 订单管理	订单管理	/order/list	同城配送再次同步	U	菜单权限	merchantStoreOrderDeliverySync
+商户后台	订单 / 退款订单	退款订单	/order/refund	列表	R	菜单权限	merchantStoreRefundOrderLst
+商户后台	订单 / 退款订单	退款订单	/order/refund	详情	R	菜单权限	merchantStoreRefundOrderDetail
+商户后台	订单 / 退款订单	退款订单	/order/refund	审核	U	菜单权限	merchantStoreRefundOrderSwitchStatus
+商户后台	订单 / 退款订单	退款订单	/order/refund	收到退回商品后确认退款	D	菜单权限	merchantStoreRefundOrderRefund
+商户后台	订单 / 退款订单	退款订单	/order/refund	删除	D	菜单权限	merchantStoreRefundDelete
+商户后台	订单 / 退款订单	退款订单	/order/refund	备注	U	菜单权限	merchantStoreRefundMark
+商户后台	订单 / 退款订单	退款订单	/order/refund	操作记录	R	菜单权限	merchantStoreRefundLog
+商户后台	订单 / 退款订单	退款订单	/order/refund	快递查询	R	菜单权限	merchantStoreRefundExpress
+商户后台	订单 / 退款订单	退款订单	/order/refund	导出	CR	菜单权限	merchantStoreRefundCreateExcel
+商户后台	订单 / 退款订单	退款订单	/order/refund	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	订单 / 退款订单	退款订单	/order/refund	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	订单 / 退款订单	退款订单	/order/refund	创建	C	菜单权限	merchantStoreRefundOrderCreate
+商户后台	订单 / 预约服务	预约服务	/order/reservation	预约日历	O	菜单权限	merchantReservationServiceList
+商户后台	订单 / 预约设置	预约设置	/product/reservation	(页面入口)	R	待补	
+商户后台	设置	设置	/config	编辑	U	路由	merchantAttachmentUpdate
+商户后台	设置	设置	/config	列表	R	路由	merchantAttachmentCategoryGetFormatList
+商户后台	设置	设置	/config	添加表单	C	路由	merchantAttachmentCategoryCreateForm
+商户后台	设置	设置	/config	编辑表单	U	路由	merchantAttachmentCategoryUpdateForm
+商户后台	设置	设置	/config	添加	C	路由	merchantAttachmentCategoryCreate
+商户后台	设置	设置	/config	编辑	U	路由	merchantAttachmentCategoryUpdate
+商户后台	设置	设置	/config	删除	D	路由	merchantAttachmentCategoryDelete
+商户后台	设置 / 一号通	一号通	/one_setting	(页面入口)	R	待补	
+商户后台	设置 / 一号通 / 平台一号通	平台一号通	/setting/sms/sms_config/index	套餐列表	R	菜单权限	merchantServeMeal
+商户后台	设置 / 一号通 / 平台一号通	平台一号通	/setting/sms/sms_config/index	支付二维码	O	菜单权限	merchantServeCode
+商户后台	设置 / 一号通 / 平台一号通	平台一号通	/setting/sms/sms_config/index	购买记录	R	菜单权限	merchantServeLst
+商户后台	设置 / 一号通 / 平台一号通	平台一号通	/setting/sms/sms_config/index	详情	R	菜单权限	merchantServeDetail
+商户后台	设置 / 一号通 / 平台一号通	平台一号通	/setting/sms/sms_config/index	账号信息	R	菜单权限	merchantServeInfo
+商户后台	设置 / 一号通 / 自有一号通	自有一号通	/setting/sms/sms_account/index	(页面入口)	R	待补	
+商户后台	设置 / 一号通 / 配置管理	配置管理	/setting/sms/dumpConfig	保存配置	CU	菜单权限	merchantServeSetConfig
+商户后台	设置 / 付费会员	付费会员	/systemForm/Basics/svip	(页面入口)	R	待补	
+商户后台	设置 / 同城配送	同城配送	/delivery	城市列表	R	路由	merchantStoreDeliveryCityList
+商户后台	设置 / 同城配送	同城配送	/delivery	充值记录	R	路由	merchantStoreDeliveryPayLst
+商户后台	设置 / 同城配送	同城配送	/delivery	充值二维码	R	路由	merchantStoreDeliveryGetQrcode
+商户后台	设置 / 同城配送 / 充值记录	充值记录	/delivery/recharge_record	充值记录	CR	菜单权限	merchantStoreDeliveryPayLst
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	列表	R	路由	merchantDeliveryServiceLst
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	修改状态	U	路由	merchantDeliveryServiceStatus
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	添加表单	C	路由	merchantDeliveryServiceCreateForm
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	添加	C	路由	merchantDeliveryServiceCreate
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	编辑	U	路由	merchantDeliveryServiceUpdateForm
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	编辑	U	路由	merchantDeliveryServiceUpdate
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	删除	D	路由	merchantDeliveryServiceDelete
+商户后台	设置 / 同城配送 / 发货点管理	发货点管理	/delivery/store_manage	统计列表	R	路由	merchantDeliveryServiceStatisticsList
+商户后台	设置 / 同城配送 / 配送记录	配送记录	/delivery/usage_record	列表	R	菜单权限	merchantStoreDeliveryOrderLst
+商户后台	设置 / 同城配送 / 配送记录	配送记录	/delivery/usage_record	取消	D	菜单权限	merchantStoreDeliveryOrderCancel
+商户后台	设置 / 同城配送 / 配送记录	配送记录	/delivery/usage_record	详情	R	菜单权限	merchantStoreDeliveryOrderDetail
+商户后台	设置 / 同城配送 / 配送设置	配送设置	/setting/delivery	更新配送设置信息	U	菜单权限	merchantDeliveryConfigUpdate
+商户后台	设置 / 同城配送 / 配送设置	配送设置	/setting/delivery	配送设置信息	U	菜单权限	merchantDeliveryConfigSettings
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	获取分类	R	菜单权限	merchantStoreDeliveryBusiness
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	添加	C	菜单权限	merchantStoreDeliveryCreate
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	编辑	U	菜单权限	merchantStoreDeliveryUpdate
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	编辑状态	U	菜单权限	merchantStoreDeliveryStatus
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	列表	R	菜单权限	merchantStoreDeliveryLst
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	详情	R	菜单权限	merchantStoreDeliveryDetail
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	删除	D	菜单权限	merchantStoreDeliveryDelete
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	备注	U	菜单权限	merchantStoreDeliveryMark
+商户后台	设置 / 同城配送 / 配送门店	配送门店	/delivery/delivery_point	城市列表	R	菜单权限	merchantStoreDeliveryCityList
+商户后台	设置 / 店铺信息	店铺信息	/systemForm/modifyStoreInfo	保存到店自提信息	CU	菜单权限	merchantTakeUpdate
+商户后台	设置 / 店铺信息	店铺信息	/systemForm/modifyStoreInfo	退保证金申请	C	菜单权限	merchantFinancialRefundMarginApply
+商户后台	设置 / 店铺配置	店铺配置	/systemForm/Basics/mer_base	资料更新	U	菜单权限	merchantUpdate
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	列表	R	菜单权限	merchantOpenapiLst
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	添加	C	菜单权限	merchantOpenapiCreate
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	编辑	U	菜单权限	merchantOpenapiUpdate
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	修改状态	U	菜单权限	merchantOpenapiStatus
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	删除	D	菜单权限	merchantOpenapiDeleta
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	查看	R	菜单权限	merchantOpenapiGetSecretKey
+商户后台	设置 / 开放账户	开放账户	/systemForm/openAuth/list	重置	O	菜单权限	merchantOpenapiSetSecretKey
+商户后台	设置 / 快递配送	快递配送	/city	(页面入口)	R	待补	
+商户后台	设置 / 快递配送 / 物流公司	物流公司	/config/freight/express	列表	R	菜单权限	merchantServeExportLst
+商户后台	设置 / 快递配送 / 物流公司	物流公司	/config/freight/express	月结账号编辑	U	菜单权限	merchantExpressPratnerUpdate
+商户后台	设置 / 快递配送 / 物流公司	物流公司	/config/freight/express	修改状态	U	菜单权限	merchantExpressChangeMerStatus
+商户后台	设置 / 快递配送 / 运费模板	运费模板	/config/freight/shippingTemplates	添加 	C	菜单权限	merchantStoreShippingTemplateCreate
+商户后台	设置 / 快递配送 / 运费模板	运费模板	/config/freight/shippingTemplates	编辑	U	菜单权限	merchantStoreShippingTemplateUpdate
+商户后台	设置 / 快递配送 / 运费模板	运费模板	/config/freight/shippingTemplates	详情	R	菜单权限	merchantStoreShippingTemplateDetail
+商户后台	设置 / 快递配送 / 运费模板	运费模板	/config/freight/shippingTemplates	删除	D	菜单权限	merchantStoreShippingTemplateDelete
+商户后台	设置 / 快递配送 / 运费模板	运费模板	/config/freight/shippingTemplates	设置默认模板	U	菜单权限	merchantStoreShippingTemplateSetDefault
+商户后台	设置 / 打印配置	打印配置	/setting/printer	所有数据	R	路由	merchantStatisticsMain
+商户后台	设置 / 打印配置	打印配置	/setting/printer	支付订单	R	路由	merchantStatisticsOrder
+商户后台	设置 / 打印配置	打印配置	/setting/printer	成交客户	R	路由	merchantStatisticsUser
+商户后台	设置 / 打印配置	打印配置	/setting/printer	成交客户比	R	路由	merchantStatisticsUserRate
+商户后台	设置 / 打印配置	打印配置	/setting/printer	商品支付排行	R	路由	merchantStatisticsProduct
+商户后台	设置 / 打印配置	打印配置	/setting/printer	商品访问排行	R	路由	merchantStatisticsProductVisit
+商户后台	设置 / 打印配置	打印配置	/setting/printer	商品加购排行	R	路由	merchantStatisticsProductCart
+商户后台	设置 / 打印配置	打印配置	/setting/printer	首页未处理业务统计	R	路由	merchantStatisticsMerchantCount
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	获取配置内容	RU	菜单权限	merchantStorePrinterGetContent
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	列表	R	菜单权限	merchantStorePrinterLst
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	添加	C	菜单权限	merchantStorePrinterCreate
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	编辑	U	菜单权限	merchantStorePrinterUpdate
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	取消	UD	菜单权限	merchantStorePrinterStatus
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	删除	D	菜单权限	merchantStorePrinterDelete
+商户后台	设置 / 打印配置 / 小票打印	小票打印	/setting/printer/list	保存配置内容	CU	菜单权限	merchantStorePrinterSetContent
+商户后台	设置 / 打印配置 / 打印配置	打印配置	/systemForm/Basics/printer_tabs	(页面入口)	R	待补	
+商户后台	设置 / 权限管理	权限管理	/setting	一键换色	R	路由	merchantGetChangeColor
+商户后台	设置 / 权限管理 / 操作日志	操作日志	/setting/systemLog	操作日志	R	路由	merchantAdminLog
+商户后台	设置 / 权限管理 / 操作日志	操作日志	/setting/systemLog	修改信息表单	U	路由	merchantAdminEditForm
+商户后台	设置 / 权限管理 / 操作日志	操作日志	/setting/systemLog	修改信息	U	路由	merchantAdminEdit
+商户后台	设置 / 权限管理 / 操作日志	操作日志	/setting/systemLog	修改密码表单	U	路由	merchantAdminEditPasswordForm
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	列表	R	菜单权限	merchantAdminLst
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	修改状态	U	菜单权限	merchantAdminStatus
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	添加	C	菜单权限	merchantAdminCreate
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	编辑	U	菜单权限	merchantAdminUpdate
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	修改密码	U	菜单权限	merchantAdminPassword
+商户后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	删除	D	菜单权限	merchantAdminDelete
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	修改状态	U	路由	merchantRoleStatus
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	删除	D	路由	merchantRoleDelete
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	列表	R	路由	merchantAdminLst
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	修改状态	U	路由	merchantAdminStatus
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	添加	C	路由	merchantAdminCreate
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	添加表单	C	路由	merchantAdminCreateForm
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	编辑	U	路由	merchantAdminUpdate
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	编辑表单	U	路由	merchantAdminUpdateForm
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	修改密码	U	路由	merchantAdminPassword
+商户后台	设置 / 权限管理 / 身份管理	身份管理	/setting/systemRole	修改密码表单	U	路由	merchantAdminPasswordForm
+商户后台	财务	财务	/accounts	收款方式	C	路由	merchantFinancialAccountSave
+商户后台	财务	财务	/accounts	转账记录	R	路由	merchantFinancialLst
+商户后台	财务	财务	/accounts	详情	R	路由	merchantFinancialDetail
+商户后台	财务	财务	/accounts	申请表单	C	路由	merchantFinancialCreateForm
+商户后台	财务	财务	/accounts	申请	C	路由	merchantFinancialCreateSave
+商户后台	财务	财务	/accounts	删除	D	路由	merchantFinancialDelete
+商户后台	财务	财务	/accounts	备注表单	R	路由	merchantFinancialMarkForm
+商户后台	财务	财务	/accounts	备注	C	路由	merchantFinancialMark
+商户后台	财务 / 分账管理	分账管理	/systemForm/applyList	列表	R	菜单权限	merchantOrderProfitsharingLst
+商户后台	财务 / 分账管理	分账管理	/systemForm/applyList	导出	R	菜单权限	merchantOrderProfitsharingExport
+商户后台	财务 / 分账管理	分账管理	/systemForm/applyList	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	财务 / 分账管理	分账管理	/systemForm/applyList	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	财务 / 发票管理	发票管理	/order/invoice	列表	R	菜单权限	merchantOrderReceiptLst
+商户后台	财务 / 发票管理	发票管理	/order/invoice	详情	R	菜单权限	merchantOrderReceiptDetail
+商户后台	财务 / 发票管理	发票管理	/order/invoice	开发票	O	菜单权限	merchantOrderReceiptSetRecipt
+商户后台	财务 / 发票管理	发票管理	/order/invoice	保存发票	C	菜单权限	merchantOrderReceiptSave
+商户后台	财务 / 发票管理	发票管理	/order/invoice	备注	U	菜单权限	merchantOrderReceiptMark
+商户后台	财务 / 发票管理	发票管理	/order/invoice	编辑	U	菜单权限	merchantOrderReceiptUpdate
+商户后台	财务 / 收款方式	收款方式	/accounts/payType	收款方式	C	菜单权限	merchantFinancialAccountSave
+商户后台	财务 / 申请分账商户	申请分账商户	/systemForm/applyments	申请	C	菜单权限	merchantApplymentsCreate
+商户后台	财务 / 申请分账商户	申请分账商户	/systemForm/applyments	详情	R	菜单权限	merchantApplymentsDetail
+商户后台	财务 / 申请分账商户	申请分账商户	/systemForm/applyments	编辑	U	菜单权限	merchantApplymentsUpdate
+商户后台	财务 / 申请分账商户	申请分账商户	/systemForm/applyments	上传图片	C	菜单权限	merchantApplymentsUpload
+商户后台	财务 / 申请分账商户	申请分账商户	/systemForm/applyments	上传视频	C	菜单权限	merchantApplymentsUploadVideo
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	列表	R	菜单权限	merchantFinanciaRecordlLst
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	统计	R	菜单权限	merchantFinancialTitle
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	详情	R	菜单权限	merchantFinancialRecordDetail
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	导出	R	菜单权限	merchantFinancialRecordDetailExport
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	财务 / 账单管理	账单管理	/accounts/statement	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	列表	R	菜单权限	merchantFinancialRecordList
+商户后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出	R	菜单权限	merchantFinancialRecordExport
+商户后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	统计	R	菜单权限	merchantFinancialCount
+商户后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	列表	R	菜单权限	merchantFinancialRefundMargin
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	转账记录	R	菜单权限	merchantFinancialLst
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	详情	R	菜单权限	merchantFinancialDetail
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	申请	C	菜单权限	merchantFinancialCreateSave
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	删除	D	菜单权限	merchantFinancialDelete
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	备注	U	菜单权限	merchantFinancialMark
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	导出	R	菜单权限	merchantFinancialExport
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	导出列表	R	菜单权限	merchantStoreExcelLst
+商户后台	财务 / 转账记录	转账记录	/accounts/transManagement	导出下载	R	菜单权限	merchantStoreExcelDownload
+商户后台	首页	首页	/dashboard	所有数据	O	菜单权限	merchantStatisticsMain
+商户后台	首页	首页	/dashboard	支付订单	O	菜单权限	merchantStatisticsOrder
+商户后台	首页	首页	/dashboard	成交客户	O	菜单权限	merchantStatisticsUser
+商户后台	首页	首页	/dashboard	成交客户比	O	菜单权限	merchantStatisticsUserRate
+商户后台	首页	首页	/dashboard	商品支付排行	O	菜单权限	merchantStatisticsProduct
+商户后台	首页	首页	/dashboard	商品访问排行	O	菜单权限	merchantStatisticsProductVisit
+商户后台	首页	首页	/dashboard	商品加购排行	O	菜单权限	merchantStatisticsProductCart
+商户后台	首页	首页	/dashboard	首页未处理业务统计	RU	菜单权限	merchantStatisticsMerchantCount
+商户后台	首页	首页	/dashboard	待办事项	O	菜单权限	merchantStatisticsMerchantTodo
+商户后台	首页	首页	/dashboard	获取商户代办统计	R	菜单权限	merchantStatisticsProductSalesPriceTop
+商户后台	首页 / 商品统计	商品统计	/statistic/product	顶部统计	R	菜单权限	merchantAnalyticsProductTop
+商户后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	merchantAnalyticsProductLineChart
+商户后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	merchantAnalyticsProductTypePieChart
+商户后台	首页 / 控制台	控制台	/dashboard	待办事项	R	路由	merchantStatisticsMerchantTodo
+商户后台	首页 / 控制台	控制台	/dashboard	获取商户代办统计	R	路由	merchantStatisticsProductSalesPriceTop
+商户后台	首页 / 控制台	控制台	/dashboard	列表	R	路由	systemNoticeLogList
+商户后台	首页 / 控制台	控制台	/dashboard	已读	C	路由	systemNoticeLogRead
+商户后台	首页 / 控制台	控制台	/dashboard	删除	D	路由	systemNoticeLogDel
+商户后台	首页 / 订单统计	订单统计	/statistic/order	顶部统计	R	菜单权限	merchantAnalyticsOrderTop
+商户后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	merchantAnalyticsOrderLineChart
+商户后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	merchantAnalyticsOrderTypePieChart

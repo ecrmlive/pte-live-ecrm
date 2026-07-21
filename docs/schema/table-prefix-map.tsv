@@ -1,0 +1,166 @@
+crmeb_table	qixi_table	comment	columns
+eb_article	qixi_article	文章管理表	16
+eb_article_category	qixi_article_category	文章分类表	9
+eb_article_content	qixi_article_content	文章内容表	2
+eb_broadcast_assistant	qixi_broadcast_assistant	直播助手信息	6
+eb_broadcast_goods	qixi_broadcast_goods	直播商品表	19
+eb_broadcast_room	qixi_broadcast_room	直播间表	34
+eb_broadcast_room_goods	qixi_broadcast_room_goods	直播间导入商品表	3
+eb_cache	qixi_cache	微信缓存表	4
+eb_cdkey_library	qixi_cdkey_library		10
+eb_circle	qixi_circle		17
+eb_circle_agent	qixi_circle_agent	商圈代理表	23
+eb_circle_brokerage_checkout	qixi_circle_brokerage_checkout	商圈佣金结算表	21
+eb_circle_financial_record	qixi_circle_financial_record	商圈提成流水	16
+eb_city_area	qixi_city_area	省市区县数据	9
+eb_community	qixi_community	社区图文表信息	24
+eb_community_category	qixi_community_category	社区分类	7
+eb_community_reply	qixi_community_reply	社区评论	12
+eb_community_topic	qixi_community_topic	社区话题	11
+eb_delivery_config	qixi_delivery_config	配送设置表	15
+eb_delivery_order	qixi_delivery_order		28
+eb_delivery_service	qixi_delivery_service		13
+eb_delivery_station	qixi_delivery_station	同城配送门店列表	28
+eb_diy	qixi_diy		23
+eb_excel	qixi_excel	导出文件记录表	10
+eb_express	qixi_express	快递公司表	13
+eb_express_partner	qixi_express_partner		10
+eb_extend	qixi_extend		7
+eb_feedback	qixi_feedback	用户反馈表	13
+eb_feedback_category	qixi_feedback_category	用户反馈分类表	10
+eb_financial	qixi_financial	商户财务申请提现	20
+eb_financial_record	qixi_financial_record	商户财务流水	13
+eb_guarantee	qixi_guarantee	保障服务选项	11
+eb_guarantee_template	qixi_guarantee_template	保障服务模板	7
+eb_guarantee_value	qixi_guarantee_value	保障服务模板条款	5
+eb_label_rule	qixi_label_rule	自定标签规则	9
+eb_member_interests	qixi_member_interests		11
+eb_merchant	qixi_merchant	商户表	55
+eb_merchant_admin	qixi_merchant_admin	商户管理员表	14
+eb_merchant_applyments	qixi_merchant_applyments	商户申请分账商户号表	13
+eb_merchant_category	qixi_merchant_category	商户分类表	4
+eb_merchant_intention	qixi_merchant_intention	商户申请表	16
+eb_merchant_region	qixi_merchant_region		13
+eb_merchant_type	qixi_merchant_type	商户类型表	9
+eb_open_auth	qixi_open_auth		15
+eb_operate_log	qixi_operate_log		15
+eb_page_category	qixi_page_category	页面链接分类	9
+eb_page_link	qixi_page_link	页面链接	11
+eb_parameter	qixi_parameter		8
+eb_parameter_product	qixi_parameter_product		3
+eb_parameter_template	qixi_parameter_template		5
+eb_parameter_value	qixi_parameter_value		8
+eb_presell_order	qixi_presell_order		16
+eb_price_rule	qixi_price_rule		8
+eb_record	qixi_record		6
+eb_relevance	qixi_relevance		4
+eb_routine_qrcode	qixi_routine_qrcode	小程序二维码管理表	8
+eb_serve_meal	qixi_serve_meal		9
+eb_serve_order	qixi_serve_order		12
+eb_shipping_template	qixi_shipping_template	运费表	10
+eb_shipping_template_free	qixi_shipping_template_free	指定包邮信息表	5
+eb_shipping_template_region	qixi_shipping_template_region	配送区域表	7
+eb_shipping_template_undelivery	qixi_shipping_template_undelivery	指定不配送区域表	3
+eb_sms_record	qixi_sms_record	短信发送记录表	9
+eb_staffs	qixi_staffs		11
+eb_store_activity	qixi_store_activity		21
+eb_store_activity_cate	qixi_store_activity_cate	活动标签分类表	11
+eb_store_activity_label	qixi_store_activity_label	活动标签表	15
+eb_store_activity_related	qixi_store_activity_related		13
+eb_store_attr_template	qixi_store_attr_template	商品规则值(规格)表	4
+eb_store_brand	qixi_store_brand	商品品牌表	7
+eb_store_brand_category	qixi_store_brand_category	品牌分类表	8
+eb_store_cart	qixi_store_cart	购物车表	18
+eb_store_cart_price	qixi_store_cart_price		10
+eb_store_category	qixi_store_category	商品分类表	12
+eb_store_coupon	qixi_store_coupon	优惠券表	22
+eb_store_coupon_issue_user	qixi_store_coupon_issue_user	优惠券前台用户领取记录表	3
+eb_store_coupon_product	qixi_store_coupon_product	优惠卷关联商品辅助表	3
+eb_store_coupon_send	qixi_store_coupon_send	优惠券发送记录	7
+eb_store_coupon_user	qixi_store_coupon_user	优惠券发放记录表	15
+eb_store_discounts	qixi_store_discounts		19
+eb_store_discounts_product	qixi_store_discounts_product		8
+eb_store_group	qixi_store_group	分组表	15
+eb_store_group_order	qixi_store_group_order	用户订单表	28
+eb_store_import	qixi_store_import	导入批次记录	8
+eb_store_import_delivery	qixi_store_import_delivery	导入发货单详细记录	10
+eb_store_order	qixi_store_order	订单表	66
+eb_store_order_product	qixi_store_order_product	订单购物详情表	31
+eb_store_order_profitsharing	qixi_store_order_profitsharing	分账表	14
+eb_store_order_receipt	qixi_store_order_receipt	订单发票信息	17
+eb_store_order_status	qixi_store_order_status	订单操作记录表	9
+eb_store_printer	qixi_store_printer		13
+eb_store_product	qixi_store_product	商品表	71
+eb_store_product_assist	qixi_store_product_assist	商品助力活动表	17
+eb_store_product_assist_set	qixi_store_product_assist_set	助力发起列表	13
+eb_store_product_assist_sku	qixi_store_product_assist_sku		6
+eb_store_product_assist_user	qixi_store_product_assist_user	助力记录表	7
+eb_store_product_attr	qixi_store_product_attr	商品属性表	4
+eb_store_product_attr_reservation	qixi_store_product_attr_reservation		10
+eb_store_product_attr_result	qixi_store_product_attr_result		5
+eb_store_product_attr_value	qixi_store_product_attr_value	商品属性值表	23
+eb_store_product_cate	qixi_store_product_cate	商品商户分类关联表	3
+eb_store_product_cdkey	qixi_store_product_cdkey		11
+eb_store_product_content	qixi_store_product_content	商品详情表	3
+eb_store_product_copy	qixi_store_product_copy		8
+eb_store_product_group	qixi_store_product_group	拼团商品信息表	23
+eb_store_product_group_buying	qixi_store_product_group_buying	拼团活动表	13
+eb_store_product_group_sku	qixi_store_product_group_sku		6
+eb_store_product_group_user	qixi_store_product_group_user	拼团成员表	11
+eb_store_product_label	qixi_store_product_label		9
+eb_store_product_presell	qixi_store_product_presell	商品预售活动表	21
+eb_store_product_presell_sku	qixi_store_product_presell_sku		12
+eb_store_product_reply	qixi_store_product_reply	商品评论表	22
+eb_store_product_reservation	qixi_store_product_reservation		22
+eb_store_product_sku	qixi_store_product_sku		10
+eb_store_product_take	qixi_store_product_take	用户到货通知记录	7
+eb_store_product_unit	qixi_store_product_unit		7
+eb_store_refund_order	qixi_store_refund_order	订单退款表	35
+eb_store_refund_product	qixi_store_refund_product	退款单产品表	9
+eb_store_refund_status	qixi_store_refund_status	订单操作记录表	4
+eb_store_seckill_active	qixi_store_seckill_active	商户设置秒杀商品关联表	20
+eb_store_seckill_time	qixi_store_seckill_time	秒杀时间段配置	7
+eb_store_service	qixi_store_service	客服表	17
+eb_store_service_log	qixi_store_service_log	客服用户对话记录表	11
+eb_store_service_reply	qixi_store_service_reply		7
+eb_store_service_user	qixi_store_service_user		10
+eb_store_spu	qixi_store_spu	商品搜索信息表	19
+eb_system_admin	qixi_system_admin	后台管理员表	17
+eb_system_attachment	qixi_system_attachment	附件管理表	9
+eb_system_attachment_category	qixi_system_attachment_category	附件分类表	8
+eb_system_config	qixi_system_config	配置表	16
+eb_system_config_classify	qixi_system_config_classify	配置分类表	9
+eb_system_config_value	qixi_system_config_value	配置表	5
+eb_system_form	qixi_system_form		9
+eb_system_group	qixi_system_group	组合数据表	8
+eb_system_group_data	qixi_system_group_data	组合数据详情表	7
+eb_system_log	qixi_system_log	管理员操作记录表	9
+eb_system_menu	qixi_system_menu	菜单表	14
+eb_system_notice	qixi_system_notice	商户公告	9
+eb_system_notice_config	qixi_system_notice_config		21
+eb_system_notice_log	qixi_system_notice_log		6
+eb_system_role	qixi_system_role	身份管理表	10
+eb_system_storage	qixi_system_storage		12
+eb_template_message	qixi_template_message	微信模板	9
+eb_user	qixi_user	用户表	45
+eb_user_address	qixi_user_address	用户地址表	20
+eb_user_bill	qixi_user_bill	用户账单表	13
+eb_user_brokerage	qixi_user_brokerage		10
+eb_user_extract	qixi_user_extract	用户提现表	24
+eb_user_fields	qixi_user_fields		2
+eb_user_group	qixi_user_group	用户分组表	3
+eb_user_history	qixi_user_history	浏览记录表	6
+eb_user_info	qixi_user_info		13
+eb_user_label	qixi_user_label	用户标签表	5
+eb_user_merchant	qixi_user_merchant	商户用户表	11
+eb_user_order	qixi_user_order	支付订单信息	19
+eb_user_receipt	qixi_user_receipt	用户发票信息	14
+eb_user_recharge	qixi_user_recharge	用户充值表	10
+eb_user_relation	qixi_user_relation	用户记录表	4
+eb_user_sign	qixi_user_sign	签到记录表	7
+eb_user_spread_log	qixi_user_spread_log		6
+eb_user_visit	qixi_user_visit	商品浏览分析表	6
+eb_wechat_news	qixi_wechat_news	图文消息管理表	4
+eb_wechat_qrcode	qixi_wechat_qrcode	微信二维码管理表	10
+eb_wechat_reply	qixi_wechat_reply	微信关键字回复表	7
+eb_wechat_user	qixi_wechat_user	微信用户表	19

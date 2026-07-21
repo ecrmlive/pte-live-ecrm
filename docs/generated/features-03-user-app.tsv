@@ -1,0 +1,343 @@
+portal	group	module	action	crud	method	path	handler	name
+用户端	未登录可访问	upload/video	upload Video (upload/video)	C	POST	upload/video	admin.system.attachment.Attachment/uploadVideo	
+用户端	未登录可访问	excel/download	download (excel/download/:id)	R	GET	excel/download/:id	merchant.store.order.Order/download	
+用户端	未登录可访问	notice	微信支付回调:微信 服务商 收付通	O	ANY	notice/:type	api.Common/notify	wechatNotify
+用户端	未登录可访问	notice/mchNotify	企业付款到零钱回调	O	ANY	notice/mchNotify/:type	api.Common/mchNotify	mchNotify
+用户端	未登录可访问	notice/pay	支付宝支付回调	C	ANY	notice/pay/alipay	api.Common/alipayNotify	alipayNotify
+用户端	未登录可访问	notice/callback	delivery Notify (notice/callback)	O	ANY	notice/callback	api.Common/deliveryNotify	mchNotify
+用户端	未登录可访问	order_call_back	call Back Notify (order_call_back)	O	ANY	order_call_back	api.Common/callBackNotify	mchNotify
+用户端	未登录可访问	system/city	城市列表	R	GET	system/city/lst	merchant.store.shipping.City/getlist	
+用户端	未登录可访问	v2/system	lst V2 (v2/system/city/lst/:pid)	R	GET	v2/system/city/lst/:pid	merchant.store.shipping.City/lstV2	
+用户端	未登录可访问	v2/system	city List (v2/system/city)	R	GET	v2/system/city	merchant.store.shipping.City/cityList	
+用户端	未登录可访问	common/hot_keyword	热门搜索	R	GET	common/hot_keyword	api.Common/hotKeyword	
+用户端	未登录可访问	common/commuunity	社区热门搜索	R	GET	common/commuunity/hot_keyword	api.Common/hotKeyword	
+用户端	未登录可访问	common/hot_banner	推荐页 banner	R	GET	common/hot_banner/:type	api.Common/hotBanner	
+用户端	未登录可访问	common/refund_message	退款原因	R	GET	common/refund_message	api.Common/refundMessage	
+用户端	未登录可访问	common/recharge_quota	充值赠送	R	GET	common/recharge_quota	api.Common/userRechargeQuota	
+用户端	未登录可访问	common/express	快递公司	R	GET	common/express	api.Common/express	
+用户端	未登录可访问	common/base64	图片转 base64	R	POST	common/base64	api.Common/get_image_base64	
+用户端	未登录可访问	common/menus	个人中心菜单	R	GET	common/menus	api.Common/menus	
+用户端	未登录可访问	common/home	首页数据	R	GET	common/home	api.Common/home	
+用户端	未登录可访问	lbs/geocoder	经纬度转位置信息	R	GET	lbs/geocoder	api.Common/lbs_geocoder	
+用户端	未登录可访问	lbs/address	位置信息转经纬度	CR	GET	lbs/address	api.Common/lbs_address	
+用户端	未登录可访问	common/pay_key	获取支付宝支付链接	CR	GET	common/pay_key/:key	api.Common/pay_key	
+用户端	未登录可访问	common/feedback_type	用户反馈类型	R	GET	common/feedback_type	api.user.FeedBackCategory/lst	
+用户端	未登录可访问	auth/login	登录	C	POST	auth/login	api.Auth/login	
+用户端	未登录可访问	auth/mp_login_type	获取小程序登录是否需绑定手机号处理	C	POST	auth/mp_login_type	api.Auth/mpLoginType	
+用户端	未登录可访问	auth	登录	C	POST	auth	api.Auth/authLogin	
+用户端	未登录可访问	auth/smslogin	短信登录	C	POST	auth/smslogin	api.Auth/smsLogin	
+用户端	未登录可访问	auth/register	注册	C	POST	auth/register	api.Auth/register	
+用户端	未登录可访问	auth/mp_phone	小程序手机号注册	C	POST	auth/mp_phone	api.Auth/mpPhone	
+用户端	未登录可访问	auth/wechat	微信授权	R	GET	auth/wechat	api.Auth/auth	
+用户端	未登录可访问	auth/mp	小程序授权	C	POST	auth/mp	api.Auth/mpAuth	
+用户端	未登录可访问	auth/app	app授权	C	POST	auth/app	api.Auth/appAuth	
+用户端	未登录可访问	auth/apple	apple授权	C	POST	auth/apple	api.Auth/appleAuth	
+用户端	未登录可访问	user/change_pwd	修改密码	U	POST	user/change_pwd	api.Auth/changePassword	
+用户端	未登录可访问	auth/verify	验证码	U	POST	auth/verify	api.Auth/verify	
+用户端	未登录可访问	wechat/config	微信配置	R	GET	wechat/config	api.Wechat/jsConfig	
+用户端	未登录可访问	captcha	图片验证码	R	GET	captcha	api.Auth/getCaptcha	
+用户端	未登录可访问	agreement_lst	获取协议列表	R	GET	agreement_lst	admin.system.Cache/getKeyLst	
+用户端	未登录可访问	agreement	获取协议内容	R	GET	agreement/:key	admin.system.Cache/getAgree	
+用户端	未登录可访问	copyright	copyright (copyright)	R	GET	copyright	api.Common/copyright	
+用户端	未登录可访问	script	script (script)	R	GET	script	api.Common/script	
+用户端	未登录可访问	appVersion	app Version (appVersion)	R	GET	appVersion	api.Common/appVersion	
+用户端	未登录可访问	micro	micro (micro)	R	GET	micro	api.Common/micro	getVersion
+用户端	未登录可访问	version	version (version)	R	GET	version	admin.Common/version	getVersion
+用户端	未登录可访问	getVersion	get Version (getVersion)	O	ANY	getVersion	api.Common/getVersion	getVersion
+用户端	未登录可访问	diy	diy (diy)	R	GET	diy	api.Common/diy	
+用户端	未登录可访问	ajcaptcha	滑块验证码	R	GET	ajcaptcha	api.Auth/ajcaptcha	
+用户端	未登录可访问	ajcheck	ajcheck (ajcheck)	U	POST	ajcheck	api.Auth/ajcheck	
+用户端	未登录可访问	open_screen	open_screen (open_screen)	R	GET	open_screen	api.Common/open_screen	
+用户端	未登录可访问	route/list	可以查看所有路由的接口 - 开发者使用	R	GET	route/list	api.Route/list	
+用户端	登录用户	pay/config	pay Config (pay/config)	CR	GET	pay/config	api.store.order.StoreOrder/payConfig	
+用户端	登录用户	check	v3 Check Order (check)	U	POST	check	/v3CheckOrder	
+用户端	登录用户	create	v3 Create Order (create)	C	POST	create	/v3CreateOrder	
+用户端	登录用户	check	v2 Check Order (check)	U	POST	check	/v2CheckOrder	
+用户端	登录用户	create	v2 Create Order (create)	C	POST	create	/v2CreateOrder	
+用户端	登录用户	logout	退出登录	C	POST	logout	api.Auth/logout	
+用户端	登录用户	user	用户信息	R	GET	user	api.Auth/userInfo	
+用户端	登录用户	user/spread	绑定推荐人	R	POST	user/spread	api.Auth/spread	
+用户端	登录用户	receive	receive Coupon (receive/:id)	C	POST	receive/:id	api.store.product.StoreCoupon/receiveCoupon	
+用户端	登录用户	check	check Order (check)	U	POST	check	/checkOrder	
+用户端	登录用户	create	create Order (create)	C	POST	create	/createOrder	
+用户端	登录用户	group_order_list	group Order List (group_order_list)	R	GET	group_order_list	/groupOrderList	
+用户端	登录用户	group_order_detail	group Order Detail (group_order_detail/:id)	R	GET	group_order_detail/:id	/groupOrderDetail	
+用户端	登录用户	cancel	cancel Group Order (cancel/:id)	D	POST	cancel/:id	/cancelGroupOrder	
+用户端	登录用户	list	lst (list)	R	GET	list	/lst	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	/detail	
+用户端	登录用户	number	number (number)	R	GET	number	/number	
+用户端	登录用户	pay	group Order Pay (pay/:id)	C	POST	pay/:id	/groupOrderPay	
+用户端	登录用户	points/pay	group Order Pay (points/pay/:id)	C	POST	points/pay/:id	/groupOrderPay	
+用户端	登录用户	take	take (take/:id)	C	POST	take/:id	/take	
+用户端	登录用户	express	express (express/:id)	C	POST	express/:id	/express	
+用户端	登录用户	del	del (del/:id)	D	POST	del/:id	/del	
+用户端	登录用户	status	group Order Status (status/:id)	RU	GET	status/:id	/groupOrderStatus	
+用户端	登录用户	verify_code	verify Code (verify_code/:id)	R	GET	verify_code/:id	/verifyCode	
+用户端	登录用户	receipt	create Receipt (receipt/:id)	C	POST	receipt/:id	/createReceipt	
+用户端	登录用户	delivery	get Order Delivery (delivery/:id)	R	GET	delivery/:id	/getOrderDelivery	
+用户端	登录用户	cashier_order	get Cashier Order (cashier_order/:id)	R	GET	cashier_order/:id	/getCashierOrder	
+用户端	登录用户	self/cancel	cancel Order (self/cancel/:id)	D	POST	self/cancel/:id	/cancelOrder	
+用户端	登录用户	deliveryStation/list	delivery Station List (deliveryStation/list)	R	GET	deliveryStation/list	/deliveryStationList	
+用户端	登录用户	deliverySetings	delivery Config (deliverySetings)	R	GET	deliverySetings	/deliveryConfig	
+用户端	登录用户	deliveryTrack	delivery Track (deliveryTrack/:id)	R	GET	deliveryTrack/:id	/deliveryTrack	
+用户端	登录用户	pay	pay (pay/:id)	C	POST	pay/:id	/pay	
+用户端	登录用户	batch_product	batch Product (batch_product/:id)	R	GET	batch_product/:id	/batchProduct	
+用户端	登录用户	express	express (express/:id)	R	GET	express/:id	/express	
+用户端	登录用户	product	product (product/:id)	R	GET	product/:id	/product	
+用户端	登录用户	compute	compute (compute)	C	POST	compute	/compute	
+用户端	登录用户	apply	refund (apply/:id)	D	POST	apply/:id	/refund	
+用户端	登录用户	list	lst (list)	R	GET	list	/lst	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	/detail	
+用户端	登录用户	del	del (del/:id)	D	POST	del/:id	/del	
+用户端	登录用户	back_goods	back_goods (back_goods/:id)	C	POST	back_goods/:id	/back_goods	
+用户端	登录用户	cancel	cancel (cancel/:id)	D	POST	cancel/:id	/cancel	
+用户端	登录用户	platform	platform Intervene (platform/:id)	C	POST	platform/:id	/platformIntervene	
+用户端	登录用户	product	product (product/:id)	R	GET	product/:id	/product	
+用户端	登录用户	登录用户	reply (:id)	U	POST	:id	/reply	
+用户端	登录用户	user/cancel	注销用户	D	POST	user/cancel	api.Auth/cancel	
+用户端	登录用户	account	切换账号	R	GET	account	User/account	
+用户端	登录用户	switch	switch User (switch)	U	POST	switch	User/switchUser	
+用户端	登录用户	change/phone	修改信息	U	POST	change/phone	User/changePhone	
+用户端	登录用户	change/info	update Base Info (change/info)	RU	POST	change/info	User/updateBaseInfo	
+用户端	登录用户	change/password	change Password (change/password)	U	POST	change/password	User/changePassword	
+用户端	登录用户	relation/product	收藏	R	GET	/relation/product/lst	UserRelation/productList	
+用户端	登录用户	relation/merchant	merchant List (/relation/merchant/lst)	R	GET	/relation/merchant/lst	UserRelation/merchantList	
+用户端	登录用户	relation/create	create (/relation/create)	C	POST	/relation/create	UserRelation/create	
+用户端	登录用户	relation/batch	batch Create (/relation/batch/create)	C	POST	/relation/batch/create	UserRelation/batchCreate	
+用户端	登录用户	relation/delete	delete (/relation/delete)	D	POST	/relation/delete	UserRelation/delete	
+用户端	登录用户	relation/batch	batch Delete (/relation/batch/delete)	D	POST	/relation/batch/delete	UserRelation/batchDelete	
+用户端	登录用户	feedback	反馈	C	POST	/feedback	Feedback/feedback	
+用户端	登录用户	feedback/list	feedback List (/feedback/list)	R	GET	/feedback/list	Feedback/feedbackList	
+用户端	登录用户	feedback/detail	detail (/feedback/detail/:id)	R	GET	/feedback/detail/:id	Feedback/detail	
+用户端	登录用户	recharge	充值	C	POST	/recharge	UserRecharge/recharge	
+用户端	登录用户	recharge/brokerage	brokerage (/recharge/brokerage)	C	POST	/recharge/brokerage	UserRecharge/brokerage	
+用户端	登录用户	address/lst	地址	CR	GET	/address/lst	UserAddress/lst	
+用户端	登录用户	address/create	create (/address/create)	C	POST	/address/create	UserAddress/create	
+用户端	登录用户	address/detail	detail (/address/detail/:id)	CR	GET	/address/detail/:id	UserAddress/detail	
+用户端	登录用户	address/update	edit Default (/address/update/:id)	CU	POST	/address/update/:id	UserAddress/editDefault	
+用户端	登录用户	address/delete	delete (/address/delete/:id)	CD	POST	/address/delete/:id	UserAddress/delete	
+用户端	登录用户	spread_image	分销海报	R	GET	/spread_image	User/spread_image	
+用户端	登录用户	v2/spread_image	spread_image_v2 (/v2/spread_image)	R	GET	/v2/spread_image	User/spread_image_v2	
+用户端	登录用户	spread_list	推广人列表	R	GET	/spread_list	User/spread_list	
+用户端	登录用户	extract/lst	提现	R	GET	/extract/lst	UserExtract/lst	
+用户端	登录用户	extract/detail	detail (/extract/detail/:id)	R	GET	/extract/detail/:id	UserExtract/detail	
+用户端	登录用户	extract/banklst	bank Lst (/extract/banklst)	R	GET	/extract/banklst	UserExtract/bankLst	
+用户端	登录用户	extract/create	create (/extract/create)	C	POST	/extract/create	UserExtract/create	
+用户端	登录用户	extract/history_bank	history Bank (/extract/history_bank)	R	GET	/extract/history_bank	UserExtract/historyBank	
+用户端	登录用户	binding	绑定手机号	U	POST	binding	User/binding	
+用户端	登录用户	mp/binding	小程序获取手机号	U	POST	mp/binding	User/mpPhone	
+用户端	登录用户	bill	余额记录	R	GET	bill	User/bill	
+用户端	登录用户	brokerage_list	佣金记录	R	GET	brokerage_list	User/brokerage_list	
+用户端	登录用户	spread_order	推广人订单	R	GET	spread_order	User/spread_order	
+用户端	登录用户	spread_top	推广人排行榜	R	GET	spread_top	User/spread_top	
+用户端	登录用户	brokerage_top	佣金排行榜	R	GET	brokerage_top	User/brokerage_top	
+用户端	登录用户	spread_info	spread_info (spread_info)	R	GET	spread_info	User/spread_info	
+用户端	登录用户	spread_level	spread_info (spread_level)	R	GET	spread_level	User/spread_info	
+用户端	登录用户	brokerage/info	brokerage_info (brokerage/info)	R	GET	brokerage/info	User/brokerage_info	
+用户端	登录用户	brokerage/all	brokerage_all (brokerage/all)	R	GET	brokerage/all	User/brokerage_all	
+用户端	登录用户	brokerage/notice	notice (brokerage/notice)	R	GET	brokerage/notice	User/notice	
+用户端	登录用户	history	浏览记录	R	GET	history	UserHistory/lst	
+用户端	登录用户	history/delete	delete History (history/delete/:id)	RD	POST	history/delete/:id	UserHistory/deleteHistory	
+用户端	登录用户	history/batch	delete History Batch (history/batch/delete)	RD	POST	history/batch/delete	UserHistory/deleteHistoryBatch	
+用户端	登录用户	receipt/create	发票	C	POST	receipt/create	UserReceipt/create	
+用户端	登录用户	receipt/lst	lst (receipt/lst)	R	GET	receipt/lst	UserReceipt/lst	
+用户端	登录用户	receipt/order	order (receipt/order)	R	GET	receipt/order	UserReceipt/order	
+用户端	登录用户	receipt/order	order Detail (receipt/order/:id)	R	GET	receipt/order/:id	UserReceipt/orderDetail	
+用户端	登录用户	receipt/delete	delete (receipt/delete/:id)	D	POST	receipt/delete/:id	UserReceipt/delete	
+用户端	登录用户	receipt/update	update (receipt/update/:id)	U	POST	receipt/update/:id	UserReceipt/update	
+用户端	登录用户	receipt/is_default	is Default (receipt/is_default/:id)	C	POST	receipt/is_default/:id	UserReceipt/isDefault	
+用户端	登录用户	receipt/detail	detail (receipt/detail/:id)	R	GET	receipt/detail/:id	UserReceipt/detail	
+用户端	登录用户	sign/lst	签到	R	GET	sign/lst	UserSign/lst	
+用户端	登录用户	sign/create	create (sign/create)	C	POST	sign/create	UserSign/create	
+用户端	登录用户	sign/month	month (sign/month)	R	GET	sign/month	UserSign/month	
+用户端	登录用户	integral/info	积分	R	GET	integral/info	User/integralInfo	
+用户端	登录用户	integral/lst	integral List (integral/lst)	R	GET	integral/lst	User/integralList	
+用户端	登录用户	services	客服列表	R	GET	services	User/services	
+用户端	登录用户	member/info	member Info (member/info)	R	GET	member/info	User/memberInfo	
+用户端	登录用户	member/log	get Member Value (member/log)	R	GET	member/log	Member/getMemberValue	
+用户端	登录用户	fields/info	用户表单数据操作	R	GET	fields/info	UserFields/info	
+用户端	登录用户	fields/save	save (fields/save)	C	POST	fields/save	UserFields/save	
+用户端	登录用户	fields/delete	delete (fields/delete)	D	DELETE	fields/delete	UserFields/delete	
+用户端	登录用户	check	check Cerate (/check/:id)	U	POST	/check/:id	StoreCart/checkCerate	
+用户端	登录用户	lst	lst (/lst)	R	GET	/lst	StoreCart/lst	
+用户端	登录用户	create	create (/create)	C	POST	/create	StoreCart/create	
+用户端	登录用户	again	again (/again)	C	POST	/again	StoreCart/again	
+用户端	登录用户	change	change (/change/:id)	U	POST	/change/:id	StoreCart/change	
+用户端	登录用户	delete	batch Delete (/delete)	D	POST	/delete	StoreCart/batchDelete	
+用户端	登录用户	count	cart Count (/count)	R	GET	/count	StoreCart/cartCount	
+用户端	登录用户	batchCreate	batch Create (/batchCreate)	C	POST	/batchCreate	StoreCart/batchCreate	
+用户端	登录用户	clear	clear (/clear)	D	POST	/clear	StoreCart/clear	
+用户端	登录用户	assist/create	create (/assist/create/:id)	CU	POST	/assist/create/:id	StoreProductAssistSet/create	
+用户端	登录用户	assist/detail	detail (/assist/detail/:id)	R	GET	/assist/detail/:id	StoreProductAssistSet/detail	
+用户端	登录用户	assist/set	set (/assist/set/:id)	U	POST	/assist/set/:id	StoreProductAssistSet/set	
+用户端	登录用户	assist/user	user List (/assist/user/:id)	R	GET	/assist/user/:id	StoreProductAssistSet/userList	
+用户端	登录用户	assist/share	share Num (/assist/share/:id)	R	GET	/assist/share/:id	StoreProductAssistSet/shareNum	
+用户端	登录用户	assist/set	lst (/assist/set/lst)	R	GET	/assist/set/lst	StoreProductAssistSet/lst	
+用户端	登录用户	assist/set	delete (/assist/set/delete/:id)	D	POST	/assist/set/delete/:id	StoreProductAssistSet/delete	
+用户端	登录用户	increase_take	set Increase Take (/increase_take)	U	POST	/increase_take	StoreProduct/setIncreaseTake	
+用户端	登录用户	get_attr_value	get Attr Value (/get_attr_value/:id)	R	GET	/get_attr_value/:id	StoreProduct/getAttrValue	
+用户端	登录用户	intention/lst	申请商户	R	GET	intention/lst	api.store.merchant.MerchantIntention/lst	
+用户端	登录用户	intention/detail	detail (intention/detail/:id)	R	GET	intention/detail/:id	api.store.merchant.MerchantIntention/detail	
+用户端	登录用户	intention/update	update (intention/update/:id)	U	POST	intention/update/:id	api.store.merchant.MerchantIntention/update	
+用户端	登录用户	store/product	cancel (store/product/group/cancel)	D	POST	store/product/group/cancel	api.store.product.StoreProductGroup/cancel	
+用户端	登录用户	create	create (/create)	C	POST	/create	Community/create	
+用户端	登录用户	update	update (/update/:id)	U	POST	/update/:id	Community/update	
+用户端	登录用户	delete	delete (/delete/:id)	D	POST	/delete/:id	Community/delete	
+用户端	登录用户	pay_product/lst	pay List (pay_product/lst)	CR	GET	pay_product/lst	Community/payList	
+用户端	登录用户	rela_product/lst	relation List (rela_product/lst)	R	GET	rela_product/lst	Community/relationList	
+用户端	登录用户	hist_product/lst	history List (hist_product/lst)	R	GET	hist_product/lst	Community/historyList	
+用户端	登录用户	fans	set Focus (fans/:id)	U	POST	fans/:id	Community/setFocus	
+用户端	登录用户	fans/lst	get User Fans (fans/lst)	R	GET	fans/lst	Community/getUserFans	
+用户端	登录用户	focus/lst	get User Focus (focus/lst)	R	GET	focus/lst	Community/getUserFocus	
+用户端	登录用户	start	start Community (start/:id)	C	POST	start/:id	Community/startCommunity	
+用户端	登录用户	start/lst	get User Start Community (start/lst)	R	GET	start/lst	Community/getUserStartCommunity	
+用户端	登录用户	reply/create	create (reply/create/:id)	CU	POST	reply/create/:id	CommunityReply/create	
+用户端	登录用户	reply/start	start (reply/start/:id)	U	POST	reply/start/:id	CommunityReply/start	
+用户端	登录用户	order	get Spu By Order (order/:id)	R	GET	order/:id	Community/getSpuByOrder	
+用户端	登录用户	svip/pay	付费会员购买	C	POST	svip/pay/:id	api.user.Svip/createOrder	
+用户端	登录用户	check	befor Check (check)	U	POST	check	PointsOrder/beforCheck	
+用户端	登录用户	create	create Order (create)	C	POST	create	PointsOrder/createOrder	
+用户端	登录用户	pay	order Pay (pay/:id)	C	POST	pay/:id	PointsOrder/orderPay	
+用户端	登录用户	lst	lst (lst)	R	GET	lst	PointsOrder/lst	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	PointsOrder/detail	
+用户端	登录用户	take	take (take/:id)	C	POST	take/:id	PointsOrder/take	
+用户端	登录用户	deleate	del (deleate/:id)	D	POST	deleate/:id	PointsOrder/del	
+用户端	登录用户	create	create (/create/:id)	C	POST	/create/:id	/create	
+用户端	登录用户	lst	lst (/lst)	R	GET	/lst	/lst	
+用户端	登录用户	detail	detail (/detail/:id)	R	GET	/detail/:id	/detail	
+用户端	登录用户	show	show (/show/:id)	R	GET	/show/:id	/show	
+用户端	登录用户	list	list (list)	R	GET	list	/list	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	/detail	
+用户端	登录用户	create	create (create)	C	POST	create	/create	
+用户端	登录用户	update	update (update/:id)	U	POST	update/:id	/update	
+用户端	登录用户	revoke	revoke (revoke/:id)	C	POST	revoke/:id	/revoke	
+用户端	登录用户	pay_lst	价格列表	CR	GET	pay_lst	/getTypeLst	
+用户端	登录用户	user_info	svip User Info (user_info)	R	GET	user_info	/svipUserInfo	
+用户端	登录用户	coupon_lst	svip Coupon (coupon_lst)	R	GET	coupon_lst	/svipCoupon	
+用户端	登录用户	product_lst	svip Product List (product_lst)	R	GET	product_lst	/svipProductList	
+用户端	登录用户	coupon_receive	receive Coupon (coupon_receive/:id)	C	POST	coupon_receive/:id	/receiveCoupon	
+用户端	登录用户	lst	社区文章列表	R	GET	/lst	Community/lst	
+用户端	登录用户	user_lst	user List (/user_lst)	R	GET	/user_lst	Community/userList	
+用户端	登录用户	video_lst	video Show (/video_lst)	R	GET	/video_lst	Community/videoShow	
+用户端	登录用户	show	详情	R	GET	/show/:id	Community/show	
+用户端	登录用户	user/info	用户页	R	GET	/user/info/:id	Community/userInfo	
+用户端	登录用户	user/community	用户的文章	R	GET	/user/community/:id	Community/userCommunitylst	
+用户端	登录用户	user/community_video	用户的视频	R	GET	/user/community_video/:id	Community/userCommunityVideolst	
+用户端	登录用户	category/lst	分类&话题	R	GET	category/lst	CommunityCategory/lst	
+用户端	登录用户	reply	lst (/:id/reply)	R	GET	/:id/reply	CommunityReply/lst	
+用户端	登录用户	focuslst	focuslst (/focuslst)	R	GET	/focuslst	Community/focuslst	
+用户端	登录用户	qrcode	qrcode (qrcode/:id)	R	GET	qrcode/:id	Community/qrcode	
+用户端	登录用户	lst	activity Lst (lst/:id)	R	GET	lst/:id	api.Common/activityLst	
+用户端	登录用户	info	activity Info (info/:id)	R	GET	info/:id	api.Common/activityInfo	
+用户端	登录用户	seckill/select	select (seckill/select)	R	GET	seckill/select	StoreProductSeckill/select	
+用户端	登录用户	seckill/lst	lst (seckill/lst)	R	GET	seckill/lst	StoreProductSeckill/lst	
+用户端	登录用户	seckill/detail	detail (seckill/detail/:id)	R	GET	seckill/detail/:id	StoreProductSeckill/detail	
+用户端	登录用户	category/lst	lst (category/lst)	R	GET	category/lst	StoreCategory/lst	
+用户端	登录用户	category	children (category)	R	GET	category	StoreCategory/children	
+用户端	登录用户	brand/lst	lst (brand/lst)	R	GET	brand/lst	StoreBrand/lst	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	StoreProduct/detail	
+用户端	登录用户	show	show (show/:id)	R	GET	show/:id	StoreProduct/show	
+用户端	登录用户	good_list	get Good List (good_list/:id)	R	GET	good_list/:id	StoreProduct/getGoodList	
+用户端	登录用户	qrcode	qrcode (/qrcode/:id)	R	GET	/qrcode/:id	StoreProduct/qrcode	
+用户端	登录用户	category/hotranking	cate Hot Ranking (category/hotranking)	R	GET	category/hotranking	StoreCategory/cateHotRanking	
+用户端	登录用户	bag/explain	get Bag Explain (bag/explain)	R	GET	bag/explain	StoreProduct/getBagExplain	
+用户端	登录用户	reply/lst	lst (/reply/lst/:id)	R	GET	/reply/lst/:id	StoreReply/lst	
+用户端	登录用户	presell/lst	预售	R	GET	/presell/lst	StoreProductPresell/lst	
+用户端	登录用户	presell/detail	detail (/presell/detail/:id)	R	GET	/presell/detail/:id	StoreProductPresell/detail	
+用户端	登录用户	presell/agree	预售协议	R	GET	presell/agree	StoreProductPresell/getAgree	
+用户端	登录用户	assist/lst	助力	R	GET	/assist/lst	StoreProductAssist/lst	
+用户端	登录用户	group/lst	拼团	R	GET	group/lst	StoreProductGroup/lst	
+用户端	登录用户	group/detail	detail (group/detail/:id)	R	GET	group/detail/:id	StoreProductGroup/detail	
+用户端	登录用户	group/count	user Count (group/count)	R	GET	group/count	StoreProductGroup/userCount	
+用户端	登录用户	group/category	category (group/category)	R	GET	group/category	StoreProductGroup/category	
+用户端	登录用户	group/get	group Buying (group/get/:id)	CR	GET	group/get/:id	StoreProductGroup/groupBuying	
+用户端	登录用户	guarantee	guarantee Template (/guarantee/:id)	R	GET	/guarantee/:id	StoreProduct/guaranteeTemplate	
+用户端	登录用户	preview	preview (/preview)	R	GET	/preview	StoreProduct/preview	
+用户端	登录用户	price_rule	price Rule (/price_rule/:id)	R	GET	/price_rule/:id	StoreProduct/priceRule	
+用户端	登录用户	cate_hot	cate Hot List (/cate_hot)	R	GET	/cate_hot	StoreProduct/cateHotList	
+用户端	登录用户	get_spec	商品列表获取商品规格	R	GET	/get_spec/:id	StoreProduct/getSpec	
+用户端	登录用户	recommendProduct	商品列表获取推荐商品	R	GET	/recommendProduct	StoreProduct/recommendProduct	
+用户端	登录用户	reservation/getMonth	show Month (/reservation/getMonth/:id)	R	GET	/reservation/getMonth/:id	StorePrdouctReservation/showMonth	
+用户端	登录用户	reservation/getDay	show Day (/reservation/getDay/:id)	R	GET	/reservation/getDay/:id	StorePrdouctReservation/showDay	
+用户端	登录用户	reservation/checkRange	check Range (/reservation/checkRange)	U	POST	/reservation/checkRange	StorePrdouctReservation/checkRange	
+用户端	登录用户	bag	礼包 product/spu/bag	R	GET	/bag	StoreSpu/bag	
+用户端	登录用户	lst	商品 product/spu/lst	R	GET	/lst	StoreSpu/lst	
+用户端	登录用户	hot	热门 product/spu/hot/:type	R	GET	/hot/:type	StoreSpu/hot	
+用户端	登录用户	recommend	推荐 product/spu/recommend	R	GET	/recommend	StoreSpu/recommend	
+用户端	登录用户	merchant	商户商品  product/spu/merchant/:id	R	GET	/merchant/:id	StoreSpu/merProductLst	
+用户端	登录用户	bag/recommend	礼包推荐  product/spu/bag/recommend	R	GET	/bag/recommend	StoreSpu/bagRecommend	
+用户端	登录用户	active/category	活动分类  product/spu/active/category/:type	R	GET	/active/category/:type	StoreSpu/activeCategory	
+用户端	登录用户	labels	标签获取数据	R	GET	/labels	StoreSpu/labelsLst	
+用户端	登录用户	local	本地生活商品	R	GET	/local/:id	StoreSpu/local	
+用户端	登录用户	copy	复制口令	R	GET	/copy	StoreSpu/copy	
+用户端	登录用户	get	get (/get/:id)	R	GET	/get/:id	StoreSpu/get	
+用户端	登录用户	coupon_product	优惠券商品列表	R	GET	/coupon_product	StoreSpu/getProductByCoupon	
+用户端	登录用户	get_hot_ranking	热卖排行	R	GET	/get_hot_ranking	StoreSpu/getHotRanking	
+用户端	登录用户	params	商品参数	R	GET	/params	StoreParams/select	
+用户端	登录用户	params_value	商品参数值	R	GET	/params_value/:id	StoreParams/getValue	
+用户端	登录用户	hot_lst	商品热搜	R	GET	/hot_lst	StoreProduct/getHotList	
+用户端	登录用户	hot_top	get Hot Top (/hot_top)	R	GET	/hot_top	StoreProduct/getHotTop	
+用户端	登录用户	lst	lst (/lst)	R	GET	/lst	BroadcastRoom/lst	
+用户端	登录用户	hot	hot (/hot)	R	GET	/hot	BroadcastRoom/hot	
+用户端	登录用户	product	coupon (product)	R	GET	product	api.store.product.StoreCoupon/coupon	
+用户端	登录用户	store	mer Coupon (store/:id)	R	GET	store/:id	api.store.product.StoreCoupon/merCoupon	
+用户端	登录用户	list	lst (list)	R	GET	list	api.store.product.StoreCoupon/lst	
+用户端	登录用户	getlst	get List (getlst)	R	GET	getlst	api.store.product.StoreCoupon/getList	
+用户端	登录用户	new_people	new People (new_people)	R	GET	new_people	api.store.product.StoreCoupon/newPeople	
+用户端	登录用户	lst	lst (/lst)	R	GET	/lst	Merchant/lst	
+用户端	登录用户	product/lst	product List (/product/lst/:id)	R	GET	/product/lst/:id	Merchant/productList	
+用户端	登录用户	category/lst	category List (/category/lst/:id)	R	GET	/category/lst/:id	Merchant/categoryList	
+用户端	登录用户	detail/0	system Detail (/detail/0)	R	GET	/detail/0	Merchant/systemDetail	
+用户端	登录用户	detail	detail (/detail/:id)	R	GET	/detail/:id	Merchant/detail	
+用户端	登录用户	qrcode	qrcode (/qrcode/:id)	R	GET	/qrcode/:id	Merchant/qrcode	
+用户端	登录用户	local	local Lst (/local)	R	GET	/local	Merchant/localLst	
+用户端	登录用户	localDetail	local Detail (/localDetail/:id)	R	GET	/localDetail/:id	Merchant/localDetail	
+用户端	登录用户	store/certificate	get Mer Certificate (store/certificate/:merId)	R	POST	store/certificate/:merId	api.Auth/getMerCertificate	
+用户端	登录用户	lst	lst (/lst/:cid)	R	GET	/lst/:cid	Article/lst	
+用户端	登录用户	list	list (/list)	R	GET	/list	Article/list	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	Article/detail	
+用户端	登录用户	category/lst	lst (/category/lst)	R	GET	/category/lst	ArticleCategory/lst	
+用户端	登录用户	intention/create	申请商户	C	POST	intention/create	api.store.merchant.MerchantIntention/create	
+用户端	登录用户	intention/cate	cate Lst (intention/cate)	R	GET	intention/cate	api.store.merchant.MerchantIntention/cateLst	
+用户端	登录用户	intention/type	type Lst (intention/type)	R	GET	intention/type	api.store.merchant.MerchantIntention/typeLst	
+用户端	登录用户	intention/circles	circles (intention/circles)	R	GET	intention/circles	api.store.merchant.MerchantIntention/circles	
+用户端	登录用户	intention/business	business (intention/business)	R	GET	intention/business	api.store.merchant.MerchantIntention/business	
+用户端	登录用户	common/visit	浏览	C	POST	common/visit	api.Common/visit	
+用户端	登录用户	store/product	user Count (store/product/assist/count)	R	GET	store/product/assist/count	api.store.product.StoreProductAssist/userCount	
+用户端	登录用户	store/expr	get Export Temp (store/expr/temps)	R	GET	store/expr/temps	admin.system.serve.Export/getExportTemp	
+用户端	登录用户	command/copy	复制口令	R	GET	command/copy	api.Common/getCommand	
+用户端	登录用户	lst	lst (lst)	R	GET	lst	/lst	
+用户端	登录用户	store/test	test	O	ANY	store/test	api.Test/test	
+用户端	登录用户	subscribe	subscribe (subscribe)	R	GET	subscribe	api.Common/subscribe	
+用户端	登录用户	home	home (home)	R	GET	home	/home	
+用户端	登录用户	scope	points_mall_scope (scope)	R	GET	scope	/points_mall_scope	
+用户端	登录用户	lst	lst (lst)	R	GET	lst	/lst	
+用户端	登录用户	detail	detail (detail/:id)	R	GET	detail/:id	/detail	
+用户端	登录用户	product_detail	普通商品详情	R	GET	/product_detail	/productDetail	
+用户端	登录用户	seckill	秒杀	R	GET	/seckill	/seckill	
+用户端	登录用户	assist	助力	R	GET	/assist	/assist	
+用户端	登录用户	presell	预售	R	GET	/presell	/presell	
+用户端	登录用户	group	拼团	R	GET	/group	/group	
+用户端	登录用户	spu	商品列表	R	GET	/spu	/spu	
+用户端	登录用户	community	社区	R	GET	/community	/community	
+用户端	登录用户	coupon	优惠券	R	GET	/coupon	/coupon	
+用户端	登录用户	store	品牌好店	R	GET	/store	/store	
+用户端	登录用户	category	二级分类	R	GET	/category	/category	
+用户端	登录用户	broadcast	直播	R	GET	/broadcast	/broadcast	
+用户端	登录用户	hot_top	热卖排行	R	GET	/hot_top	/hot_top	
+用户端	登录用户	fab	悬浮按钮	R	GET	/fab	/fab	
+用户端	登录用户	productCategory	平台商品分类	R	GET	/productCategory	/productCategory	
+用户端	登录用户	lst	lst (/lst)	R	GET	/lst	/lst	
+用户端	登录用户	detail	detail (/detail/:id)	R	GET	/detail/:id	/detail	
+用户端	登录用户	info	get Form Info (/info/:form_id)	R	GET	/info/:form_id	/getFormInfo	
+用户端	登录用户	share_posters	get Share Posters (/share_posters/:id)	R	GET	/share_posters/:id	/getSharePosters	
+用户端	登录用户	recommend	recommend List (/recommend)	R	GET	/recommend	/recommendList	
+用户端	登录用户	options	options (/options)	R	GET	/options	/options	
+用户端	登录用户	sign/info	签到数据信息获取	R	GET	sign/info	UserSign/info	
+用户端	登录用户	service/info	获取商户基本信息	R	GET	service/info/:id	api.store.service.Service/merchantInfo	
+用户端	登录用户	has_service	has Service (has_service/:id)	R	GET	has_service/:id	api.store.service.Service/hasService	
+用户端	登录用户	upload/image	上传图片	C	POST	upload/image/:field	api.Common/uploadImage	
+用户端	登录用户	scan_upload/image	scan Upload Image (scan_upload/image/:field/:token)	C	POST	scan_upload/image/:field/:token	api.Common/scanUploadImage	
+用户端	登录用户	upload/certificate	入住商户上传证件接口	C	POST	upload/certificate/:field	api.Common/uploadCertificate	
+用户端	登录用户	config	公共配置	R	GET	config	api.Common/config	
+用户端	登录用户	navigation	get Navigation (navigation)	R	GET	navigation	api.Common/getNavigation	

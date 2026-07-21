@@ -1,0 +1,1334 @@
+portal	module_path	page	page_route	action	crud	source	identifier
+平台后台	内容	内容	/content	(页面入口)	R	待补	
+平台后台	内容 / 文章	文章	/cms	文章分类详情	R	路由	systemArticleCategoryDetail
+平台后台	内容 / 文章	文章	/cms	文章列表	R	路由	systemArticlArticleLst
+平台后台	内容 / 文章	文章	/cms	文章添加	C	路由	systemArticleArticleCreate
+平台后台	内容 / 文章	文章	/cms	文章编辑	U	路由	systemArticArticleleUpdate
+平台后台	内容 / 文章	文章	/cms	文章删除	D	路由	systemArticArticleleDelete
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类列表	R	菜单权限	systemArticleCategoryLst
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类添加	C	菜单权限	systemArticleCategoryCreate
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类编辑	U	菜单权限	systemArticleCategoryUpdate
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类修改状态	U	菜单权限	systemArticleCategoryStatus
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类删除	D	菜单权限	systemArticleCategoryDelete
+平台后台	内容 / 文章 / 文章分类	文章分类	/cms/articleCategory	文章分类详情	R	菜单权限	systemArticleCategoryDetail
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章列表	R	菜单权限	systemArticlArticleLst
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章添加	C	菜单权限	systemArticleArticleCreate
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章编辑	U	菜单权限	systemArticArticleleUpdate
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章删除	D	菜单权限	systemArticArticleleDelete
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章详情	R	菜单权限	systemArticArticleleDetail
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	文章修改状态	U	菜单权限	systemArticlArticlStatus
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	上传图片	C	菜单权限	uploadImage
+平台后台	内容 / 文章 / 文章管理	文章管理	/cms/article	素材列表	R	菜单权限	systemAttachmentLst
+平台后台	内容 / 社区	社区	/community	文章详情	R	路由	systemCommunityShow
+平台后台	内容 / 社区	社区	/community	统计	R	路由	systemCommunityTitle
+平台后台	内容 / 社区	社区	/community	社区分类状态	U	路由	systemCommunityCategoryLst
+平台后台	内容 / 社区	社区	/community	社区分类添加表单	C	路由	systemCommunityCategoryCreateForm
+平台后台	内容 / 社区	社区	/community	社区分类添加	C	路由	systemCommunityCategoryCreate
+平台后台	内容 / 社区	社区	/community	社区分类编辑表单	U	路由	systemCommunityCategoryUpdateForm
+平台后台	内容 / 社区	社区	/community	社区分类编辑	U	路由	systemCommunityCategoryUpdate
+平台后台	内容 / 社区	社区	/community	社区分类详情	R	路由	systemCommunityCategoryDetail
+平台后台	内容 / 社区	社区	/community	社区分类删除	D	路由	systemCommunityCategoryDelete
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	文章列表	R	菜单权限	systemCommunityLst
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	文章详情	R	菜单权限	systemCommunityDetail
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	文章编辑	U	菜单权限	systemCommunityUpdate
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	文章删除	D	菜单权限	systemCommunityDelete
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	修改状态	U	菜单权限	systemCommunityStatus
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	文章详情	RU	菜单权限	systemCommunityShow
+平台后台	内容 / 社区 / 社区内容	社区内容	/community/list	统计	R	菜单权限	systemCommunityTitle
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类状态	RU	菜单权限	systemCommunityCategoryLst
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类添加	C	菜单权限	systemCommunityCategoryCreate
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类编辑	U	菜单权限	systemCommunityCategoryUpdate
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类详情	R	菜单权限	systemCommunityCategoryDetail
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类删除	D	菜单权限	systemCommunityCategoryDelete
+平台后台	内容 / 社区 / 社区分类	社区分类	/community/category	社区分类修改状态	U	菜单权限	systemCommunityCategoryStatus
+平台后台	内容 / 社区 / 社区评论	社区评论	/community/reply	社区评论列表	R	菜单权限	systemCommunityReplyLst
+平台后台	内容 / 社区 / 社区评论	社区评论	/community/reply	社区评论删除	D	菜单权限	systemCommunityReplyDelete
+平台后台	内容 / 社区 / 社区评论	社区评论	/community/reply	社区评论审核	U	菜单权限	systemCommunityReplyStatus
+平台后台	内容 / 社区 / 社区评论	社区评论	/community/reply	内容评论列表	R	菜单权限	systemCommunityReply
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题	R	菜单权限	systemCommunityTopicLst
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题添加	C	菜单权限	systemCommunityTopicCreate
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题编辑	U	菜单权限	systemCommunityTopicUpdate
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题详情 	R	菜单权限	systemCommunityTopicDetail
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题删除	D	菜单权限	systemCommunityTopicDelete
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题修改状态	U	菜单权限	systemCommunityTopicStatus
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	社区话题推荐	U	菜单权限	systemCommunityTopicHot
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	上传图片	C	菜单权限	uploadImage
+平台后台	内容 / 社区 / 社区话题	社区话题	/community/topic	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	内容 / 社区 / 社区配置	社区配置	/systemForm/Basics/community	编辑配置信息	CU	菜单权限	configSave
+平台后台	分销	分销	/promoter	记录	R	路由	systemSpreadOrderStatus
+平台后台	分销	分销	/promoter	关联订单	R	路由	systemSpreadOrderChildrenList
+平台后台	分销	分销	/promoter	列表	R	路由	systemOrderLst
+平台后台	分销	分销	/promoter	金额统计	R	路由	systemOrderStat
+平台后台	分销	分销	/promoter	快递查询	R	路由	systemOrderExpress
+平台后台	分销	分销	/promoter	头部统计	R	路由	systemOrderTitle
+平台后台	分销	分销	/promoter	详情	R	路由	systemOrderDetail
+平台后台	分销	分销	/promoter	导出	R	路由	systemOrderExcel
+平台后台	分销 / 佣金说明	佣金说明	/promoter/commission	佣金说明	C	菜单权限	systemAgreeSave
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	分销员列表	R	菜单权限	systemPromoterUserLst
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	分销员统计	R	菜单权限	systemPromoterUserCount
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	修改分销员等级	CRU	菜单权限	systemUserSpreadSave
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	推广人列表	R	菜单权限	systemUserSpreadLst
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	推广人订单	R	菜单权限	systemUserSpreadOrder
+平台后台	分销 / 分销员列表	分销员列表	/promoter/user	清除推广人	RD	菜单权限	systemUserSpreadClear
+平台后台	分销 / 分销海报	分销海报	/group/config/68	详情	R	菜单权限	groupDetail
+平台后台	分销 / 分销海报	分销海报	/group/config/68	列表	R	菜单权限	groupDataLst
+平台后台	分销 / 分销海报	分销海报	/group/config/68	添加	C	菜单权限	groupDataCreate
+平台后台	分销 / 分销海报	分销海报	/group/config/68	编辑	U	菜单权限	groupDataUpdate
+平台后台	分销 / 分销海报	分销海报	/group/config/68	删除	D	菜单权限	groupDataDelete
+平台后台	分销 / 分销海报	分销海报	/group/config/68	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	分销 / 分销海报	分销海报	/group/config/68	上传图片	C	菜单权限	uploadImage
+平台后台	分销 / 分销海报	分销海报	/group/config/68	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	分销 / 分销特权	分销特权	/group/config/75	详情	R	菜单权限	groupDetail
+平台后台	分销 / 分销特权	分销特权	/group/config/75	列表	R	菜单权限	groupDataLst
+平台后台	分销 / 分销特权	分销特权	/group/config/75	添加	C	菜单权限	groupDataCreate
+平台后台	分销 / 分销特权	分销特权	/group/config/75	编辑	U	菜单权限	groupDataUpdate
+平台后台	分销 / 分销特权	分销特权	/group/config/75	删除	D	菜单权限	groupDataDelete
+平台后台	分销 / 分销特权	分销特权	/group/config/75	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	分销 / 分销特权	分销特权	/group/config/75	上传图片	C	菜单权限	uploadImage
+平台后台	分销 / 分销特权	分销特权	/group/config/75	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	统计	R	菜单权限	systemStoreBagLstFilter
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	列表	R	菜单权限	systemStoreBagLst
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	详情	R	菜单权限	systemStoreBagDetail
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	编辑	U	菜单权限	systemStoreBagUpdate
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	修改状态	U	菜单权限	systemStoreBagSwitchStatus
+平台后台	分销 / 分销礼包	分销礼包	/promoter/gift	显示/隐藏	U	菜单权限	systemStoreBagChangeUsed
+平台后台	分销 / 分销等级	分销等级	brokerage	(页面入口)	R	待补	
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	分销员等级列表	R	菜单权限	systemUserBrokerageLst
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	分销员等级添加	C	菜单权限	systemUserBrokerageCreate
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	分销员等级编辑	U	菜单权限	systemUserBrokerageUpdate
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	分销员等级删除	D	菜单权限	systemUserBrokerageDelete
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	上传图片	C	菜单权限	uploadImage
+平台后台	分销 / 分销等级 / 分销员等级	分销员等级	/promoter/membership_level	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	分销 / 分销等级 / 等级规则	等级规则	/promoter/distribution	等级规则	C	菜单权限	systemAgreeSave
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	金额统计	R	菜单权限	systemSpreadOrderStat
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	快递查询	R	菜单权限	systemSpreadOrderExpress
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	头部统计	R	菜单权限	systemSpreadOrderTitle
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	详情	R	菜单权限	systemSpreadOrderDetail
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	导出	R	菜单权限	systemSpreadOrderExcel
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	记录	RU	菜单权限	systemSpreadOrderStatus
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	关联订单	R	菜单权限	systemSpreadOrderChildrenList
+平台后台	分销 / 分销订单	分销订单	/promoter/orderList	列表	R	菜单权限	systemSpreadOrderLst
+平台后台	分销 / 分销说明	分销说明	/promoter/retail	(页面入口)	R	待补	
+平台后台	分销 / 分销配置	分销配置	/systemForm/Basics/distribution_tabs	配置保存	CU	菜单权限	configOthersSettingUpdate
+平台后台	分销 / 提现银行	提现银行	/group/config/76	详情	R	菜单权限	groupDetail
+平台后台	分销 / 提现银行	提现银行	/group/config/76	列表	R	菜单权限	groupDataLst
+平台后台	分销 / 提现银行	提现银行	/group/config/76	添加	C	菜单权限	groupDataCreate
+平台后台	分销 / 提现银行	提现银行	/group/config/76	编辑	U	菜单权限	groupDataUpdate
+平台后台	分销 / 提现银行	提现银行	/group/config/76	删除	D	菜单权限	groupDataDelete
+平台后台	分销 / 提现银行	提现银行	/group/config/76	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	分销 / 提现银行	提现银行	/group/config/76	上传图片	C	菜单权限	uploadImage
+平台后台	分销 / 提现银行	提现银行	/group/config/76	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	商品	商品	/product	平台参数列表	R	路由	systemStoreParameterTemplateLst
+平台后台	商品	商品	/product	商户参数模板	R	路由	systemStoreParameterTemplateMerLst
+平台后台	商品	商品	/product	详情	R	路由	systemStoreParameterTemplateDetail
+平台后台	商品	商品	/product	删除	D	路由	systemStoreParameterTemplateDelete
+平台后台	商品	商品	/product	添加	C	路由	systemStoreParameterTemplateCreate
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	价格说明列表	R	菜单权限	systemPriceRuleLst
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	添加价格说明	C	菜单权限	systemPriceRuleCreate
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	修改价格说明	U	菜单权限	systemPriceRuleUpdate
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	价格说明修改状态	U	菜单权限	systemPriceRuleStatus
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	删除价格说明	D	菜单权限	systemPriceRuleDelete
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	上传图片	C	菜单权限	uploadImage
+平台后台	商品 / 价格说明	价格说明	/product/priceDescription	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	列表	R	菜单权限	systemGuaranteeLst
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	添加	C	菜单权限	systemGuaranteeCreate
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	编辑	U	菜单权限	systemGuaranteeUpdate
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	详情	R	菜单权限	systemGuaranteeDetail
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	删除	D	菜单权限	systemGuaranteeDelete
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	排序	U	菜单权限	systemGuaranteeSort
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	修改状态	U	菜单权限	systemGuaranteeStatus
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	上传图片	C	菜单权限	uploadImage
+平台后台	商品 / 保障服务	保障服务	/product/guarantee	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	商品 / 品牌管理	品牌管理	/product/brand	(页面入口)	R	待补	
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	编辑	U	菜单权限	systemStoreBrandCategoryUpdate
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	列表	R	菜单权限	systemStoreBrandCategoryLst
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	详情	R	菜单权限	systemStoreBrandCategoryDtailt
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	添加	C	菜单权限	systemStoreBrandCategoryCreate
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	删除	D	菜单权限	systemStoreBrandCategoryDelete
+平台后台	商品 / 品牌管理 / 品牌分类	品牌分类	/product/band/brandClassify	修改状态	U	菜单权限	systemStoreBrandCategorySwitchStatus
+平台后台	商品 / 品牌管理 / 品牌列表	品牌列表	/product/band/brandList	列表	R	菜单权限	systemStoreBrandLst
+平台后台	商品 / 品牌管理 / 品牌列表	品牌列表	/product/band/brandList	修改状态	U	菜单权限	systemStoreBrandSwithStatus
+平台后台	商品 / 品牌管理 / 品牌列表	品牌列表	/product/band/brandList	添加	C	菜单权限	systemStoreBrandCreate
+平台后台	商品 / 品牌管理 / 品牌列表	品牌列表	/product/band/brandList	编辑	U	菜单权限	systemStoreBrandUpdate
+平台后台	商品 / 品牌管理 / 品牌列表	品牌列表	/product/band/brandList	删除	D	菜单权限	systemStoreBrandDelete
+平台后台	商品 / 商品分类	商品分类	/product/classify	编辑	U	菜单权限	systemStoreCategoryUpdate
+平台后台	商品 / 商品分类	商品分类	/product/classify	列表	R	菜单权限	systemStoreCategoryLst
+平台后台	商品 / 商品分类	商品分类	/product/classify	详情	R	菜单权限	systemStoreCategoryDtailt
+平台后台	商品 / 商品分类	商品分类	/product/classify	添加	C	菜单权限	systemStoreCategoryCreate
+平台后台	商品 / 商品分类	商品分类	/product/classify	删除	D	菜单权限	systemStoreCategoryDelete
+平台后台	商品 / 商品分类	商品分类	/product/classify	修改状态	U	菜单权限	systemStoreCategorySwitchStatus
+平台后台	商品 / 商品分类	商品分类	/product/classify	修改推荐	U	菜单权限	systemStoreCategorySwitchIsHot
+平台后台	商品 / 商品分类	商品分类	/product/classify	上传图片	C	菜单权限	uploadImage
+平台后台	商品 / 商品分类	商品分类	/product/classify	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	编辑	U	路由	systemStoreParameterTemplateUpdate
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	删除属性	D	路由	systemStoreParameterTemplateDeleteValue
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	添加表单	C	路由	systemStoreCategoryCreateForm
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	编辑表单	U	路由	systemStoreCategoryUpdateForm
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	编辑	U	路由	systemStoreCategoryUpdate
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	列表	R	路由	systemStoreCategoryLst
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	详情	R	路由	systemStoreCategoryDtailt
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	添加	C	路由	systemStoreCategoryCreate
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	删除	D	路由	systemStoreCategoryDelete
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	修改状态	U	路由	systemStoreCategorySwitchStatus
+平台后台	商品 / 商品参数	商品参数	/product/specsMain	修改推荐	U	路由	systemStoreCategorySwitchIsHot
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	平台参数列表	R	菜单权限	systemStoreParameterTemplateLst
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	详情	R	菜单权限	systemStoreParameterTemplateDetail
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	删除	D	菜单权限	systemStoreParameterTemplateDelete
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	添加	C	菜单权限	systemStoreParameterTemplateCreate
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	编辑	U	菜单权限	systemStoreParameterTemplateUpdate
+平台后台	商品 / 商品参数 / 平台商品参数	平台商品参数	/product/specs	删除属性	D	菜单权限	systemStoreParameterTemplateDeleteValue
+平台后台	商品 / 商品参数 / 店铺商品参数	店铺商品参数	/product/merSpecs	商户参数模板	R	菜单权限	systemStoreParameterTemplateMerLst
+平台后台	商品 / 商品标签	商品标签	/product/label	列表	R	菜单权限	systemStoreProductLabelLst
+平台后台	商品 / 商品标签	商品标签	/product/label	添加	C	菜单权限	systemStoreProductLabelCreate
+平台后台	商品 / 商品标签	商品标签	/product/label	编辑	U	菜单权限	systemStoreProductLabelUpdate
+平台后台	商品 / 商品标签	商品标签	/product/label	详情	R	菜单权限	systemStoreProductLabelDetail
+平台后台	商品 / 商品标签	商品标签	/product/label	删除	D	菜单权限	systemStoreProductLabelDelete
+平台后台	商品 / 商品标签	商品标签	/product/label	修改状态	U	菜单权限	systemStoreProductLabelStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	统计	R	菜单权限	systemStoreProductLstFilter
+平台后台	商品 / 商品管理	商品管理	/product/examine	列表	R	菜单权限	systemStoreProductLst
+平台后台	商品 / 商品管理	商品管理	/product/examine	详情	R	菜单权限	systemStoreProductDetail
+平台后台	商品 / 商品管理	商品管理	/product/examine	编辑	U	菜单权限	systemStoreProductUpdate
+平台后台	商品 / 商品管理	商品管理	/product/examine	上下架	U	菜单权限	systemStoreProductSwitchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	分销状态变更商品检测	U	菜单权限	systemStoreProductCheck
+平台后台	商品 / 商品管理	商品管理	/product/examine	显示/隐藏	U	菜单权限	systemStoreProductChangeUsed
+平台后台	商品 / 商品管理	商品管理	/product/examine	虚拟销量	C	菜单权限	systemStoreProductAddFicti
+平台后台	商品 / 商品管理	商品管理	/product/examine	设置标签	U	菜单权限	systemStoreProductLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量上下架	U	菜单权限	systemStoreProductSwitchBatchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置标签	U	菜单权限	systemStoreProductSwitchBatchLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置推荐	U	菜单权限	systemStoreProductSwitchBatchHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取商品操作记录	R	菜单权限	systemStoreProductGetOperateList
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取自营商品列表	R	菜单权限	systemStoreProductGetSelfProductList
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置分类推荐	U	菜单权限	systemStoreProductSwitchBatchCateHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量复制商品到店铺	C	菜单权限	systemStoreProductBatchCopy
+平台后台	商品 / 商品管理	商品管理	/product/examine	统计	R	菜单权限	systemStoreProductLstFilter
+平台后台	商品 / 商品管理	商品管理	/product/examine	列表	R	菜单权限	systemStoreProductLst
+平台后台	商品 / 商品管理	商品管理	/product/examine	详情	R	菜单权限	systemStoreProductDetail
+平台后台	商品 / 商品管理	商品管理	/product/examine	编辑	U	菜单权限	systemStoreProductUpdate
+平台后台	商品 / 商品管理	商品管理	/product/examine	上下架	U	菜单权限	systemStoreProductSwitchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量上下架	U	菜单权限	systemStoreProductSwitchBatchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置标签	U	菜单权限	systemStoreProductSwitchBatchLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置推荐	U	菜单权限	systemStoreProductSwitchBatchHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置分类推荐	U	菜单权限	systemStoreProductSwitchBatchCateHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	分销状态变更商品检测	U	菜单权限	systemStoreProductCheck
+平台后台	商品 / 商品管理	商品管理	/product/examine	显示/隐藏	U	菜单权限	systemStoreProductChangeUsed
+平台后台	商品 / 商品管理	商品管理	/product/examine	虚拟销量	C	菜单权限	systemStoreProductAddFicti
+平台后台	商品 / 商品管理	商品管理	/product/examine	设置标签	U	菜单权限	systemStoreProductLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取商品操作记录	R	菜单权限	systemStoreProductGetOperateList
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取自营商品列表	R	菜单权限	systemStoreProductGetSelfProductList
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量复制商品到店铺	C	菜单权限	systemStoreProductBatchCopy
+平台后台	商品 / 商品管理	商品管理	/product/examine	统计	R	菜单权限	systemStoreProductLstFilter
+平台后台	商品 / 商品管理	商品管理	/product/examine	列表	R	菜单权限	systemStoreProductLst
+平台后台	商品 / 商品管理	商品管理	/product/examine	详情	R	菜单权限	systemStoreProductDetail
+平台后台	商品 / 商品管理	商品管理	/product/examine	编辑	U	菜单权限	systemStoreProductUpdate
+平台后台	商品 / 商品管理	商品管理	/product/examine	上下架	U	菜单权限	systemStoreProductSwitchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量上下架	U	菜单权限	systemStoreProductSwitchBatchStatus
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置标签	U	菜单权限	systemStoreProductSwitchBatchLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置推荐	U	菜单权限	systemStoreProductSwitchBatchHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量设置分类推荐	U	菜单权限	systemStoreProductSwitchBatchCateHot
+平台后台	商品 / 商品管理	商品管理	/product/examine	分销状态变更商品检测	U	菜单权限	systemStoreProductCheck
+平台后台	商品 / 商品管理	商品管理	/product/examine	显示/隐藏	U	菜单权限	systemStoreProductChangeUsed
+平台后台	商品 / 商品管理	商品管理	/product/examine	虚拟销量	C	菜单权限	systemStoreProductAddFicti
+平台后台	商品 / 商品管理	商品管理	/product/examine	设置标签	U	菜单权限	systemStoreProductLabels
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取商品操作记录	R	菜单权限	systemStoreProductGetOperateList
+平台后台	商品 / 商品管理	商品管理	/product/examine	获取自营商品列表	R	菜单权限	systemStoreProductGetSelfProductList
+平台后台	商品 / 商品管理	商品管理	/product/examine	批量复制商品到店铺	C	菜单权限	systemStoreProductBatchCopy
+平台后台	商品 / 活动标签	活动标签	/product/activityLabel	(页面入口)	R	待补	
+平台后台	商品 / 评论管理	评论管理	/product/comment	列表	R	菜单权限	systemProductReplyLst
+平台后台	商品 / 评论管理	评论管理	/product/comment	添加虚拟评论	C	菜单权限	systemProductReplyCreate
+平台后台	商品 / 评论管理	评论管理	/product/comment	排序	U	菜单权限	systemProductReplySort
+平台后台	商品 / 评论管理	评论管理	/product/comment	删除	D	菜单权限	systemProductReplyDelete
+平台后台	商品 / 评论管理	评论管理	/product/comment	上传图片	C	菜单权限	uploadImage
+平台后台	商品 / 评论管理	评论管理	/product/comment	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	客服	客服	/service	用户与商户聊天记录	R	路由	adminServiceMerchantUserLogLst
+平台后台	客服	客服	/service	列表	R	路由	adminServiceReplyLst
+平台后台	客服	客服	/service	添加	C	路由	adminServiceReplyCreate
+平台后台	客服	客服	/service	编辑	U	路由	adminServiceReplyUpdate
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	列表	R	菜单权限	adminServiceLst
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	登录	O	菜单权限	adminServiceLogin
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	添加	C	菜单权限	adminServiceCreate
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	编辑	U	菜单权限	adminServiceUpdate
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	修改状态	U	菜单权限	adminServiceSwitchStatus
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	删除	D	菜单权限	adminServiceDelete
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	客服的全部用户 	O	菜单权限	adminServiceServiceUserList
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	用户与客服聊天记录	R	菜单权限	adminServiceServiceUserLogLst
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	客服的聊天用户列表	R	菜单权限	adminServiceServiceMerchantUserList
+平台后台	客服 / 客服列表	客服列表	/service/customer/list	用户与商户聊天记录	R	菜单权限	adminServiceMerchantUserLogLst
+平台后台	客服 / 客服自动回复	客服自动回复	/systemForm/customer_keyword	列表	R	菜单权限	adminServiceReplyLst
+平台后台	客服 / 客服自动回复	客服自动回复	/systemForm/customer_keyword	添加	C	菜单权限	adminServiceReplyCreate
+平台后台	客服 / 客服自动回复	客服自动回复	/systemForm/customer_keyword	编辑	U	菜单权限	adminServiceReplyUpdate
+平台后台	客服 / 客服自动回复	客服自动回复	/systemForm/customer_keyword	切换状态	U	菜单权限	adminServiceReplyStatus
+平台后台	客服 / 客服自动回复	客服自动回复	/systemForm/customer_keyword	删除	D	菜单权限	adminServiceReplyDelete
+平台后台	客服 / 客服设置	客服设置	/systemForm/Basics/service	编辑配置信息	CU	菜单权限	configSave
+平台后台	应用	应用	/apploction	(页面入口)	R	待补	
+平台后台	应用 / 公众号	公众号	/app/wechat	微信菜单配置	R	路由	wechatMenu
+平台后台	应用 / 公众号	公众号	/app/wechat	保存微信菜单配置	C	路由	saveWechatMenu
+平台后台	应用 / 公众号	公众号	/app/wechat	详情	R	路由	wechatReplyInfo
+平台后台	应用 / 公众号	公众号	/app/wechat	编辑	CU	路由	saveWechatReply
+平台后台	应用 / 公众号	公众号	/app/wechat	添加	C	路由	createWechatReply
+平台后台	应用 / 公众号	公众号	/app/wechat	修改	U	路由	updateWechatReply
+平台后台	应用 / 公众号	公众号	/app/wechat	列表	R	路由	wechatReplyLst
+平台后台	应用 / 公众号	公众号	/app/wechat	删除	D	路由	wechatReplyDelete
+平台后台	应用 / 公众号	公众号	/app/wechat	修改状态	U	路由	wechatReplyStatus
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	添加	C	菜单权限	systemWechatNewsCreate
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	编辑	U	菜单权限	systemWechatNewsUpdate
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	删除	D	菜单权限	systemWechatNewsDelete
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	列表	R	菜单权限	systemWechatNewsLst
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	详情	R	菜单权限	systemWechatNewsDetail
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	上传图片	C	菜单权限	uploadImage
+平台后台	应用 / 公众号 / 图文管理	图文管理	/app/wechat/newsCategory	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	同步	U	菜单权限	systemTemplateMessageSync
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	列表	R	菜单权限	systemTemplateMessageLst
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	添加	C	菜单权限	systemTemplateMessageCreate
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	编辑	U	菜单权限	systemTemplateMessageUpdate
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	删除	D	菜单权限	systemTemplateMessageDelete
+平台后台	应用 / 公众号 / 微信模板消息	微信模板消息	/app/wechat/template	修改状态	U	菜单权限	systemTemplateMessageSwitchStatus
+平台后台	应用 / 公众号 / 微信菜单	微信菜单	/app/wechat/menus	微信菜单配置	U	菜单权限	wechatMenu
+平台后台	应用 / 公众号 / 微信菜单	微信菜单	/app/wechat/menus	保存微信菜单配置	CU	菜单权限	saveWechatMenu
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	详情	R	菜单权限	wechatReplyInfo
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	编辑	CU	菜单权限	saveWechatReply
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	添加	C	菜单权限	createWechatReply
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	修改	U	菜单权限	updateWechatReply
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	列表	R	菜单权限	wechatReplyLst
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	删除	D	菜单权限	wechatReplyDelete
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	修改状态	U	菜单权限	wechatReplyStatus
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	上传图片	C	菜单权限	wechatUploadImage
+平台后台	应用 / 公众号 / 自动回复	自动回复	/admin/app/wechat/reply	上传语音	C	菜单权限	wechatUploadVoice
+平台后台	应用 / 公众号 / 自动回复 / 关键字回复	关键字回复	/app/wechat/reply/keyword	(页面入口)	R	待补	
+平台后台	应用 / 公众号 / 自动回复 / 微信关注回复	微信关注回复	/app/wechat/reply/follow/subscribe	(页面入口)	R	待补	
+平台后台	应用 / 公众号 / 自动回复 / 无效关键词回复	无效关键词回复	/app/wechat/reply/index/default	(页面入口)	R	待补	
+平台后台	应用 / 小程序	小程序	/app/routine	小程序配置	R	路由	configRoutineConfig
+平台后台	应用 / 小程序	小程序	/app/routine	小程序下载	R	路由	configRoutineDownload
+平台后台	应用 / 小程序 / 小程序下载	小程序下载	/app/routine/download	小程序下载	R	菜单权限	configRoutineDownload
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	同步	U	菜单权限	systemTemplateMessageMinSync
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	列表 	R	菜单权限	systemTemplateMessageMinList
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	添加	C	菜单权限	systemTemplateMessageMinCreate
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	编辑	U	菜单权限	systemTemplateMessageMinUpdate
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	删除	D	菜单权限	systemTemplateMessageMinDelete
+平台后台	应用 / 小程序 / 小程序订阅消息	小程序订阅消息	/app/routine/template	修改状态	U	菜单权限	systemTemplateMessageMinSwitchStatus
+平台后台	店铺	店铺	/mer	分账商户申请备注	C	路由	systemMerchantApplymentsMarrkSave
+平台后台	店铺	店铺	/mer	列表	R	路由	systemOrderProfitsharingLst
+平台后台	店铺 / 区域代理	区域代理	/business-zones/manage	(页面入口)	R	待补	
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	商圈代理添加	C	菜单权限	systemCircleAgentCreate
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	商圈代理编辑	U	菜单权限	systemCircleAgentUpdate
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	商圈代理删除	D	菜单权限	systemCircleAgentDelete
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	关联商户列表	R	菜单权限	systemCircleAgentMerchant
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	代理选项	O	菜单权限	systemCircleAgentOptions
+平台后台	店铺 / 区域代理 / 代理人员	代理人员	/business-zones/agents	重置密码	O	菜单权限	systemCircleAgentResetPassword
+平台后台	店铺 / 区域代理 / 代理审核	代理审核	/business-zones/agent-review	商圈代理审核	U	菜单权限	systemCircleAgentAudit
+平台后台	店铺 / 区域代理 / 代理设置	代理设置	/business-zones/settings	(页面入口)	R	待补	
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈列表	R	菜单权限	systemCircleList
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈详情	R	菜单权限	systemCircleDetail
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈添加	C	菜单权限	systemCircleCreate
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈编辑	U	菜单权限	systemCircleUpdate
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈删除	D	菜单权限	systemCircleDelete
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	商圈状态切换	U	菜单权限	systemCircleSwitch
+平台后台	店铺 / 区域代理 / 区域列表	区域列表	/business-zones/index	关联商户列表	R	菜单权限	systemCircleMerchantList
+平台后台	店铺 / 商户管理	商户管理	/merchant	分账商户申请备注	C	路由	systemMerchantApplymentsMarrkSave
+平台后台	店铺 / 商户管理	商户管理	/merchant	列表	R	路由	systemOrderProfitsharingLst
+平台后台	店铺 / 商户管理 / 商户入驻审核	商户入驻审核	/merchant/review	商圈代理审核	U	菜单权限	systemCircleAgentAudit
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈列表	R	菜单权限	systemCircleList
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈详情	R	菜单权限	systemCircleDetail
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈添加	C	菜单权限	systemCircleCreate
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈编辑	U	菜单权限	systemCircleUpdate
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈删除	D	菜单权限	systemCircleDelete
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	商圈状态切换	U	菜单权限	systemCircleSwitch
+平台后台	店铺 / 商户管理 / 商户列表	商户列表	/merchant/index	关联商户列表	R	菜单权限	systemCircleMerchantList
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	商圈代理添加	C	菜单权限	systemCircleAgentCreate
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	商圈代理编辑	U	菜单权限	systemCircleAgentUpdate
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	商圈代理删除	D	菜单权限	systemCircleAgentDelete
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	关联商户列表	R	菜单权限	systemCircleAgentMerchant
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	代理选项	O	菜单权限	systemCircleAgentOptions
+平台后台	店铺 / 商户管理 / 商户管理员	商户管理员	/merchant/admin-list	重置密码	O	菜单权限	systemCircleAgentResetPassword
+平台后台	店铺 / 商户管理 / 商户设置	商户设置	/merchant/apply-setting	(页面入口)	R	待补	
+平台后台	店铺 / 店铺管理	店铺管理	/mer/mer	(页面入口)	R	待补	
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	虚拟关注量	O	菜单权限	systemMerchantCareFicti
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户列表	CR	菜单权限	systemMerchantCreateForm
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户列表统计	R	菜单权限	systemMerchantCount
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户列表	R	菜单权限	systemMerchantLst
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户添加	C	菜单权限	systemMerchantCreate
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户编辑	U	菜单权限	systemMerchantUpdate
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户修改推荐	U	菜单权限	systemMerchantStatus
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户开启/关闭	O	菜单权限	systemMerchantClose
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户删除	D	菜单权限	systemMerchantDelete
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户修改密码	U	菜单权限	systemMerchantAdminPassword
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户登录	O	菜单权限	systemMerchantLogin
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	修改采集商品次数	CU	菜单权限	systemMerchantChangeCopy
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	详情	R	菜单权限	systemMerchantDetail
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	操作日志	R	菜单权限	systemMerchantOperateList
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	上传图片	C	菜单权限	uploadImage
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	店铺 / 店铺管理 / 商户列表	商户列表	/merchant/list	商户添加店铺	C	菜单权限	systemMerchantBusinessCreate
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	列表	R	菜单权限	systemMerchantIntentionLst
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	审核	U	菜单权限	systemMerchantIntentionStatus
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	删除	D	菜单权限	systemMerchantIntentionDelete
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	备注	U	菜单权限	systemMerchantIntentionMark
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	列表	R	菜单权限	systemMerchantIntentionLst
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	审核	U	菜单权限	systemMerchantIntentionStatus
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	删除	D	菜单权限	systemMerchantIntentionDelete
+平台后台	店铺 / 店铺管理 / 店铺入驻申请	店铺入驻申请	/merchant/application	备注	U	菜单权限	systemMerchantIntentionMark
+平台后台	店铺 / 店铺管理 / 店铺分类	店铺分类	/merchant/classify	商户分类列表	R	菜单权限	systemMerchantCategoryLst
+平台后台	店铺 / 店铺管理 / 店铺分类	店铺分类	/merchant/classify	商户分类添加	C	菜单权限	systemMerchantCategoryCreate
+平台后台	店铺 / 店铺管理 / 店铺分类	店铺分类	/merchant/classify	商户分类删除	D	菜单权限	systemMerchantCategoryDelete
+平台后台	店铺 / 店铺管理 / 店铺分类	店铺分类	/merchant/classify	商户分类编辑	U	菜单权限	systemMerchantCategoryUpdate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	添加	C	菜单权限	systemMerchantRegionCreate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	编辑	U	菜单权限	systemMerchantRegionUpdate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	列表	R	菜单权限	systemMerchantRegionLst
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	删除	D	菜单权限	systemMerchantRegionDelete
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	列表	R	菜单权限	systemStoreGroupLst
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	详情	R	菜单权限	systemStoreGroupDetail
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	添加	C	菜单权限	systemStoreGroupCreate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	编辑	U	菜单权限	systemStoreGroupUpdate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	删除	D	菜单权限	systemStoreGroupDelete
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	状态切换	U	菜单权限	systemStoreGroupSwitchStatus
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	设置店铺分组模板	U	菜单权限	systemStoreGroupSetTemplate
+平台后台	店铺 / 店铺管理 / 店铺分组	店铺分组	/merchant/grouping	关联店铺列表	R	菜单权限	systemStoreGroupStores
+平台后台	店铺 / 店铺管理 / 店铺分账申请	店铺分账申请	/merchant/applyments	分账商户申请列表	CR	菜单权限	systemMerchantApplymentsLst
+平台后台	店铺 / 店铺管理 / 店铺分账申请	店铺分账申请	/merchant/applyments	分账商户申请详情	CR	菜单权限	systemMerchantApplymentsDetail
+平台后台	店铺 / 店铺管理 / 店铺分账申请	店铺分账申请	/merchant/applyments	分账商户申请审核	CU	菜单权限	systemMerchantApplymentsStatus
+平台后台	店铺 / 店铺管理 / 店铺分账申请	店铺分账申请	/merchant/applyments	分账商户申请备注	CU	菜单权限	systemMerchantApplymentsMarrkSave
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户列表	CR	菜单权限	systemMerchantCreateForm
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户列表统计	R	菜单权限	systemMerchantCount
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户列表	R	菜单权限	systemMerchantLst
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户添加	C	菜单权限	systemMerchantCreate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户编辑	U	菜单权限	systemMerchantUpdate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户修改推荐	U	菜单权限	systemMerchantStatus
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户开启/关闭	O	菜单权限	systemMerchantClose
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户删除	D	菜单权限	systemMerchantDelete
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户修改密码	U	菜单权限	systemMerchantAdminPassword
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户登录	O	菜单权限	systemMerchantLogin
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	修改采集商品次数	CU	菜单权限	systemMerchantChangeCopy
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	上传图片	C	菜单权限	uploadImage
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	详情	R	菜单权限	systemMerchantDetail
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	操作日志	R	菜单权限	systemMerchantOperateList
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	虚拟关注量	O	菜单权限	systemMerchantCareFicti
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户添加店铺	C	菜单权限	systemMerchantBusinessCreate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	虚拟关注量	O	菜单权限	systemMerchantCareFicti
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺列表	CR	菜单权限	systemMerchantCreateForm
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺列表统计	R	菜单权限	systemMerchantCount
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺列表	R	菜单权限	systemMerchantLst
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺添加	C	菜单权限	systemMerchantCreate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺编辑	U	菜单权限	systemMerchantUpdate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺修改推荐	U	菜单权限	systemMerchantStatus
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺开启/关闭	O	菜单权限	systemMerchantClose
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺删除	D	菜单权限	systemMerchantDelete
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺修改密码	U	菜单权限	systemMerchantAdminPassword
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	店铺登录	O	菜单权限	systemMerchantLogin
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	修改采集商品次数	CU	菜单权限	systemMerchantChangeCopy
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	详情	R	菜单权限	systemMerchantDetail
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	操作日志	R	菜单权限	systemMerchantOperateList
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	商户添加店铺	C	菜单权限	systemMerchantBusinessCreate
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	上传图片	C	菜单权限	uploadImage
+平台后台	店铺 / 店铺管理 / 店铺列表	店铺列表	/merchant/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	列表	R	菜单权限	systemMerchantTypeLst
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	添加	C	菜单权限	systemMerchantTypeCreate
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	编辑	U	菜单权限	systemMerchantTypeUpdate
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	删除	D	菜单权限	systemMerchantTypeDelete
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	备注	U	菜单权限	systemMerchantTypeMark
+平台后台	店铺 / 店铺管理 / 店铺类型	店铺类型	/merchant/type	备注	RU	菜单权限	systemMerchantTypeDetail
+平台后台	店铺 / 店铺设置	店铺设置	/mer/store	(页面入口)	R	待补	
+平台后台	店铺 / 店铺设置 / 保证金配置	保证金配置	/systemForm/Basics/margin	编辑配置信息	CU	菜单权限	configSave
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	缴纳记录	R	菜单权限	systemMerchantMarginLst
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	扣费记录	R	菜单权限	systemMarginList
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	扣除保证金	O	菜单权限	systemMarginSet
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	退款申请列表	CRD	菜单权限	systemMarginRefundList
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	退款申请详情	CRUD	菜单权限	systemMarginRefundShow
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	审核	U	菜单权限	systemMarginRefundSwitchStatus
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	备注	U	菜单权限	systemMarginRefundMark
+平台后台	店铺 / 店铺设置 / 店铺保证金	店铺保证金	/merchant/deposit_list	待缴列表	R	菜单权限	systemMarginMakeUpMarginLst
+平台后台	店铺 / 店铺设置 / 店铺菜单	店铺菜单	/merchant/system	商户菜单/权限列表	R	菜单权限	systemMerchantMenuGetLst
+平台后台	店铺 / 店铺设置 / 店铺菜单	店铺菜单	/merchant/system	商户菜单/权限添加	C	菜单权限	systemMerchantMenuCreate
+平台后台	店铺 / 店铺设置 / 店铺菜单	店铺菜单	/merchant/system	商户菜单/权限编辑	U	菜单权限	systemMerchantMenuUpdate
+平台后台	店铺 / 店铺设置 / 店铺菜单	店铺菜单	/merchant/system	商户菜单/权限删除	D	菜单权限	systemMerchantMenuDelete
+平台后台	店铺 / 店铺设置 / 说明提示	说明提示	/merchant/type/description	店铺类型说明 	C	菜单权限	systemAgreeSave
+平台后台	用户	用户	/user	详情关联列表	R	路由	systemCouponShowLst
+平台后台	用户	用户	/user	发送优惠券	C	路由	systemCouponSend
+平台后台	用户	用户	/user	批量设置分销员	R	路由	getMemberLevelBatchSpreadForm
+平台后台	用户	用户	/user	批量设置分销员	R	路由	getMemberLevelBatchSpread
+平台后台	用户	用户	/user	用户搜索记录	R	路由	systemUserSearchLog
+平台后台	用户	用户	/user	清除用户搜索记录	R	路由	systemUserClearSearchLog
+平台后台	用户	用户	/user	用户搜索记录导出	R	路由	systemUserExportSearchLog
+平台后台	用户 / 付费会员	付费会员	/user/svip	(页面入口)	R	待补	
+平台后台	用户 / 付费会员 / 付费会员配置	付费会员配置	/systemForm/Basics/svip	编辑配置信息	CU	菜单权限	configSave
+平台后台	用户 / 付费会员 / 会员协议	会员协议	/user/member/vipAgreement	(页面入口)	R	待补	
+平台后台	用户 / 付费会员 / 会员权益	会员权益	/user/member/equity	列表	R	菜单权限	systemUserSvipInterestsLst
+平台后台	用户 / 付费会员 / 会员权益	会员权益	/user/member/equity	编辑	U	菜单权限	systemUserSvipInterestsUpdate
+平台后台	用户 / 付费会员 / 会员权益	会员权益	/user/member/equity	编辑状态	U	菜单权限	systemUserSvipInterestsStatus
+平台后台	用户 / 付费会员 / 会员权益	会员权益	/user/member/equity	上传图片	C	菜单权限	uploadImage
+平台后台	用户 / 付费会员 / 会员权益	会员权益	/user/member/equity	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	列表	R	菜单权限	systemUserSvipLst
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	添加	C	菜单权限	systemUserSvipCreate
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	编辑表单	U	菜单权限	systemUserSvipUpdateForm
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	编辑	U	菜单权限	systemUserSvipTypeUpdate
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	删除	D	菜单权限	systemUserSvipDelete
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	修改状态	U	菜单权限	systemUserSvipStatus
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	上传图片	C	菜单权限	uploadImage
+平台后台	用户 / 付费会员 / 会员类型	会员类型	/user/member/type	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	用户 / 付费会员 / 会员记录	会员记录	/user/member/record	列表	R	路由	systemUserSvipPayLst
+平台后台	用户 / 付费会员 / 会员记录	会员记录	/user/member/record	统计	R	路由	systemUserSvipCountInfo
+平台后台	用户 / 付费会员 / 会员记录	会员记录	/user/member/record	列表	R	路由	systemUserSvipInterestsLst
+平台后台	用户 / 付费会员 / 会员记录	会员记录	/user/member/record	编辑	U	路由	systemUserSvipInterestsUpdateForm
+平台后台	用户 / 搜索记录	搜索记录	/user/searchRecord	用户搜索记录	R	菜单权限	systemUserSearchLog
+平台后台	用户 / 搜索记录	搜索记录	/user/searchRecord	用户搜索记录导出	R	菜单权限	systemUserExportSearchLog
+平台后台	用户 / 搜索记录	搜索记录	/user/searchRecord	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	用户 / 搜索记录	搜索记录	/user/searchRecord	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	用户 / 搜索记录	搜索记录	/user/searchRecord	清除用户搜索记录	RD	菜单权限	systemUserClearSearchLog
+平台后台	用户 / 用户分组	用户分组	/user/group	用户分组列表	R	菜单权限	systemUserGroupLst
+平台后台	用户 / 用户分组	用户分组	/user/group	用户分组添加	C	菜单权限	systemUserGroupCreate
+平台后台	用户 / 用户分组	用户分组	/user/group	用户分组删除	D	菜单权限	systemUserGroupDelete
+平台后台	用户 / 用户分组	用户分组	/user/group	用户分组编辑	U	菜单权限	systemUserGroupUpdate
+平台后台	用户 / 用户列表	用户列表	/user/list	发送优惠券	C	菜单权限	systemCouponSend
+平台后台	用户 / 用户列表	用户列表	/user/list	用户列表	R	菜单权限	systemUserLst
+平台后台	用户 / 用户列表	用户列表	/user/list	用户编辑	U	菜单权限	systemUserUpdate
+平台后台	用户 / 用户列表	用户列表	/user/list	用户修改余额	U	菜单权限	systemUserChangeNowMoney
+平台后台	用户 / 用户列表	用户列表	/user/list	用户修改积分	U	菜单权限	systemUserChangeIntegral
+平台后台	用户 / 用户列表	用户列表	/user/list	用户发送图文	C	菜单权限	systemWechatUserSendNews
+平台后台	用户 / 用户列表	用户列表	/user/list	用户详情	R	菜单权限	systemUserDetail
+平台后台	用户 / 用户列表	用户列表	/user/list	用户消费记录	R	菜单权限	systemUserOrder
+平台后台	用户 / 用户列表	用户列表	/user/list	用户持有优惠券	O	菜单权限	systemUserCoupon
+平台后台	用户 / 用户列表	用户列表	/user/list	用户余额变动列表	R	菜单权限	systemUserBill
+平台后台	用户 / 用户列表	用户列表	/user/list	推荐人修改记录	RU	菜单权限	systemUserSpreadLog
+平台后台	用户 / 用户列表	用户列表	/user/list	修改推荐人	RU	菜单权限	systemUserSpreadChange
+平台后台	用户 / 用户列表	用户列表	/user/list	用户修改会员等级	CU	菜单权限	systemUserMemberSave
+平台后台	用户 / 用户列表	用户列表	/user/list	用户添加	C	菜单权限	systemUserCreate
+平台后台	用户 / 用户列表	用户列表	/user/list	用户修改密码	U	菜单权限	systemUserChangePassword
+平台后台	用户 / 用户列表	用户列表	/user/list	用户分组编辑	U	菜单权限	systemUserChangeGroup
+平台后台	用户 / 用户列表	用户列表	/user/list	用户分组批量编辑	U	菜单权限	systemUserBatchChangeGroup
+平台后台	用户 / 用户列表	用户列表	/user/list	用户标签编辑	U	菜单权限	systemUserChangeLabel
+平台后台	用户 / 用户列表	用户列表	/user/list	用户标签批量编辑	U	菜单权限	systemUserBatchChangeLabel
+平台后台	用户 / 用户列表	用户列表	/user/list	优惠券列表	R	菜单权限	systemCouponList
+平台后台	用户 / 用户列表	用户列表	/user/list	上传图片	C	菜单权限	uploadImage
+平台后台	用户 / 用户列表	用户列表	/user/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	用户 / 用户列表	用户列表	/user/list	用户标签编辑	U	菜单权限	systemUserSvipUpdate
+平台后台	用户 / 用户列表	用户列表	/user/list	积分记录	R	菜单权限	systemUserIntegralList
+平台后台	用户 / 用户列表	用户列表	/user/list	签到记录	R	菜单权限	systemUserSginLog
+平台后台	用户 / 用户列表	用户列表	/user/list	浏览记录	R	菜单权限	systemUserHistory
+平台后台	用户 / 用户列表	用户列表	/user/list	用户信息导出	R	菜单权限	systemUserExcel
+平台后台	用户 / 用户列表	用户列表	/user/list	批量设置分销员	RU	菜单权限	getMemberLevelBatchSpread
+平台后台	用户 / 用户协议	用户协议	/user/agreement	用户协议	C	菜单权限	systemAgreeSave
+平台后台	用户 / 用户反馈	用户反馈	/feedback	修改状态	U	路由	systemUserFeedBackCategorySwitchStatus
+平台后台	用户 / 用户反馈	用户反馈	/feedback	删除	D	路由	systemUserFeedBackCategoryDelete
+平台后台	用户 / 用户反馈	用户反馈	/feedback	列表	R	路由	systemUserFeedBackLst
+平台后台	用户 / 用户反馈	用户反馈	/feedback	详情	R	路由	systemUserFeedBackDetail
+平台后台	用户 / 用户反馈	用户反馈	/feedback	回复表单	R	路由	systemUserFeedBackReplyForm
+平台后台	用户 / 用户反馈 / 反馈分类	反馈分类	/feedback/classify	列表	R	菜单权限	systemUserFeedBackCategoryLst
+平台后台	用户 / 用户反馈 / 反馈分类	反馈分类	/feedback/classify	添加	C	菜单权限	systemUserFeedBackCategoryCreate
+平台后台	用户 / 用户反馈 / 反馈分类	反馈分类	/feedback/classify	编辑	U	菜单权限	systemUserFeedBackCategoryUpdate
+平台后台	用户 / 用户反馈 / 反馈分类	反馈分类	/feedback/classify	修改状态	U	菜单权限	systemUserFeedBackCategorySwitchStatus
+平台后台	用户 / 用户反馈 / 反馈分类	反馈分类	/feedback/classify	删除	D	菜单权限	systemUserFeedBackCategoryDelete
+平台后台	用户 / 用户反馈 / 反馈列表	反馈列表	/feedback/list	列表	R	菜单权限	systemUserFeedBackLst
+平台后台	用户 / 用户反馈 / 反馈列表	反馈列表	/feedback/list	详情	R	菜单权限	systemUserFeedBackDetail
+平台后台	用户 / 用户反馈 / 反馈列表	反馈列表	/feedback/list	回复	U	菜单权限	systemUserFeedBackReply
+平台后台	用户 / 用户反馈 / 反馈列表	反馈列表	/feedback/list	删除	D	菜单权限	systemUserFeedBackDelete
+平台后台	用户 / 用户标签	用户标签	/user/label	用户标签列表	R	菜单权限	systemUserLabelLst
+平台后台	用户 / 用户标签	用户标签	/user/label	用户标签添加	C	菜单权限	systemUserLabelCreate
+平台后台	用户 / 用户标签	用户标签	/user/label	用户标签删除	D	菜单权限	systemUserLabelDelete
+平台后台	用户 / 用户标签	用户标签	/user/label	用户标签编辑	U	菜单权限	systemUserLabelUpdate
+平台后台	用户 / 用户等级	用户等级	/user/member	删除	D	路由	systemUserSvipDelete
+平台后台	用户 / 用户等级	用户等级	/user/member	修改状态	U	路由	systemUserSvipStatus
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	会员权益	R	菜单权限	systemUserMemberInterestsLst
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	会员权益添加	C	菜单权限	systemUserMemberInterestsCreate
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	会员权益编辑	U	菜单权限	systemUserMemberInterestsUpdate
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	会员权益删除	D	菜单权限	systemUserMemberInterestsDelete
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	上传图片	C	菜单权限	uploadImage
+平台后台	用户 / 用户等级 / 等级权益	等级权益	/user/member/interests	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	普通会员等级列表	R	菜单权限	systemUserMemberLst
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	普通会员等级添加	C	菜单权限	systemUserMemberCreate
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	普通会员等级编辑	U	菜单权限	systemUserMemberUpdate
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	普通会员等级删除	D	菜单权限	systemUserMemberDelete
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	上传图片	C	菜单权限	uploadImage
+平台后台	用户 / 用户等级 / 等级管理	等级管理	/user/member/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	用户 / 用户等级 / 等级说明	等级说明	/user/member/description	会员等级规则	C	菜单权限	systemAgreeSave
+平台后台	用户 / 用户等级 / 等级配置	等级配置	/systemForm/Basics/members	编辑配置信息	CU	菜单权限	configSave
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	列表	R	菜单权限	systemUserInfolst
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	添加	CR	菜单权限	systemUserInfoCreate
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	保存信息	CR	菜单权限	systemUserInfoSaveAll
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	删除	RD	菜单权限	systemUserInfoDelete
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	保存注册配置	CU	菜单权限	systemUserRegisterConfig
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	新人礼优惠券列表	R	菜单权限	systemUserRegisterCoupon
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	扩展信息表单	C	菜单权限	systemUserFieldSaveForm
+平台后台	用户 / 用户设置	用户设置	/user/setup_user	添加或编辑	CRU	菜单权限	systemUserInfoFieldSave
+平台后台	维护	维护	/safe	(页面入口)	R	待补	
+平台后台	维护 / 安全维护	安全维护	/maintain	数据库备份下载	R	路由	systemSafetyDatabaseDownloadFile
+平台后台	维护 / 安全维护	安全维护	/maintain	数据库备份删除	D	路由	systemSafetyDatabaseDeleteFile
+平台后台	维护 / 安全维护 / 商业授权	商业授权	/setting/system/maintain/auth	获取去版权信息	CR	菜单权限	systemCopyright
+平台后台	维护 / 安全维护 / 商业授权	商业授权	/setting/system/maintain/auth	获取授权信息	CR	菜单权限	systemAuthCopyright
+平台后台	维护 / 安全维护 / 商业授权	商业授权	/setting/system/maintain/auth	保存去版权信息	C	菜单权限	systemSaveCopyright
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库列表	R	菜单权限	systemSafetyDatabaseLst
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库备份列表	R	菜单权限	systemSafetyDatabaseFileList
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库备份详情	R	菜单权限	systemSafetyDatabaseDetail
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	备份	O	菜单权限	systemSafetyDatabaseBackups
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库优化	O	菜单权限	systemSafetyDatabaseOptimize
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库维护	O	菜单权限	systemSafetyDatabaseRepair
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库备份下载	R	菜单权限	systemSafetyDatabaseDownloadFile
+平台后台	维护 / 安全维护 / 数据备份	数据备份	/maintain/dataBackup	数据库备份删除	D	菜单权限	systemSafetyDatabaseDeleteFile
+平台后台	维护 / 安全维护 / 缓存清除	缓存清除	/maintain/cache	清除缓存	D	菜单权限	systemClearCache
+平台后台	维护 / 安全维护 / 缓存清除	缓存清除	/maintain/cache	替换素材域名	O	菜单权限	systemAttachmentReplaceHost
+平台后台	维护 / 导出记录	导出记录	/group/exportList	列表	R	菜单权限	systemStoreExcelLst
+平台后台	维护 / 导出记录	导出记录	/group/exportList	下载	R	菜单权限	systemStoreExcelDownload
+平台后台	维护 / 开发配置	开发配置	/safe/exploit	(页面入口)	R	待补	
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	组合数据配置列表	RU	菜单权限	groupLst
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	组合数据配置添加	CU	菜单权限	groupCreate
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	组合数据配置编辑	U	菜单权限	groupUpdate
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	详情	R	菜单权限	groupDetail
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	列表	R	菜单权限	groupDataLst
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	添加	C	菜单权限	groupDataCreate
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	编辑	U	菜单权限	groupDataUpdate
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	删除	D	菜单权限	groupDataDelete
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	上传图片	C	菜单权限	uploadImage
+平台后台	维护 / 开发配置 / 组合数据	组合数据	/group/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	维护 / 操作日志	操作日志	/setting/systemLog	操作日志	R	菜单权限	systemAdminLog
+平台后台	维护 / 配置分类	配置分类	/config/classify	配置分类添加	CU	菜单权限	configClassifyCreate
+平台后台	维护 / 配置分类	配置分类	/config/classify	配置分类删除	UD	菜单权限	configClassifyDelete
+平台后台	维护 / 配置分类	配置分类	/config/classify	配置分类编辑	U	菜单权限	configClassifyUpdate
+平台后台	维护 / 配置分类	配置分类	/config/classify	配置分类修改状态	U	菜单权限	configClassifySwitchStatus
+平台后台	维护 / 配置分类	配置分类	/config/classify	配置分类列表	RU	菜单权限	configClassifyLst
+平台后台	维护 / 配置管理	配置管理	/config/setting	配置添加	CU	菜单权限	configSettingCreate
+平台后台	维护 / 配置管理	配置管理	/config/setting	配置编辑	U	菜单权限	configSettingUpdate
+平台后台	维护 / 配置管理	配置管理	/config/setting	配置修改状态	U	菜单权限	configSettingSwitchStatus
+平台后台	维护 / 配置管理	配置管理	/config/setting	配置列表	RU	菜单权限	configSettingLst
+平台后台	维护 / 配置管理	配置管理	/config/setting	配置删除	UD	菜单权限	configSettingDelete
+平台后台	维护 / 页面链接	页面链接	/safe/pageLinks	(页面入口)	R	待补	
+平台后台	营销	营销	/marketing	列表	R	路由	systemStoreCouponLst
+平台后台	营销	营销	/marketing	使用记录	R	路由	systemCouponIssue
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	详情	R	菜单权限	groupDetail
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	列表	R	菜单权限	groupDataLst
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	添加	C	菜单权限	groupDataCreate
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	编辑	U	菜单权限	groupDataUpdate
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	删除	D	菜单权限	groupDataDelete
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 专场列表	专场列表	/group/topic/94	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	优惠套餐列表	R	菜单权限	systemStoreDiscountsLst
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	优惠套餐详情	R	菜单权限	systemStoreDiscountsDetail
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	优惠套餐修改状态	U	菜单权限	systemStoreDiscountsStatus
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	价格说明列表	R	菜单权限	systemPriceRuleLst
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	添加价格说明	C	菜单权限	systemPriceRuleCreate
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	修改价格说明	U	菜单权限	systemPriceRuleUpdate
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	价格说明修改状态	U	菜单权限	systemPriceRuleStatus
+平台后台	营销 / 优惠套餐	优惠套餐	/marketing/discounts/list	删除价格说明	D	菜单权限	systemPriceRuleDelete
+平台后台	营销 / 余额充值	余额充值	/banlace	(页面入口)	R	待补	
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	详情	R	菜单权限	groupDetail
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	列表	R	菜单权限	groupDataLst
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	添加	C	菜单权限	groupDataCreate
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	编辑	U	菜单权限	groupDataUpdate
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	删除	D	菜单权限	groupDataDelete
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 余额充值 / 余额充值配置	余额充值配置	/group/config/69	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 余额充值 / 余额设置	余额设置	/systemForm/Basics/balance	编辑配置信息	CU	菜单权限	configSave
+平台后台	营销 / 助力	助力	/assist	(页面入口)	R	待补	
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	列表	R	菜单权限	systemStoreProductAssistSetLst
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	详情	R	菜单权限	systemStoreProductAssistSetDetail
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	列表	R	菜单权限	systemStoreProductAssistSetLst
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	详情	R	菜单权限	systemStoreProductAssistSetDetail
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	列表	R	菜单权限	systemStoreProductAssistSetLst
+平台后台	营销 / 助力 / 助力活动	助力活动	/marketing/assist/list	详情	R	菜单权限	systemStoreProductAssistSetDetail
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	列表	R	菜单权限	systemStoreProductAssistLst
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	显示/隐藏	U	菜单权限	systemStoreProductAssistShow
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	详情	R	菜单权限	systemStoreProductAssistDetail
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑	U	菜单权限	systemStoreProductAssistProductUpdate
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	审核	U	菜单权限	systemStoreProductAssistStatus
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑数据	RU	菜单权限	systemStoreProductAssistGet
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	设置标签	U	菜单权限	systemStoreProductAssistLabels
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	列表	R	菜单权限	systemStoreProductAssistLst
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	显示/隐藏	U	菜单权限	systemStoreProductAssistShow
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	详情	R	菜单权限	systemStoreProductAssistDetail
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑	U	菜单权限	systemStoreProductAssistProductUpdate
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	审核	U	菜单权限	systemStoreProductAssistStatus
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑数据	RU	菜单权限	systemStoreProductAssistGet
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	设置标签	U	菜单权限	systemStoreProductAssistLabels
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	列表	R	菜单权限	systemStoreProductAssistLst
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	显示/隐藏	U	菜单权限	systemStoreProductAssistShow
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	详情	R	菜单权限	systemStoreProductAssistDetail
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑	U	菜单权限	systemStoreProductAssistProductUpdate
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	审核	U	菜单权限	systemStoreProductAssistStatus
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	编辑数据	RU	菜单权限	systemStoreProductAssistGet
+平台后台	营销 / 助力 / 活动商品	活动商品	/marketing/assist/goods_list	设置标签	U	菜单权限	systemStoreProductAssistLabels
+平台后台	营销 / 商户优惠券	商户优惠券	/marketing/coupon	列表	R	路由	systemStoreCouponLst
+平台后台	营销 / 商户优惠券	商户优惠券	/marketing/coupon	使用记录	R	路由	systemCouponIssue
+平台后台	营销 / 商户优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	列表	R	菜单权限	systemStoreCouponLst
+平台后台	营销 / 商户优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	详情	R	菜单权限	systemCouponDetail
+平台后台	营销 / 商户优惠券 / 优惠券列表	优惠券列表	/marketing/coupon/list	商品列表	R	菜单权限	systemCouponProduct
+平台后台	营销 / 商户优惠券 / 领取记录	领取记录	/marketing/coupon/user	使用记录	R	菜单权限	systemCouponIssue
+平台后台	营销 / 平台优惠券	平台优惠券	/marketing/platform_coupon	详情	R	路由	systemCouponShow
+平台后台	营销 / 平台优惠券	平台优惠券	/marketing/platform_coupon	使用记录	R	路由	systemCouponIssue
+平台后台	营销 / 平台优惠券	平台优惠券	/marketing/platform_coupon	复制表单	C	路由	systemCouponCloneForm
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	添加	C	菜单权限	systemCouponCreate
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	编辑	U	菜单权限	systemCouponUpdate
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	删除	D	菜单权限	systemCouponDelete
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	修改状态	U	菜单权限	systemCouponStatus
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	列表	R	菜单权限	systemCouponList
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	详情	RU	菜单权限	systemCouponShow
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	详情关联列表	RU	菜单权限	systemCouponShowLst
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 平台优惠券 / 优惠券列表	优惠券列表	/marketing/platform_coupon/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 平台优惠券 / 使用说明	使用说明	/marketing/platform_coupon/instructions	使用说明	C	菜单权限	systemAgreeSave
+平台后台	营销 / 平台优惠券 / 发送记录	发送记录	/marketing/platform_coupon/couponSend	发送记录	CR	菜单权限	systemCouponSendLst
+平台后台	营销 / 平台优惠券 / 领取记录	领取记录	/marketing/platform_coupon/couponRecord	使用记录	R	菜单权限	systemCouponIssue
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	添加	C	菜单权限	systemActivityFormCreate
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	列表	R	菜单权限	systemActivityFormLst
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	编辑	U	菜单权限	systemActivityFormUpdate
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	详情	R	菜单权限	systemActivityFormDetail
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	删除	D	菜单权限	systemActivityFormDelete
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	修改状态	U	菜单权限	systemActivityFormStatus
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	活动记录	R	菜单权限	systemFormActivUserLst
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	活动记录导出	R	菜单权限	systemFormActivUserExcel
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 报名活动	报名活动	/marketing/application/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 拼团	拼团	/marketing/combination	排序	U	路由	systemStoreProductGroupSort
+平台后台	营销 / 拼团	拼团	/marketing/combination	设置标签	C	路由	systemStoreProductGroupLabels
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	列表	R	菜单权限	systemStoreProductGroupLst
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	显示/隐藏	U	菜单权限	systemStoreProductGroupShow
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	详情	R	菜单权限	systemStoreProductGroupDetail
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑	U	菜单权限	systemStoreProductGroupProductUpdate
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	审核	U	菜单权限	systemStoreProductGroupStatus
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑数据	RU	菜单权限	systemStoreProductGroupGet
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	排序	U	菜单权限	systemStoreProductGroupSort
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	设置标签	U	菜单权限	systemStoreProductGroupLabels
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	列表	R	菜单权限	systemStoreProductGroupLst
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	显示/隐藏	U	菜单权限	systemStoreProductGroupShow
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	详情	R	菜单权限	systemStoreProductGroupDetail
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑	U	菜单权限	systemStoreProductGroupProductUpdate
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	审核	U	菜单权限	systemStoreProductGroupStatus
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑数据	RU	菜单权限	systemStoreProductGroupGet
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	排序	U	菜单权限	systemStoreProductGroupSort
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	设置标签	U	菜单权限	systemStoreProductGroupLabels
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	列表	R	菜单权限	systemStoreProductGroupLst
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	显示/隐藏	U	菜单权限	systemStoreProductGroupShow
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	详情	R	菜单权限	systemStoreProductGroupDetail
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑	U	菜单权限	systemStoreProductGroupProductUpdate
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	审核	U	菜单权限	systemStoreProductGroupStatus
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	编辑数据	RU	菜单权限	systemStoreProductGroupGet
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	排序	U	菜单权限	systemStoreProductGroupSort
+平台后台	营销 / 拼团 / 拼团商品列表	拼团商品列表	/marketing/combination/combination_goods	设置标签	U	菜单权限	systemStoreProductGroupLabels
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	列表	R	菜单权限	systemStoreProductGroupBuyingLst
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	详情	R	菜单权限	systemStoreProductGroupBuyingDetail
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	列表	R	菜单权限	systemStoreProductGroupBuyingLst
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	详情	R	菜单权限	systemStoreProductGroupBuyingDetail
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	列表	R	菜单权限	systemStoreProductGroupBuyingLst
+平台后台	营销 / 拼团 / 拼团活动列表	拼团活动列表	/marketing/combination/combination_list	详情	R	菜单权限	systemStoreProductGroupBuyingDetail
+平台后台	营销 / 拼团 / 拼团设置	拼团设置	/marketing/combination/combination_set	配置保存	CU	菜单权限	configOthersGroupBuyingUpdate
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	添加	C	菜单权限	systemActivityAtmosphereCreate
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	列表	R	菜单权限	systemActivityAtmosphereLst
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	编辑	U	菜单权限	systemActivityAtmosphereUpdate
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	详情	R	菜单权限	systemActivityAtmosphereDetail
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	删除	D	菜单权限	systemActivityAtmosphereDelete
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	修改状态	U	菜单权限	systemActivityAtmosphereStatus
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 活动氛围图	活动氛围图	/marketing/atmosphere/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	添加	C	菜单权限	systemActivityBorderCreate
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	列表	R	菜单权限	systemActivityBorderLst
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	编辑	U	菜单权限	systemActivityBorderUpdate
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	详情	R	菜单权限	systemActivityBorderDetail
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	删除	D	菜单权限	systemActivityBorderDelete
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	修改状态	U	菜单权限	systemActivityBorderStatus
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 活动边框图	活动边框图	/marketing/border/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 直播	直播	/marketing2	(页面入口)	R	待补	
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	列表	R	菜单权限	systemBroadcastGoodsLst
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	详情	R	菜单权限	systemBroadcastGoodsDetail
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	审核	U	菜单权限	systemBroadcastGoodsApply
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	修改状态	U	菜单权限	systemBroadcastGoodsChangeStatus
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	排序	U	菜单权限	systemBroadcastGoodsSort
+平台后台	营销 / 直播 / 直播商品管理	直播商品管理	/marketing/broadcast/list	删除	D	菜单权限	systemBroadcastGoodsDelete
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	列表	R	菜单权限	systemBroadcastRoomLst
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	详情	R	菜单权限	systemBroadcastRoomDetail
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	申请	C	菜单权限	systemBroadcastRoomApply
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	修改状态	U	菜单权限	systemBroadcastRoomChangeStatus
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	排序	U	菜单权限	systemBroadcastRoomSort
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	修改状态	U	菜单权限	systemBroadcastRoomChangeLiveStatus
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	删除	D	菜单权限	systemBroadcastRoomDelete
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	商品列表	R	菜单权限	systemBroadcastRoomGoods
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	客服开关	U	菜单权限	systemBroadcastRoomCloseKf
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	禁言开关	U	菜单权限	systemBroadcastRoomCloseComment
+平台后台	营销 / 直播 / 直播间管理	直播间管理	/marketing/studio/list	收录开关	U	菜单权限	systemBroadcastRoomClosesFeeds
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	排序	U	路由	systemSeckillConfigStatus
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	删除	D	路由	systemSeckillConfigDelete
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	列表	R	路由	systemSeckillActiveGetActiveList
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	详情	R	路由	systemSeckillActiveGetActiveInfo
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	列表	R	路由	systemSeckillActiveGetActiveAll
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	创建	C	路由	systemSeckillActiveCreateActive
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	编辑	U	路由	systemSeckillActiveUpdateActive
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	编辑状态	U	路由	systemSeckillActiveUpdateActiveStatus
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	删除	D	路由	systemSeckillActiveDeleteActive
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	活动统计数据面板	R	路由	systemSeckillActiveChartPanel
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	活动参与人统计列表	R	路由	systemSeckillActiveChartPeople
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	活动订单统计列表	R	路由	systemSeckillActiveChartOrder
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	活动商品统计列表	R	路由	systemSeckillActiveChartProduct
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	统计	R	路由	systemStoreSeckillProductLstFilter
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	列表	R	路由	systemStoreSeckillProductPageLst
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	列表	R	路由	systemStoreSeckillProductLst
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	详情	R	路由	systemStoreSeckillProductDetail
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	编辑	U	路由	systemStoreSeckillProductUpdate
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	审核	U	路由	systemStoreSeckillProductSwitchStatus
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	审核表单	U	路由	systemStoreSeckillProductSwitchStatusForm
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	显示/隐藏	U	路由	systemStoreSeckillProductChangeUsed
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	设置标签	C	路由	systemStoreSeckillProductLabels
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	加入回收站	C	路由	systemStoreSeckillProductDelete
+平台后台	营销 / 秒杀	秒杀	/marketing/seckill	删除	D	路由	systemStoreSeckillProductDestory
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	列表	R	菜单权限	systemSeckillActiveGetActiveList
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	详情	R	菜单权限	systemSeckillActiveGetActiveInfo
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	创建	C	菜单权限	systemSeckillActiveCreateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑	U	菜单权限	systemSeckillActiveUpdateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑状态	U	菜单权限	systemSeckillActiveUpdateActiveStatus
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	删除	D	菜单权限	systemSeckillActiveDeleteActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动统计数据面板	R	菜单权限	systemSeckillActiveChartPanel
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动参与人统计列表	R	菜单权限	systemSeckillActiveChartPeople
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动订单统计列表	R	菜单权限	systemSeckillActiveChartOrder
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动商品统计列表	R	菜单权限	systemSeckillActiveChartProduct
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	列表	R	菜单权限	systemSeckillActiveGetActiveList
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	详情	R	菜单权限	systemSeckillActiveGetActiveInfo
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	创建	C	菜单权限	systemSeckillActiveCreateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑	U	菜单权限	systemSeckillActiveUpdateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑状态	U	菜单权限	systemSeckillActiveUpdateActiveStatus
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	删除	D	菜单权限	systemSeckillActiveDeleteActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动统计数据面板	R	菜单权限	systemSeckillActiveChartPanel
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动参与人统计列表	R	菜单权限	systemSeckillActiveChartPeople
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动订单统计列表	R	菜单权限	systemSeckillActiveChartOrder
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动商品统计列表	R	菜单权限	systemSeckillActiveChartProduct
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	列表	R	菜单权限	systemSeckillActiveGetActiveList
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	详情	R	菜单权限	systemSeckillActiveGetActiveInfo
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	创建	C	菜单权限	systemSeckillActiveCreateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑	U	菜单权限	systemSeckillActiveUpdateActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	编辑状态	U	菜单权限	systemSeckillActiveUpdateActiveStatus
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	删除	D	菜单权限	systemSeckillActiveDeleteActive
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动统计数据面板	R	菜单权限	systemSeckillActiveChartPanel
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动参与人统计列表	R	菜单权限	systemSeckillActiveChartPeople
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动订单统计列表	R	菜单权限	systemSeckillActiveChartOrder
+平台后台	营销 / 秒杀 / 秒杀活动	秒杀活动	/marketing/seckill/store_seckill/list	活动商品统计列表	R	菜单权限	systemSeckillActiveChartProduct
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	统计	R	菜单权限	systemStoreSeckillProductLstFilter
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	编辑	U	菜单权限	systemStoreSeckillProductUpdate
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	审核	U	菜单权限	systemStoreSeckillProductSwitchStatus
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	显示/隐藏	U	菜单权限	systemStoreSeckillProductChangeUsed
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	设置标签	U	菜单权限	systemStoreSeckillProductLabels
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductPageLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	加入回收站	D	菜单权限	systemStoreSeckillProductDelete
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	删除	D	菜单权限	systemStoreSeckillProductDestory
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	统计	R	菜单权限	systemStoreSeckillProductLstFilter
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductPageLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	详情	R	菜单权限	systemStoreSeckillProductDetail
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	编辑	U	菜单权限	systemStoreSeckillProductUpdate
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	审核	U	菜单权限	systemStoreSeckillProductSwitchStatus
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	显示/隐藏	U	菜单权限	systemStoreSeckillProductChangeUsed
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	设置标签	U	菜单权限	systemStoreSeckillProductLabels
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	加入回收站	D	菜单权限	systemStoreSeckillProductDelete
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	删除	D	菜单权限	systemStoreSeckillProductDestory
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	统计	R	菜单权限	systemStoreSeckillProductLstFilter
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductPageLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	列表	R	菜单权限	systemStoreSeckillProductLst
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	详情	R	菜单权限	systemStoreSeckillProductDetail
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	编辑	U	菜单权限	systemStoreSeckillProductUpdate
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	审核	U	菜单权限	systemStoreSeckillProductSwitchStatus
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	显示/隐藏	U	菜单权限	systemStoreSeckillProductChangeUsed
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	设置标签	U	菜单权限	systemStoreSeckillProductLabels
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	加入回收站	D	菜单权限	systemStoreSeckillProductDelete
+平台后台	营销 / 秒杀 / 秒杀管理	秒杀管理	/marketing/seckill/list	删除	D	菜单权限	systemStoreSeckillProductDestory
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	列表	R	菜单权限	systemSeckillConfigLst
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	添加	C	菜单权限	systemSeckillConfigCreate
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	编辑	U	菜单权限	systemSeckillConfigUpdate
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	排序	U	菜单权限	systemSeckillConfigStatus
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	删除	D	菜单权限	systemSeckillConfigDelete
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	上传图片	C	菜单权限	uploadImage
+平台后台	营销 / 秒杀 / 秒杀配置	秒杀配置	/marketing/seckill/seckillConfig	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	营销 / 积分	积分	/marketing/integral	积分配置保存	C	路由	systemUserIntegralConfigSave
+平台后台	营销 / 积分	积分	/marketing/integral	积分统计	R	路由	systemUserIntegralTitle
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	列表	R	菜单权限	pointsCateLst
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	详情	R	菜单权限	pointsCateDetail
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	添加	C	菜单权限	pointsCateCreate
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	编辑	U	菜单权限	pointsCateUpdate
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	修改状态	U	菜单权限	pointsCateStatus
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	列表	R	菜单权限	pointsProductLst
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	获取规格	R	菜单权限	pointsCateFormatAttr
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	编辑	RU	菜单权限	pointsProductDetail
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	添加	C	菜单权限	pointsProductCreate
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	编辑	U	菜单权限	pointsProductUpdate
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	修改状态	U	菜单权限	pointsProductStatus
+平台后台	营销 / 积分 / 商品分类	商品分类	/marketing/integral/classify	预览	R	菜单权限	pointsProductPreview
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	列表	R	菜单权限	pointsProductLst
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	获取规格	R	菜单权限	pointsCateFormatAttr
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	编辑	RU	菜单权限	pointsProductDetail
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	添加	C	菜单权限	pointsProductCreate
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	编辑	U	菜单权限	pointsProductUpdate
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	修改状态	U	菜单权限	pointsProductStatus
+平台后台	营销 / 积分 / 商品列表	商品列表	/marketing/integral/proList	预览	R	菜单权限	pointsProductPreview
+平台后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	积分统计	R	菜单权限	systemUserIntegralTitle
+平台后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	积分日志	R	菜单权限	systemUserIntegralLst
+平台后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	积分导出	R	菜单权限	systemUserIntegralExcel
+平台后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	营销 / 积分 / 积分日志	积分日志	/marketing/integral/log	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	列表	R	菜单权限	pointsOrderLst
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	编辑	RU	菜单权限	pointsOrderDetail
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	发货	U	菜单权限	pointsOrderDelivery
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	批量发货	U	菜单权限	pointsOrderBatchDelivery
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	快递查询	R	菜单权限	pointsOrderExpress
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	导出	R	菜单权限	pointsOrderExcel
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	备注	U	菜单权限	pointsOrderMark
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	记录	RU	菜单权限	pointsOrderStatus
+平台后台	营销 / 积分 / 积分订单	积分订单	/marketing/integral/orderList	删除	D	菜单权限	pointsOrderDelete
+平台后台	营销 / 积分 / 积分配置	积分配置	/marketing/integral/config	积分配置保存	CU	菜单权限	systemUserIntegralConfigSave
+平台后台	营销 / 预售	预售	/marketing/presell	审核	U	路由	systemStoreProductPresellSwitchStatus
+平台后台	营销 / 预售	预售	/marketing/presell	设置标签	C	路由	systemStoreProductPresellLabels
+平台后台	营销 / 预售	预售	/marketing/presell	列表	R	路由	systemStoreProductAssistLst
+平台后台	营销 / 预售	预售	/marketing/presell	显示/隐藏	U	路由	systemStoreProductAssistShow
+平台后台	营销 / 预售	预售	/marketing/presell	详情	R	路由	systemStoreProductAssistDetail
+平台后台	营销 / 预售	预售	/marketing/presell	编辑	U	路由	systemStoreProductAssistProductUpdate
+平台后台	营销 / 预售	预售	/marketing/presell	审核	U	路由	systemStoreProductAssistStatus
+平台后台	营销 / 预售 / 预售协议	预售协议	/marketing/presell/agreement	预售协议	C	菜单权限	systemAgreeSave
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	列表	R	菜单权限	systemStoreProductPresellLst
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	显示/隐藏	U	菜单权限	systemStoreProductPresellShow
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	详情	R	菜单权限	systemStoreProductPresellDetail
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑数据	RU	菜单权限	systemStoreProductPresellGet
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑	U	菜单权限	systemStoreProductPresellUpdate
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	审核	U	菜单权限	systemStoreProductPresellSwitchStatus
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	设置标签	U	菜单权限	systemStoreProductPresellLabels
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	列表	R	菜单权限	systemStoreProductPresellLst
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	显示/隐藏	U	菜单权限	systemStoreProductPresellShow
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	详情	R	菜单权限	systemStoreProductPresellDetail
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑数据	RU	菜单权限	systemStoreProductPresellGet
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑	U	菜单权限	systemStoreProductPresellUpdate
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	审核	U	菜单权限	systemStoreProductPresellSwitchStatus
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	设置标签	U	菜单权限	systemStoreProductPresellLabels
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	列表	R	菜单权限	systemStoreProductPresellLst
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	显示/隐藏	U	菜单权限	systemStoreProductPresellShow
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	详情	R	菜单权限	systemStoreProductPresellDetail
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑数据	RU	菜单权限	systemStoreProductPresellGet
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	编辑	U	菜单权限	systemStoreProductPresellUpdate
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	审核	U	菜单权限	systemStoreProductPresellSwitchStatus
+平台后台	营销 / 预售 / 预售商品	预售商品	/marketing/presell/list	设置标签	U	菜单权限	systemStoreProductPresellLabels
+平台后台	装修	装修	/theme	(页面入口)	R	待补	
+平台后台	装修 / 个人中心	个人中心	/setting/diy/personal	(页面入口)	R	待补	
+平台后台	装修 / 主题风格	主题风格	/setting/theme_style	一键换色保存	C	菜单权限	systemSetChangeColor
+平台后台	装修 / 商品分类	商品分类	/setting/product_category	商品分类信息	R	菜单权限	systemDiyProductCategoryInfo
+平台后台	装修 / 商品分类	商品分类	/setting/product_category	保存商品分类	C	菜单权限	systemDiyProductCategorySave
+平台后台	装修 / 商品详情	商品详情	/setting/diy/product_detail	(页面入口)	R	待补	
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	列表 	R	菜单权限	systemMerDiyLst
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	详情 	R	菜单权限	systemMerDiyDetail
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	添加/编辑	CU	菜单权限	systemMerDiyCreate
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	设置默认	U	菜单权限	systemMerDiySetDefault
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	重置	O	菜单权限	systemMerDiyRecovery
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	删除	D	菜单权限	systemMerDiyDelete
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	复制	C	菜单权限	systemMerDiyCopy
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	保存适用范围	CR	菜单权限	systemMerDiyGetScope
+平台后台	装修 / 店铺模板	店铺模板	/setting/merchant/diyList	保存适用范围	C	菜单权限	systemMerDiySetScope
+平台后台	装修 / 店铺街	店铺街	/setting/diy/store	(页面入口)	R	待补	
+平台后台	装修 / 微页面	微页面	/setting/micro/list	列表 	R	菜单权限	systemDiyMicroLst
+平台后台	装修 / 微页面	微页面	/setting/micro/list	详情 	R	菜单权限	systemDiyMicroDetail
+平台后台	装修 / 微页面	微页面	/setting/micro/list	添加/编辑	CU	菜单权限	systemDiyMicroCreate
+平台后台	装修 / 微页面	微页面	/setting/micro/list	重置	O	菜单权限	systemDiyMicroRecovery
+平台后台	装修 / 微页面	微页面	/setting/micro/list	删除	D	菜单权限	systemDiyMicroDelete
+平台后台	装修 / 微页面	微页面	/setting/micro/list	上传图片	C	菜单权限	uploadImage
+平台后台	装修 / 微页面	微页面	/setting/micro/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	装修 / 悬浮菜单	悬浮菜单	/setting/fab	悬浮按钮信息	R	菜单权限	systemDiyFabInfo
+平台后台	装修 / 悬浮菜单	悬浮菜单	/setting/fab	保存悬浮按钮	C	菜单权限	systemDiyFabSave
+平台后台	装修 / 悬浮菜单	悬浮菜单	/setting/fab	上传图片	C	菜单权限	uploadImage
+平台后台	装修 / 悬浮菜单	悬浮菜单	/setting/fab	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	添加	C	菜单权限	systemFormCreate
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	编辑	U	菜单权限	systemFormUpdate
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	编辑状态	U	菜单权限	systemFormStatusSwitch
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	删除	D	菜单权限	systemFormDelete
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	详情	R	菜单权限	systemFormDetail
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	列表	R	菜单权限	systemFormLst
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	导出	R	菜单权限	systemFormExcel
+平台后台	装修 / 系统表单	系统表单	/systemForm/form_list	表单提交记录	CR	菜单权限	systemFormUserLst
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材分类列表	R	菜单权限	systemAttachmentCategoryGetFormatList
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材分类添加	C	菜单权限	systemAttachmentCategoryCreate
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材编辑	U	菜单权限	systemAttachmentCategoryUpdate
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材删除	D	菜单权限	systemAttachmentCategoryDelete
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材列表	R	菜单权限	systemAttachmentLst
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材删除	D	菜单权限	systemAttachmentDelete
+平台后台	装修 / 素材管理	素材管理	/config/picture	批量移动	O	菜单权限	systemAttachmentBatchChangeCategory
+平台后台	装修 / 素材管理	素材管理	/config/picture	素材编辑	U	菜单权限	systemAttachmentUpdate
+平台后台	装修 / 素材管理	素材管理	/config/picture	上传二维码	C	菜单权限	systemAttachmentScanQrcode
+平台后台	装修 / 素材管理	素材管理	/config/picture	扫码上传图片	C	菜单权限	systemAttachmentScanImage
+平台后台	装修 / 素材管理	素材管理	/config/picture	扫码上传保存	C	菜单权限	systemAttachmentScanImageSave
+平台后台	装修 / 素材管理	素材管理	/config/picture	在线图片	O	菜单权限	systemAttachmentOnline
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	列表 	R	菜单权限	systemDiyLst
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	添加/编辑	CU	菜单权限	systemDiyCreate
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	使用模板	U	菜单权限	systemDiyStatus
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	设置默认	U	菜单权限	systemDiySetDefault
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	重置	O	菜单权限	systemDiyRecovery
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	删除	D	菜单权限	systemDiyDelete
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	商品列表	R	菜单权限	systemDiyProductLst
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	复制	C	菜单权限	systemDiyCopy
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	个人中心装修	R	菜单权限	systemVisualUserInfo
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	店铺街装修	O	菜单权限	systemVisualStoreStreet
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	上传图片	C	菜单权限	uploadImage
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	详情 	R	菜单权限	systemDiyDetail
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	商品详情 	R	菜单权限	systemDiyGetProductDetail
+平台后台	装修 / 页面装修	页面装修	/setting/diy/list	商品详情保存 	CR	菜单权限	systemDiySaveProductDetail
+平台后台	装修 / 页面配置	页面配置	/setting/system_visualization_data	可视化列表	R	菜单权限	systemVisualStoreGetThemeKey
+平台后台	装修 / 页面配置	页面配置	/setting/system_visualization_data	可视化详情	R	菜单权限	systemVisualStoreGetTheme
+平台后台	装修 / 页面配置	页面配置	/setting/system_visualization_data	可视化保存	C	菜单权限	systemVisualSetTheme
+平台后台	装修 / 页面链接	页面链接	/setting/page	(页面入口)	R	待补	
+平台后台	装修 / 页面链接 / 商户页面分类	商户页面分类	/setting/diy/merchant/category/list	列表 	R	菜单权限	systemDiyPageMerCategroyLst
+平台后台	装修 / 页面链接 / 商户页面分类	商户页面分类	/setting/diy/merchant/category/list	添加	C	菜单权限	systemDiyPageMerCategroyCreate
+平台后台	装修 / 页面链接 / 商户页面分类	商户页面分类	/setting/diy/merchant/category/list	编辑	U	菜单权限	systemDiyPageMerCategroyUpdate
+平台后台	装修 / 页面链接 / 商户页面分类	商户页面分类	/setting/diy/merchant/category/list	编辑状态	U	菜单权限	systemDiyPageMerCategroyStatus
+平台后台	装修 / 页面链接 / 商户页面分类	商户页面分类	/setting/diy/merchant/category/list	删除	D	菜单权限	systemDiyPageMerCategroyDelete
+平台后台	装修 / 页面链接 / 商户页面链接	商户页面链接	/setting/diy/merLink/list	列表	R	菜单权限	systemDiyPageLinkMerLst
+平台后台	装修 / 页面链接 / 商户页面链接	商户页面链接	/setting/diy/merLink/list	添加	C	菜单权限	systemDiyPageLinkMerCreate
+平台后台	装修 / 页面链接 / 商户页面链接	商户页面链接	/setting/diy/merLink/list	编辑	U	菜单权限	systemDiyPageLinkMerUpdate
+平台后台	装修 / 页面链接 / 商户页面链接	商户页面链接	/setting/diy/merLink/list	删除	D	菜单权限	systemDiyPageLinkMerDelete
+平台后台	装修 / 页面链接 / 商户页面链接	商户页面链接	/setting/diy/merLink/list	修改状态	U	菜单权限	systemDiyPageLinkMerStatus
+平台后台	装修 / 页面链接 / 平台页面分类	平台页面分类	/setting/diy/plantform/category/list	列表 	R	菜单权限	systemDiyPageCategroyLst
+平台后台	装修 / 页面链接 / 平台页面分类	平台页面分类	/setting/diy/plantform/category/list	添加	C	菜单权限	systemDiyPageCategroyCreate
+平台后台	装修 / 页面链接 / 平台页面分类	平台页面分类	/setting/diy/plantform/category/list	编辑	U	菜单权限	systemDiyPageCategroyUpdate
+平台后台	装修 / 页面链接 / 平台页面分类	平台页面分类	/setting/diy/plantform/category/list	编辑状态	U	菜单权限	systemDiyPageCategroyStatus
+平台后台	装修 / 页面链接 / 平台页面分类	平台页面分类	/setting/diy/plantform/category/list	删除	D	菜单权限	systemDiyPageCategroyDelete
+平台后台	装修 / 页面链接 / 平台页面链接	平台页面链接	/setting/diy/links/list	列表	R	菜单权限	systemDiyPageLinkLst
+平台后台	装修 / 页面链接 / 平台页面链接	平台页面链接	/setting/diy/links/list	添加	C	菜单权限	systemDiyPageLinkCreate
+平台后台	装修 / 页面链接 / 平台页面链接	平台页面链接	/setting/diy/links/list	编辑	U	菜单权限	systemDiyPageLinkUpdate
+平台后台	装修 / 页面链接 / 平台页面链接	平台页面链接	/setting/diy/links/list	删除	D	菜单权限	systemDiyPageLinkDelete
+平台后台	装修 / 页面链接 / 平台页面链接	平台页面链接	/setting/diy/links/list	修改状态	U	菜单权限	systemDiyPageLinkStatus
+平台后台	订单	订单	/order	记录	R	路由	systemOrderStatus
+平台后台	订单	订单	/order	关联订单	R	路由	systemOrderChildrenList
+平台后台	订单	订单	/order	核销	R	路由	systemOrderTakeStat
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销	U	菜单权限	systemOrderTakeStat
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销订单	RU	菜单权限	systemTakeOrderLst
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	头部统计	R	菜单权限	systemTakeOrderTitle
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销	U	菜单权限	systemOrderTakeStat
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销订单	RU	菜单权限	systemTakeOrderLst
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	头部统计	R	菜单权限	systemTakeOrderTitle
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销	U	菜单权限	systemOrderTakeStat
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	核销订单	RU	菜单权限	systemTakeOrderLst
+平台后台	订单 / 核销记录	核销记录	/order/cancellation	头部统计	R	菜单权限	systemTakeOrderTitle
+平台后台	订单 / 订单列表	订单列表	/order/list	列表	R	菜单权限	systemOrderLst
+平台后台	订单 / 订单列表	订单列表	/order/list	金额统计	R	菜单权限	systemOrderStat
+平台后台	订单 / 订单列表	订单列表	/order/list	快递查询	R	菜单权限	systemOrderExpress
+平台后台	订单 / 订单列表	订单列表	/order/list	头部统计	R	菜单权限	systemOrderTitle
+平台后台	订单 / 订单列表	订单列表	/order/list	详情	R	菜单权限	systemOrderDetail
+平台后台	订单 / 订单列表	订单列表	/order/list	导出	R	菜单权限	systemOrderExcel
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelDownload
+平台后台	订单 / 订单列表	订单列表	/order/list	记录	RU	菜单权限	systemOrderStatus
+平台后台	订单 / 订单列表	订单列表	/order/list	关联订单	O	菜单权限	systemOrderChildrenList
+平台后台	订单 / 订单列表	订单列表	/order/list	列表	R	菜单权限	systemOrderLst
+平台后台	订单 / 订单列表	订单列表	/order/list	金额统计	R	菜单权限	systemOrderStat
+平台后台	订单 / 订单列表	订单列表	/order/list	快递查询	R	菜单权限	systemOrderExpress
+平台后台	订单 / 订单列表	订单列表	/order/list	头部统计	R	菜单权限	systemOrderTitle
+平台后台	订单 / 订单列表	订单列表	/order/list	详情	R	菜单权限	systemOrderDetail
+平台后台	订单 / 订单列表	订单列表	/order/list	导出	R	菜单权限	systemOrderExcel
+平台后台	订单 / 订单列表	订单列表	/order/list	记录	RU	菜单权限	systemOrderStatus
+平台后台	订单 / 订单列表	订单列表	/order/list	关联订单	O	菜单权限	systemOrderChildrenList
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelDownload
+平台后台	订单 / 订单列表	订单列表	/order/list	列表	R	菜单权限	systemOrderLst
+平台后台	订单 / 订单列表	订单列表	/order/list	金额统计	R	菜单权限	systemOrderStat
+平台后台	订单 / 订单列表	订单列表	/order/list	快递查询	R	菜单权限	systemOrderExpress
+平台后台	订单 / 订单列表	订单列表	/order/list	头部统计	R	菜单权限	systemOrderTitle
+平台后台	订单 / 订单列表	订单列表	/order/list	详情	R	菜单权限	systemOrderDetail
+平台后台	订单 / 订单列表	订单列表	/order/list	导出	R	菜单权限	systemOrderExcel
+平台后台	订单 / 订单列表	订单列表	/order/list	记录	RU	菜单权限	systemOrderStatus
+平台后台	订单 / 订单列表	订单列表	/order/list	关联订单	O	菜单权限	systemOrderChildrenList
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 订单列表	订单列表	/order/list	导出列表	R	菜单权限	systemStoreExcelDownload
+平台后台	订单 / 退款订单	退款订单	/order/refund	列表	R	菜单权限	systemRefundOrderLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出	R	菜单权限	systemRefundOrderExcel
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	订单 / 退款订单	退款订单	/order/refund	详情	R	菜单权限	systemRefundOrderDetail
+平台后台	订单 / 退款订单	退款订单	/order/refund	日志	R	菜单权限	systemRefundOrderLog
+平台后台	订单 / 退款订单	退款订单	/order/refund	审核	U	菜单权限	systemRefundOrderApprove
+平台后台	订单 / 退款订单	退款订单	/order/refund	列表	R	菜单权限	systemRefundOrderLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	详情	R	菜单权限	systemRefundOrderDetail
+平台后台	订单 / 退款订单	退款订单	/order/refund	日志	R	菜单权限	systemRefundOrderLog
+平台后台	订单 / 退款订单	退款订单	/order/refund	审核	U	菜单权限	systemRefundOrderApprove
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出	R	菜单权限	systemRefundOrderExcel
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	订单 / 退款订单	退款订单	/order/refund	列表	R	菜单权限	systemRefundOrderLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	详情	R	菜单权限	systemRefundOrderDetail
+平台后台	订单 / 退款订单	退款订单	/order/refund	日志	R	菜单权限	systemRefundOrderLog
+平台后台	订单 / 退款订单	退款订单	/order/refund	审核	U	菜单权限	systemRefundOrderApprove
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出	R	菜单权限	systemRefundOrderExcel
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	订单 / 退款订单	退款订单	/order/refund	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	设置	设置	/settings	(页面入口)	R	待补	
+平台后台	设置 / 商城设置	商城设置	/shop	(页面入口)	R	待补	
+平台后台	设置 / 商城设置 / 协议规则	协议规则	/setting/agreements	协议列表	R	菜单权限	systemAgreeKeyLsy
+平台后台	设置 / 商城设置 / 协议规则	协议规则	/setting/agreements	商户入住申请协议	C	菜单权限	systemAgreeSave
+平台后台	设置 / 商城设置 / 商城设置	商城设置	/systemForm/Basics/shop_tabs	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 商城设置 / 支付设置	支付设置	/systemForm/Basics/pay_tabs	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	详情	R	菜单权限	groupDetail
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	列表	R	菜单权限	groupDataLst
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	添加	C	菜单权限	groupDataCreate
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	编辑	U	菜单权限	groupDataUpdate
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	删除	D	菜单权限	groupDataDelete
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	修改状态	U	菜单权限	groupDataChangeStatus
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	上传图片	C	菜单权限	uploadImage
+平台后台	设置 / 商城设置 / 热门搜索	热门搜索	/group/config/67	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	设置 / 商城设置 / 配送配置	配送配置	/delivery_config	(页面入口)	R	待补	
+平台后台	设置 / 商城设置 / 配送配置 / 城市数据	城市数据	/freight/city/list	(页面入口)	R	待补	
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	列表	R	菜单权限	systemExpressLst
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	修改状态	U	菜单权限	systemExpressSwitchStatus
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	编辑	U	菜单权限	systemExpressUpdate
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	删除	D	菜单权限	systemExpressDelete
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	同步	U	菜单权限	systemExpressSync
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	列表	R	菜单权限	systemServeExportLst
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	列表	R	菜单权限	systemCityAreaLst
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	编辑	CU	菜单权限	systemCityAreaCreate
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	编辑	U	菜单权限	systemCityAreaUpdate
+平台后台	设置 / 商城设置 / 配送配置 / 物流公司	物流公司	/freight/express	删除	D	菜单权限	systemCityAreaDelete
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送	第三方送	/delivery	门店列表	R	路由	systemDeliveryStationlst
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送	第三方送	/delivery	门店详情	R	路由	systemDeliveryStationDetail
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送	第三方送	/delivery	门店筛选	R	路由	systemStoreDeliveryOptions
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 充值记录	充值记录	/delivery/recharge_record	充值记录	CR	菜单权限	systemDeliveryStationPaayyLst
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 充值记录	充值记录	/delivery/recharge_record	统计	R	菜单权限	systemDeliveryOrderTitle
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 充值记录	充值记录	/delivery/recharge_record	余额	R	菜单权限	systemDeliveryStationGetBalance
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 配送记录	配送记录	/delivery/usage_record	配送记录	R	菜单权限	systemDeliveryOrderLst
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 配送记录	配送记录	/delivery/usage_record	配送详情	R	菜单权限	systemDeliveryOrderDetail
+平台后台	设置 / 商城设置 / 配送配置 / 第三方送 / 配送配置	配送配置	/systemForm/delivery	编辑配置	CU	菜单权限	systemDeliveryConfigSave
+平台后台	设置 / 应用配置	应用配置	/app_config	(页面入口)	R	待补	
+平台后台	设置 / 应用配置 / APP升级配置	APP升级配置	/systemForm/Basics/app_version	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 应用配置 / APP配置	APP配置	/systemForm/Basics/wechat_open_app	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 应用配置 / 上传校验文件	上传校验文件	/app/wechat/file	上传文件	C	菜单权限	configUpload
+平台后台	设置 / 应用配置 / 上传校验文件	上传校验文件	/app/wechat/file	上传原名文件	C	菜单权限	configUploadName
+平台后台	设置 / 应用配置 / 上传校验文件	上传校验文件	/app/wechat/file	微信校验文件上传	C	菜单权限	configWechatUploadSet
+平台后台	设置 / 应用配置 / 上传校验文件	上传校验文件	/app/wechat/file	小程序配置	U	菜单权限	configRoutineConfig
+平台后台	设置 / 应用配置 / 公众号配置	公众号配置	/systemForm/Basics/wechat	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 应用配置 / 小程序配置	小程序配置	/systemForm/Basics/smallapp	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 权限管理	权限管理	/setting	一键换色	R	路由	systemGetChangeColor
+平台后台	设置 / 权限管理	权限管理	/setting	一键换色保存	C	路由	systemSetChangeColor
+平台后台	设置 / 权限管理	权限管理	/setting	列表 	R	路由	systemDiyPageCategroyLst
+平台后台	设置 / 权限管理	权限管理	/setting	添加表单	C	路由	systemDiyPageCategroyCreateForm
+平台后台	设置 / 权限管理	权限管理	/setting	添加	C	路由	systemDiyPageCategroyCreate
+平台后台	设置 / 权限管理	权限管理	/setting	编辑表单	U	路由	systemDiyPageCategroyUpdateForm
+平台后台	设置 / 权限管理	权限管理	/setting	编辑	U	路由	systemDiyPageCategroyUpdate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员列表	R	菜单权限	systemAdminLst
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改状态	U	菜单权限	systemAdminStatus
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员添加	C	菜单权限	systemAdminCreate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员编辑	U	菜单权限	systemAdminUpdate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改密码	U	菜单权限	systemAdminPassword
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员删除	D	菜单权限	systemAdminDelete
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	上传图片	C	菜单权限	uploadImage
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员列表	R	菜单权限	systemAdminLst
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改状态	U	菜单权限	systemAdminStatus
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员添加	C	菜单权限	systemAdminCreate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员编辑	U	菜单权限	systemAdminUpdate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改密码	U	菜单权限	systemAdminPassword
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员删除	D	菜单权限	systemAdminDelete
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	上传图片	C	菜单权限	uploadImage
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员列表	R	菜单权限	systemAdminLst
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改状态	U	菜单权限	systemAdminStatus
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员添加	C	菜单权限	systemAdminCreate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员编辑	U	菜单权限	systemAdminUpdate
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员修改密码	U	菜单权限	systemAdminPassword
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	管理员删除	D	菜单权限	systemAdminDelete
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	上传图片	C	菜单权限	uploadImage
+平台后台	设置 / 权限管理 / 管理员管理	管理员管理	/setting/systemAdmin	图片列表	R	菜单权限	systemAttachmentLst
+平台后台	设置 / 权限管理 / 菜单管理	菜单管理	/setting/menu	平台菜单/权限列表	R	菜单权限	systemMenuGetLst
+平台后台	设置 / 权限管理 / 菜单管理	菜单管理	/setting/menu	平台菜单/权限添加	C	菜单权限	systemMenuCreate
+平台后台	设置 / 权限管理 / 菜单管理	菜单管理	/setting/menu	平台菜单/权限编辑	U	菜单权限	systemMenuUpdate
+平台后台	设置 / 权限管理 / 菜单管理	菜单管理	/setting/menu	平台菜单/权限删除	D	菜单权限	systemMenuDelete
+平台后台	设置 / 权限管理 / 菜单管理	菜单管理	/setting/menu	搜索获取菜单	R	菜单权限	getMenusList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份列表	R	菜单权限	systemRoleGetList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份添加	C	菜单权限	systemRoleCreate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份编辑	U	菜单权限	systemRoleUpdate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份修改状态	U	菜单权限	systemRoleStatus
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份删除	D	菜单权限	systemRoleDelete
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份列表	R	菜单权限	systemOrganizationRoleGetList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份添加	C	菜单权限	systemOrganizationRoleCreate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份编辑	U	菜单权限	systemOrganizationRoleUpdate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份修改状态	U	菜单权限	systemOrganizationRoleStatus
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份删除	D	菜单权限	systemOrganizationRoleDelete
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份选项	O	菜单权限	systemOrganizationRoleOptions
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份列表	R	菜单权限	systemRoleGetList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份添加	C	菜单权限	systemRoleCreate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份编辑	U	菜单权限	systemRoleUpdate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份修改状态	U	菜单权限	systemRoleStatus
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份删除	D	菜单权限	systemRoleDelete
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份列表	R	菜单权限	systemOrganizationRoleGetList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份添加	C	菜单权限	systemOrganizationRoleCreate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份编辑	U	菜单权限	systemOrganizationRoleUpdate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份修改状态	U	菜单权限	systemOrganizationRoleStatus
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份删除	D	菜单权限	systemOrganizationRoleDelete
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份选项	O	菜单权限	systemOrganizationRoleOptions
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份列表	R	菜单权限	systemRoleGetList
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份添加	C	菜单权限	systemRoleCreate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份编辑	U	菜单权限	systemRoleUpdate
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份修改状态	U	菜单权限	systemRoleStatus
+平台后台	设置 / 权限管理 / 角色权限	角色权限	/setting/systemRole	身份删除	D	菜单权限	systemRoleDelete
+平台后台	设置 / 消息管理	消息管理	/notice	(页面入口)	R	待补	
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告列表	R	菜单权限	systemNoticeList
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告发布	C	菜单权限	systemNoticeCreate
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告编辑	U	菜单权限	systemNoticeUpdate
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告修改状态	U	菜单权限	systemNoticeSwitchStatus
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告详情	R	菜单权限	systemNoticeDetail
+平台后台	设置 / 消息管理 / 公告管理	公告管理	/station/notice	系统公告删除	D	菜单权限	systemNoticeDelete
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置列表	RU	菜单权限	systemNoticeConfigLst
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置添加	CU	菜单权限	systemNoticeConfigCreate
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置编辑	U	菜单权限	systemNoticeConfigUpdate
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置详情	RU	菜单权限	systemNoticeConfigDetail
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置删除	UD	菜单权限	systemNoticeConfigDelete
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置修改状态	U	菜单权限	systemNoticeConfigStatus
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置修改模板ID	RU	菜单权限	systemNoticeConfigGetChangeTempId
+平台后台	设置 / 消息管理 / 消息管理	消息管理	/setting/notification/index	消息配置修改模板ID	U	菜单权限	systemNoticeConfigSetChangeTempId
+平台后台	设置 / 系统设置	系统设置	/sys	配置表单	R	路由	systemDeliveryConfigForm
+平台后台	设置 / 系统设置	系统设置	/sys	编辑配置	U	路由	systemDeliveryConfigSave
+平台后台	设置 / 系统设置 / 一号通	一号通	/serve	(页面入口)	R	待补	
+平台后台	设置 / 系统设置 / 一号通 / 商户结余	商户结余	/service/balance_record	商户结余	R	菜单权限	systemServeMerLst
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	列表	R	菜单权限	systemServeMerMealLst
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	详情	R	菜单权限	systemServeMealDetail
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	添加	C	菜单权限	systemServeMealCreate
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	编辑	U	菜单权限	systemServeMealUpdate
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	删除	D	菜单权限	systemServeMealDelete
+平台后台	设置 / 系统设置 / 一号通 / 服务配置	服务配置	/service/settings	修改状态	U	菜单权限	systemServeMealStatus
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	使用记录	CR	菜单权限	systemStoreProductCopyLst
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	短信发送记录	CR	菜单权限	smsRecord
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	退出登录	O	菜单权限	smsLogout
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	获取验证码	R	菜单权限	systemServeCaptcha
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	验证码校验	O	菜单权限	systemServeCaptchaCheck
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	注册	O	菜单权限	systemServeRegister
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	登录	O	菜单权限	systemServeLogin
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	修改密码	U	菜单权限	systemServeChangePassword
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	修改手机号	U	菜单权限	systemServeChangePhone
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	检测登录状态	U	菜单权限	systemServeIsLogin
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	使用记录	R	菜单权限	systemServeRecordLst
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	套餐列表	R	菜单权限	systemServeMealLst
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	购买套餐	O	菜单权限	systemServePayMeal
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	开通服务	C	菜单权限	systemServeOpenServe
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	修改签名	U	菜单权限	systemServeChangeSign
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	模板	R	菜单权限	systemServeExportTemps
+平台后台	设置 / 系统设置 / 一号通 / 登陆入口	登陆入口	/setting/sms/sms_config/index	使用记录	R	菜单权限	systemServeExportDumpLst
+平台后台	设置 / 系统设置 / 一号通 / 短信设置	短信设置	/sms	短信模板	R	路由	systemServeSmsTemps
+平台后台	设置 / 系统设置 / 一号通 / 短信设置	短信设置	/sms	申请模板	C	路由	systemServeSmsApply
+平台后台	设置 / 系统设置 / 一号通 / 短信设置 / 申请记录	申请记录	/sms/applyList	申请记录	CR	菜单权限	systemServeSmsApplyRecord
+平台后台	设置 / 系统设置 / 一号通 / 短信设置 / 短信模板	短信模板	/sms/template	短信模板	O	菜单权限	systemServeSmsTemps
+平台后台	设置 / 系统设置 / 一号通 / 短信设置 / 短信模板	短信模板	/sms/template	申请模板	C	菜单权限	systemServeSmsApply
+平台后台	设置 / 系统设置 / 一号通 / 短信设置 / 短信账户	短信账户	/sms/user	(页面入口)	R	待补	
+平台后台	设置 / 系统设置 / 一号通 / 短信设置 / 短信配置	短信配置	/systemForm/Basics/message	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 系统设置 / 一号通 / 购买记录	购买记录	/service/purchase	购买记录	R	菜单权限	systemServePayLst
+平台后台	设置 / 系统设置 / 一号通 / 购买记录	购买记录	/service/purchase	商户购买记录	R	菜单权限	systemServeMerPayLst
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	配置信息	RU	菜单权限	systemStorageGetConfig
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	提交配置	CU	菜单权限	systemStorageSetConfig
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	保存云存储配置	CU	菜单权限	systemStorageUpdate
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	同步存储空间	U	菜单权限	systemStorageSync
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	存储空间列表	R	菜单权限	systemStorageLstRegion
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	添加存储空间	C	菜单权限	systemStorageCreateRegion
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	删除存储空间	D	菜单权限	systemStorageDeleteRegion
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	使用存储空间	U	菜单权限	systemStorageRegionSwtichStatus
+平台后台	设置 / 系统设置 / 存储管理	存储管理	/setting/storage	修改存储空间名称	U	菜单权限	systemStorageUpdateDomain
+平台后台	设置 / 系统设置 / 接口配置	接口配置	/systemForm/Basics/extend_tabs	编辑配置信息	CU	菜单权限	configSave
+平台后台	设置 / 系统设置 / 系统设置	系统设置	/systemForm/Basics/system_tabs	编辑配置信息	CU	菜单权限	configSave
+平台后台	财务	财务	/accounts	配置信息	R	路由	systemOrderProfitsharingGetConfig
+平台后台	财务	财务	/accounts	配置保存	C	路由	systemOrderProfitsharingSetConfig
+平台后台	财务	财务	/accounts	申请列表	R	路由	systemUserExtractLst
+平台后台	财务	财务	/accounts	审核表单	U	路由	systemUserExtractSwitchStatusForm
+平台后台	财务	财务	/accounts	审核	U	路由	systemUserExtractSwitchStatus
+平台后台	财务 / 发票管理	发票管理	/accounts/accounts	(页面入口)	R	待补	
+平台后台	财务 / 发票管理 / 发票列表	发票列表	/accounts/receipt	列表	R	菜单权限	systemOrderReceiptList
+平台后台	财务 / 发票管理 / 发票列表	发票列表	/accounts/receipt	详情	R	菜单权限	systemOrderReceiptDetail
+平台后台	财务 / 发票管理 / 发票说明	发票说明	/accounts/invoiceDesc	发票说明 	C	菜单权限	systemAgreeSave
+平台后台	财务 / 商圈代理	商圈代理	/accounts/zoneAgent	结算方式get	R	路由	systemCircleAgentGetSettlementMethod
+平台后台	财务 / 商圈代理	商圈代理	/accounts/zoneAgent	结算方式post	C	路由	systemCircleAgentSetSettlementMethod
+平台后台	财务 / 商圈代理	商圈代理	/accounts/zoneAgent	结算记录列表	R	路由	systemCircleCheckoutList
+平台后台	财务 / 商圈代理	商圈代理	/accounts/zoneAgent	结算记录详情	R	路由	systemCircleCheckoutDetail
+平台后台	财务 / 商圈代理	商圈代理	/accounts/zoneAgent	平台结算审核	U	路由	systemCircleCheckoutAudit
+平台后台	财务 / 商圈代理 / 提成流水	提成流水	/accounts/zoneAgent/commissionRecord	商圈提成流水列表	R	菜单权限	systemCircleFinancialRecordList
+平台后台	财务 / 商圈代理 / 提成流水	提成流水	/accounts/zoneAgent/commissionRecord	商圈提成流水列表	R	菜单权限	systemCircleFinancialRecordList
+平台后台	财务 / 商圈代理 / 申请结算	申请结算	/accounts/zoneAgent/settlementApply	商圈申请结算获取余额	CR	菜单权限	systemCircleCheckoutCreate
+平台后台	财务 / 商圈代理 / 申请结算	申请结算	/accounts/zoneAgent/settlementApply	商圈申请结算提交	C	菜单权限	systemCircleCheckoutSave
+平台后台	财务 / 商圈代理 / 申请结算	申请结算	/accounts/zoneAgent/settlementApply	商圈撤销结算	O	菜单权限	systemCircleCheckoutRevoke
+平台后台	财务 / 商圈代理 / 申请结算	申请结算	/accounts/zoneAgent/settlementApply	商圈备注	U	菜单权限	systemCircleCheckoutRemark
+平台后台	财务 / 商圈代理 / 结算审核	结算审核	/accounts/zoneAgent/settlementReview	平台结算审核	U	菜单权限	systemCircleCheckoutAudit
+平台后台	财务 / 商圈代理 / 结算审核	结算审核	/accounts/zoneAgent/settlementReview	平台转账	O	菜单权限	systemCircleCheckoutTransfer
+平台后台	财务 / 商圈代理 / 结算审核	结算审核	/accounts/zoneAgent/settlementReview	平台备注	U	菜单权限	systemCircleCheckoutPlatformRemark
+平台后台	财务 / 商圈代理 / 结算账号	结算账号	/accounts/zoneAgent/settlementAccount	结算方式get	R	菜单权限	systemCircleAgentGetSettlementMethod
+平台后台	财务 / 商圈代理 / 结算账号	结算账号	/accounts/zoneAgent/settlementAccount	结算方式post	O	菜单权限	systemCircleAgentSetSettlementMethod
+平台后台	财务 / 店铺结算	店铺结算	/mer/accounts	(页面入口)	R	待补	
+平台后台	财务 / 店铺结算 / 分账管理	分账管理	/merchant/applyList	列表	R	菜单权限	systemOrderProfitsharingLst
+平台后台	财务 / 店铺结算 / 分账管理	分账管理	/merchant/applyList	重新分账	O	菜单权限	systemOrderProfitsharingAgain
+平台后台	财务 / 店铺结算 / 分账管理	分账管理	/merchant/applyList	导出	R	菜单权限	systemOrderProfitsharingExport
+平台后台	财务 / 店铺结算 / 分账管理	分账管理	/merchant/applyList	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 店铺结算 / 分账管理	分账管理	/merchant/applyList	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	列表	R	菜单权限	systemFinancialRecordLst
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	统计	R	菜单权限	systemFinancialRecordTitle
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	详情	R	菜单权限	systemFinancialRecordDetail
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	导出	R	菜单权限	systemFinancialRecordDetailExport
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 店铺结算 / 平台账单	平台账单	/accounts/statement	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户列表	R	菜单权限	systemFinancialRecordMerLst
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户统计	R	菜单权限	systemFinancialRecordMerAcountsLst
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务头部统计	R	菜单权限	systemFinancialRecordMerTitle
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务详情	R	菜单权限	systemFinancialRecordMerDetail
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务导出	R	菜单权限	systemFinancialRecordMerExcel
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户列表	R	菜单权限	systemFinancialRecordMerLst
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户统计	R	菜单权限	systemFinancialRecordMerAcountsLst
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务头部统计	R	菜单权限	systemFinancialRecordMerTitle
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务详情	R	菜单权限	systemFinancialRecordMerDetail
+平台后台	财务 / 店铺结算 / 店铺账单	店铺账单	/accounts/merchantBill	商户财务导出	R	菜单权限	systemFinancialRecordMerExcel
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	列表	R	菜单权限	systemFinancialList
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	详情	R	菜单权限	systemFinancialDetail
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	编辑	U	菜单权限	systemFinancialUpdate
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	修改状态	U	菜单权限	systemFinancialSwitchStatus
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	备注	U	菜单权限	systemFinancialMark
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	统计	R	菜单权限	systemFinancialTitle
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	导出	R	菜单权限	systemFinancialExport
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 店铺结算 / 转账记录	转账记录	/accounts/transferRecord	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	财务 / 店铺结算 / 转账设置	转账设置	/accounts/settings	配置信息	RU	菜单权限	systemOrderProfitsharingGetConfig
+平台后台	财务 / 店铺结算 / 转账设置	转账设置	/accounts/settings	配置保存	CU	菜单权限	systemOrderProfitsharingSetConfig
+平台后台	财务 / 用户结算	用户结算	/accounts/record	(页面入口)	R	待补	
+平台后台	财务 / 用户结算 / 充值记录	充值记录	/accounts/bill	列表	R	菜单权限	systemUserRechargeList
+平台后台	财务 / 用户结算 / 充值记录	充值记录	/accounts/bill	统计	R	菜单权限	systemUserRechargeTotal
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	申请列表	CR	菜单权限	systemUserExtractLst
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	审核	U	菜单权限	systemUserExtractSwitchStatus
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	导出	R	菜单权限	systemUserExtractExport
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	财务 / 用户结算 / 提现管理	提现管理	/accounts/extract	详情	R	菜单权限	systemUserExtractDetail
+平台后台	财务 / 用户结算 / 资金记录	资金记录	/accounts/capital	列表	R	菜单权限	systemUserBillList
+平台后台	财务 / 用户结算 / 资金记录	资金记录	/accounts/capital	导出	R	菜单权限	systemUserBillExport
+平台后台	财务 / 用户结算 / 资金记录	资金记录	/accounts/capital	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 用户结算 / 资金记录	资金记录	/accounts/capital	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	列表	R	菜单权限	systemFinancialRecordList
+平台后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出	R	菜单权限	systemFinancialRecordExport
+平台后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	统计	R	菜单权限	systemFinancialCount
+平台后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出列表	R	菜单权限	systemStoreExcelLst
+平台后台	财务 / 资金流水	资金流水	/accounts/capitalFlow	导出下载	R	菜单权限	systemStoreExcelDownload
+平台后台	首页	首页	/	分账商户申请备注	C	路由	systemMerchantApplymentsMarrkSave
+平台后台	首页	首页	/	列表	R	路由	systemOrderProfitsharingLst
+平台后台	首页 / 商品统计	商品统计	/statistic/product	顶部统计	R	菜单权限	systemAnalyticsProductTop
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductLineChart
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductTypePieChart
+平台后台	首页 / 商品统计	商品统计	/statistic/product	顶部统计	R	菜单权限	systemAnalyticsProductTop
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductLineChart
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductTypePieChart
+平台后台	首页 / 商品统计	商品统计	/statistic/product	顶部统计	R	菜单权限	systemAnalyticsProductTop
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductLineChart
+平台后台	首页 / 商品统计	商品统计	/statistic/product	折线图统计	R	菜单权限	systemAnalyticsProductTypePieChart
+平台后台	首页 / 控制台	控制台	/dashboard	主要数据	O	菜单权限	systemStatisticsMain
+平台后台	首页 / 控制台	控制台	/dashboard	当日订单	O	菜单权限	systemStatisticsOrder
+平台后台	首页 / 控制台	控制台	/dashboard	当日订单数	O	菜单权限	systemStatisticsOrderNum
+平台后台	首页 / 控制台	控制台	/dashboard	当日支付人数	O	菜单权限	systemStatisticsOrderUser
+平台后台	首页 / 控制台	控制台	/dashboard	商户销量	O	菜单权限	systemStatisticsMerchantStock
+平台后台	首页 / 控制台	控制台	/dashboard	商户访问量	O	菜单权限	systemStatisticsMerchantRate
+平台后台	首页 / 控制台	控制台	/dashboard	商户销售额	O	菜单权限	systemStatisticsMerchantVisit
+平台后台	首页 / 控制台	控制台	/dashboard	用户数据	O	菜单权限	systemStatisticsUserData
+平台后台	首页 / 控制台	控制台	/dashboard	成交用户	O	菜单权限	systemStatisticsUser
+平台后台	首页 / 控制台	控制台	/dashboard	成交用户占比	O	菜单权限	systemStatisticsUserRate
+平台后台	首页 / 控制台	控制台	/dashboard	未处理业务统计	RU	菜单权限	systemStatisticsAdminCount
+平台后台	首页 / 控制台	控制台	/dashboard	待办事项	O	菜单权限	systemStatisticsAdminTodo
+平台后台	首页 / 控制台	控制台	/dashboard	商户销量排行	O	菜单权限	systemStatisticsMerchantTop
+平台后台	首页 / 数据大屏	数据大屏	/data-screen/index	数据大屏	O	菜单权限	systemDataScreen
+平台后台	首页 / 用户统计	用户统计	/statistic/member	顶部统计	R	菜单权限	systemAnalyticsUserTop
+平台后台	首页 / 用户统计	用户统计	/statistic/member	折线图统计	R	菜单权限	systemAnalyticsUserLineChart
+平台后台	首页 / 用户统计	用户统计	/statistic/member	折线图统计	R	菜单权限	systemAnalyticsUserTypePieChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	顶部统计	R	菜单权限	systemAnalyticsOrderTop
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderLineChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderTypePieChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	顶部统计	R	菜单权限	systemAnalyticsOrderTop
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderLineChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderTypePieChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	顶部统计	R	菜单权限	systemAnalyticsOrderTop
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderLineChart
+平台后台	首页 / 订单统计	订单统计	/statistic/order	折线图统计	R	菜单权限	systemAnalyticsOrderTypePieChart

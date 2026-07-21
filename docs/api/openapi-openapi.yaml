@@ -1,0 +1,684 @@
+openapi: 3.0.3
+info:
+  title: CRMEB 商户开放接口
+  description: 见 ACCURACY.md。confidence 统计见 description。
+  version: CRMEB-MER-v4.0-ref
+servers:
+- url: /
+  description: 路径已含端前缀
+tags:
+- name: openapi
+  description: 商户开放接口
+paths:
+  /openapi/auth:
+    post:
+      tags:
+      - openapi
+      summary: 获取开放接口 Token
+      operationId: post_openapi_auth
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.Auth/auth`
+
+        源码：`app/controller/openapi/Auth.php` :: `auth()`
+
+        返回：data.token, data.exp'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id001
+              type: object
+              properties:
+                unique:
+                  type: string
+                  description: 唯一标识
+                expiration:
+                  type: integer
+                  description: 时间戳，相差≤300秒
+                access_key:
+                  type: string
+                  description: access_key
+                signature:
+                  type: string
+                  description: 签名
+              required:
+              - unique
+              - expiration
+              - access_key
+              - signature
+          application/x-www-form-urlencoded:
+            schema: *id001
+  /openapi/order/detail/{id}:
+    get:
+      tags:
+      - openapi
+      summary: 订单详情
+      operationId: get_openapi_order_detail__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.store.StoreOrder/detail`
+
+        源码：`app/controller/openapi/store/StoreOrder.php` :: `detail()`
+
+        返回：data 订单详情'
+      parameters:
+      - name: unique
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 唯一标识
+      - name: expiration
+        in: query
+        required: true
+        schema:
+          type: integer
+        description: 时间戳，相差≤300秒
+      - name: access_key
+        in: query
+        required: true
+        schema:
+          type: string
+        description: access_key
+      - name: signature
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 签名
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 订单ID
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /openapi/order/list:
+    get:
+      tags:
+      - openapi
+      summary: 订单列表
+      operationId: get_openapi_order_list
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.store.StoreOrder/lst`
+
+        源码：`app/controller/openapi/store/StoreOrder.php` :: `lst()`
+
+        返回：data 分页订单列表'
+      parameters:
+      - name: unique
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 唯一标识
+      - name: expiration
+        in: query
+        required: true
+        schema:
+          type: integer
+        description: 时间戳，相差≤300秒
+      - name: access_key
+        in: query
+        required: true
+        schema:
+          type: string
+        description: access_key
+      - name: signature
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 签名
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 页码
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 每页数量
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 0全部 1未支付 2待发货 3待收货 4待评价 5完成 6已退款 7待核销
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 时间筛选
+      - name: order_sn
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 订单编号
+      - name: username
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 用户昵称
+      - name: order_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 0普通 1自提 2虚拟 3卡密
+      - name: keywords
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 关键词
+      - name: order_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 订单ID
+      - name: activity_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 活动类型
+      - name: group_order_sn
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 主订单编号
+      - name: store_name
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 商品名模糊
+      - name: filter_delivery
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 发货方式筛选
+      - name: filter_product
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 1实物 2虚拟 3卡密
+      - name: pay_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 支付方式
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /openapi/product/create:
+    post:
+      tags:
+      - openapi
+      summary: 创建商品
+      operationId: post_openapi_product_create
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.store.StoreProduct/create`
+
+        源码：`app/controller/openapi/store/StoreProduct.php` :: `create()`
+
+        返回：message 添加成功'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id002
+              type: object
+              properties:
+                unique:
+                  type: string
+                  description: 唯一标识
+                expiration:
+                  type: integer
+                  description: 时间戳，相差≤300秒
+                access_key:
+                  type: string
+                  description: access_key
+                signature:
+                  type: string
+                  description: 签名
+                is_gift_bag:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                integral_rate:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                mer_labels:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                delivery_way:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                delivery_free:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                param_temp_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                custom_temp_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                extend:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                mer_form_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                auto_on_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                auto_off_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                refund_switch:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                once_max_count:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                once_min_count:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                pay_limit:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                give_coupon_ids:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                svip_price:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                svip_price_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                params:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                product_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                good_ids:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_time_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_start_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_end_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_time_interval:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                time_period:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                show_num_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                sale_time_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                sale_time_start_day:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                sale_time_end_day:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                sale_time_week:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                show_reservation_days:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                is_advance:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                advance_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                is_cancel_reservation:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                cancel_reservation_time:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                reservation_form_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                labels:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                activity_label_ids:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+              required:
+              - unique
+              - expiration
+              - access_key
+              - signature
+          application/x-www-form-urlencoded:
+            schema: *id002
+  /openapi/product/detail/{id}:
+    get:
+      tags:
+      - openapi
+      summary: 商品详情
+      operationId: get_openapi_product_detail__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.store.StoreProduct/detail`
+
+        源码：`app/controller/openapi/store/StoreProduct.php` :: `detail()`
+
+        返回：data 商品详情'
+      parameters:
+      - name: unique
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 唯一标识
+      - name: expiration
+        in: query
+        required: true
+        schema:
+          type: integer
+        description: 时间戳，相差≤300秒
+      - name: access_key
+        in: query
+        required: true
+        schema:
+          type: string
+        description: access_key
+      - name: signature
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 签名
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 商品ID
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /openapi/product/list:
+    get:
+      tags:
+      - openapi
+      summary: 商品列表
+      operationId: get_openapi_product_list
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`openapi.store.StoreProduct/lst`
+
+        源码：`app/controller/openapi/store/StoreProduct.php` :: `lst()`
+
+        返回：data 商品分页列表'
+      parameters:
+      - name: unique
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 唯一标识
+      - name: expiration
+        in: query
+        required: true
+        schema:
+          type: integer
+        description: 时间戳，相差≤300秒
+      - name: access_key
+        in: query
+        required: true
+        schema:
+          type: string
+        description: access_key
+      - name: signature
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 签名
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 页码
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 每页数量
+      - name: temp_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: cate_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: mer_cate_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: is_gift_bag
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: us_status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: product_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: mer_labels
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: order
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 默认 'sort'
+      - name: is_ficti
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: svip_price_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: filters_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: is_action
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+components:
+  schemas:
+    CrmebResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+          description: 业务数据，结构因接口而异
+      required:
+      - status
+      - message

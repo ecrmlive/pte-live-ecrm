@@ -1,0 +1,7 @@
+portal	group	module	action	crud	method	path	handler	name
+OpenAPI	openapi	auth	auth (auth)	C	POST	auth	openapi.Auth/auth	
+OpenAPI	openapi	list	订单列表	R	GET	list	/lst	
+OpenAPI	openapi	detail	订单详情	R	GET	detail/:id	/detail	
+OpenAPI	openapi	create	create (create)	C	POST	create	/create	
+OpenAPI	openapi	list	商品列表	R	GET	list	/lst	
+OpenAPI	openapi	detail	商品详情	R	GET	detail/:id	/detail	

@@ -1,0 +1,728 @@
+openapi: 3.0.3
+info:
+  title: CRMEB 客服端
+  description: 见 ACCURACY.md。confidence 统计见 description。
+  version: CRMEB-MER-v4.0-ref
+servers:
+- url: /
+  description: 路径已含端前缀
+tags:
+- name: service-ser
+  description: 客服端
+paths:
+  /ser/captcha:
+    get:
+      tags:
+      - service-ser
+      summary: getCaptcha
+      operationId: get_ser_captcha
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Login/getCaptcha`
+
+        源码：`app/controller/service/Login.php` :: `getCaptcha()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/config:
+    get:
+      tags:
+      - service-ser
+      summary: config
+      operationId: get_ser_config
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Common/config`
+
+        源码：`app/controller/service/Common.php` :: `config()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/history/{uid}:
+    get:
+      tags:
+      - service-ser
+      summary: history
+      operationId: get_ser_history__uid
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/history`
+
+        源码：`app/controller/service/Service.php` :: `history()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 页码
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 每页数量
+      - name: last_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/info:
+    get:
+      tags:
+      - service-ser
+      summary: info
+      operationId: get_ser_info
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Common/info`
+
+        源码：`app/controller/service/Common.php` :: `info()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/login:
+    post:
+      tags:
+      - service-ser
+      summary: login
+      operationId: post_ser_login
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Login/login`
+
+        源码：`app/controller/service/Login.php` :: `login()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id001
+              type: object
+              properties:
+                account:
+                  type: string
+                  description: ''
+                password:
+                  type: string
+                  description: ''
+                key:
+                  type: string
+                  description: ''
+                code:
+                  type: string
+                  description: ''
+          application/x-www-form-urlencoded:
+            schema: *id001
+  /ser/login/scan:
+    post:
+      tags:
+      - service-ser
+      summary: scanLogin
+      operationId: post_ser_login_scan
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Login/scanLogin`
+
+        源码：`app/controller/service/Login.php` :: `scanLogin()`
+
+        返回：data 对象字段: timeout, key, qrcode | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/login/scan/check:
+    post:
+      tags:
+      - service-ser
+      summary: checkScanLogin
+      operationId: post_ser_login_scan_check
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Login/checkScanLogin`
+
+        源码：`app/controller/service/Login.php` :: `checkScanLogin()`
+
+        返回：统一响应包 {status,message,data?}；详见控制器实现 | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id002
+              type: object
+              properties:
+                key:
+                  type: string
+                  description: ''
+          application/x-www-form-urlencoded:
+            schema: *id002
+  /ser/logout:
+    post:
+      tags:
+      - service-ser
+      summary: logout
+      operationId: post_ser_logout
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Login/logout`
+
+        源码：`app/controller/service/Login.php` :: `logout()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/order/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: getOrderInfo
+      operationId: get_ser_order__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/getOrderInfo`
+
+        源码：`app/controller/service/Service.php` :: `getOrderInfo()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/order_express/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: orderExpress
+      operationId: get_ser_order_express__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/orderExpress`
+
+        源码：`app/controller/service/Service.php` :: `orderExpress()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/order_status/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: orderStatus
+      operationId: get_ser_order_status__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/orderStatus`
+
+        源码：`app/controller/service/Service.php` :: `orderStatus()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 页码
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 每页数量
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      - name: user_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/product/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: product
+      operationId: get_ser_product__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/product`
+
+        源码：`app/controller/service/Service.php` :: `product()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/refund/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: getRefundOder
+      operationId: get_ser_refund__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/getRefundOder`
+
+        源码：`app/controller/service/Service.php` :: `getRefundOder()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/refund_express/{id}:
+    get:
+      tags:
+      - service-ser
+      summary: refundOrderExpress
+      operationId: get_ser_refund_express__id
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/refundOrderExpress`
+
+        源码：`app/controller/service/Service.php` :: `refundOrderExpress()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/upload/{field}:
+    post:
+      tags:
+      - service-ser
+      summary: upload
+      operationId: post_ser_upload__field
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/upload`
+
+        源码：`app/controller/service/Service.php` :: `upload()`
+
+        返回：data 对象字段: src | 外层: {status,message,data}'
+      parameters:
+      - name: field
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/user:
+    get:
+      tags:
+      - service-ser
+      summary: user
+      operationId: get_ser_user
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Common/user`
+
+        源码：`app/controller/service/Common.php` :: `user()`
+
+        返回：data: 业务数据对象/数组（见 Repository 返回） | 外层: {status,message,data}'
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/user/lst:
+    get:
+      tags:
+      - service-ser
+      summary: serviceUserList
+      operationId: get_ser_user_lst
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/serviceUserList`
+
+        源码：`app/controller/service/Service.php` :: `serviceUserList()`
+
+        返回：data: 列表结构（通常含 list/count 或分页数据，以实际返回为准） | 外层: {status,message,data}'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 页码
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 每页数量
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+  /ser/user/mark/{uid}:
+    post:
+      tags:
+      - service-ser
+      summary: mark
+      operationId: post_ser_user_mark__uid
+      description: '**doc_confidence**: `high`
+
+        控制器方法已校验存在
+
+        处理器：`service.Service/mark`
+
+        源码：`app/controller/service/Service.php` :: `mark()`
+
+        返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}'
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 路径参数
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+        '400':
+          description: 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmebResponse'
+      x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id003
+              type: object
+              properties:
+                mark:
+                  type: string
+                  description: ''
+          application/x-www-form-urlencoded:
+            schema: *id003
+components:
+  schemas:
+    CrmebResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+          description: 业务数据，结构因接口而异
+      required:
+      - status
+      - message
