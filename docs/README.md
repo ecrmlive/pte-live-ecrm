@@ -7,7 +7,7 @@
 0. [我们要做什么（产品全景）](./product-understanding.md) — **业务主链路与对象**
 1. [功能解析完整度](./analysis-completeness.md) — 完整度与是否允许写代码
 2. **[功能点清单（各端→按钮→CRUD）](./features/README.md)** — **验收主文档**
-3. **[原项目接口文档](./api/README.md)** — Markdown + **OpenAPI 3.0 YAML**（`docs/api/openapi.yaml`）
+3. **[原项目接口文档](./api/README.md)** — Markdown + **OpenAPI 3.0 YAML**；正确性见 [`api/ACCURACY.md`](./api/ACCURACY.md)、真实功能见 [`api/FUNCTIONAL-TRUTH.md`](./api/FUNCTIONAL-TRUTH.md)
 4. **[数据表 `qixi_`](./schema/README.md)** — 表前缀映射与字段
 5. [项目总览](./overview.md) — 定位、三角色、建设范围
 6. [功能地图（模块级摘要）](./feature-matrix.md) — 功能表 + 脑图摘要
@@ -16,8 +16,11 @@
 9. [目标技术架构](./architecture-target.md) — Go / Vben / uni-app x 目标栈
 10. [领域模块拆分](./domain-modules.md) — 建议服务与边界
 11. [角色与端入口](./roles-and-portals.md) — 平台 / 商户 / 用户端
+12. **[服务命名 · Docker 网络/IP](./release/SERVICE-MATRIX.md)** — 各端命名、固定 IP、发布形态
+13. [发布命令](./release/COMMANDS.md) · [Pack/Config](./release/PACK-AND-CONFIG.md)
+14. **[全端开发计划](./dev-plan-full.md)** — 竖切阶段、各端交付与里程碑（阶段 1 起）
 
-> 功能基线以 `docs/features/` 为准；表前缀一律 `qixi_`。缺口见 `docs/features/08-gaps.md`。锁定前不写业务代码。
+> 功能基线以 `docs/features/` 为准（**已锁定**，见 `analysis-completeness.md`）；表前缀一律 `qixi_`。缺口结案见 `docs/features/08-gaps.md`。
 
 ## 原始素材
 

@@ -1,0 +1,38 @@
+# C 端 API（api-app）local 模板；pack 以 api/conf/app.yaml 为准覆盖 config/local/app.yaml
+server:
+  addr: ":8080"
+  mode: debug
+
+mysql:
+  dsn: "qixi:qixi_local@tcp(qixi_mergers_mysql:3306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "qixi_mergers_redis:6379"
+  password: ""
+  db: 0
+
+nats:
+  url: "nats://qixi_mergers_nats:4222"
+
+etcd:
+  endpoints:
+    - "qixi_mergers_etcd:2379"
+
+minio:
+  endpoint: "qixi_mergers_minio:9000"
+  access_key: "qixi_minio"
+  secret_key: "qixi_minio_secret"
+  bucket: "qixi-mergers"
+  use_ssl: false
+
+jwt:
+  secret: "qixi-mergers-dev-jwt-secret-change-me"
+  access_ttl_hours: 12
+  refresh_ttl_hours: 168
+
+# 支付：sandbox=true 时下发 notify_token，回调 HMAC 验签后走 paySuccess（非真实微信/支付宝 SDK）
+payment:
+  sandbox: true
+  notify_secret: "qixi-pay-notify-dev-secret-change-me"
+  wechat: true
+  alipay: true

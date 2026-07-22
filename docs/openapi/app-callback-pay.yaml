@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers pay callback
+  version: 0.1.0
+  description: |
+    支付回调前缀 /api/callback/v1（无 JWT）。
+    mock：直调 paySuccess。
+    wechat/alipay：HMAC(notify_secret) 验签 notify_token 后 paySuccess（沙箱闭环；非真实微信/支付宝 SDK）。
+servers:
+  - url: /api/callback/v1
+paths:
+  /pay/mock:
+    post:
+      summary: Mock 支付回调
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [group_order_id, uid]
+              properties:
+                group_order_id: { type: integer }
+                uid: { type: integer }
+  /pay/wechat:
+    post:
+      summary: 微信渠道回调（沙箱验签）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelNotify"
+  /pay/alipay:
+    post:
+      summary: 支付宝渠道回调（沙箱验签）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelNotify"
+components:
+  schemas:
+    ChannelNotify:
+      type: object
+      required: [group_order_id, uid, notify_token]
+      properties:
+        group_order_id: { type: integer }
+        uid: { type: integer }
+        out_trade_no: { type: string }
+        pay_price: { type: number }
+        notify_token: { type: string }

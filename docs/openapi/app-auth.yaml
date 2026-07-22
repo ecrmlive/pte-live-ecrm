@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app auth
+  version: 0.1.0
+  description: 阶段 1 C 端用户身份接口（api-app）；JWT portal=app，强制含 uid
+servers:
+  - url: /api/app/v1
+paths:
+  /auth/login:
+    post:
+      summary: 用户账号密码登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, password]
+              properties:
+                account: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: OK（token + user）
+  /auth/register:
+    post:
+      summary: 用户注册并登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, password]
+              properties:
+                account: { type: string }
+                password: { type: string, format: password }
+                nickname: { type: string }
+      responses:
+        '200':
+          description: OK（token + user）
+  /auth/refresh:
+    post:
+      summary: 刷新 access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: OK
+  /auth/me:
+    get:
+      summary: 当前用户资料
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

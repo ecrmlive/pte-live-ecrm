@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant trade
+  version: 0.3.0
+  description: 阶段 3 商户订单 / 发货 / 核销（mer_id 隔离）
+servers:
+  - url: /api/merchant/v1
+paths:
+  /orders:
+    get:
+      summary: 本店订单列表（paid/status/await_ship）
+  /orders/{id}:
+    get:
+      summary: 订单详情
+  /orders/{id}/delivery:
+    post:
+      summary: 发货
+  /orders/{id}/verify:
+    post:
+      summary: 核销完成（可选 body.verify_code；有码须匹配；已完成幂等）
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verify_code: { type: string }

@@ -4,7 +4,9 @@
 
 ## 正确性（先读）
 
-**[ACCURACY.md](./ACCURACY.md)** — 文档分级与下单死路由说明。文档错了开发就会错。
+**[ACCURACY.md](./ACCURACY.md)** — 文档分级与下单死路由说明。
+
+**[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)** — 与源码一致的真实功能（下单/积分单/退款/开放接口）。文档错了开发就会错。
 
 ## OpenAPI 3.0（正式 YAML）
 
@@ -26,6 +28,7 @@
 | 文件 | 说明 |
 | --- | --- |
 | [00-common.md](./00-common.md) | 前缀 / 响应 / 鉴权 |
+| [FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md) | **高风险域真实功能**（下单/退款/开放接口） |
 | [01-platform-sys.md](./01-platform-sys.md) | 平台 972 |
 | [02-merchant-mer.md](./02-merchant-mer.md) | 商户后台 595 |
 | [03-user-api.md](./03-user-api.md) | 用户端 436 |

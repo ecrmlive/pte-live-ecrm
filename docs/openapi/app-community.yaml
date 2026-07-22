@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app community
+  version: 0.6.7
+  description: C 端社区种草（图文/评论/挂货；发帖待审 status=0）
+servers:
+  - url: /api/app/v1
+paths:
+  /community/categories:
+    get:
+      summary: 分类列表
+  /community/topics:
+    get:
+      summary: 话题列表（可用于筛选）
+  /community/posts:
+    get:
+      summary: 已审核且展示的帖子列表
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: topic_id
+          in: query
+          schema: { type: integer, default: 0 }
+          description: 0=全部
+    post:
+      summary: 发帖（需登录；创建后 status=0 待审）
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                content: { type: string }
+                image: { type: string }
+                category_id: { type: integer }
+                topic_id: { type: integer }
+                product_id: { type: integer }
+                mer_id: { type: integer }
+  /community/posts/{id}:
+    get:
+      summary: 帖子详情（计 PV；仅通过且展示）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+  /community/posts/{id}/replies:
+    get:
+      summary: 评论列表
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+    post:
+      summary: 发表评论（需登录）
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+                pid: { type: integer, default: 0 }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

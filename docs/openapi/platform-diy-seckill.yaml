@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform diy & seckill
+  version: 0.7.6
+  description: 阶段 6a DIY 装修 + 秒杀监管；DIY 写需 diy/create|update|delete|active（选图 FE diy/pick）
+servers:
+  - url: /api/platform/v1
+paths:
+  /diy/pages:
+    get:
+      summary: 装修页列表
+    post:
+      summary: 新建装修页（按钮权 diy/create）
+  /diy/pages/{id}:
+    get:
+      summary: 装修页详情
+    put:
+      summary: 更新装修页（value.banners / value.menus；按钮权 diy/update）
+    delete:
+      summary: 软删除装修页（按钮权 diy/delete）
+  /diy/pages/{id}/active:
+    post:
+      summary: 设为当前启用首页（按钮权 diy/active）
+  /seckill/times:
+    get:
+      summary: 秒杀场次列表
+  /seckill/actives:
+    get:
+      summary: 秒杀活动列表（可按 mer_id）
+  /seckill/actives/{id}:
+    get:
+      summary: 秒杀活动详情
+    put:
+      summary: 更新秒杀活动（平台监管）
+    delete:
+      summary: 软删除秒杀活动

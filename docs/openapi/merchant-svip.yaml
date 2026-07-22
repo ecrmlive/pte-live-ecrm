@@ -1,0 +1,13 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant svip
+  version: 0.6.4
+  description: 商户 SVIP 价与店铺券叠加配置；更新需 svip/update；商品会员价字段见 merchant-catalog
+servers:
+  - url: /api/merchant/v1
+paths:
+  /setting/svip:
+    get:
+      summary: 读取 svip_coupon_merge
+    put:
+      summary: 更新（按钮权 svip/update；0互斥 1可叠店铺券）

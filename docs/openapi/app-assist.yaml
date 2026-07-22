@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app assist
+  version: 0.6.3
+  description: |
+    C 端助力：活动列表/发起/好友助力 + `/order/assist/check|create`（独立于 v2）。
+    助力单 status：1 进行中 / 10 满员可下单 / 20 已支付 / -1 失败。
+servers:
+  - url: /api/app/v1
+paths:
+  /assist/actives:
+    get:
+      summary: 进行中助力活动列表
+  /assist/actives/{id}:
+    get:
+      summary: 助力活动详情
+  /assist/actives/{id}/sets:
+    get:
+      summary: 进行中/可下单的助力发起列表
+  /assist/actives/{id}/mine:
+    get:
+      summary: 我的助力单（需登录；无则 null）
+  /assist/actives/{id}/start:
+    post:
+      summary: 发起助力（需登录；幂等返回进行中/已满员单）
+  /assist/sets/{id}:
+    get:
+      summary: 助力单详情（含 helpers）
+  /assist/sets/{id}/help:
+    post:
+      summary: 好友助力（需登录，不可自助）
+  /order/assist/check:
+    post:
+      summary: 助力价核对（需登录；仅 status=10）
+  /order/assist/create:
+    post:
+      summary: 助力价下单（需登录）；支付走 /order/pay/:id

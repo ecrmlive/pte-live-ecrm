@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant presell
+  version: 0.7.3
+  description: 商户预售 CRUD；create/delete/toggle 分别需对应按钮权
+servers:
+  - url: /api/merchant/v1
+paths:
+  /presell/actives:
+    get:
+      summary: 本店预售列表
+    post:
+      summary: 创建预售（按钮权 presell/create；定金需 down_price / final_*）
+  /presell/actives/{id}:
+    put:
+      summary: 更新（改 is_show 需 presell/toggle）
+    delete:
+      summary: 软删除（按钮权 presell/delete）
+  /presell/actives/{id}/show:
+    put:
+      summary: 上下架（按钮权 presell/toggle）

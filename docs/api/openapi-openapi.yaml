@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CRMEB 商户开放接口
-  description: 见 ACCURACY.md。confidence 统计见 description。
+  description: 见 ACCURACY.md / FUNCTIONAL-TRUTH.md
   version: CRMEB-MER-v4.0-ref
 servers:
 - url: /
@@ -278,7 +278,7 @@ paths:
       operationId: post_openapi_product_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；商品字段对齐 ProductRepository::CREATE_PARAMS
 
         处理器：`openapi.store.StoreProduct/create`
 
@@ -319,10 +319,67 @@ paths:
                 signature:
                   type: string
                   description: 签名
+                is_copy:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                image:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                slider_image:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                store_name:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                store_info:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                keyword:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                bar_code:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                guarantee_template_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                cate_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                unit_name:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                sort:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                is_show:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                is_good:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
                 is_gift_bag:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
                 integral_rate:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                video_link:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                temp_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                content:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                spec_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                extension_type:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                attr:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
                 mer_labels:
@@ -352,7 +409,13 @@ paths:
                 auto_off_time:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
+                mer_cate_id:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
                 refund_switch:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                brand_id:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
                 once_max_count:
@@ -362,6 +425,9 @@ paths:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
                 pay_limit:
+                  type: string
+                  description: ProductRepository::CREATE_PARAMS
+                attrValue:
                   type: string
                   description: ProductRepository::CREATE_PARAMS
                 give_coupon_ids:

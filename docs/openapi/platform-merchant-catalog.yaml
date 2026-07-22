@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform merchant & catalog
+  version: 0.2.0
+  description: 阶段 2 平台侧商户审核 / 类目品牌 / 商品审核
+servers:
+  - url: /api/platform/v1
+paths:
+  /merchants:
+    get:
+      summary: 商户列表
+      security: [{ bearerAuth: [] }]
+  /merchants/{id}:
+    get:
+      summary: 商户详情
+      security: [{ bearerAuth: [] }]
+  /merchants/{id}/status:
+    put:
+      summary: 启用/锁定商户
+      security: [{ bearerAuth: [] }]
+  /merchant-intentions:
+    get:
+      summary: 入驻申请列表
+      security: [{ bearerAuth: [] }]
+  /merchant-intentions/{id}/audit:
+    post:
+      summary: 审核入驻（通过则创建商户+主账号）
+      security: [{ bearerAuth: [] }]
+  /merchant-categories:
+    get:
+      summary: 商户分类列表
+      security: [{ bearerAuth: [] }]
+  /product-categories:
+    get:
+      summary: 平台商品分类树
+      security: [{ bearerAuth: [] }]
+  /brands:
+    get:
+      summary: 品牌列表
+      security: [{ bearerAuth: [] }]
+  /products:
+    get:
+      summary: 商品监管列表
+      security: [{ bearerAuth: [] }]
+  /products/{id}/audit:
+    post:
+      summary: 商品审核 status=1/-1/-2
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

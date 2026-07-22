@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app promotion
+  version: 0.5.0
+  description: 阶段5 C端平台/店铺券领取、我的券、结算可用券、分销绑定与佣金流水；v2 选券计价。
+servers:
+  - url: /api/app/v1
+paths:
+  /coupons/center:
+    get:
+      summary: 可领券列表（默认平台券；mer_id>0 为店铺券）
+      security: [{ bearerAuth: [] }]
+  /coupons/{id}/receive:
+    post:
+      summary: 领取优惠券（每人每券一次）
+      security: [{ bearerAuth: [] }]
+  /coupons/mine:
+    get:
+      summary: 我的券 status=0未用/1已用/2过期
+      security: [{ bearerAuth: [] }]
+  /coupons/usable:
+    get:
+      summary: 结算可用券 cart_ids=1,2,3
+      security: [{ bearerAuth: [] }]
+  /spread/bind:
+    post:
+      summary: 绑定推广人 {spread_uid}
+      security: [{ bearerAuth: [] }]
+  /spread/me:
+    get:
+      summary: 我的分销信息
+      security: [{ bearerAuth: [] }]
+  /spread/bills:
+    get:
+      summary: 我的佣金流水
+      security: [{ bearerAuth: [] }]
+  /v2/order/check:
+    post:
+      summary: 结算预览，可选 coupon_user_ids、use_integral
+      security: [{ bearerAuth: [] }]
+  /v2/order/create:
+    post:
+      summary: 下单，可选 coupon_user_ids（创建时核销）、use_integral
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

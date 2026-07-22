@@ -4,7 +4,7 @@ description: >-
   Maintain the qixi-live-mergers multi-merchant mall system. Use when working on
   this repository, multi-merchant marketplace features, platform/merchant admin,
   trade/catalog/finance domains, CRMEB MER v4.0 feature alignment, Vben admin,
-  uni-app x storefront, or Go Gin/GORM APIs for qixi-live-mergers.
+  uni-app x / PC storefront, or Go Gin/GORM APIs for qixi-live-mergers.
 disable-model-invocation: false
 ---
 
@@ -37,7 +37,8 @@ disable-model-invocation: false
 
 ## Analysis gate
 
-功能基线未锁定前：只做文档与分析，不写业务代码。详见 `docs/analysis-completeness.md`。
+功能基线**已锁定**（见 `docs/analysis-completeness.md`）：允许技术方案与业务编码。  
+验收以 `docs/features/` 为准；高风险域先读 `docs/api/FUNCTIONAL-TRUTH.md`。
 
 ## Task scope
 
@@ -62,7 +63,7 @@ disable-model-invocation: false
 
 - 配置文件使用 `.yaml`。
 - API：Gin、GORM、Swagger、MySQL、etcd、NATS。
-- 管理后台：Vben 5+；C 端优先 uni-app x（UTS / HBuilderX 5.0+）。
+- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x；PC 商城用 Vue 3（`app-pc/`）。
 - **数据库表前缀固定 `qixi_`**（CRMEB `eb_` → `qixi_`）。见 `docs/schema/`。禁止新代码使用 `eb_`。
 - 商户接口强制 `mer_id` 隔离。
 - 测试数据注意中文乱码（utf8mb4）。

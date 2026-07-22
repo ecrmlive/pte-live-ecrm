@@ -1,6 +1,6 @@
 # 平台后台 `/sys/`
 
-> 对照文档。置信度：high=959 stale=12 unresolved=1。先读 [ACCURACY.md](./ACCURACY.md)。
+> 对照文档。置信度：high=959 stale=12 unresolved=1。先读 [ACCURACY.md](./ACCURACY.md)、[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 合计 **972** 条。
 
@@ -9,11 +9,11 @@
 ### `POST /sys/activity/atmosphere/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.marketing.StoreAtmosphere/create`
 - 源码：`app/controller/admin/store/marketing/StoreAtmosphere.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `scope_type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/activity/atmosphere/delete/:id` — 删除
@@ -74,11 +74,11 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/activity/border/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.marketing.StoreBorder/create`
 - 源码：`app/controller/admin/store/marketing/StoreBorder.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `scope_type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/activity/border/delete/:id` — 删除
@@ -139,11 +139,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/activity/cate/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreActivityCate/create`
 - 源码：`app/controller/admin/store/StoreActivityCate.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/activity/cate/delete/:id` — 删除
@@ -210,11 +213,11 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/activity/form/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.marketing.StoreForm/create`
 - 源码：`app/controller/admin/store/marketing/StoreForm.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `form_id` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/activity/form/delete/:id` — 删除
@@ -302,11 +305,21 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/activity/label/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreActivityLabel/create`
 - 源码：`app/controller/admin/store/StoreActivityLabel.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `label_cate` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `label_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `style_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `color` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bg_color` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `border_color` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `icon` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/activity/label/delete/:id` — 删除
@@ -1331,11 +1344,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/community/category/create` — 社区分类添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.community.CommunityCategory/create`
 - 源码：`app/controller/admin/community/CommunityCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/community/category/create/form` — 社区分类添加表单
@@ -1579,11 +1595,16 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/community/topic/create` — 社区话题添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.community.CommunityTopic/create`
 - 源码：`app/controller/admin/community/CommunityTopic.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `category_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `topic_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_hot` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/community/topic/create/form` — 社区话题添加表单
@@ -3750,11 +3771,19 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/member/interests/create` — 会员权益添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user..MemberInterests/create`
 - 源码：`app/controller/admin/user/MemberInterests.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `brokerage_level` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `info` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `has_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `link` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `value` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `on_pic` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /sys/member/interests/create/form` — 会员权益添加表单
@@ -4311,11 +4340,18 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/notice/config/create` — 消息配置添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.system.notice.SystemNoticeConfig/create`
 - 源码：`app/controller/admin/system/notice/SystemNoticeConfig.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `notice_title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_key` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_info` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_sys` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_wechat` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_routine` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notice_sms` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/notice/config/create/form` — 消息配置添加表单
@@ -4787,11 +4823,16 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/points/cate/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.points.Category/create`
 - 源码：`app/controller/admin/points/Category.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `cate_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/points/cate/create/form` — 添加表单
@@ -5009,11 +5050,13 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/points/product/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.points.Product/create`
 - 源码：`app/controller/admin/points/Product.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `is_used` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_hot` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `spec_type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/points/product/delete/:id` — 修改状态
@@ -5599,11 +5642,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/seckill/config/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreSeckill/create`
 - 源码：`app/controller/admin/store/StoreSeckill.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `start_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `end_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/seckill/config/create/form` — 添加表单
@@ -6259,11 +6306,24 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/service/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.service.StoreService/create`
 - 源码：`app/controller/merchant/store/service/StoreService.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `uid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `nickname` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `account` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pwd` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `confirm_pwd` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_open` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `customer` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_verify` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_goods` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notify` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `avatar` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /sys/service/create/form` — 添加表单
@@ -6324,11 +6384,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/service/reply/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.service.StoreServiceReply/create`
 - 源码：`app/controller/merchant/store/service/StoreServiceReply.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `keyword` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `content` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `DELETE /sys/service/reply/delete/:id` — 删除
@@ -7039,11 +7102,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/brand/category/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreBrandCategory/create`
 - 源码：`app/controller/admin/store/StoreBrandCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `data` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/brand/category/create/form` — 添加表单
@@ -7120,11 +7187,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/brand/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreBrand/create`
 - 源码：`app/controller/admin/store/StoreBrand.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `brand_category_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brand_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/brand/create/form` — 添加表单
@@ -7204,11 +7275,16 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/category/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreCategory/create`
 - 源码：`app/controller/admin/store/StoreCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `data` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/category/create/form` — 添加表单
@@ -7307,11 +7383,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/city/create` — 编辑
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.CityArea/create`
 - 源码：`app/controller/admin/store/CityArea.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `parent_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `level` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `path` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/city/create/form/:id` — 编辑表单
@@ -7367,11 +7446,33 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/coupon/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.Coupon/create`
 - 源码：`app/controller/admin/store/Coupon.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `use_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_price` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `use_min_price` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `use_start_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `product_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `range_date` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `send_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `full_reduction` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_limited` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_timeout` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `total_count` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_ids` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mer_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_trader` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `category_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mer_ids` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/coupon/create/form` — 添加表单
@@ -7662,11 +7763,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/params/temp/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.parameter.ParameterTemplate/create`
 - 源码：`app/controller/admin/parameter/ParameterTemplate.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `template_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_ids` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `params` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `delete_params` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/store/params/temp/delete/:id` — 删除
@@ -8347,11 +8452,20 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/store/reply/create` — 添加虚拟评论
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreProductReply/virtualReply`
 - 源码：`app/controller/admin/store/StoreProductReply.php` :: `virtualReply()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `product_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `nickname` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `comment` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `product_score` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `service_score` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `postage_score` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `avatar` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pics` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `create_time` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/store/reply/create/form/:id?` — 添加虚拟评论表单
@@ -8697,11 +8811,21 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/system/article/article/create` — 文章添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.article.Article/create`
 - 源码：`app/controller/admin/article/Article.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `cid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `content` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `author` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `image_input` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `synopsis` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_hot` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_banner` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `url` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/system/article/article/delete/:id` — 文章删除
@@ -8761,11 +8885,16 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/system/article/category/create` — 文章分类添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.article.ArticleCategory/create`
 - 源码：`app/controller/admin/article/ArticleCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `info` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `image` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/system/article/category/create/form` — 文章分类添加表单
@@ -9022,11 +9151,13 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/system/form/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.system.form.Form/create`
 - 源码：`app/controller/admin/system/form/Form.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `value` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/system/form/delete/:id` — 删除
@@ -9244,11 +9375,12 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/system/merchant/category` — 店铺分类添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.system.merchant.MerchantCategory/create`
 - 源码：`app/controller/admin/system/merchant/MerchantCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `category_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `commission_rate` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/system/merchant/category/:id` — 店铺分类删除
@@ -9997,11 +10129,19 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/user/brokerage/create` — 分销员等级添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user..UserBrokerage/create`
 - 源码：`app/controller/admin/user/UserBrokerage.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `brokerage_level` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_icon` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_rule` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extension_one` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extension_two` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `image` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `value` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `DELETE /sys/user/brokerage/delete/:id` — 分销员等级删除
@@ -10579,11 +10719,11 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/user/group/user/group` — 用户分组添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user.UserGroup/create`
 - 源码：`app/controller/admin/user/UserGroup.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `group_name` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /sys/user/history/:id` — 浏览记录
@@ -10811,11 +10951,11 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/user/label/user/label` — 用户标签添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user.UserLabel/create`
 - 源码：`app/controller/admin/user/UserLabel.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `label_name` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `POST /sys/user/lst` — 用户列表
@@ -10874,11 +11014,19 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/user/member/create` — 普通会员等级添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user..UserBrokerage/create`
 - 源码：`app/controller/admin/user/UserBrokerage.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `brokerage_level` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_icon` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `brokerage_rule` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extension_one` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extension_two` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `image` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `value` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /sys/user/member/create/form` — 普通会员等级添加表单
@@ -11399,11 +11547,12 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /sys/wechat/news/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.wechat.WechatNews/create`
 - 源码：`app/controller/admin/wechat/WechatNews.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `data` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /sys/wechat/news/delete/:id` — 删除

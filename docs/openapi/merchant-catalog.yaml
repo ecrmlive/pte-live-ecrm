@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant catalog
+  version: 0.2.0
+  description: 阶段 2 商户商品 CRUD（强制 mer_id）
+servers:
+  - url: /api/merchant/v1
+paths:
+  /products:
+    get:
+      summary: 本店商品列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建商品（单规格默认 SKU）
+      security: [{ bearerAuth: [] }]
+  /products/{id}:
+    get:
+      summary: 商品详情
+      security: [{ bearerAuth: [] }]
+    put:
+      summary: 更新商品
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 软删除
+      security: [{ bearerAuth: [] }]
+  /products/{id}/show:
+    put:
+      summary: 上下架 is_show=0|1
+      security: [{ bearerAuth: [] }]
+  /products/{id}/stock:
+    put:
+      summary: 改库存
+      security: [{ bearerAuth: [] }]
+  /product-categories:
+    get:
+      summary: 平台分类树（选类目）
+      security: [{ bearerAuth: [] }]
+  /brands:
+    get:
+      summary: 品牌列表
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

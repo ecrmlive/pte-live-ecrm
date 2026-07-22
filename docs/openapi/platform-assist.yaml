@@ -1,0 +1,16 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform assist
+  version: 0.6.3
+  description: 平台助力监管（上下架/删除）
+servers:
+  - url: /api/platform/v1
+paths:
+  /assist/actives:
+    get:
+      summary: 全平台助力活动列表
+  /assist/actives/{id}:
+    put:
+      summary: 更新（含上下架）
+    delete:
+      summary: 软删除

@@ -15,13 +15,24 @@
 | `POST /api/v3/order/create` | v3CreateOrder | ❌ 不存在 | **stale** |
 | `POST /api/v3/order/check` | v3CheckOrder | ❌ 不存在 | **stale** |
 
-当前这份 CRMEB 源码里，用户下单实现落在 **v2**；v1/v3 路由是死路由。重建时不要被错误文档带去实现不存在的方法。
+当前这份 CRMEB 源码里，**普通订单**落在 **v2**；`/api/order/create|check` 与 `/api/v3/order/*` 为死路由。**积分订单**另见 `/api/order/v3/*`（PointsOrder）。
+
+### 路径易混（积分 vs 死路由）
+
+| 路径 | 真实功能 |
+| --- | --- |
+| `/api/v2/order/*` | 普通订单 |
+| `/api/order/v3/*` | **积分订单**（PointsOrder） |
+| `/api/v3/order/*` | **死路由**（StoreOrder 无 v3 方法） |
+
+完整功能真相见 **[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)**。
+
 
 ## 结论（诚实）
 
 | 等级 | 含义 | 数量（约） | 开发能否直接用 |
 | --- | --- | --- | --- |
-| **high** | 路径正确且控制器方法真实存在；参数从方法体抽取 | 1999 | 可作主对照，实现前仍打开源码看 data |
+| **high** | 路径正确且控制器方法真实存在；参数从方法体/Validate 抽取 | 1999 | 可作主对照，实现前仍打开源码看 data |
 | **stale** | 路由有、方法无（原项目死路由） | 26 | **禁止**按文档实现 |
 | **unresolved** | 未可靠映射 | 2 | 先查 route 源码 |
 | 其它 | 待定 | 0 | 先核实 |
@@ -49,8 +60,10 @@
 
 ## 校验产物
 
+- `FUNCTIONAL-TRUTH.md` — 高风险域真实功能（下单 / 支付回调 / 退款与提现状态机）
 - `VALIDATION-REPORT.md` — 自动校验明细  
 - `crmeb-api-all.jsonl` 字段 `doc_confidence` / `doc_note`  
 - OpenAPI YAML operation.description 含置信度说明  
+- `../features/08-gaps.md` — 空页已分类（39 非缺口 / 14 待前端对照）
 
 源码根：`~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0`

@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform trade
+  version: 0.3.0
+  description: 阶段 3 平台订单监管（只读）
+servers:
+  - url: /api/platform/v1
+paths:
+  /orders:
+    get:
+      summary: 全平台子单列表
+  /orders/{id}:
+    get:
+      summary: 子单详情

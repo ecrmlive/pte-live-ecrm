@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>栖息商城 · 客服查单</title>
+  <style>
+    :root { --bg: #f4f6f8; --card: #fff; --line: #e6e8eb; --text: #1f2329; --muted: #8a8f98; --accent: #1677ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--card); border-bottom: 1px solid var(--line); padding: 16px 24px; }
+    h1 { margin: 0; font-size: 18px; }
+    p.sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    main { max-width: 760px; margin: 24px auto; padding: 0 16px 40px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 14px; }
+    button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); margin-left: 8px; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; font-size: 12px; min-height: 120px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .replies { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .replies button { background: #f0f5ff; color: #1d39c4; border: 1px solid #adc6ff; }
+    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>客服工作台 · 查单</h1>
+    <p class="sub">阶段 6b：/api/service/v1 查单 + 快捷回复；亦可演示 OpenAPI 签名换票</p>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>API 根（api-admin）</label>
+          <input id="base" value="http://127.0.0.1:18080" />
+        </div>
+        <div>
+          <label>客服 Token（X-Service-Token）</label>
+          <input id="svcToken" value="service_demo_token" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>商户 mer_id</label>
+          <input id="merId" value="1" />
+        </div>
+        <div>
+          <label>订单 order_id</label>
+          <input id="orderId" value="1" />
+        </div>
+      </div>
+      <button id="btnService">客服查单</button>
+      <button class="secondary" id="btnReplies">加载快捷回复</button>
+      <button class="secondary" id="btnOpen">OpenAPI 签名换票并查单</button>
+      <div class="replies" id="replyBox"></div>
+    </div>
+    <div class="card">
+      <label>OpenAPI 演示凭证（sql/008）</label>
+      <div class="row">
+        <input id="ak" value="demo_mer1_ak" placeholder="access_key" />
+        <input id="sk" value="demo_mer1_sk" placeholder="secret_key" />
+      </div>
+      <pre id="out">等待查询…</pre>
+    </div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const out = (v) => { $("out").textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2); };
+
+    async function hmacSHA256Hex(secret, message) {
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+      return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function ymdHisCST(unixSec) {
+      const d = new Date((unixSec + 8 * 3600) * 1000);
+      const p = (n) => String(n).padStart(2, "0");
+      return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
+    }
+
+    async function openSignature(ak, sk, unique, expiration) {
+      const policy = {
+        access_key: ak,
+        conditions: `${ak}/mer/openapi`,
+        expiration: ymdHisCST(expiration),
+        unique,
+      };
+      const keys = Object.keys(policy).sort();
+      const ordered = {};
+      keys.forEach((k) => { ordered[k] = policy[k]; });
+      const json = JSON.stringify(ordered);
+      const b64 = btoa(json);
+      return hmacSHA256Hex(sk, b64);
+    }
+
+    $("btnService").onclick = async () => {
+      try {
+        const base = $("base").value.replace(/\/$/, "");
+        const url = `${base}/api/service/v1/orders/${$("orderId").value}?mer_id=${$("merId").value}`;
+        const res = await fetch(url, { headers: { "X-Service-Token": $("svcToken").value } });
+        out(await res.json());
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnReplies").onclick = async () => {
+      try {
+        const base = $("base").value.replace(/\/$/, "");
+        const res = await fetch(`${base}/api/service/v1/quick-replies?mer_id=${$("merId").value}`, {
+          headers: { "X-Service-Token": $("svcToken").value },
+        });
+        const json = await res.json();
+        out(json);
+        const box = $("replyBox");
+        box.innerHTML = "";
+        (json.data?.list || []).forEach((item) => {
+          const b = document.createElement("button");
+          b.textContent = item.title;
+          b.onclick = () => out({ reply: item });
+          box.appendChild(b);
+        });
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnOpen").onclick = async () => {
+      try {
+        const base = $("base").value.replace(/\/$/, "");
+        const ak = $("ak").value;
+        const sk = $("sk").value;
+        const unique = `svc-${Date.now()}`;
+        const expiration = Math.floor(Date.now() / 1000);
+        const signature = await openSignature(ak, sk, unique, expiration);
+        const authRes = await fetch(`${base}/api/open/v1/auth`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ unique, expiration, access_key: ak, signature }),
+        });
+        const auth = await authRes.json();
+        if (auth.status !== 200) { out(auth); return; }
+        const token = auth.data.token;
+        const detailRes = await fetch(`${base}/api/open/v1/order/detail/${$("orderId").value}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        out({ auth: auth.data, order: await detailRes.json() });
+      } catch (e) { out(String(e)); }
+    };
+  </script>
+</body>
+</html>

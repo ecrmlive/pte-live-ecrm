@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app catalog
+  version: 0.2.0
+  description: 阶段 2 C 端只读商品（已审+上架）
+servers:
+  - url: /api/app/v1
+paths:
+  /catalog/home:
+    get:
+      summary: 首页热卖
+  /catalog/categories:
+    get:
+      summary: 分类列表
+  /catalog/products:
+    get:
+      summary: 可售商品列表
+  /catalog/products/{id}:
+    get:
+      summary: 商详
+  /catalog/stores/{id}:
+    get:
+      summary: 店铺首页商品
+  /catalog/points/products:
+    get:
+      summary: 积分商城商品（type=1）

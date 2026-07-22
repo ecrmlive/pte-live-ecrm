@@ -20,10 +20,19 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+.temp
 
 # build output
 */dist/
 dist/
+!**/dist/.gitkeep
+!admin/public/
+!merchant-admin/public/
+!app-uni/public/
+!app-pc/public/
+!service-web/public/
+app-uni/unpackage/
+app-uni/dist/
 
 # local environment (keep *.example templates)
 .env
@@ -36,19 +45,32 @@ deploy.env
 scripts/release.env
 scripts/release.*.env
 
-# release 打包产物（结构与 compose 提交 git；密钥与二进制/静态产物忽略）
+# release 打包产物（结构与 compose / *.example 提交；密钥与二进制忽略）
 app.yaml
-release/qixi-live-sports-*/config/local/compose.env
-release/qixi-live-sports-*/config/prod/compose.env
-release/qixi-live-sports-*/config/test/compose.env
-release/qixi-live-sports-*/config/test/app.yaml
-release/qixi-live-sports-*/bin/
-release/qixi-live-sports-*/dist/
-release/opts/qxkejiwl.top
-12_init_key.sql
-services/admin-api/.gocache
-services/client-api/.gocache
+!api/conf/app.yaml
+!api/conf/admin.yaml
+!api/conf/job.yaml
+!**/config/**/*.example
+release/qixi-mergers-*/config/local/compose.env
+release/qixi-mergers-*/config/local/app.yaml
+release/qixi-mergers-*/config/prod/compose.env
+release/qixi-mergers-*/config/prod/app.yaml
+release/qixi-mergers-*/bin/
+release/qixi-mergers-*/dist/
+release/qixi-mergers-db/sql/
+# opts：忽略证书/私钥站点目录，保留 nginx 模板与 README
+release/opts/*/
+!release/opts/README.md
+!release/opts/nginx/
+!release/opts/nginx/**
 build
+api/.gocache
+**/bin/
+!**/bin/.gitkeep
+
+# 本地素材库上传产物
+api/data/uploads/
+data/uploads/
 
 # node dependencies
 node_modules/

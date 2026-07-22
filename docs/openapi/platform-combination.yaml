@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform combination
+  version: 0.6.2
+  description: 平台拼团监管
+servers:
+  - url: /api/platform/v1
+paths:
+  /combination/groups:
+    get:
+      summary: 拼团活动列表
+  /combination/groups/{id}:
+    get:
+      summary: 详情
+    put:
+      summary: 更新（上下架/价/人数）
+    delete:
+      summary: 软删除

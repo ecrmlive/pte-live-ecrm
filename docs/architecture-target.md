@@ -2,6 +2,8 @@
 
 本仓库重建栈，不以 CRMEB PHP/Swoole 为运行时。
 
+**服务命名 / Docker 网络 / IP / 分阶段计划**（权威）：[`docs/release/SERVICE-MATRIX.md`](./release/SERVICE-MATRIX.md)。
+
 ## 1. 固定版本
 
 | 组件 | 版本 |
@@ -11,40 +13,39 @@
 | npm | 11.16.0 |
 | Corepack | 0.35.0 |
 | alpine | 3.24.1 |
-| nginx | 1.30.3-alpine3.23 |
+| nginx | 宿主机安装（本仓库不用 Docker Nginx） |
 | node 镜像 | 24.18.0-alpine3.24 |
 | MySQL | 8.4.10 |
 | Redis | 8.8.0 |
 | etcd | v3.7.0 |
 | NATS | 2.12.0-alpine |
-| MinIO（可选对象存储） | RELEASE.2025-10-15T17-29-55Z |
+| MinIO（对象存储） | RELEASE.2025-10-15T17-29-55Z |
 
 配置文件统一使用 `.yaml`。
 
-## 2. 推荐仓库形态（落地时）
+## 2. 仓库形态
 
 ```text
 qixi-live-mergers/
 ├── AGENTS.md
 ├── docs/
-├── api/                    # Go：Gin + GORM + Swagger
-│   ├── cmd/
-│   ├── internal/
-│   │   ├── platform/       # 平台后台 API
-│   │   ├── merchant/       # 商户后台 API
-│   │   ├── app/            # C 端 API
-│   │   ├── domain/         # 订单/商品/结算等领域
-│   │   └── pkg/
-│   └── conf/
-├── admin/                  # Vben 5+ 平台后台
-├── merchant-admin/         # Vben 5+ 商户后台（可与 admin 同仓多入口）
-├── app-uni/                # uni-app x 用户端
+├── api/                    # Go 同仓；进程分立
+│   ├── cmd/api-admin/      # 后台：platform/merchant/manager/service/open
+│   ├── cmd/api-app/        # C 端：app + callback
+│   ├── cmd/job/            # NATS 消费
+│   ├── internal/domain/    # 共享领域
+│   ├── internal/{platform,merchant,app,...}/
+│   └── conf/{admin,app,job}.yaml
+├── admin/                  # Vben 平台 → qixi-mergers-admin
+├── merchant-admin/         # Vben 商户 → qixi-mergers-merchant-admin
+├── app-uni/                # uni-app x → qixi-mergers-h5
+├── app-pc/                 # Vue3 PC 商城 → qixi-mergers-pc
 ├── sql/
-├── release/                # 本机构建产物 + Docker 挂载
+├── release/                # 见 SERVICE-MATRIX
 └── scripts/
 ```
 
-若拆多仓，以契约（OpenAPI / NATS 事件）为准，避免循环依赖。
+**API 形态**：**后台 API 与 C 端 API 独立进程**（`api-admin` / `api-app`）+ `job`；领域代码共享，不按业务再拆微服务。
 
 ## 3. API 技术选型
 
@@ -52,47 +53,39 @@ qixi-live-mergers/
 | --- | --- |
 | HTTP | Gin |
 | ORM | GORM |
-| 文档 | Swagger / OpenAPI |
+| 文档 | Swagger / OpenAPI（本仓库契约在 `docs/openapi/`，CRMEB `docs/api/` 仅对照） |
 | DB | MySQL 8.4 |
 | 缓存/锁 | Redis |
 | 配置/服务发现 | etcd |
-| 消息 | NATS（异步：支付后续、通知、结算任务） |
-| 认证 | JWT / Session 按端分离；平台与商户 RBAC 隔离 |
+| 消息 | NATS |
+| 认证 | JWT；平台与商户 RBAC 隔离 |
 
 ## 4. 客户端规范
 
 | 端 | 规范 |
 | --- | --- |
 | 管理后台 | Vben 5+ |
-| 新移动端（uni-app x） | UTS / HBuilderX 5.0+ |
-| 导航栏（新 App 项目） | 高度 44，紧贴状态栏底部，按钮 44px |
-| iOS（若原生） | iOS 16+、Swift 6、UIKit（禁止 SwiftUI）、MVVM/Clean |
-| Android（若原生） | API 31+、Kotlin、Compose、MVVM/Clean |
-| 鸿蒙（若原生） | OpenHarmony API 23、ArkTS/ArkUI |
+| 用户端 H5/小程序 | uni-app x（UTS / HBuilderX 5.0+） |
+| 用户端 PC | Vue 3 + Vite + TypeScript（`app-pc/`，功能表 4） |
+| 导航栏（新 App） | 高度 44，紧贴状态栏底部，按钮 44px |
 
-本阶段优先：**Go API + Vben 双后台 + uni-app x 用户端**。
+## 5. Docker 与部署
 
-## 5. 部署铁律
-
-1. **本机构建**打包产物，再上传服务器；禁止在服务器用源码构建业务。
-2. Dockerfile **只复制本机产物**进镜像或挂载 `bin/` / `dist/`，禁止服务器 `docker build` 编译应用。
-3. Docker Compose **挂载模式**运行；`config/local` 与 `config/prod` 分离。
-4. 改动发布前必读：
-   - `docs/release/COMMANDS.md`
-   - `docs/release/PACK-AND-CONFIG.md`
-5. 实际部署完成后反馈**部署服务器 IP**。
-6. 部署/服务器操作必须由用户明确授权。
-
-细节遵循全局 Skill `unified-docker-release` 与（落地后的）仓库 `docs/release/`。
+- 网络：`qixi_mergers_net` / `172.30.80.0/24`；业务容器：`api_admin .20`、`job .21`、`api_app .22`。
+- 本机构建产物 → `release/<svc>/` → rsync → 远程 Compose **挂载**运行（后端）。
+- 前端仅 `dist/`；**Nginx 统一宿主机**；后台反代 api-admin，C 端反代 api-app。
+- `config/local` · `config/prod`；禁止服务器源码构建。
+- 必读：[`docs/release/COMMANDS.md`](./release/COMMANDS.md)、[`PACK-AND-CONFIG.md`](./release/PACK-AND-CONFIG.md)。
+- 部署须用户授权；完成后反馈服务器 IP。
 
 ## 6. 领域横切要求
 
-- 多租户：所有商户域数据带 `merchant_id`，平台接口可跨租户，商户接口强制隔离。
-- 订单：平台主单 + 商户子单（对齐 CRMEB `store_group_order` / `store_order` 概念）。
-- 资金：余额/佣金/结算流水可追溯；提现审核状态机明确。
-- 营销：价格计算单一入口，避免前台/后台两套算法。
-- 中文测试数据：注意连接与文件编码（utf8mb4），避免乱码。
+- 多租户：商户域带 `merchant_id`，商户接口强制隔离。
+- 订单：平台主单 + 商户子单。
+- 资金/退款/结算：状态机见 `docs/api/FUNCTIONAL-TRUTH.md`。
+- 营销：价格计算单一入口。
+- 中文测试数据：utf8mb4。
 
 ## 7. 数据库前缀
 
-所有业务表使用前缀 `qixi_`（由 CRMEB `eb_` 映射）。详见 `docs/schema/`。
+业务表前缀 `qixi_`。详见 `docs/schema/`。

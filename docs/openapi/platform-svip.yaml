@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform svip
+  version: 0.6.4
+  description: 平台付费会员授予（§8.2 互斥由 trade 计价执行）；设置需按钮权 svip/update
+servers:
+  - url: /api/platform/v1
+paths:
+  /users:
+    get:
+      summary: C 端用户列表（含 is_svip）
+  /users/{id}/svip:
+    put:
+      summary: 设置会员类型（按钮权 svip/update；0关/1体验/2有效期/3永久）

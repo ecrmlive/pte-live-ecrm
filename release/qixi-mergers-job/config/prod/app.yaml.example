@@ -1,0 +1,31 @@
+# Job prod 模板；首次 pack 种子为 config/prod/app.yaml（后续 pack 不覆盖）
+server:
+  addr: ":8080"
+  mode: release
+
+mysql:
+  dsn: "qixi:CHANGE_ME@tcp(qixi_mergers_mysql:3306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "qixi_mergers_redis:6379"
+  password: ""
+  db: 0
+
+nats:
+  url: "nats://qixi_mergers_nats:4222"
+
+etcd:
+  endpoints:
+    - "qixi_mergers_etcd:2379"
+
+minio:
+  endpoint: "qixi_mergers_minio:9000"
+  access_key: "CHANGE_ME"
+  secret_key: "CHANGE_ME"
+  bucket: "qixi-mergers"
+  use_ssl: false
+
+job:
+  tick_seconds: 30
+  unpaid_ttl_minutes: 30
+  unpaid_batch: 50

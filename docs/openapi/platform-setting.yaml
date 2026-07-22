@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform setting
+  version: 0.7.1
+  description: 平台设置最小 CRUD（管理员/角色/菜单）
+servers:
+  - url: /api/platform/v1
+paths:
+  /setting/admins:
+    get:
+      summary: 管理员列表
+    post:
+      summary: 新建管理员
+  /setting/admins/{id}:
+    put:
+      summary: 更新管理员（含启停/改密）
+  /setting/roles:
+    get:
+      summary: 角色列表
+    post:
+      summary: 新建角色（可用 menu_ids 勾选）
+  /setting/roles/{id}:
+    put:
+      summary: 更新角色名/menu_ids/启停
+  /setting/menus:
+    get:
+      summary: 菜单列表（含隐藏项）
+  /setting/menus/tree:
+    get:
+      summary: 菜单树（角色勾选用）
+  /setting/menus/{id}:
+    put:
+      summary: 更新名称/排序/显示

@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app aftersale
+  version: 0.4.0
+  description: 阶段 4 C 端仅退款申请/进度
+servers:
+  - url: /api/app/v1
+paths:
+  /refund/apply:
+    post:
+      summary: 申请仅退款（refund_type=1）
+  /refunds:
+    get:
+      summary: 售后列表
+  /refunds/{id}:
+    get:
+      summary: 售后详情
+  /refunds/{id}/cancel:
+    post:
+      summary: 取消待审售后（status=-2）
+  /refunds/{id}/platform:
+    post:
+      summary: 申请平台介入（status 0→4）

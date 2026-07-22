@@ -44,8 +44,9 @@
 ## 文档生成说明
 
 - 路径：由 `route/**/*.php` 解析，并拼上端前缀。
-- 请求参数：从控制器方法内 `params` / `param` / `getPage` / Validate 规则 / 注释提取。
+- 请求参数：从控制器方法内 `params` / `param` / `getPage` / `checkParams` / Validate 规则提取。
 - 返回参数：多数接口 `data` 为动态结构；文档给出可确定字段，其余标注「见 Repository 返回」。
 - 若某接口未解析到控制器，仍保留路由行，参数可能只有路径参数。
+- **正确性分级**：见 [ACCURACY.md](./ACCURACY.md)；**真实功能**：见 [FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 分端明细见同目录其它文件；机器可读总表：`crmeb-api-all.jsonl` / `crmeb-api-all.tsv`。

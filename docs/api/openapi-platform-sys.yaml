@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CRMEB 平台后台
-  description: 见 ACCURACY.md。confidence 统计见 description。
+  description: 见 ACCURACY.md / FUNCTIONAL-TRUTH.md
   version: CRMEB-MER-v4.0-ref
 servers:
 - url: /
@@ -18,7 +18,7 @@ paths:
       operationId: systemActivityAtmosphereCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.marketing.StoreAtmosphere/create`
 
@@ -40,6 +40,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id001
+              type: object
+              properties:
+                scope_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id001
   /sys/activity/atmosphere/delete/{id}:
     delete:
       tags:
@@ -212,14 +224,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id001
+            schema: &id002
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id001
+            schema: *id002
   /sys/activity/atmosphere/update/{id}:
     post:
       tags:
@@ -264,7 +276,7 @@ paths:
       operationId: systemActivityBorderCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.marketing.StoreBorder/create`
 
@@ -286,6 +298,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id003
+              type: object
+              properties:
+                scope_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id003
   /sys/activity/border/delete/{id}:
     delete:
       tags:
@@ -458,14 +482,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id002
+            schema: &id004
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id002
+            schema: *id004
   /sys/activity/border/update/{id}:
     post:
       tags:
@@ -510,7 +534,7 @@ paths:
       operationId: systemActivityCateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreActivityCate/create`
 
@@ -532,6 +556,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id005
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id005
   /sys/activity/cate/delete/{id}:
     delete:
       tags:
@@ -750,7 +795,7 @@ paths:
       operationId: systemActivityFormCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.marketing.StoreForm/create`
 
@@ -772,6 +817,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id006
+              type: object
+              properties:
+                form_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id006
   /sys/activity/form/delete/{id}:
     delete:
       tags:
@@ -1004,14 +1061,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id003
+            schema: &id007
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id003
+            schema: *id007
   /sys/activity/form/update/{id}:
     post:
       tags:
@@ -1110,7 +1167,7 @@ paths:
       operationId: systemActivityLabelCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreActivityLabel/create`
 
@@ -1132,6 +1189,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id008
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                label_cate:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                label_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                style_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                color:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bg_color:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                border_color:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                icon:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id008
   /sys/activity/label/delete/{id}:
     delete:
       tags:
@@ -1322,7 +1421,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id004
+            schema: &id009
               type: object
               properties:
                 status:
@@ -1332,7 +1431,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id004
+            schema: *id009
   /sys/activity/label/update/{id}:
     post:
       tags:
@@ -1480,14 +1579,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id005
+            schema: &id010
               type: object
               properties:
                 agree:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id005
+            schema: *id010
   /sys/ajcaptcha:
     get:
       tags:
@@ -1558,7 +1657,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id006
+            schema: &id011
               type: object
               properties:
                 token:
@@ -1571,7 +1670,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id006
+            schema: *id011
   /sys/ajstatus:
     post:
       tags:
@@ -1606,14 +1705,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id007
+            schema: &id012
               type: object
               properties:
                 account:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id007
+            schema: *id012
   /sys/analytics/order/line_chart:
     get:
       tags:
@@ -2015,7 +2114,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id008
+            schema: &id013
               type: object
               properties:
                 company_name:
@@ -2037,7 +2136,7 @@ paths:
                   type: string
                   description: 默认 ''
           application/x-www-form-urlencoded:
-            schema: *id008
+            schema: *id013
   /sys/bill/brokerage:
     get:
       tags:
@@ -2378,7 +2477,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id009
+            schema: &id014
               type: object
               properties:
                 status:
@@ -2388,7 +2487,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id009
+            schema: *id014
   /sys/broadcast/goods/delete/{id}:
     delete:
       tags:
@@ -2573,14 +2672,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id010
+            schema: &id015
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id010
+            schema: *id015
   /sys/broadcast/goods/status/{id}:
     post:
       tags:
@@ -2621,14 +2720,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id011
+            schema: &id016
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id011
+            schema: *id016
   /sys/broadcast/room/apply/form/{id}:
     get:
       tags:
@@ -2705,7 +2804,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id012
+            schema: &id017
               type: object
               properties:
                 status:
@@ -2715,7 +2814,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id012
+            schema: *id017
   /sys/broadcast/room/closeKf/{id}:
     post:
       tags:
@@ -2756,14 +2855,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id013
+            schema: &id018
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id013
+            schema: *id018
   /sys/broadcast/room/comment/{id}:
     post:
       tags:
@@ -2804,14 +2903,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id014
+            schema: &id019
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id014
+            schema: *id019
   /sys/broadcast/room/delete/{id}:
     delete:
       tags:
@@ -2924,14 +3023,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id015
+            schema: &id020
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id015
+            schema: *id020
   /sys/broadcast/room/goods/{id}:
     get:
       tags:
@@ -3020,14 +3119,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id016
+            schema: &id021
               type: object
               properties:
                 replay_status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id016
+            schema: *id021
   /sys/broadcast/room/lst:
     get:
       tags:
@@ -3158,7 +3257,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id017
+            schema: &id022
               type: object
               properties:
                 sort:
@@ -3168,7 +3267,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id017
+            schema: *id022
   /sys/broadcast/room/status/{id}:
     post:
       tags:
@@ -3209,14 +3308,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id018
+            schema: &id023
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id018
+            schema: *id023
   /sys/captcha:
     get:
       tags:
@@ -3310,14 +3409,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id019
+            schema: &id024
               type: object
               properties:
                 global_theme:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id019
+            schema: *id024
   /sys/check/queue:
     get:
       tags:
@@ -3419,7 +3518,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id020
+            schema: &id025
               type: object
               properties:
                 status:
@@ -3429,7 +3528,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id020
+            schema: *id025
   /sys/circle/agent/create:
     post:
       tags:
@@ -3464,7 +3563,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id021
+            schema: &id026
               type: object
               properties:
                 type:
@@ -3498,7 +3597,7 @@ paths:
                   type: string
                   description: 默认 [
           application/x-www-form-urlencoded:
-            schema: *id021
+            schema: *id026
   /sys/circle/agent/delete/{id}:
     delete:
       tags:
@@ -3880,7 +3979,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id022
+            schema: &id027
               type: object
               properties:
                 payment_method:
@@ -3899,7 +3998,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id022
+            schema: *id027
   /sys/circle/agent/update/{id}:
     post:
       tags:
@@ -3940,7 +4039,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id023
+            schema: &id028
               type: object
               properties:
                 type:
@@ -3968,7 +4067,7 @@ paths:
                   type: string
                   description: 默认 [
           application/x-www-form-urlencoded:
-            schema: *id023
+            schema: *id028
   /sys/circle/checkout/audit/{id}:
     post:
       tags:
@@ -4009,7 +4108,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id024
+            schema: &id029
               type: object
               properties:
                 audit_status:
@@ -4019,7 +4118,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id024
+            schema: *id029
   /sys/circle/checkout/create:
     get:
       tags:
@@ -4089,7 +4188,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id025
+            schema: &id030
               type: object
               properties:
                 agent_id:
@@ -4102,7 +4201,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id025
+            schema: *id030
   /sys/circle/checkout/detail/{id}:
     get:
       tags:
@@ -4263,14 +4362,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id026
+            schema: &id031
               type: object
               properties:
                 platform_remark:
                   type: string
                   description: 默认 ''
           application/x-www-form-urlencoded:
-            schema: *id026
+            schema: *id031
   /sys/circle/checkout/remark/{id}:
     post:
       tags:
@@ -4311,14 +4410,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id027
+            schema: &id032
               type: object
               properties:
                 remark:
                   type: string
                   description: 默认 ''
           application/x-www-form-urlencoded:
-            schema: *id027
+            schema: *id032
   /sys/circle/checkout/revoke/{id}:
     post:
       tags:
@@ -4395,7 +4494,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id028
+            schema: &id033
               type: object
               properties:
                 transfer_voucher:
@@ -4405,7 +4504,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id028
+            schema: *id033
   /sys/circle/create:
     post:
       tags:
@@ -4440,7 +4539,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id029
+            schema: &id034
               type: object
               properties:
                 pid:
@@ -4480,7 +4579,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id029
+            schema: *id034
   /sys/circle/delete/{id}:
     delete:
       tags:
@@ -4845,14 +4944,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id030
+            schema: &id035
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id030
+            schema: *id035
   /sys/circle/update/{id}:
     post:
       tags:
@@ -4893,7 +4992,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id031
+            schema: &id036
               type: object
               properties:
                 pid:
@@ -4933,7 +5032,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id031
+            schema: *id036
   /sys/clear/cache:
     post:
       tags:
@@ -4968,14 +5067,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id032
+            schema: &id037
               type: object
               properties:
                 type:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id032
+            schema: *id037
   /sys/community/category/create:
     post:
       tags:
@@ -4984,7 +5083,7 @@ paths:
       operationId: systemCommunityCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.community.CommunityCategory/create`
 
@@ -5006,6 +5105,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id038
+              type: object
+              properties:
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id038
   /sys/community/category/create/form:
     get:
       tags:
@@ -5221,14 +5341,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id033
+            schema: &id039
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id033
+            schema: *id039
   /sys/community/category/update/{id}:
     post:
       tags:
@@ -5629,7 +5749,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id034
+            schema: &id040
               type: object
               properties:
                 status:
@@ -5639,7 +5759,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id034
+            schema: *id040
   /sys/community/reply/status/{id}/form:
     get:
       tags:
@@ -5764,14 +5884,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id035
+            schema: &id041
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id035
+            schema: *id041
   /sys/community/status/{id}:
     post:
       tags:
@@ -5812,7 +5932,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id036
+            schema: &id042
               type: object
               properties:
                 status:
@@ -5822,7 +5942,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id036
+            schema: *id042
   /sys/community/status/{id}/form:
     get:
       tags:
@@ -5963,7 +6083,7 @@ paths:
       operationId: systemCommunityTopicCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.community.CommunityTopic/create`
 
@@ -5985,6 +6105,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id043
+              type: object
+              properties:
+                category_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                topic_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_hot:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id043
   /sys/community/topic/create/form:
     get:
       tags:
@@ -6122,14 +6269,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id037
+            schema: &id044
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id037
+            schema: *id044
   /sys/community/topic/lst:
     get:
       tags:
@@ -6272,14 +6419,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id038
+            schema: &id045
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id038
+            schema: *id045
   /sys/community/topic/update/{id}:
     post:
       tags:
@@ -6392,14 +6539,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id039
+            schema: &id046
               type: object
               properties:
                 start:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id039
+            schema: *id046
   /sys/community/update/{id}/form:
     get:
       tags:
@@ -6500,7 +6647,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id040
+            schema: &id047
               type: object
               properties:
                 pid:
@@ -6525,7 +6672,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id040
+            schema: *id047
   /sys/config/classify/create/table:
     get:
       tags:
@@ -6704,14 +6851,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id041
+            schema: &id048
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id041
+            schema: *id048
   /sys/config/classify/update/table/{id}:
     get:
       tags:
@@ -6788,7 +6935,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id042
+            schema: &id049
               type: object
               properties:
                 pid:
@@ -6813,7 +6960,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id042
+            schema: *id049
   /sys/config/others/group_buying:
     get:
       tags:
@@ -6877,7 +7024,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id043
+            schema: &id050
               type: object
               properties:
                 ficti_status:
@@ -6887,7 +7034,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id043
+            schema: *id050
   /sys/config/others/update:
     post:
       tags:
@@ -6922,7 +7069,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id044
+            schema: &id051
               type: object
               properties:
                 extension_status:
@@ -6977,7 +7124,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id044
+            schema: *id051
   /sys/config/save/{key}:
     post:
       tags:
@@ -7288,14 +7435,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id045
+            schema: &id052
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id045
+            schema: *id052
   /sys/config/setting/update/table/{id}:
     get:
       tags:
@@ -7504,14 +7651,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id046
+            schema: &id053
               type: object
               properties:
                 wechat_chekc_file:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id046
+            schema: *id053
   /sys/config/{key}:
     get:
       tags:
@@ -7697,7 +7844,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id047
+            schema: &id054
               type: object
               properties:
                 copyright_context:
@@ -7707,7 +7854,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id047
+            schema: *id054
   /sys/data_screen/{key}:
     get:
       tags:
@@ -7844,7 +7991,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id048
+            schema: &id055
               type: object
               properties:
                 delivery_type:
@@ -7872,7 +8019,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id048
+            schema: *id055
   /sys/delivery/order/detail/{id}:
     get:
       tags:
@@ -8393,14 +8540,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id049
+            schema: &id056
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id049
+            schema: *id056
   /sys/diy/categroy/create:
     post:
       tags:
@@ -8435,7 +8582,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id050
+            schema: &id057
               type: object
               properties:
                 pid:
@@ -8460,7 +8607,7 @@ paths:
                   type: string
                   description: 默认 3
           application/x-www-form-urlencoded:
-            schema: *id050
+            schema: *id057
   /sys/diy/categroy/delete/{id}:
     delete:
       tags:
@@ -8645,14 +8792,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id051
+            schema: &id058
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id051
+            schema: *id058
   /sys/diy/categroy/update/{id}:
     post:
       tags:
@@ -8693,7 +8840,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id052
+            schema: &id059
               type: object
               properties:
                 pid:
@@ -8715,7 +8862,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id052
+            schema: *id059
   /sys/diy/categroy/{id}/form:
     get:
       tags:
@@ -8828,7 +8975,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id053
+            schema: &id060
               type: object
               properties:
                 name:
@@ -8868,7 +9015,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id053
+            schema: *id060
   /sys/diy/delete/{id}:
     delete:
       tags:
@@ -8981,7 +9128,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id054
+            schema: &id061
               type: object
               properties:
                 name:
@@ -9021,7 +9168,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id054
+            schema: *id061
   /sys/diy/fab/info:
     get:
       tags:
@@ -9194,7 +9341,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id055
+            schema: &id062
               type: object
               properties:
                 cate_id:
@@ -9219,7 +9366,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id055
+            schema: *id062
   /sys/diy/link/delete/{id}:
     delete:
       tags:
@@ -9494,14 +9641,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id056
+            schema: &id063
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id056
+            schema: *id063
   /sys/diy/link/update/{id}:
     post:
       tags:
@@ -9542,7 +9689,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id057
+            schema: &id064
               type: object
               properties:
                 cate_id:
@@ -9564,7 +9711,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id057
+            schema: *id064
   /sys/diy/link/{id}/form:
     get:
       tags:
@@ -9701,7 +9848,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id058
+            schema: &id065
               type: object
               properties:
                 pid:
@@ -9726,7 +9873,7 @@ paths:
                   type: string
                   description: 默认 3
           application/x-www-form-urlencoded:
-            schema: *id058
+            schema: *id065
   /sys/diy/mer_categroy/delete/{id}:
     delete:
       tags:
@@ -9875,14 +10022,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id059
+            schema: &id066
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id059
+            schema: *id066
   /sys/diy/mer_categroy/update/{id}:
     post:
       tags:
@@ -9923,7 +10070,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id060
+            schema: &id067
               type: object
               properties:
                 pid:
@@ -9945,7 +10092,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id060
+            schema: *id067
   /sys/diy/mer_categroy/{id}/form:
     get:
       tags:
@@ -10016,7 +10163,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id061
+            schema: &id068
               type: object
               properties:
                 cate_id:
@@ -10041,7 +10188,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id061
+            schema: *id068
   /sys/diy/mer_link/delete/{id}:
     delete:
       tags:
@@ -10208,14 +10355,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id062
+            schema: &id069
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id062
+            schema: *id069
   /sys/diy/mer_link/update/{id}:
     post:
       tags:
@@ -10256,7 +10403,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id063
+            schema: &id070
               type: object
               properties:
                 cate_id:
@@ -10278,7 +10425,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id063
+            schema: *id070
   /sys/diy/mer_link/{id}/form:
     get:
       tags:
@@ -10469,7 +10616,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id064
+            schema: &id071
               type: object
               properties:
                 name:
@@ -10509,7 +10656,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id064
+            schema: *id071
   /sys/diy/productCategory/info:
     get:
       tags:
@@ -10610,7 +10757,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id065
+            schema: &id072
               type: object
               properties:
                 name:
@@ -10653,7 +10800,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id065
+            schema: *id072
   /sys/diy/select:
     get:
       tags:
@@ -10760,14 +10907,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id066
+            schema: &id073
               type: object
               properties:
                 config:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id066
+            schema: *id073
   /sys/diy/status/{id}:
     post:
       tags:
@@ -10867,7 +11014,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id067
+            schema: &id074
               type: object
               properties:
                 mer_location:
@@ -10877,7 +11024,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id067
+            schema: *id074
   /sys/diy/user_index:
     get:
       tags:
@@ -10941,7 +11088,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id068
+            schema: &id075
               type: object
               properties:
                 my_banner:
@@ -10951,7 +11098,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id068
+            schema: *id075
   /sys/excel/download/{id}:
     get:
       tags:
@@ -11310,14 +11457,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id069
+            schema: &id076
               type: object
               properties:
                 admin_mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id069
+            schema: *id076
   /sys/financial/mark/{id}/form:
     get:
       tags:
@@ -11394,7 +11541,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id070
+            schema: &id077
               type: object
               properties:
                 status:
@@ -11407,7 +11554,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id070
+            schema: *id077
   /sys/financial/title:
     get:
       tags:
@@ -11478,14 +11625,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id071
+            schema: &id078
               type: object
               properties:
                 image:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id071
+            schema: *id078
   /sys/financial_record/count:
     get:
       tags:
@@ -12150,7 +12297,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id072
+            schema: &id079
               type: object
               properties:
                 group_name:
@@ -12172,7 +12319,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id072
+            schema: *id079
   /sys/group/create/table:
     get:
       tags:
@@ -12279,7 +12426,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id073
+            schema: &id080
               type: object
               properties:
                 sort:
@@ -12289,7 +12436,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id073
+            schema: *id080
   /sys/group/data/delete/{id}:
     delete:
       tags:
@@ -12450,14 +12597,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id074
+            schema: &id081
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id074
+            schema: *id081
   /sys/group/data/update/table/{groupId}/{id}:
     get:
       tags:
@@ -12546,7 +12693,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id075
+            schema: &id082
               type: object
               properties:
                 sort:
@@ -12556,7 +12703,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id075
+            schema: *id082
   /sys/group/detail/{id}:
     get:
       tags:
@@ -12711,7 +12858,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id076
+            schema: &id083
               type: object
               properties:
                 group_name:
@@ -12733,7 +12880,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id076
+            schema: *id083
   /sys/guarantee/create:
     post:
       tags:
@@ -12960,14 +13107,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id077
+            schema: &id084
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id077
+            schema: *id084
   /sys/guarantee/status/{id}:
     post:
       tags:
@@ -13008,14 +13155,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id078
+            schema: &id085
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id078
+            schema: *id085
   /sys/guarantee/update/{id}:
     post:
       tags:
@@ -13152,7 +13299,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id079
+            schema: &id086
               type: object
               properties:
                 account:
@@ -13177,7 +13324,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id079
+            schema: *id086
   /sys/login_config:
     get:
       tags:
@@ -13326,7 +13473,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id080
+            schema: &id087
               type: object
               properties:
                 number:
@@ -13339,7 +13486,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id080
+            schema: *id087
   /sys/margin/local/{id}/form:
     get:
       tags:
@@ -13692,14 +13839,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id081
+            schema: &id088
               type: object
               properties:
                 admin_mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id081
+            schema: *id088
   /sys/margin/refund/mark/{id}/form:
     get:
       tags:
@@ -13812,7 +13959,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id082
+            schema: &id089
               type: object
               properties:
                 status:
@@ -13825,7 +13972,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id082
+            schema: *id089
   /sys/margin/refund/status/{id}/form:
     get:
       tags:
@@ -13896,7 +14043,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id083
+            schema: &id090
               type: object
               properties:
                 mer_id:
@@ -13912,7 +14059,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id083
+            schema: *id090
   /sys/margin/set/{id}/form:
     get:
       tags:
@@ -14047,7 +14194,7 @@ paths:
       operationId: systemUserMemberInterestsCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user..MemberInterests/create`
 
@@ -14069,6 +14216,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id091
+              type: object
+              properties:
+                brokerage_level:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                info:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                has_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                link:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                on_pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id091
   /sys/member/interests/create/form:
     get:
       tags:
@@ -14440,7 +14623,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id084
+            schema: &id092
               type: object
               properties:
                 name:
@@ -14480,7 +14663,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id084
+            schema: *id092
   /sys/mer_diy/delete/{id}:
     delete:
       tags:
@@ -14724,7 +14907,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id085
+            schema: &id093
               type: object
               properties:
                 scope_type:
@@ -14734,7 +14917,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id085
+            schema: *id093
   /sys/mer_diy/set_default_data/{id}:
     post:
       tags:
@@ -15015,14 +15198,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id086
+            schema: &id094
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id086
+            schema: *id094
   /sys/merchant/intention/mark/{id}/form:
     get:
       tags:
@@ -15099,7 +15282,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id087
+            schema: &id095
               type: object
               properties:
                 status:
@@ -15112,7 +15295,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id087
+            schema: *id095
   /sys/merchant/intention/status/{id}/form:
     get:
       tags:
@@ -15614,14 +15797,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id088
+            schema: &id096
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id088
+            schema: *id096
   /sys/merchant/type/mer_auth:
     get:
       tags:
@@ -15758,7 +15941,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id089
+            schema: &id097
               type: object
               properties:
                 name:
@@ -15798,7 +15981,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id089
+            schema: *id097
   /sys/micro/delete/{id}:
     delete:
       tags:
@@ -16041,7 +16224,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id090
+            schema: &id098
               type: object
               properties:
                 sms_tempid:
@@ -16066,7 +16249,7 @@ paths:
                   type: string
                   description: 默认 -1
           application/x-www-form-urlencoded:
-            schema: *id090
+            schema: *id098
   /sys/notice/config/create:
     post:
       tags:
@@ -16075,7 +16258,7 @@ paths:
       operationId: systemNoticeConfigCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.system.notice.SystemNoticeConfig/create`
 
@@ -16097,6 +16280,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id099
+              type: object
+              properties:
+                notice_title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_key:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_info:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_sys:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_wechat:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_routine:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notice_sms:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id099
   /sys/notice/config/create/form:
     get:
       tags:
@@ -16318,7 +16534,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id091
+            schema: &id100
               type: object
               properties:
                 status:
@@ -16328,7 +16544,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id091
+            schema: *id100
   /sys/notice/config/update/{id}:
     post:
       tags:
@@ -16435,7 +16651,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id092
+            schema: &id101
               type: object
               properties:
                 type:
@@ -16457,7 +16673,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id092
+            schema: *id101
   /sys/notice/delete/{id}:
     delete:
       tags:
@@ -16624,14 +16840,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id093
+            schema: &id102
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id093
+            schema: *id102
   /sys/notice/update/{id}:
     post:
       tags:
@@ -16672,7 +16888,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id094
+            schema: &id103
               type: object
               properties:
                 type:
@@ -16694,7 +16910,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id094
+            schema: *id103
   /sys/order/chart:
     get:
       tags:
@@ -17341,7 +17557,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id095
+            schema: &id104
               type: object
               properties:
                 status:
@@ -17351,7 +17567,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id095
+            schema: *id104
   /sys/order/refund/detail/{id}:
     get:
       tags:
@@ -18074,7 +18290,7 @@ paths:
       operationId: pointsCateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.points.Category/create`
 
@@ -18096,6 +18312,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id105
+              type: object
+              properties:
+                cate_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id105
   /sys/points/cate/create/form:
     get:
       tags:
@@ -18293,14 +18536,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id096
+            schema: &id106
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id096
+            schema: *id106
   /sys/points/cate/update/form/{id}:
     get:
       tags:
@@ -18449,7 +18692,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id097
+            schema: &id107
               type: object
               properties:
                 is_split:
@@ -18471,7 +18714,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id097
+            schema: *id107
   /sys/points/order/delivery_batch:
     post:
       tags:
@@ -18506,7 +18749,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id098
+            schema: &id108
               type: object
               properties:
                 order_id:
@@ -18525,7 +18768,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id098
+            schema: *id108
   /sys/points/order/detail/{id}:
     get:
       tags:
@@ -18806,14 +19049,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id099
+            schema: &id109
               type: object
               properties:
                 remark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id099
+            schema: *id109
   /sys/points/order/mark/{id}/form:
     get:
       tags:
@@ -18918,7 +19161,7 @@ paths:
       operationId: pointsProductCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.points.Product/create`
 
@@ -18940,6 +19183,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id110
+              type: object
+              properties:
+                is_used:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_hot:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                spec_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id110
   /sys/points/product/delete/{id}:
     delete:
       tags:
@@ -19052,7 +19313,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id100
+            schema: &id111
               type: object
               properties:
                 attrs:
@@ -19065,7 +19326,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id100
+            schema: *id111
   /sys/points/product/lst:
     get:
       tags:
@@ -19208,14 +19469,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id101
+            schema: &id112
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id101
+            schema: *id112
   /sys/points/product/update/{id}:
     post:
       tags:
@@ -19418,14 +19679,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id102
+            schema: &id113
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id102
+            schema: *id113
   /sys/price_rule/update/{id}:
     post:
       tags:
@@ -19496,7 +19757,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id103
+            schema: &id114
               type: object
               properties:
                 label_name:
@@ -19512,7 +19773,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id103
+            schema: *id114
   /sys/product/label/create/form:
     get:
       tags:
@@ -19751,14 +20012,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id104
+            schema: &id115
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id104
+            schema: *id115
   /sys/product/label/update/{id}:
     post:
       tags:
@@ -19799,7 +20060,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id105
+            schema: &id116
               type: object
               properties:
                 label_name:
@@ -19815,7 +20076,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id105
+            schema: *id116
   /sys/product/label/update/{id}/form:
     get:
       tags:
@@ -19951,7 +20212,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id106
+            schema: &id117
               type: object
               properties:
                 extract_maxmum_num:
@@ -19973,7 +20234,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id106
+            schema: *id117
   /sys/profitsharing/export:
     get:
       tags:
@@ -20296,7 +20557,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id107
+            schema: &id118
               type: object
               properties:
                 origin:
@@ -20306,7 +20567,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id107
+            schema: *id118
   /sys/safety/database/backups:
     post:
       tags:
@@ -21073,14 +21334,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id108
+            schema: &id119
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id108
+            schema: *id119
   /sys/seckill/config/create:
     post:
       tags:
@@ -21089,7 +21350,7 @@ paths:
       operationId: systemSeckillConfigCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreSeckill/create`
 
@@ -21111,6 +21372,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id120
+              type: object
+              properties:
+                start_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                end_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id120
   /sys/seckill/config/create/form:
     get:
       tags:
@@ -21307,14 +21592,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id109
+            schema: &id121
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id109
+            schema: *id121
   /sys/seckill/config/update/{id}:
     post:
       tags:
@@ -21427,14 +21712,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id110
+            schema: &id122
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id110
+            schema: *id122
   /sys/seckill/product/delete/{id}:
     post:
       tags:
@@ -21573,14 +21858,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id111
+            schema: &id123
               type: object
               properties:
                 sys_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id111
+            schema: *id123
   /sys/seckill/product/list:
     get:
       tags:
@@ -21957,7 +22242,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id112
+            schema: &id124
               type: object
               properties:
                 status:
@@ -21970,7 +22255,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id112
+            schema: *id124
   /sys/seckill/product/status/{id}/form:
     get:
       tags:
@@ -22113,7 +22398,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id113
+            schema: &id125
               type: object
               properties:
                 phone:
@@ -22123,7 +22408,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id113
+            schema: *id125
   /sys/serve/captcha/{phone}:
     get:
       tags:
@@ -22194,7 +22479,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id114
+            schema: &id126
               type: object
               properties:
                 phone:
@@ -22210,7 +22495,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id114
+            schema: *id126
   /sys/serve/change_phone:
     post:
       tags:
@@ -22245,7 +22530,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id115
+            schema: &id127
               type: object
               properties:
                 phone:
@@ -22258,7 +22543,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id115
+            schema: *id127
   /sys/serve/change_sign:
     post:
       tags:
@@ -22293,7 +22578,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id116
+            schema: &id128
               type: object
               properties:
                 phone:
@@ -22306,7 +22591,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id116
+            schema: *id128
   /sys/serve/expr/dump_lst:
     get:
       tags:
@@ -22473,7 +22758,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id117
+            schema: &id129
               type: object
               properties:
                 account:
@@ -22483,7 +22768,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id117
+            schema: *id129
   /sys/serve/meal/create:
     post:
       tags:
@@ -22518,7 +22803,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id118
+            schema: &id130
               type: object
               properties:
                 name:
@@ -22540,7 +22825,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id118
+            schema: *id130
   /sys/serve/meal/create/form:
     get:
       tags:
@@ -22737,14 +23022,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id119
+            schema: &id131
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id119
+            schema: *id131
   /sys/serve/meal/update/{id}:
     post:
       tags:
@@ -22785,7 +23070,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id120
+            schema: &id132
               type: object
               properties:
                 name:
@@ -22807,7 +23092,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id120
+            schema: *id132
   /sys/serve/meal/update/{id}/form:
     get:
       tags:
@@ -23028,7 +23313,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id121
+            schema: &id133
               type: object
               properties:
                 type:
@@ -23038,7 +23323,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id121
+            schema: *id133
   /sys/serve/paylst:
     get:
       tags:
@@ -23223,7 +23508,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id122
+            schema: &id134
               type: object
               properties:
                 phone:
@@ -23239,7 +23524,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id122
+            schema: *id134
   /sys/serve/sms/apply:
     post:
       tags:
@@ -23274,7 +23559,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id123
+            schema: &id135
               type: object
               properties:
                 title:
@@ -23287,7 +23572,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id123
+            schema: *id135
   /sys/serve/sms/apply_record:
     get:
       tags:
@@ -23506,7 +23791,7 @@ paths:
       operationId: adminServiceCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.service.StoreService/create`
 
@@ -23528,6 +23813,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id136
+              type: object
+              properties:
+                uid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                nickname:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                account:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pwd:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                confirm_pwd:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_open:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                customer:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_verify:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_goods:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notify:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                avatar:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id136
   /sys/service/create/form:
     get:
       tags:
@@ -23740,7 +24076,7 @@ paths:
       operationId: adminServiceReplyCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.service.StoreServiceReply/create`
 
@@ -23762,6 +24098,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id137
+              type: object
+              properties:
+                keyword:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                content:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id137
   /sys/service/reply/delete/{id}:
     delete:
       tags:
@@ -23892,14 +24249,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id124
+            schema: &id138
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id124
+            schema: *id138
   /sys/service/reply/update/{id}:
     post:
       tags:
@@ -23976,14 +24333,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id125
+            schema: &id139
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id125
+            schema: *id139
   /sys/service/update/form/{id}:
     get:
       tags:
@@ -24288,14 +24645,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id126
+            schema: &id140
               type: object
               properties:
                 phone:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id126
+            schema: *id140
   /sys/sms/change_password:
     post:
       tags:
@@ -24330,7 +24687,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id127
+            schema: &id141
               type: object
               properties:
                 password:
@@ -24343,7 +24700,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id127
+            schema: *id141
   /sys/sms/change_sign:
     post:
       tags:
@@ -24378,7 +24735,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id128
+            schema: &id142
               type: object
               properties:
                 sign:
@@ -24391,7 +24748,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id128
+            schema: *id142
   /sys/sms/config:
     post:
       tags:
@@ -24426,7 +24783,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id129
+            schema: &id143
               type: object
               properties:
                 account:
@@ -24436,7 +24793,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id129
+            schema: *id143
   /sys/sms/data:
     get:
       tags:
@@ -24621,7 +24978,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id130
+            schema: &id144
               type: object
               properties:
                 payType:
@@ -24634,7 +24991,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id130
+            schema: *id144
   /sys/sms/price:
     get:
       tags:
@@ -24807,7 +25164,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id131
+            schema: &id145
               type: object
               properties:
                 account:
@@ -24829,7 +25186,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id131
+            schema: *id145
   /sys/sms/temp:
     get:
       tags:
@@ -24923,7 +25280,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id132
+            schema: &id146
               type: object
               properties:
                 title:
@@ -24936,7 +25293,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id132
+            schema: *id146
   /sys/sms/temp/form:
     get:
       tags:
@@ -26243,14 +26600,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id133
+            schema: &id147
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id133
+            schema: *id147
   /sys/store/bag/detail/{id}:
     get:
       tags:
@@ -26663,7 +27020,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id134
+            schema: &id148
               type: object
               properties:
                 status:
@@ -26676,7 +27033,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id134
+            schema: *id148
   /sys/store/bag/update/{id}:
     post:
       tags:
@@ -26721,7 +27078,7 @@ paths:
       operationId: systemStoreBrandCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreBrandCategory/create`
 
@@ -26743,6 +27100,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id149
+              type: object
+              properties:
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                data:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id149
   /sys/store/brand/category/create/form:
     get:
       tags:
@@ -26921,14 +27302,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id135
+            schema: &id150
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id135
+            schema: *id150
   /sys/store/brand/category/update/form/{id}:
     get:
       tags:
@@ -27009,7 +27390,7 @@ paths:
       operationId: systemStoreBrandCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreBrand/create`
 
@@ -27031,6 +27412,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id151
+              type: object
+              properties:
+                brand_category_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brand_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id151
   /sys/store/brand/create/form:
     get:
       tags:
@@ -27191,14 +27596,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id136
+            schema: &id152
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id136
+            schema: *id152
   /sys/store/brand/update/form/{id}:
     get:
       tags:
@@ -27309,7 +27714,7 @@ paths:
       operationId: systemStoreCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreCategory/create`
 
@@ -27331,6 +27736,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id153
+              type: object
+              properties:
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                data:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id153
   /sys/store/category/create/form:
     get:
       tags:
@@ -27473,14 +27905,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id137
+            schema: &id154
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id137
+            schema: *id154
   /sys/store/category/list:
     get:
       tags:
@@ -27593,14 +28025,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id138
+            schema: &id155
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id138
+            schema: *id155
   /sys/store/category/update/form/{id}:
     get:
       tags:
@@ -27681,7 +28113,7 @@ paths:
       operationId: systemCityAreaCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.CityArea/create`
 
@@ -27703,6 +28135,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id156
+              type: object
+              properties:
+                parent_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                level:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                path:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id156
   /sys/store/city/create/form/{id}:
     get:
       tags:
@@ -27891,7 +28344,7 @@ paths:
       operationId: systemCouponCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.Coupon/create`
 
@@ -27913,6 +28366,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id157
+              type: object
+              properties:
+                use_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                use_min_price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                use_start_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                product_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                range_date:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                send_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                full_reduction:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_limited:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_timeout:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                total_count:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_ids:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mer_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_trader:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                category_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mer_ids:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id157
   /sys/store/coupon/create/form:
     get:
       tags:
@@ -28349,7 +28880,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id139
+            schema: &id158
               type: object
               properties:
                 coupon_id:
@@ -28368,7 +28899,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id139
+            schema: *id158
   /sys/store/coupon/send/lst:
     get:
       tags:
@@ -28559,14 +29090,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id140
+            schema: &id159
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id140
+            schema: *id159
   /sys/store/coupon/sys/clone/{id}/form:
     get:
       tags:
@@ -28727,14 +29258,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id141
+            schema: &id160
               type: object
               properties:
                 title:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id141
+            schema: *id160
   /sys/store/coupon/update/{id}/form:
     get:
       tags:
@@ -28931,14 +29462,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id142
+            schema: &id161
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id142
+            schema: *id161
   /sys/store/express/sync:
     get:
       tags:
@@ -29045,7 +29576,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id143
+            schema: &id162
               type: object
               properties:
                 name:
@@ -29061,7 +29592,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id143
+            schema: *id162
   /sys/store/params/temp/create:
     post:
       tags:
@@ -29070,7 +29601,7 @@ paths:
       operationId: systemStoreParameterTemplateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.parameter.ParameterTemplate/create`
 
@@ -29092,6 +29623,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id163
+              type: object
+              properties:
+                template_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_ids:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                params:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                delete_params:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id163
   /sys/store/params/temp/delete/value/{id}:
     delete:
       tags:
@@ -29492,14 +30047,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id144
+            schema: &id164
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id144
+            schema: *id164
   /sys/store/product/assist/labels/{id}:
     post:
       tags:
@@ -29540,14 +30095,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id145
+            schema: &id165
               type: object
               properties:
                 sys_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id145
+            schema: *id165
   /sys/store/product/assist/lst:
     get:
       tags:
@@ -29816,7 +30371,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id146
+            schema: &id166
               type: object
               properties:
                 status:
@@ -29829,7 +30384,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id146
+            schema: *id166
   /sys/store/product/assist/update/{id}:
     post:
       tags:
@@ -29900,7 +30455,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id147
+            schema: &id167
               type: object
               properties:
                 product_ids:
@@ -29910,7 +30465,7 @@ paths:
                   type: string
                   description: 默认 ''
           application/x-www-form-urlencoded:
-            schema: *id147
+            schema: *id167
   /sys/store/product/batch_cate_hot:
     post:
       tags:
@@ -29976,7 +30531,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id148
+            schema: &id168
               type: object
               properties:
                 is_hot:
@@ -29995,7 +30550,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id148
+            schema: *id168
   /sys/store/product/batch_labels:
     post:
       tags:
@@ -30030,7 +30585,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id149
+            schema: &id169
               type: object
               properties:
                 sys_labels:
@@ -30040,7 +30595,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id149
+            schema: *id169
   /sys/store/product/batch_status:
     post:
       tags:
@@ -30075,7 +30630,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id150
+            schema: &id170
               type: object
               properties:
                 ids:
@@ -30085,7 +30640,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id150
+            schema: *id170
   /sys/store/product/change/{id}:
     post:
       tags:
@@ -30126,14 +30681,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id151
+            schema: &id171
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id151
+            schema: *id171
   /sys/store/product/check:
     post:
       tags:
@@ -30276,7 +30831,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id152
+            schema: &id172
               type: object
               properties:
                 type:
@@ -30286,7 +30841,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id152
+            schema: *id172
   /sys/store/product/get_operate_list/{product_id}:
     get:
       tags:
@@ -30585,14 +31140,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id153
+            schema: &id173
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id153
+            schema: *id173
   /sys/store/product/group/labels/{id}:
     post:
       tags:
@@ -30633,14 +31188,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id154
+            schema: &id174
               type: object
               properties:
                 sys_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id154
+            schema: *id174
   /sys/store/product/group/lst:
     get:
       tags:
@@ -30789,14 +31344,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id155
+            schema: &id175
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id155
+            schema: *id175
   /sys/store/product/group/status:
     post:
       tags:
@@ -30831,7 +31386,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id156
+            schema: &id176
               type: object
               properties:
                 status:
@@ -30844,7 +31399,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id156
+            schema: *id176
   /sys/store/product/group/update/{id}:
     post:
       tags:
@@ -30921,14 +31476,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id157
+            schema: &id177
               type: object
               properties:
                 sys_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id157
+            schema: *id177
   /sys/store/product/list:
     get:
       tags:
@@ -31533,14 +32088,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id158
+            schema: &id178
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id158
+            schema: *id178
   /sys/store/product/presell/labels/{id}:
     post:
       tags:
@@ -31581,14 +32136,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id159
+            schema: &id179
               type: object
               properties:
                 sys_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id159
+            schema: *id179
   /sys/store/product/presell/lst:
     get:
       tags:
@@ -31731,7 +32286,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id160
+            schema: &id180
               type: object
               properties:
                 status:
@@ -31744,7 +32299,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id160
+            schema: *id180
   /sys/store/product/presell/update/{id}:
     post:
       tags:
@@ -31911,7 +32466,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id161
+            schema: &id181
               type: object
               properties:
                 status:
@@ -31924,7 +32479,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id161
+            schema: *id181
   /sys/store/product/update/{id}:
     post:
       tags:
@@ -31969,7 +32524,7 @@ paths:
       operationId: systemProductReplyCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreProductReply/virtualReply`
 
@@ -31991,6 +32546,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id182
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                nickname:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                comment:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                product_score:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                service_score:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                postage_score:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                avatar:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pics:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                create_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id182
   /sys/store/reply/create/form/{id}?:
     get:
       tags:
@@ -32175,14 +32769,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id162
+            schema: &id183
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id162
+            schema: *id183
   /sys/svip/interests/lst:
     get:
       tags:
@@ -32253,14 +32847,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id163
+            schema: &id184
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id163
+            schema: *id184
   /sys/svip/interests/update/{id}:
     post:
       tags:
@@ -32367,7 +32961,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id164
+            schema: &id185
               type: object
               properties:
                 account:
@@ -32398,7 +32992,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id164
+            schema: *id185
   /sys/system/admin/create/form:
     get:
       tags:
@@ -32511,7 +33105,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id165
+            schema: &id186
               type: object
               properties:
                 real_name:
@@ -32521,7 +33115,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id165
+            schema: *id186
   /sys/system/admin/edit/form:
     get:
       tags:
@@ -32586,7 +33180,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id166
+            schema: &id187
               type: object
               properties:
                 pwd:
@@ -32596,7 +33190,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id166
+            schema: *id187
   /sys/system/admin/edit/password/form:
     get:
       tags:
@@ -32847,7 +33441,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id167
+            schema: &id188
               type: object
               properties:
                 pwd:
@@ -32857,7 +33451,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id167
+            schema: *id188
   /sys/system/admin/status/{id}:
     post:
       tags:
@@ -32898,14 +33492,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id168
+            schema: &id189
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id168
+            schema: *id189
   /sys/system/admin/update/form/{id}:
     get:
       tags:
@@ -32994,7 +33588,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id169
+            schema: &id190
               type: object
               properties:
                 account:
@@ -33019,7 +33613,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id169
+            schema: *id190
   /sys/system/applyments/detail/{id}:
     get:
       tags:
@@ -33180,14 +33774,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id170
+            schema: &id191
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id170
+            schema: *id191
   /sys/system/applyments/mark/{id}/form:
     get:
       tags:
@@ -33300,7 +33894,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id171
+            schema: &id192
               type: object
               properties:
                 status:
@@ -33310,7 +33904,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id171
+            schema: *id192
   /sys/system/article/article/create:
     post:
       tags:
@@ -33319,7 +33913,7 @@ paths:
       operationId: systemArticleArticleCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.article.Article/create`
 
@@ -33341,6 +33935,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id193
+              type: object
+              properties:
+                cid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                content:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                author:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                image_input:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                synopsis:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_hot:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_banner:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                url:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id193
   /sys/system/article/article/delete/{id}:
     delete:
       tags:
@@ -33507,14 +34143,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id172
+            schema: &id194
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id172
+            schema: *id194
   /sys/system/article/article/update/{id}:
     post:
       tags:
@@ -33559,7 +34195,7 @@ paths:
       operationId: systemArticleCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.article.ArticleCategory/create`
 
@@ -33581,6 +34217,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id195
+              type: object
+              properties:
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                info:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                image:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id195
   /sys/system/article/category/create/form:
     get:
       tags:
@@ -33783,14 +34446,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id173
+            schema: &id196
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id173
+            schema: *id196
   /sys/system/article/category/update/form/{id}:
     get:
       tags:
@@ -33897,7 +34560,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id174
+            schema: &id197
               type: object
               properties:
                 ids:
@@ -33907,7 +34570,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id174
+            schema: *id197
   /sys/system/attachment/category/create:
     post:
       tags:
@@ -34242,7 +34905,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id175
+            schema: &id198
               type: object
               properties:
                 id:
@@ -34252,7 +34915,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id175
+            schema: *id198
   /sys/system/attachment/scan_upload/image/{token}:
     get:
       tags:
@@ -34328,7 +34991,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id176
+            schema: &id199
               type: object
               properties:
                 pid:
@@ -34338,7 +35001,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id176
+            schema: *id199
   /sys/system/attachment/scan_upload/qrcode/{pid}:
     get:
       tags:
@@ -34415,14 +35078,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id177
+            schema: &id200
               type: object
               properties:
                 attachment_name:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id177
+            schema: *id200
   /sys/system/attachment/update/{id}/form:
     get:
       tags:
@@ -34497,7 +35160,7 @@ paths:
       operationId: systemFormCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.system.form.Form/create`
 
@@ -34519,6 +35182,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id201
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id201
   /sys/system/form/delete/{id}:
     delete:
       tags:
@@ -35028,7 +35709,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id178
+            schema: &id202
               type: object
               properties:
                 is_mer:
@@ -35038,7 +35719,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id178
+            schema: *id202
   /sys/system/menu/lst:
     get:
       tags:
@@ -35187,7 +35868,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id179
+            schema: &id203
               type: object
               properties:
                 mer_name:
@@ -35218,7 +35899,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id179
+            schema: *id203
   /sys/system/merchant/care_ficti/form/{id}:
     get:
       tags:
@@ -35295,7 +35976,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id180
+            schema: &id204
               type: object
               properties:
                 type:
@@ -35305,7 +35986,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id180
+            schema: *id204
   /sys/system/merchant/category:
     post:
       tags:
@@ -35314,7 +35995,7 @@ paths:
       operationId: systemMerchantCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.system.merchant.MerchantCategory/create`
 
@@ -35336,6 +36017,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id205
+              type: object
+              properties:
+                category_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                commission_rate:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id205
   /sys/system/merchant/category/form:
     get:
       tags:
@@ -35627,7 +36323,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id181
+            schema: &id206
               type: object
               properties:
                 type:
@@ -35637,7 +36333,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id181
+            schema: *id206
   /sys/system/merchant/changecopy/{id}/form:
     get:
       tags:
@@ -35714,14 +36410,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id182
+            schema: &id207
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id182
+            schema: *id207
   /sys/system/merchant/count:
     get:
       tags:
@@ -35912,14 +36608,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id183
+            schema: &id208
               type: object
               properties:
                 type:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id183
+            schema: *id208
   /sys/system/merchant/delete/{id}/form:
     get:
       tags:
@@ -36086,7 +36782,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id184
+            schema: &id209
               type: object
               properties:
                 pid:
@@ -36117,7 +36813,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id184
+            schema: *id209
   /sys/system/merchant/group/delete/{id}:
     delete:
       tags:
@@ -36302,14 +36998,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id185
+            schema: &id210
               type: object
               properties:
                 diy_temp_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id185
+            schema: *id210
   /sys/system/merchant/group/status/{id}:
     post:
       tags:
@@ -36350,14 +37046,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id186
+            schema: &id211
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id186
+            schema: *id211
   /sys/system/merchant/group/stores/{id}:
     get:
       tags:
@@ -36452,7 +37148,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id187
+            schema: &id212
               type: object
               properties:
                 pid:
@@ -36483,7 +37179,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id187
+            schema: *id212
   /sys/system/merchant/login/{id}:
     post:
       tags:
@@ -36752,7 +37448,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id188
+            schema: &id213
               type: object
               properties:
                 pwd:
@@ -36762,7 +37458,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id188
+            schema: *id213
   /sys/system/merchant/status/{id}:
     post:
       tags:
@@ -36803,14 +37499,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id189
+            schema: &id214
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id189
+            schema: *id214
   /sys/system/merchant/update/form/{id}:
     get:
       tags:
@@ -37091,14 +37787,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id190
+            schema: &id215
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id190
+            schema: *id215
   /sys/system/role/update/form/{id}:
     get:
       tags:
@@ -37540,14 +38236,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id191
+            schema: &id216
               type: object
               properties:
                 upload_type:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id191
+            schema: *id216
   /sys/system/storage/sync/{type}:
     get:
       tags:
@@ -37755,14 +38451,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id192
+            schema: &id217
               type: object
               properties:
                 ueditor:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id192
+            schema: *id217
   /sys/upload/temp_key:
     get:
       tags:
@@ -37857,7 +38553,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id193
+            schema: &id218
               type: object
               properties:
                 group_id:
@@ -37867,7 +38563,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id193
+            schema: *id218
   /sys/user/batch_change_group/form:
     get:
       tags:
@@ -37938,7 +38634,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id194
+            schema: &id219
               type: object
               properties:
                 label_id:
@@ -37948,7 +38644,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id194
+            schema: *id219
   /sys/user/batch_change_label/form:
     get:
       tags:
@@ -38019,7 +38715,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id195
+            schema: &id220
               type: object
               properties:
                 uids:
@@ -38032,7 +38728,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id195
+            schema: *id220
   /sys/user/batch_spread_form:
     get:
       tags:
@@ -38125,7 +38821,7 @@ paths:
       operationId: systemUserBrokerageCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user..UserBrokerage/create`
 
@@ -38147,6 +38843,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id221
+              type: object
+              properties:
+                brokerage_level:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_icon:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_rule:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extension_one:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extension_two:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                image:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id221
   /sys/user/brokerage/delete/{id}:
     delete:
       tags:
@@ -38421,14 +39153,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id196
+            schema: &id222
               type: object
               properties:
                 group_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id196
+            schema: *id222
   /sys/user/change_integral/form/{id}:
     get:
       tags:
@@ -38505,7 +39237,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id197
+            schema: &id223
               type: object
               properties:
                 now_money:
@@ -38515,7 +39247,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id197
+            schema: *id223
   /sys/user/change_label/form/{id}:
     get:
       tags:
@@ -38592,14 +39324,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id198
+            schema: &id224
               type: object
               properties:
                 label_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id198
+            schema: *id224
   /sys/user/change_now_money/form/{id}:
     get:
       tags:
@@ -38676,7 +39408,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id199
+            schema: &id225
               type: object
               properties:
                 now_money:
@@ -38686,7 +39418,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id199
+            schema: *id225
   /sys/user/change_password/form/{id}:
     get:
       tags:
@@ -38763,7 +39495,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id200
+            schema: &id226
               type: object
               properties:
                 pwd:
@@ -38773,7 +39505,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id200
+            schema: *id226
   /sys/user/change_spread/{id}:
     post:
       tags:
@@ -38814,14 +39546,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id201
+            schema: &id227
               type: object
               properties:
                 spid:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id201
+            schema: *id227
   /sys/user/change_spread_form/{id}:
     get:
       tags:
@@ -38999,7 +39731,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id202
+            schema: &id228
               type: object
               properties:
                 account:
@@ -39042,7 +39774,7 @@ paths:
                   type: string
                   description: 默认 1
           application/x-www-form-urlencoded:
-            schema: *id202
+            schema: *id228
   /sys/user/detail/{id}:
     get:
       tags:
@@ -39125,7 +39857,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id203
+            schema: &id229
               type: object
               properties:
                 label_id:
@@ -39186,7 +39918,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id203
+            schema: *id229
   /sys/user/extract/detail/{id}:
     get:
       tags:
@@ -39419,7 +40151,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id204
+            schema: &id230
               type: object
               properties:
                 fail_msg:
@@ -39432,7 +40164,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id204
+            schema: *id230
   /sys/user/extract/status_form/{id}:
     get:
       tags:
@@ -39503,7 +40235,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id205
+            schema: &id231
               type: object
               properties:
                 pid:
@@ -39522,7 +40254,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id205
+            schema: *id231
   /sys/user/feedback/category/create/form:
     get:
       tags:
@@ -39659,14 +40391,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id206
+            schema: &id232
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id206
+            schema: *id232
   /sys/user/feedback/category/update/{id}:
     post:
       tags:
@@ -39707,7 +40439,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id207
+            schema: &id233
               type: object
               properties:
                 pid:
@@ -39726,7 +40458,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id207
+            schema: *id233
   /sys/user/feedback/category/update/{id}/form:
     get:
       tags:
@@ -39947,7 +40679,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id208
+            schema: &id234
               type: object
               properties:
                 reply:
@@ -39957,7 +40689,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id208
+            schema: *id234
   /sys/user/feedback/reply/{id}/form:
     get:
       tags:
@@ -40242,7 +40974,7 @@ paths:
       operationId: systemUserGroupCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user.UserGroup/create`
 
@@ -40264,6 +40996,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id235
+              type: object
+              properties:
+                group_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id235
   /sys/user/group/{id}:
     delete:
       tags:
@@ -40417,7 +41161,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id209
+            schema: &id236
               type: object
               properties:
                 field:
@@ -40448,7 +41192,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id209
+            schema: *id236
   /sys/user/info/create_from:
     get:
       tags:
@@ -40597,7 +41341,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id210
+            schema: &id237
               type: object
               properties:
                 avatar:
@@ -40607,7 +41351,7 @@ paths:
                   type: string
                   description: 默认 [
           application/x-www-form-urlencoded:
-            schema: *id210
+            schema: *id237
   /sys/user/info/select_list:
     get:
       tags:
@@ -40731,7 +41475,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id211
+            schema: &id238
               type: object
               properties:
                 integral_status:
@@ -40762,7 +41506,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id211
+            schema: *id238
   /sys/user/integral/excel:
     get:
       tags:
@@ -41077,7 +41821,7 @@ paths:
       operationId: systemUserLabelCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user.UserLabel/create`
 
@@ -41099,6 +41843,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id239
+              type: object
+              properties:
+                label_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id239
   /sys/user/label/{id}:
     delete:
       tags:
@@ -41216,7 +41972,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id212
+            schema: &id240
               type: object
               properties:
                 nickname:
@@ -41283,7 +42039,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id212
+            schema: *id240
   /sys/user/member/create:
     post:
       tags:
@@ -41292,7 +42048,7 @@ paths:
       operationId: systemUserMemberCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user..UserBrokerage/create`
 
@@ -41314,6 +42070,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id241
+              type: object
+              properties:
+                brokerage_level:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_icon:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                brokerage_rule:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extension_one:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extension_two:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                image:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id241
   /sys/user/member/create/form:
     get:
       tags:
@@ -41654,14 +42446,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id213
+            schema: &id242
               type: object
               properties:
                 member_level:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id213
+            schema: *id242
   /sys/user/member_log:
     get:
       tags:
@@ -41798,7 +42590,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id214
+            schema: &id243
               type: object
               properties:
                 ids:
@@ -41808,7 +42600,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id214
+            schema: *id243
   /sys/user/order/{id}:
     get:
       tags:
@@ -42659,14 +43451,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id215
+            schema: &id244
               type: object
               properties:
                 brokerage_level:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id215
+            schema: *id244
   /sys/user/spread_log/{id}:
     get:
       tags:
@@ -43001,14 +43793,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id216
+            schema: &id245
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id216
+            schema: *id245
   /sys/user/svip/type/{id}/form:
     get:
       tags:
@@ -43091,7 +43883,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id217
+            schema: &id246
               type: object
               properties:
                 sort:
@@ -43101,7 +43893,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id217
+            schema: *id246
   /sys/user/svip/{id}:
     post:
       tags:
@@ -43142,7 +43934,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id218
+            schema: &id247
               type: object
               properties:
                 is_svip:
@@ -43155,7 +43947,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id218
+            schema: *id247
   /sys/user/svip/{id}/form:
     get:
       tags:
@@ -43268,7 +44060,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id219
+            schema: &id248
               type: object
               properties:
                 phone:
@@ -43302,7 +44094,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id219
+            schema: *id248
   /sys/version:
     get:
       tags:
@@ -43396,14 +44188,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id220
+            schema: &id249
               type: object
               properties:
                 button:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id220
+            schema: *id249
   /sys/wechat/news/create:
     post:
       tags:
@@ -43412,7 +44204,7 @@ paths:
       operationId: systemWechatNewsCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.wechat.WechatNews/create`
 
@@ -43434,6 +44226,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id250
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                data:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id250
   /sys/wechat/news/delete/{id}:
     delete:
       tags:
@@ -43624,7 +44431,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id221
+            schema: &id251
               type: object
               properties:
                 key:
@@ -43637,7 +44444,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id221
+            schema: *id251
   /sys/wechat/reply/detail/{id}:
     get:
       tags:
@@ -43768,7 +44575,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id222
+            schema: &id252
               type: object
               properties:
                 type:
@@ -43778,7 +44585,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id222
+            schema: *id252
   /sys/wechat/reply/status/{id}:
     post:
       tags:
@@ -43819,14 +44626,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id223
+            schema: &id253
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id223
+            schema: *id253
   /sys/wechat/reply/update/{id}:
     post:
       tags:
@@ -43867,7 +44674,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id224
+            schema: &id254
               type: object
               properties:
                 key:
@@ -43880,7 +44687,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id224
+            schema: *id254
   /sys/wechat/reply/upload/image:
     post:
       tags:
@@ -44317,14 +45124,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id225
+            schema: &id255
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id225
+            schema: *id255
   /sys/wechat/template/min/sync:
     get:
       tags:
@@ -44401,7 +45208,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id226
+            schema: &id256
               type: object
               properties:
                 tempid:
@@ -44411,7 +45218,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id226
+            schema: *id256
   /sys/wechat/template/min/update/{id}/form:
     get:
       tags:
@@ -44488,14 +45295,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id227
+            schema: &id257
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id227
+            schema: *id257
   /sys/wechat/template/sync:
     get:
       tags:
@@ -44572,7 +45379,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id228
+            schema: &id258
               type: object
               properties:
                 tempid:
@@ -44582,7 +45389,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id228
+            schema: *id258
   /sys/wechat/template/update/{id}/form:
     get:
       tags:

@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app diy & seckill
+  version: 0.6.1
+  description: |
+    C 端 DIY 首页 + 秒杀列表。
+    结算：v2 check/create 在场次内自动覆盖行价为 seckill_price；
+    订单行 product_type=1、activity_id=seckill_active_id；单次限购 once_pay_count；
+    秒杀清空店铺券（平台券仍可）。
+servers:
+  - url: /api/app/v1
+paths:
+  /diy/home:
+    get:
+      summary: 平台启用装修首页（banners / menus）
+  /seckill/times:
+    get:
+      summary: 秒杀场次
+  /seckill/actives:
+    get:
+      summary: 开启中的秒杀列表（含 in_window）
+  /seckill/actives/{id}:
+    get:
+      summary: 秒杀详情

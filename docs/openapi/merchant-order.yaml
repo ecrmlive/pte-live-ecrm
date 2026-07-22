@@ -1,0 +1,20 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant order
+  version: 0.3.0
+  description: 阶段 3 商户订单 / 发货 / 核销
+servers:
+  - url: /api/merchant/v1
+paths:
+  /orders:
+    get:
+      summary: 本商户订单列表（await_ship=1 待发货）
+  /orders/{id}:
+    get:
+      summary: 订单详情
+  /orders/{id}/delivery:
+    post:
+      summary: 发货
+  /orders/{id}/verify:
+    post:
+      summary: 核销完成

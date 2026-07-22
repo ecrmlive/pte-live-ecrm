@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app content
+  version: 0.7.8
+  description: C 端公告（仅 is_show=1）+ 协议只读（sql/041）
+servers:
+  - url: /api/app/v1
+paths:
+  /notices:
+    get:
+      summary: 公告列表
+  /notices/{id}:
+    get:
+      summary: 公告详情（未展示返回 404）
+  /agreements/{key}:
+    get:
+      summary: 协议正文（白名单键）

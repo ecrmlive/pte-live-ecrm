@@ -1,0 +1,16 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant reservation
+  version: 0.6.4
+  description: 商户预约商品时段配置（mer_id 隔离）；保存需 reservation/config
+servers:
+  - url: /api/merchant/v1
+paths:
+  /reservation/products:
+    get:
+      summary: 本店预约商品
+  /reservation/products/{id}/config:
+    get:
+      summary: 读取配置与时段
+    put:
+      summary: 保存可约天数与时段库存（按钮权 reservation/config）

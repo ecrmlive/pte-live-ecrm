@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform promotion
+  version: 0.7.3
+  description: 平台券 CRUD/启停 + 分销只读；create/delete/toggle 分别需对应按钮权；创建强制 mer_id=0 type=10。
+servers:
+  - url: /api/platform/v1
+paths:
+  /coupons:
+    get: { summary: 平台券列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建平台券（按钮权 coupon/create）, security: [{ bearerAuth: [] }] }
+  /coupons/{id}:
+    put: { summary: 更新平台券, security: [{ bearerAuth: [] }] }
+    delete: { summary: 软删除平台券（按钮权 coupon/delete）, security: [{ bearerAuth: [] }] }
+  /coupons/{id}/status:
+    post: { summary: 启停 status=0|1（按钮权 coupon/toggle）, security: [{ bearerAuth: [] }] }
+  /spread/logs:
+    get: { summary: 分销绑定日志 page&limit, security: [{ bearerAuth: [] }] }
+  /spread/bills:
+    get: { summary: 佣金流水 page&limit, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers service desk
+  version: 0.7.7
+  description: 阶段 6b/7 客服查单 + 快捷回复（演示 Token；回复读 qixi_store_service_reply）
+servers:
+  - url: /api/service/v1
+paths:
+  /ping:
+    get:
+      summary: 健康探测
+  /orders/{id}:
+    get:
+      summary: 按 mer_id + order_id 查单
+      parameters:
+        - in: query
+          name: mer_id
+          required: true
+        - in: header
+          name: X-Service-Token
+          required: true
+          description: 演示值 service_demo_token
+  /quick-replies:
+    get:
+      summary: 快捷回复列表（仅 status=1；按 mer_id）
+      parameters:
+        - in: query
+          name: mer_id
+          required: false
+          description: 默认 1
+        - in: header
+          name: X-Service-Token
+          required: true

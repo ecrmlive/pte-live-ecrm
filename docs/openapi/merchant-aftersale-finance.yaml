@@ -1,0 +1,34 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant aftersale & finance
+  version: 0.4.0
+  description: |
+    阶段 4 商户售后审核 + 提现申请（mer_id 隔离）。
+    approve/reject 需按钮权限 path：order/refund/approve、order/refund/reject（menu_id 129/130）。
+servers:
+  - url: /api/merchant/v1
+paths:
+  /refunds:
+    get:
+      summary: 本店售后列表
+  /refunds/{id}:
+    get:
+      summary: 售后详情
+  /refunds/{id}/approve:
+    post:
+      summary: 同意仅退款（→ status=3，退余额/库存；需 order/refund/approve）
+  /refunds/{id}/reject:
+    post:
+      summary: 拒绝（status=-1；需 order/refund/reject）
+  /finance/balance:
+    get:
+      summary: 店铺余额
+  /finance/withdraw:
+    post:
+      summary: 申请提现（扣 mer_money）
+  /finance/withdraws:
+    get:
+      summary: 提现列表
+  /finance/withdraws/{id}:
+    get:
+      summary: 提现详情

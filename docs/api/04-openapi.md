@@ -1,6 +1,6 @@
 # 商户开放接口 `/openapi/`
 
-> 对照文档。置信度：high=6 stale=0 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)。
+> 对照文档。置信度：high=6 stale=0 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)、[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 合计 **6** 条。
 
@@ -70,7 +70,7 @@
 ### `POST /openapi/product/create` — 创建商品
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；商品字段对齐 ProductRepository::CREATE_PARAMS
 - 处理器：`openapi.store.StoreProduct/create`
 - 源码：`app/controller/openapi/store/StoreProduct.php` :: `create()`
 - 请求参数：
@@ -78,8 +78,27 @@
 - `expiration` (query/body, 必填) 时间戳，相差≤300秒
 - `access_key` (query/body, 必填) access_key
 - `signature` (query/body, 必填) 签名
+- `is_copy` (body, 可选) ProductRepository::CREATE_PARAMS
+- `image` (body, 可选) ProductRepository::CREATE_PARAMS
+- `slider_image` (body, 可选) ProductRepository::CREATE_PARAMS
+- `store_name` (body, 可选) ProductRepository::CREATE_PARAMS
+- `store_info` (body, 可选) ProductRepository::CREATE_PARAMS
+- `keyword` (body, 可选) ProductRepository::CREATE_PARAMS
+- `bar_code` (body, 可选) ProductRepository::CREATE_PARAMS
+- `guarantee_template_id` (body, 可选) ProductRepository::CREATE_PARAMS
+- `cate_id` (body, 可选) ProductRepository::CREATE_PARAMS
+- `unit_name` (body, 可选) ProductRepository::CREATE_PARAMS
+- `sort` (body, 可选) ProductRepository::CREATE_PARAMS
+- `is_show` (body, 可选) ProductRepository::CREATE_PARAMS
+- `is_good` (body, 可选) ProductRepository::CREATE_PARAMS
 - `is_gift_bag` (body, 可选) ProductRepository::CREATE_PARAMS
 - `integral_rate` (body, 可选) ProductRepository::CREATE_PARAMS
+- `video_link` (body, 可选) ProductRepository::CREATE_PARAMS
+- `temp_id` (body, 可选) ProductRepository::CREATE_PARAMS
+- `content` (body, 可选) ProductRepository::CREATE_PARAMS
+- `spec_type` (body, 可选) ProductRepository::CREATE_PARAMS
+- `extension_type` (body, 可选) ProductRepository::CREATE_PARAMS
+- `attr` (body, 可选) ProductRepository::CREATE_PARAMS
 - `mer_labels` (body, 可选) ProductRepository::CREATE_PARAMS
 - `delivery_way` (body, 可选) ProductRepository::CREATE_PARAMS
 - `delivery_free` (body, 可选) ProductRepository::CREATE_PARAMS
@@ -89,10 +108,13 @@
 - `mer_form_id` (body, 可选) ProductRepository::CREATE_PARAMS
 - `auto_on_time` (body, 可选) ProductRepository::CREATE_PARAMS
 - `auto_off_time` (body, 可选) ProductRepository::CREATE_PARAMS
+- `mer_cate_id` (body, 可选) ProductRepository::CREATE_PARAMS
 - `refund_switch` (body, 可选) ProductRepository::CREATE_PARAMS
+- `brand_id` (body, 可选) ProductRepository::CREATE_PARAMS
 - `once_max_count` (body, 可选) ProductRepository::CREATE_PARAMS
 - `once_min_count` (body, 可选) ProductRepository::CREATE_PARAMS
 - `pay_limit` (body, 可选) ProductRepository::CREATE_PARAMS
+- `attrValue` (body, 可选) ProductRepository::CREATE_PARAMS
 - `give_coupon_ids` (body, 可选) ProductRepository::CREATE_PARAMS
 - `type` (body, 可选) ProductRepository::CREATE_PARAMS
 - `svip_price` (body, 可选) ProductRepository::CREATE_PARAMS

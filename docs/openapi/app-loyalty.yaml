@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app loyalty
+  version: 0.1.0
+  description: |
+    阶段 5 余量：普通单积分抵扣 + 积分商城（activity_type=20）。
+    真实路径前缀 `/api/app/v1`。禁止 stale：`/v3/order/*`。
+servers:
+  - url: /api/app/v1
+paths:
+  /integral:
+    get:
+      summary: 用户积分余额
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  integral: { type: integer, example: 2000 }
+  /points/products:
+    get:
+      summary: 积分商城商品列表（product_type=20）
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+  /points/products/{id}:
+    get:
+      summary: 积分商城商品详情
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+  /order/v3/check:
+    post:
+      summary: 积分商城核对（独立入口，不混用券）
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PointsInput"
+  /order/v3/create:
+    post:
+      summary: 积分商城下单（创建不扣积分；address_id 必填）
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/PointsInput"
+                - type: object
+                  required: [address_id]
+  /order/points/pay/{id}:
+    post:
+      summary: 积分商城支付（扣积分 MarkPaid，幂等）
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+          description: group_order_id
+  /v2/order/check:
+    post:
+      summary: 普通单结算（支持 use_integral，接 ApplyPricing）
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cart_ids]
+              properties:
+                cart_ids: { type: array, items: { type: integer } }
+                coupon_user_id: { type: integer }
+                coupon_user_ids: { type: array, items: { type: integer } }
+                use_integral: { type: integer, description: 拟用积分；商户 mer_integral_status=0 则拒绝 }
+  /v2/order/create:
+    post:
+      summary: 普通单创建（落库 integral*；若 Integral>0 则 CAS 扣积分写 bill）
+      security: [{ bearerAuth: [] }]
+components:
+  schemas:
+    PointsInput:
+      type: object
+      required: [product_id]
+      properties:
+        product_id: { type: integer }
+        product_attr_unique: { type: string }
+        cart_num: { type: integer, default: 1 }
+        address_id: { type: integer }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

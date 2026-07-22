@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app SVIP pricing
+  version: 0.6.2
+  description: |
+    C 端 SVIP 计价行为（无独立购买接口本刀；演示用户 demo 永久 SVIP）。
+    v2 check/create：有效 SVIP → 会员价覆盖行价（秒杀行跳过）→
+    若商户 svip_coupon_merge≠1 则禁用店铺券；活动商品禁止积分抵扣。
+servers:
+  - url: /api/app/v1
+paths:
+  /order/v2/check:
+    post:
+      summary: 结算预览（含 used_svip / svip_discount）
+  /order/v2/create:
+    post:
+      summary: 创建订单（子单记录 svip_discount）

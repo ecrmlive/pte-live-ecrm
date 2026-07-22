@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant community
+  version: 0.7.8
+  description: 商户本店种草；写需 community/create|update|delete（sql/040）；mer_id 隔离
+servers:
+  - url: /api/merchant/v1
+paths:
+  /community/posts:
+    get:
+      summary: 本店关联帖子列表
+    post:
+      summary: 发帖（按钮权 community/create；待平台审）
+  /community/posts/{id}:
+    get:
+      summary: 详情（仅本店 mer_id）
+    put:
+      summary: 编辑帖（按钮权 community/update；改后重回待审）
+    delete:
+      summary: 删帖（按钮权 community/delete）
+  /community/posts/{id}/replies:
+    get:
+      summary: 本店帖评论列表
+  /community/categories:
+    get:
+      summary: 分类列表
+  /community/topics:
+    get:
+      summary: 话题列表

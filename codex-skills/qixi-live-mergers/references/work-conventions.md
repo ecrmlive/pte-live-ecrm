@@ -36,7 +36,7 @@
 - Corepack：0.35.0
 - Docker 镜像：
   - alpine:3.24.1
-  - nginx:1.30.3-alpine3.23
+  - nginx: 宿主机（不用 Docker Nginx）
   - node:24.18.0-alpine3.24
   - apachepulsar/pulsar:4.0.12
   - mysql:8.4.10

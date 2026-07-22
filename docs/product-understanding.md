@@ -79,6 +79,8 @@
 
 ### 4.3 下单与支付（多商户）
 
+业务链路：
+
 ```text
 加购(qixi_store_cart，按 mer_id 分堆)
   → 结算计价（商品+运费-店铺券-平台券-积分-会员价）
@@ -89,6 +91,17 @@
   → 支付回调: paid=1，写 pay_time，推履约
   → 分账/记账（profitsharing、financial_record、user_bill）
 ```
+
+CRMEB 源码**真实接口入口**（重建必须按此，勿跟死路由）：
+
+| 业务 | 真实 API | 说明 |
+| --- | --- | --- |
+| 普通订单核对/创建 | `POST /api/v2/order/check` → `create` | `StoreOrder::v2*` |
+| 普通订单支付 | `POST /api/order/pay/:id` | `groupOrderPay` |
+| 积分订单核对/创建 | `POST /api/order/v3/check` → `create` | `PointsOrder`（≠ `/api/v3/order/*`） |
+| ~~旧版/v3 StoreOrder~~ | `/api/order/create\|check`、`/api/v3/order/*` | **源码无方法，禁止实现** |
+
+详见 [`docs/api/FUNCTIONAL-TRUTH.md`](./api/FUNCTIONAL-TRUTH.md)。 计价互斥见同文档 **§8**。
 
 订单状态（子单 `status`，在 `paid=1` 后）：
 
@@ -118,16 +131,31 @@
   → 更新订单/行退款状态
 ```
 
-售后状态：`0 待审 → -1 拒绝 | 1 待退货 → 2 待收货 → 3 已退款`。
+售后状态（`qixi_store_refund_order.status`，以列表统计为准）：
+
+| status | 含义 |
+| ---: | --- |
+| 0 | 待审核 |
+| 1 | 待退货 |
+| 2 | 待收货 |
+| 3 | 已退款 |
+| 4 | 平台介入 |
+| -1 | 拒绝 |
+| -2 | 用户取消 |
+
+支付回调与退款/提现状态机细节见 [`docs/api/FUNCTIONAL-TRUTH.md`](./api/FUNCTIONAL-TRUTH.md)。
 
 ### 4.5 商户结算与提现
 
 ```text
 订单完成/可结算
   → 商户余额 mer_money 增加（扣平台佣金 commission_rate）
-  → 商户发起提现(qixi_financial)
-  → 平台审核 → 打款 → 回凭证
+  → 商户发起提现(qixi_financial, type=0, status=0, 先扣 mer_money)
+  → 平台审核 status=1 或拒绝 status=-1（拒绝退回余额）
+  → 平台上传打款凭证 → financial_status=1
 ```
+
+`financial_type`：1 银行卡 / 2 微信 / 3 支付宝。保证金退回为 `type=1`。
 
 分账表 `qixi_store_order_profitsharing` 记录支付侧分账（收付通/服务商）。
 
@@ -183,7 +211,7 @@
 
 - 不运行、不提交 CRMEB PHP/Swoole 源码与 `eb_` 前缀库。  
 - 不把参考库当最终库：可按 Go 规范演进字段，但**表前缀保持 `qixi_`**，业务语义对齐。  
-- 功能基线未锁定（缺口未清）前，不写业务代码。  
+- 功能基线**已锁定**（2026-07-21）；可按 `docs/features/` 进入技术方案与编码。  
 
 ---
 

@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant open API
+  version: 0.6.1
+  description: |
+    阶段 6c。对照 CRMEB `/openapi/*` 六条；本仓库前缀 `/api/open/v1`。
+    鉴权：POST /auth 校验 unique+expiration+access_key+signature（HMAC-SHA256，对齐 CRMEB），
+    换取 JWT；后续接口 Bearer + mer_id 隔离。本地亦可传 secret_key 捷径。
+servers:
+  - url: /api/open/v1
+paths:
+  /auth:
+    post:
+      summary: 换取开放接口 Token（data.token / data.exp）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unique: { type: string }
+                expiration: { type: integer, description: unix 秒；与服务器相差≤300s }
+                access_key: { type: string }
+                signature: { type: string, description: hex(hmac_sha256(base64(json(policy)), secret)) }
+                secret_key: { type: string, description: 仅本地演示捷径 }
+  /order/list:
+    get:
+      summary: 本店订单列表
+      security: [{ bearerAuth: [] }]
+  /order/detail/{id}:
+    get:
+      summary: 本店订单详情
+      security: [{ bearerAuth: [] }]
+  /product/create:
+    post:
+      summary: 创建商品（最小字段 store_name/cate_id/price）
+      security: [{ bearerAuth: [] }]
+  /product/list:
+    get:
+      summary: 本店商品列表
+      security: [{ bearerAuth: [] }]
+  /product/detail/{id}:
+    get:
+      summary: 本店商品详情
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

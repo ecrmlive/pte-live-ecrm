@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant assist
+  version: 0.7.3
+  description: 商户助力 CRUD；create/delete/toggle 分别需对应按钮权
+servers:
+  - url: /api/merchant/v1
+paths:
+  /assist/actives:
+    get:
+      summary: 本店助力活动列表
+    post:
+      summary: 创建助力活动（按钮权 assist/create）
+  /assist/actives/{id}:
+    put:
+      summary: 更新（改 is_show 需 assist/toggle）
+    delete:
+      summary: 软删除（按钮权 assist/delete）
+  /assist/actives/{id}/show:
+    put:
+      summary: 上下架（按钮权 assist/toggle）

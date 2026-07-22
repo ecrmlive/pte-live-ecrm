@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform content
+  version: 0.7.8
+  description: 平台公告 CRUD + 协议规则（qixi_cache）；协议写需 agreement/update（sql/041）
+servers:
+  - url: /api/platform/v1
+paths:
+  /notices:
+    get:
+      summary: 公告列表（含未展示）
+    post:
+      summary: 新建公告
+  /notices/{id}:
+    put:
+      summary: 更新公告
+    delete:
+      summary: 软删除公告
+  /agreements:
+    get:
+      summary: 协议键列表（含正文）
+  /agreements/{key}:
+    get:
+      summary: 协议详情
+    put:
+      summary: 保存协议正文（按钮权 agreement/update）

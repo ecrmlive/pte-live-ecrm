@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app live
+  version: 0.6.5
+  description: C 端直播间列表/详情（无微信推流 stub）
+servers:
+  - url: /api/app/v1
+paths:
+  /live/rooms:
+    get:
+      summary: 直播间列表
+  /live/rooms/{id}:
+    get:
+      summary: 直播间详情（含挂货）

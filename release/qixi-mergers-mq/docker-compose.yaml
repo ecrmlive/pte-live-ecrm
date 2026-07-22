@@ -1,0 +1,19 @@
+name: qixi_mergers_mq
+
+services:
+  nats:
+    image: nats:2.12.0-alpine
+    container_name: qixi_mergers_nats
+    restart: unless-stopped
+    ports:
+      - "${NATS_HOST_PORT:-14222}:4222"
+      - "${NATS_MONITOR_HOST_PORT:-18222}:8222"
+    networks:
+      qixi_mergers_net:
+        ipv4_address: 172.30.80.13
+    command: ["-js", "-m", "8222"]
+
+networks:
+  qixi_mergers_net:
+    external: true
+    name: qixi_mergers_net

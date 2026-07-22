@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app trade
+  version: 0.3.0
+  description: |
+    阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。
+    真实路径对齐 FUNCTIONAL-TRUTH：/v2/order/check|create、/order/pay/:id。
+    wechat/alipay：POST /order/pay/:id 返回 PayIntent（沙箱含 notify_token）；
+    回调 POST /api/callback/v1/pay/{wechat|alipay} HMAC 验签后 paySuccess。
+    积分商城见 app-loyalty.yaml（/order/v3/*、/order/points/pay/:id）。
+    禁止 stale：/order/create、/order/check、/v3/order/*、/order/v2/*。
+servers:
+  - url: /api/app/v1
+paths:
+  /address:
+    get: { summary: 地址列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 新增地址, security: [{ bearerAuth: [] }] }
+  /address/{id}:
+    put: { summary: 更新地址, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除地址, security: [{ bearerAuth: [] }] }
+  /cart:
+    get: { summary: 购物车按商户分组, security: [{ bearerAuth: [] }] }
+    post: { summary: 加购, security: [{ bearerAuth: [] }] }
+  /cart/{id}:
+    put: { summary: 改数量, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除, security: [{ bearerAuth: [] }] }
+  /v2/order/check:
+    post: { summary: 结算预览, security: [{ bearerAuth: [] }] }
+  /v2/order/create:
+    post: { summary: 创建主单+商户子单, security: [{ bearerAuth: [] }] }
+  /order/pay/{id}:
+    post:
+      summary: 支付 mock|balance 同步成功；wechat|alipay 返回 PayIntent
+      security: [{ bearerAuth: [] }]
+  /orders:
+    get: { summary: 用户主单列表, security: [{ bearerAuth: [] }] }
+  /orders/{id}:
+    get: { summary: 主单详情, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,32 @@
+# 本机 go run：cp conf/admin.local.yaml.example conf/admin.local.yaml
+# go run ./cmd/api-admin -config conf/admin.local.yaml
+server:
+  addr: ":8080"
+  mode: debug
+
+mysql:
+  dsn: "qixi:qixi_local@tcp(127.0.0.1:13306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "127.0.0.1:16379"
+  password: ""
+  db: 0
+
+nats:
+  url: "nats://127.0.0.1:14222"
+
+etcd:
+  endpoints:
+    - "127.0.0.1:12379"
+
+minio:
+  endpoint: "127.0.0.1:19000"
+  access_key: "qixi_minio"
+  secret_key: "qixi_minio_secret"
+  bucket: "qixi-mergers"
+  use_ssl: false
+
+jwt:
+  secret: "qixi-mergers-dev-jwt-secret-change-me"
+  access_ttl_hours: 12
+  refresh_ttl_hours: 168

@@ -4,6 +4,10 @@
 
 > 每一条路由 = 一个可调用操作（等同按钮/动作）。CRUD 由 HTTP 方法 + 路径/处理器名推断，可人工校正。
 
+> **源码核对（2026-07-21）**：下列处理器在控制器中**不存在**，属死路由，**禁止按此开发**——`/createOrder`、`/checkOrder`、`/v3CreateOrder`、`/v3CheckOrder`、`PointsOrder/orderPay`。  
+> 普通下单用 `v2CreateOrder` / `v2CheckOrder`；积分下单用 `PointsOrder/createOrder` / `beforCheck`。  
+> 完整对照：[`docs/api/FUNCTIONAL-TRUTH.md`](../api/FUNCTIONAL-TRUTH.md)。
+
 ## 统计
 
 | 项 | 数量 |
@@ -657,11 +661,11 @@
 
 | 操作说明 | CRUD | HTTP | 路径 | 处理器 | 路由名 |
 | --- | --- | --- | --- | --- | --- |
-| check Cerate (/check/:id) | `U` | POST | `/check/:id` | `StoreCart/checkCerate` | `` |
-| v3 Check Order (check) | `U` | POST | `check` | `/v3CheckOrder` | `` |
-| v2 Check Order (check) | `U` | POST | `check` | `/v2CheckOrder` | `` |
-| check Order (check) | `U` | POST | `check` | `/checkOrder` | `` |
-| befor Check (check) | `U` | POST | `check` | `PointsOrder/beforCheck` | `` |
+| check (/check/:id) ✅真实（路由名误写 checkCerate） | `U` | POST | `/check/:id` | `StoreCart/check` | `` |
+| v3 Check Order (check) ⛔死路由 | `U` | POST | `check` | `/v3CheckOrder` | `` |
+| v2 Check Order (check) ✅真实 | `U` | POST | `check` | `/v2CheckOrder` | `` |
+| check Order (check) ⛔死路由 | `U` | POST | `check` | `/checkOrder` | `` |
+| 积分 befor Check ✅真实 | `U` | POST | `check` | `PointsOrder/beforCheck` | `` |
 
 ### `clear`
 
@@ -814,10 +818,10 @@
 | create (/create) | `C` | POST | `/create` | `StoreCart/create` | `` |
 | create (/create) | `C` | POST | `/create` | `Community/create` | `` |
 | create (/create/:id) | `C` | POST | `/create/:id` | `/create` | `` |
-| v3 Create Order (create) | `C` | POST | `create` | `/v3CreateOrder` | `` |
-| v2 Create Order (create) | `C` | POST | `create` | `/v2CreateOrder` | `` |
-| create Order (create) | `C` | POST | `create` | `/createOrder` | `` |
-| create Order (create) | `C` | POST | `create` | `PointsOrder/createOrder` | `` |
+| v3 Create Order (create) ⛔死路由 | `C` | POST | `create` | `/v3CreateOrder` | `` |
+| v2 Create Order (create) ✅真实 | `C` | POST | `create` | `/v2CreateOrder` | `` |
+| create Order (create) ⛔死路由 | `C` | POST | `create` | `/createOrder` | `` |
+| 积分 create Order ✅真实 | `C` | POST | `create` | `PointsOrder/createOrder` | `` |
 | create (create) | `C` | POST | `create` | `/create` | `` |
 
 ### `del`
@@ -1401,9 +1405,9 @@
 
 | 操作说明 | CRUD | HTTP | 路径 | 处理器 | 路由名 |
 | --- | --- | --- | --- | --- | --- |
-| group Order Pay (pay/:id) | `C` | POST | `pay/:id` | `/groupOrderPay` | `` |
-| pay (pay/:id) | `C` | POST | `pay/:id` | `/pay` | `` |
-| order Pay (pay/:id) | `C` | POST | `pay/:id` | `PointsOrder/orderPay` | `` |
+| group Order Pay (pay/:id) ✅真实 | `C` | POST | `pay/:id` | `/groupOrderPay` | `` |
+| pay (pay/:id) ✅真实（预售等） | `C` | POST | `pay/:id` | `/pay` | `` |
+| order Pay (pay/:id) ⛔死路由 | `C` | POST | `pay/:id` | `PointsOrder/orderPay` | `` |
 
 ### `pay/config`
 

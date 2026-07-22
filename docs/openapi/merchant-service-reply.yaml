@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant service reply
+  version: 0.7.7
+  description: 商户客服快捷回复 CRUD；写需 reply/write（sql/039）
+servers:
+  - url: /api/merchant/v1
+paths:
+  /setting/replies:
+    get:
+      summary: 本店快捷回复列表（mer_id 隔离）
+    post:
+      summary: 新建快捷回复（按钮权 reply/write）
+  /setting/replies/{id}:
+    put:
+      summary: 更新快捷回复（按钮权 reply/write）
+    delete:
+      summary: 删除快捷回复（按钮权 reply/write）

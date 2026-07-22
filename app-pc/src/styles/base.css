@@ -1,0 +1,73 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--pc-font);
+  color: var(--pc-ink);
+  background:
+    radial-gradient(1200px 420px at 10% -10%, rgba(15, 107, 92, 0.08), transparent 60%),
+    radial-gradient(900px 360px at 90% 0%, rgba(196, 92, 38, 0.06), transparent 55%),
+    var(--pc-bg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.pc-container {
+  width: min(100% - 48px, var(--pc-max));
+  margin-inline: auto;
+}
+
+.pc-btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 1.1rem;
+  background: var(--pc-brand);
+  color: #fff;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.pc-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.pc-btn.ghost {
+  background: transparent;
+  color: var(--pc-brand);
+  border: 1px solid rgba(15, 107, 92, 0.35);
+}
+
+.pc-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

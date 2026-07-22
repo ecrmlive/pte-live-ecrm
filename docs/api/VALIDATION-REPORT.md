@@ -1,16 +1,22 @@
 # API 文档自动校验报告
 
-生成自 `crmeb-api-all.jsonl`。置信度合计：high=1999 stale=26 unresolved=2 total=2027。
+置信度：high=1999 stale=26 unresolved=2 total=2027。
+
+## 本轮核对结论
+
+1. **方法映射**：1999 条 high 均在控制器中存在对应方法；0 条 false-high。
+2. **下单三条线**已写入 FUNCTIONAL-TRUTH.md（普通 v2 / 积分 order/v3 / 死路由）。
+3. **购物车/地址**参数已按 checkParams 补全（此前文档几乎为空，会误导开发）。
+4. **openapi/product/create** 字段对齐 `ProductRepository::CREATE_PARAMS`（63+鉴权）。
 
 ## 开发规则
 
-1. **禁止**按 `stale` / `unresolved` 实现。
-2. `high` 可作对照；实现前仍打开控制器核对 `data` 与表单参数。
-3. 用户下单：**仅** `POST /api/v2/order/create` 与 `POST /api/v2/order/check`。
+1. 禁止按 stale/unresolved 实现。
+2. 普通下单只用 `/api/v2/order/*`；积分单用 `/api/order/v3/*`；勿混用 `/api/v3/order/*`。
 
-## stale（路由有、方法无）
+## stale 全表
 
-| method | path | declared method | file |
+| method | path | declared | file |
 | --- | --- | --- | --- |
 | GET | `api/copyright` | `copyright` | `app/controller/api/Common.php` |
 | GET | `api/excel/download/:id` | `download` | `app/controller/merchant/store/order/Order.php` |
@@ -41,19 +47,5 @@
 
 ## unresolved
 
-| method | path | note |
-| --- | --- | --- |
-| GET | `sys/micro/recovery/:id` | 未能可靠映射到控制器，开发时勿直接照抄，需对照 route 源码 |
-| ANY | `api/store/test` | 未能可靠映射到控制器，开发时勿直接照抄，需对照 route 源码 |
-
-## 关键路径抽样（应 high）
-
-- `POST /api/auth/login` → **high** (`login`)
-- `POST /api/v2/order/create` → **high** (`v2CreateOrder`)
-- `POST /api/v2/order/check` → **high** (`v2CheckOrder`)
-- `POST /api/order/create` → **stale** (`createOrder`)
-- `POST /api/v3/order/create` → **stale** (`v3CreateOrder`)
-- `POST /openapi/auth` → **high** (`auth`)
-- `GET /openapi/order/list` → **high** (`lst`)
-- `POST /sys/login` → **high** (`login`)
-- `POST /mer/login` → **high** (`login`)
+- `GET /sys/micro/recovery/:id` — 未能可靠映射到控制器，开发时勿直接照抄，需对照 route 源码
+- `ANY /api/store/test` — 未能可靠映射到控制器，开发时勿直接照抄，需对照 route 源码

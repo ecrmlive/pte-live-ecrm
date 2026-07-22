@@ -1,0 +1,24 @@
+# 本机直接 go run 时可复制为旁路覆盖（可选）
+server:
+  addr: ":8080"
+  mode: debug
+
+mysql:
+  dsn: "qixi:qixi_local@tcp(127.0.0.1:13306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "127.0.0.1:16379"
+
+nats:
+  url: "nats://127.0.0.1:14222"
+
+jwt:
+  secret: "qixi-mergers-dev-jwt-secret-change-me"
+  access_ttl_hours: 12
+  refresh_ttl_hours: 168
+
+payment:
+  sandbox: true
+  notify_secret: "qixi-pay-notify-dev-secret-change-me"
+  wechat: true
+  alipay: true

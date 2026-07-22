@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform live
+  version: 0.6.5
+  description: 平台直播监管（审核/上下架）
+servers:
+  - url: /api/platform/v1
+paths:
+  /broadcast/rooms:
+    get:
+      summary: 直播间列表
+  /broadcast/rooms/{id}:
+    get:
+      summary: 详情
+  /broadcast/rooms/{id}/status:
+    put:
+      summary: 审核/显示（status=2通过/-1驳回）

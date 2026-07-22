@@ -1,6 +1,6 @@
 # 用户端 `/api/`
 
-> 对照文档。置信度：high=427 stale=8 unresolved=1。先读 [ACCURACY.md](./ACCURACY.md)。
+> 对照文档。置信度：high=427 stale=8 unresolved=1。先读 [ACCURACY.md](./ACCURACY.md)、[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 合计 **436** 条。
 
@@ -883,11 +883,17 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/community/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`api.community.Community/create`
 - 源码：`app/controller/api/community/Community.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `image` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `topic_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `content` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `spu_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `order_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `video_link` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `POST /api/community/delete/:id` — delete
@@ -1573,11 +1579,18 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/intention/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`api.store.merchant.MerchantIntention/create`
 - 源码：`app/controller/api/store/merchant/MerchantIntention.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mer_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `images` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `merchant_category_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mer_type_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `circle_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `business_id` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /api/intention/detail/:id` — detail
@@ -1767,7 +1780,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/check` — checkOrder
 
 - 置信度：⛔ stale
-- 说明：路由指向 `checkOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。
+- 真实功能：【死路由】声明 StoreOrder::checkOrder，源码无此方法。勿实现。
+- 说明：路由指向 `checkOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。；【死路由】声明 StoreOrder::checkOrder，源码无此方法。勿实现。
 - 处理器：`api.store.order.StoreOrder/checkOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `checkOrder()`
 - 请求参数：
@@ -1777,7 +1791,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/create` — createOrder
 
 - 置信度：⛔ stale
-- 说明：路由指向 `createOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。
+- 真实功能：【死路由】声明 StoreOrder::createOrder，源码无此方法。勿实现。
+- 说明：路由指向 `createOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。；【死路由】声明 StoreOrder::createOrder，源码无此方法。勿实现。
 - 处理器：`api.store.order.StoreOrder/createOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `createOrder()`
 - 请求参数：
@@ -1908,7 +1923,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/pay/:id` — groupOrderPay
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【普通/拼团等组订单支付】StoreOrder::groupOrderPay；points/pay 同方法 append is_points=1
+- 说明：控制器方法已校验存在；【普通/拼团等组订单支付】StoreOrder::groupOrderPay；points/pay 同方法 append is_points=1
 - 处理器：`api.store.order.StoreOrder/groupOrderPay`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `groupOrderPay()`
 - 请求参数：
@@ -1921,7 +1937,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/points/pay/:id` — groupOrderPay
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【积分组订单再支付】同 groupOrderPay，路由 append is_points=1
+- 说明：控制器方法已校验存在；【积分组订单再支付】同 groupOrderPay，路由 append is_points=1
 - 处理器：`api.store.order.StoreOrder/groupOrderPay`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `groupOrderPay()`
 - 请求参数：
@@ -1983,7 +2000,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/v3/check` — beforCheck
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【积分订单核对】PointsOrder::beforCheck → PointsOrderCreateRepository（activity_type=20）
+- 说明：控制器方法已校验存在；【积分订单核对】PointsOrder::beforCheck → PointsOrderCreateRepository（activity_type=20）
 - 处理器：`api.store.order.PointsOrder/beforCheck`
 - 源码：`app/controller/api/store/order/PointsOrder.php` :: `beforCheck()`
 - 请求参数：
@@ -1997,7 +2015,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/v3/create` — createOrder
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【积分订单创建】PointsOrder::createOrder；支付多在创建时发起，无独立 orderPay 方法
+- 说明：控制器方法已校验存在；【积分订单创建】PointsOrder::createOrder；支付多在创建时发起，无独立 orderPay 方法
 - 处理器：`api.store.order.PointsOrder/createOrder`
 - 源码：`app/controller/api/store/order/PointsOrder.php` :: `createOrder()`
 - 请求参数：
@@ -2012,7 +2031,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/order/v3/pay/:id` — orderPay
 
 - 置信度：⛔ stale
-- 说明：路由已登记，但 `app/controller/api/store/order/PointsOrder.php` 中不存在方法 `orderPay`（原项目死路由/加密扩展/版本差异）。开发勿实现为有效接口，除非核实。
+- 真实功能：【死路由】声明 PointsOrder::orderPay，源码无此方法；积分单支付走 create 内 repository->pay 或普通 groupOrderPay
+- 说明：路由已登记，但 `app/controller/api/store/order/PointsOrder.php` 中不存在方法 `orderPay`（原项目死路由/加密扩展/版本差异）。开发勿实现为有效接口，除非核实。；【死路由】声明 PointsOrder::orderPay，源码无此方法；积分单支付走 create 内 repository->pay 或普通 groupOrderPay
 - 处理器：`api.store.order.PointsOrder/orderPay`
 - 源码：`app/controller/api/store/order/PointsOrder.php` :: `orderPay()`
 - 请求参数：
@@ -2159,7 +2179,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/presell/pay/:id` — pay
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【预售尾款支付】PresellOrder::pay
+- 说明：控制器方法已校验存在；【预售尾款支付】PresellOrder::pay
 - 处理器：`api.store.order.PresellOrder/pay`
 - 源码：`app/controller/api/store/order/PresellOrder.php` :: `pay()`
 - 请求参数：
@@ -2426,7 +2447,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/refund/apply/:id` — refund
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【用户申请退款】StoreRefundOrder::refund；type=1 单商品 / 否则批量 ids
+- 说明：控制器方法已校验存在；【用户申请退款】StoreRefundOrder::refund；type=1 单商品 / 否则批量 ids
 - 处理器：`api.store.order.StoreRefundOrder/refund`
 - 源码：`app/controller/api/store/order/StoreRefundOrder.php` :: `refund()`
 - 请求参数：
@@ -4024,7 +4046,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/svip/pay/:id` — createOrder
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：【付费会员下单支付】Svip::createOrder
+- 说明：控制器方法已校验存在；【付费会员下单支付】Svip::createOrder
 - 处理器：`api.user.Svip/createOrder`
 - 源码：`app/controller/api/user/Svip.php` :: `createOrder()`
 - 请求参数：
@@ -4179,11 +4202,18 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/user/address/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：新增/编辑收货地址（同接口）
+- 说明：控制器方法已校验存在；参数来自 UserAddress::checkParams + UserAddressValidate
 - 处理器：`api.user.UserAddress/create`
 - 源码：`app/controller/api/user/UserAddress.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `address_id` (body, 可选) 有值则编辑
+- `real_name` (body, 必填) 收货人
+- `phone` (body, 必填) 手机
+- `area` (body, 必填) 地区数组[{id,name},...] 省市区街道
+- `detail` (body, 必填) 详细地址
+- `post_code` (body, 可选) 邮编
+- `is_default` (body, 可选) 默认地址
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `POST /api/user/address/delete/:id` — delete
@@ -4318,11 +4348,18 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/user/cart/again` — again
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：再次购买入车
+- 说明：控制器方法已校验存在；再次购买：校验同 create，批量
 - 处理器：`api.store.order.StoreCart/again`
 - 源码：`app/controller/api/store/order/StoreCart.php` :: `again()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `product_id` (body, 必填)
+- `product_attr_unique` (body, 必填)
+- `cart_num` (body, 必填)
+- `is_new` (body, 可选)
+- `product_type` (body, 可选)
+- `group_buying_id` (body, 可选)
+- `spread_id` (body, 可选)
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `POST /api/user/cart/batchCreate` — batchCreate
@@ -4381,11 +4418,20 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/user/cart/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 真实功能：加购/立即购买
+- 说明：控制器方法已校验存在；参数来自 StoreCart::checkParams + StoreCartValidate；另见 product_type 分支逻辑
 - 处理器：`api.store.order.StoreCart/create`
 - 源码：`app/controller/api/store/order/StoreCart.php` :: `create()`
 - 请求参数：
-- `source` (query/body, 可选)
+- `product_id` (body, 必填) 商品ID
+- `product_attr_unique` (body, 必填) SKU unique
+- `cart_num` (body, 必填) 数量
+- `is_new` (body, 可选) 1=立即购买不进常驻购物车
+- `product_type` (body, 可选) 0普通 1秒杀 2预售 3助力 4拼团 20积分
+- `group_buying_id` (body, 可选) 拼团ID
+- `spread_id` (body, 可选) 分销人
+- `reservation_id` (body, 可选) 预约时段
+- `reservation_date` (body, 可选) 预约日期
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `POST /api/user/cart/delete` — batchDelete
@@ -4468,11 +4514,19 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/user/extract/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`api.user.UserExtract/create`
 - 源码：`app/controller/api/user/UserExtract.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `extract_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bank_code` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bank_address` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `alipay_code` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `wechat` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extract_pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `extract_price` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `real_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bank_name` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /api/user/extract/detail/:id` — detail
@@ -4704,11 +4758,20 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/user/receipt/create` — create
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`api.user.UserReceipt/create`
 - 源码：`app/controller/api/user/UserReceipt.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `receipt_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `receipt_title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `receipt_title_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `duty_paragraph` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `email` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bank_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bank_code` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `address` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `tel` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_default` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `POST /api/user/receipt/delete/:id` — delete
@@ -5038,7 +5101,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/v2/order/check` — 订单核对
 
 - 置信度：✅ high
-- 说明：控制器方法已存在；参数来自方法体 param/params
+- 真实功能：【普通订单核对】真实入口。StoreOrder::v2CheckOrder → StoreOrderCreateRepository::v2CartIdByOrderInfo
+- 说明：控制器方法已存在；参数来自方法体 param/params；【普通订单核对】真实入口。StoreOrder::v2CheckOrder → StoreOrderCreateRepository::v2CartIdByOrderInfo
 - 处理器：`api.store.order.StoreOrder/v2CheckOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `v2CheckOrder()`
 - 请求参数：
@@ -5053,7 +5117,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/v2/order/create` — 创建订单
 
 - 置信度：✅ high
-- 说明：控制器方法已存在；参数来自方法体 param/params
+- 真实功能：【普通订单创建】真实入口。需先 check 拿到 key；StoreOrder::v2CreateOrder
+- 说明：控制器方法已存在；参数来自方法体 param/params；【普通订单创建】真实入口。需先 check 拿到 key；StoreOrder::v2CreateOrder
 - 处理器：`api.store.order.StoreOrder/v2CreateOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `v2CreateOrder()`
 - 请求参数：
@@ -5097,7 +5162,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/v3/order/check` — v3CheckOrder
 
 - 置信度：⛔ stale
-- 说明：路由指向 `v3CheckOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。
+- 真实功能：【死路由】声明 StoreOrder::v3CheckOrder，源码无此方法。勿实现。
+- 说明：路由指向 `v3CheckOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。；【死路由】声明 StoreOrder::v3CheckOrder，源码无此方法。勿实现。
 - 处理器：`api.store.order.StoreOrder/v3CheckOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `v3CheckOrder()`
 - 请求参数：
@@ -5107,7 +5173,8 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /api/v3/order/create` — v3CreateOrder
 
 - 置信度：⛔ stale
-- 说明：路由指向 `v3CreateOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。
+- 真实功能：【死路由】声明 StoreOrder::v3CreateOrder，源码无此方法。勿实现。
+- 说明：路由指向 `v3CreateOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*` 为准；勿按本条实现。；【死路由】声明 StoreOrder::v3CreateOrder，源码无此方法。勿实现。
 - 处理器：`api.store.order.StoreOrder/v3CreateOrder`
 - 源码：`app/controller/api/store/order/StoreOrder.php` :: `v3CreateOrder()`
 - 请求参数：

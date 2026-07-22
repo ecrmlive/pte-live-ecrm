@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant combination
+  version: 0.6.3
+  description: 商户拼团 CRUD（mer_id 隔离）；新建 combination/create，删除 combination/delete，上下架 combination/toggle
+servers:
+  - url: /api/merchant/v1
+paths:
+  /combination/groups:
+    get:
+      summary: 本店拼团列表
+    post:
+      summary: 新建拼团（按钮权 combination/create）
+  /combination/groups/{id}:
+    put:
+      summary: 更新本店拼团
+    delete:
+      summary: 删除本店拼团（按钮权 combination/delete）
+  /combination/groups/{id}/show:
+    put:
+      summary: 上下架（按钮权 combination/toggle）

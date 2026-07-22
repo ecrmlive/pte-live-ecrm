@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant seckill
+  version: 0.6.2
+  description: 商户秒杀 CRUD（mer_id 隔离）；新建 seckill/create，删除 seckill/delete，启停 seckill/toggle
+servers:
+  - url: /api/merchant/v1
+paths:
+  /seckill/times:
+    get:
+      summary: 秒杀场次
+  /seckill/actives:
+    get:
+      summary: 本店秒杀列表
+    post:
+      summary: 新建秒杀（按钮权 seckill/create）
+  /seckill/actives/{id}:
+    put:
+      summary: 更新本店秒杀
+    delete:
+      summary: 删除本店秒杀（按钮权 seckill/delete）
+  /seckill/actives/{id}/status:
+    put:
+      summary: 启停（按钮权 seckill/toggle）

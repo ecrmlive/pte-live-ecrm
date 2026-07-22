@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant setting
+  version: 0.7.7
+  description: 商户设置（店铺/店员/子账号/本店角色/快捷回复）；写操作需 shop/update·staff/write·admins/write·roles/write·reply/write
+servers:
+  - url: /api/merchant/v1
+paths:
+  /setting/shop:
+    get:
+      summary: 本店资料
+    put:
+      summary: 更新本店资料（mer_id 隔离；按钮权 shop/update）
+  /setting/staff:
+    get:
+      summary: 店员列表
+    post:
+      summary: 新建店员（manager 登录；按钮权 staff/write；is_verify/is_goods）
+  /setting/staff/{id}:
+    put:
+      summary: 更新店员（启停/核销/发货/改密；按钮权 staff/write）
+  /setting/admins:
+    get:
+      summary: 本店管理员/子账号列表（mer_id 隔离）
+    post:
+      summary: 新建子账号并绑定角色（按钮权 admins/write）
+  /setting/admins/{id}:
+    put:
+      summary: 更新子账号（改角色/启停/改密；按钮权 admins/write）
+  /setting/roles:
+    get:
+      summary: 角色列表（共享模板 + 本店）
+    post:
+      summary: 新建本店角色（按钮权 roles/write）
+  /setting/roles/{id}:
+    put:
+      summary: 更新本店角色（按钮权 roles/write；不可改共享模板）
+  /setting/replies:
+    get:
+      summary: 快捷回复列表（mer_id 隔离）
+    post:
+      summary: 新建快捷回复（按钮权 reply/write）
+  /setting/replies/{id}:
+    put:
+      summary: 更新快捷回复（启停；按钮权 reply/write）
+    delete:
+      summary: 删除快捷回复（按钮权 reply/write）
+  /setting/menus/tree:
+    get:
+      summary: 商户菜单+按钮树（角色勾选；is_menu=1 菜单 / 2 按钮）

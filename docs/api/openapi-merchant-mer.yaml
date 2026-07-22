@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CRMEB 商户后台
-  description: 见 ACCURACY.md。confidence 统计见 description。
+  description: 见 ACCURACY.md / FUNCTIONAL-TRUTH.md
   version: CRMEB-MER-v4.0-ref
 servers:
 - url: /
@@ -876,7 +876,7 @@ paths:
       operationId: merchantLabelRuleCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.user.LabelRule/create`
 
@@ -898,6 +898,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id007
+              type: object
+              properties:
+                label_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                min:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                max:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                data:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id007
   /mer/auto_label/delete/{id}:
     delete:
       tags:
@@ -1068,7 +1092,7 @@ paths:
       operationId: merchantBroadcastAssistantCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.broadcast.BroadcastAssistant/create`
 
@@ -1090,6 +1114,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id008
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                nickname:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mark:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id008
   /mer/broadcast/assistant/create/form:
     get:
       tags:
@@ -1347,14 +1389,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id007
+            schema: &id009
               type: object
               properties:
                 goods:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id007
+            schema: *id009
   /mer/broadcast/goods/create:
     post:
       tags:
@@ -1363,7 +1405,7 @@ paths:
       operationId: merchantBroadcastGoodsCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.broadcast.BroadcastGoods/create`
 
@@ -1385,6 +1427,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id010
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cover_img:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                product_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id010
   /mer/broadcast/goods/create/form:
     get:
       tags:
@@ -1593,14 +1656,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id008
+            schema: &id011
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id008
+            schema: *id011
   /mer/broadcast/goods/status/{id}:
     post:
       tags:
@@ -1641,14 +1704,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id009
+            schema: &id012
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id009
+            schema: *id012
   /mer/broadcast/goods/update/form/{id}:
     get:
       tags:
@@ -1797,14 +1860,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id010
+            schema: &id013
               type: object
               properties:
                 assistant_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id010
+            schema: *id013
   /mer/broadcast/room/closeKf/{id}:
     post:
       tags:
@@ -1845,14 +1908,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id011
+            schema: &id014
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id011
+            schema: *id014
   /mer/broadcast/room/comment/{id}:
     post:
       tags:
@@ -1893,14 +1956,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id012
+            schema: &id015
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id012
+            schema: *id015
   /mer/broadcast/room/create:
     post:
       tags:
@@ -1909,7 +1972,7 @@ paths:
       operationId: merchantBroadcastRoomCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.broadcast.BroadcastRoom/create`
 
@@ -1931,6 +1994,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id016
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cover_img:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                share_img:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                anchor_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                anchor_wechat:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                start_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                screen_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                close_like:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                close_goods:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                close_comment:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                replay_status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                close_share:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                close_kf:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                feeds_img:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_feeds_public:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id016
   /mer/broadcast/room/create/form:
     get:
       tags:
@@ -2067,7 +2190,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id013
+            schema: &id017
               type: object
               properties:
                 ids:
@@ -2077,7 +2200,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id013
+            schema: *id017
   /mer/broadcast/room/feedsPublic/{id}:
     post:
       tags:
@@ -2118,14 +2241,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id014
+            schema: &id018
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id014
+            schema: *id018
   /mer/broadcast/room/goods/{id}:
     get:
       tags:
@@ -2292,14 +2415,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id015
+            schema: &id019
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id015
+            schema: *id019
   /mer/broadcast/room/on_sale/{id}:
     post:
       tags:
@@ -2340,7 +2463,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id016
+            schema: &id020
               type: object
               properties:
                 status:
@@ -2350,7 +2473,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id016
+            schema: *id020
   /mer/broadcast/room/push_message/{id}:
     get:
       tags:
@@ -2421,7 +2544,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id017
+            schema: &id021
               type: object
               properties:
                 id:
@@ -2431,7 +2554,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id017
+            schema: *id021
   /mer/broadcast/room/status/{id}:
     post:
       tags:
@@ -2472,14 +2595,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id018
+            schema: &id022
               type: object
               properties:
                 is_show:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id018
+            schema: *id022
   /mer/broadcast/room/update/form/{id}:
     get:
       tags:
@@ -2676,14 +2799,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id019
+            schema: &id023
               type: object
               properties:
                 uid:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id019
+            schema: *id023
   /mer/community/delete/{id}:
     delete:
       tags:
@@ -3168,7 +3291,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id020
+            schema: &id024
               type: object
               properties:
                 mer_delivery_type:
@@ -3226,7 +3349,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id020
+            schema: *id024
   /mer/delivery/order/cancel/{id}:
     post:
       tags:
@@ -3267,7 +3390,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id021
+            schema: &id025
               type: object
               properties:
                 reason:
@@ -3277,7 +3400,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id021
+            schema: *id025
   /mer/delivery/order/cancel/{id}/form:
     get:
       tags:
@@ -3436,7 +3559,7 @@ paths:
       operationId: merchantDeliveryServiceCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.delivery.DeliveryService/create`
 
@@ -3458,6 +3581,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id026
+              type: object
+              properties:
+                uid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                avatar:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                remark:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id026
   /mer/delivery/service/create/form:
     get:
       tags:
@@ -3786,14 +3942,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id022
+            schema: &id027
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id022
+            schema: *id027
   /mer/delivery/service/update/{id}:
     post:
       tags:
@@ -3952,7 +4108,7 @@ paths:
       operationId: merchantStoreDeliveryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.delivery.DeliveryStation/create`
 
@@ -3974,6 +4130,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id028
+              type: object
+              properties:
+                station_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                business:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                station_address:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                lng:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                lat:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                contact_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                username:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                password:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                city_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                card_number:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                business_date:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                business_time_start:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                business_time_end:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                switch_city:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                switch_take:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bind_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                origin_shop_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                range_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                radius:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                region:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                fence:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id028
   /mer/delivery/station/delete/{id}:
     delete:
       tags:
@@ -4200,14 +4437,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id023
+            schema: &id029
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id023
+            schema: *id029
   /mer/delivery/station/mark/{id}/form:
     get:
       tags:
@@ -4392,14 +4629,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id024
+            schema: &id030
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id024
+            schema: *id030
   /mer/delivery/station/update/{id}:
     post:
       tags:
@@ -4650,14 +4887,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id025
+            schema: &id031
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id025
+            schema: *id031
   /mer/discounts/update/{id}:
     post:
       tags:
@@ -4806,7 +5043,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id026
+            schema: &id032
               type: object
               properties:
                 name:
@@ -4843,7 +5080,7 @@ paths:
                   type: string
                   description: 默认 1
           application/x-www-form-urlencoded:
-            schema: *id026
+            schema: *id032
   /mer/diy/default_lst:
     get:
       tags:
@@ -5280,7 +5517,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id027
+            schema: &id033
               type: object
               properties:
                 name:
@@ -5317,7 +5554,7 @@ paths:
                   type: string
                   description: 默认 1
           application/x-www-form-urlencoded:
-            schema: *id027
+            schema: *id033
   /mer/diy/productCategory/info:
     get:
       tags:
@@ -5652,14 +5889,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id028
+            schema: &id034
               type: object
               properties:
                 mer_status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id028
+            schema: *id034
   /mer/expr/dump_lst:
     get:
       tags:
@@ -5838,7 +6075,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id029
+            schema: &id035
               type: object
               properties:
                 account:
@@ -5851,7 +6088,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id029
+            schema: *id035
   /mer/expr/partner/{id}/form:
     get:
       tags:
@@ -5958,7 +6195,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id030
+            schema: &id036
               type: object
               properties:
                 account:
@@ -5989,7 +6226,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id030
+            schema: *id036
   /mer/financial/account/form:
     get:
       tags:
@@ -6336,14 +6573,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id031
+            schema: &id037
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id031
+            schema: *id037
   /mer/financial/mark/{id}/form:
     get:
       tags:
@@ -6444,7 +6681,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id032
+            schema: &id038
               type: object
               properties:
                 type:
@@ -6460,7 +6697,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id032
+            schema: *id038
   /mer/financial_record/count:
     get:
       tags:
@@ -6867,7 +7104,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id033
+            schema: &id039
               type: object
               properties:
                 is_mer:
@@ -6877,7 +7114,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id033
+            schema: *id039
   /mer/group/data/create/table/{groupId}:
     get:
       tags:
@@ -6954,7 +7191,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id034
+            schema: &id040
               type: object
               properties:
                 sort:
@@ -6964,7 +7201,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id034
+            schema: *id040
   /mer/group/data/delete/{id}:
     delete:
       tags:
@@ -7125,14 +7362,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id035
+            schema: &id041
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id035
+            schema: *id041
   /mer/group/data/update/table/{groupId}/{id}:
     get:
       tags:
@@ -7221,7 +7458,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id036
+            schema: &id042
               type: object
               properties:
                 sort:
@@ -7231,7 +7468,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id036
+            schema: *id042
   /mer/group/detail/{id}:
     get:
       tags:
@@ -7302,7 +7539,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id037
+            schema: &id043
               type: object
               properties:
                 template_name:
@@ -7318,7 +7555,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id037
+            schema: *id043
   /mer/guarantee/delete/{id}:
     delete:
       tags:
@@ -7551,14 +7788,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id038
+            schema: &id044
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id038
+            schema: *id044
   /mer/guarantee/status/{id}:
     post:
       tags:
@@ -7599,14 +7836,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id039
+            schema: &id045
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id039
+            schema: *id045
   /mer/guarantee/update/{id}:
     post:
       tags:
@@ -7647,7 +7884,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id040
+            schema: &id046
               type: object
               properties:
                 template_name:
@@ -7663,7 +7900,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id040
+            schema: *id046
   /mer/info:
     get:
       tags:
@@ -7728,7 +7965,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id041
+            schema: &id047
               type: object
               properties:
                 mer_info:
@@ -7777,7 +8014,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id041
+            schema: *id047
   /mer/integral/lst:
     get:
       tags:
@@ -7896,7 +8133,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id042
+            schema: &id048
               type: object
               properties:
                 account:
@@ -7921,7 +8158,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id042
+            schema: *id048
   /mer/login_config:
     get:
       tags:
@@ -8409,7 +8646,7 @@ paths:
       operationId: merchantOpenapiCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.system.openapi.OpenApi/create`
 
@@ -8431,6 +8668,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id049
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mark:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                auth:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id049
   /mer/openapi/create/form:
     get:
       tags:
@@ -8669,14 +8930,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id043
+            schema: &id050
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id043
+            schema: *id050
   /mer/openapi/update/{id}:
     post:
       tags:
@@ -8819,7 +9080,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id044
+            schema: &id051
               type: object
               properties:
                 csList:
@@ -8829,7 +9090,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id044
+            schema: *id051
   /mer/product/cdkey/delete/{id}:
     delete:
       tags:
@@ -8874,7 +9135,7 @@ paths:
       operationId: merchantStoreProductCdkeyLibraryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.product.CdkeyLibrary/create`
 
@@ -8896,6 +9157,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id052
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                remark:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id052
   /mer/product/cdkey/library/create/form:
     get:
       tags:
@@ -9064,14 +9340,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id045
+            schema: &id053
               type: object
               properties:
                 library_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id045
+            schema: *id053
   /mer/product/cdkey/library/lst:
     get:
       tags:
@@ -9340,7 +9616,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id046
+            schema: &id054
               type: object
               properties:
                 key:
@@ -9350,7 +9626,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id046
+            schema: *id054
   /mer/product/label/create:
     post:
       tags:
@@ -9613,14 +9889,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id047
+            schema: &id055
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id047
+            schema: *id055
   /mer/product/label/update/{id}:
     post:
       tags:
@@ -10535,7 +10811,7 @@ paths:
       operationId: merchantServiceCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.service.StoreService/create`
 
@@ -10557,6 +10833,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id056
+              type: object
+              properties:
+                uid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                nickname:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                account:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pwd:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                confirm_pwd:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_open:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                customer:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_verify:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_goods:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                notify:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                avatar:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id056
   /mer/service/create/form:
     get:
       tags:
@@ -10769,7 +11096,7 @@ paths:
       operationId: merchantServiceReplyCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.service.StoreServiceReply/create`
 
@@ -10791,6 +11118,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id057
+              type: object
+              properties:
+                keyword:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                content:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id057
   /mer/service/reply/delete/{id}:
     delete:
       tags:
@@ -10921,14 +11269,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id048
+            schema: &id058
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id048
+            schema: *id058
   /mer/service/reply/update/{id}:
     post:
       tags:
@@ -11005,14 +11353,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id049
+            schema: &id059
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id049
+            schema: *id059
   /mer/service/update/form/{id}:
     get:
       tags:
@@ -11243,7 +11591,7 @@ paths:
       operationId: merchantStaffsCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.Staffs/create`
 
@@ -11265,6 +11613,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id060
+              type: object
+              properties:
+                uid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                photo:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                remark:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id060
   /mer/staffs/create/form:
     get:
       tags:
@@ -11539,14 +11917,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id050
+            schema: &id061
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id050
+            schema: *id061
   /mer/staffs/update/form/{id}:
     get:
       tags:
@@ -11969,7 +12347,7 @@ paths:
       operationId: merchantStoreAttrTemplateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.StoreAttrTemplate/create`
 
@@ -11991,6 +12369,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id062
+              type: object
+              properties:
+                template_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                template_value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id062
   /mer/store/attr/template/list:
     get:
       tags:
@@ -12168,7 +12561,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id051
+            schema: &id063
               type: object
               properties:
                 cart_ids:
@@ -12193,7 +12586,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id051
+            schema: *id063
   /mer/store/behalf/cartChange/{id}:
     post:
       tags:
@@ -12234,7 +12627,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id052
+            schema: &id064
               type: object
               properties:
                 uid:
@@ -12247,7 +12640,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id052
+            schema: *id064
   /mer/store/behalf/cartClear:
     post:
       tags:
@@ -12282,7 +12675,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id053
+            schema: &id065
               type: object
               properties:
                 uid:
@@ -12292,7 +12685,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id053
+            schema: *id065
   /mer/store/behalf/cartCount:
     get:
       tags:
@@ -12369,7 +12762,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id054
+            schema: &id066
               type: object
               properties:
                 uid:
@@ -12388,7 +12781,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id054
+            schema: *id066
   /mer/store/behalf/cartDelete/{id}:
     delete:
       tags:
@@ -12507,7 +12900,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id055
+            schema: &id067
               type: object
               properties:
                 old_price:
@@ -12526,7 +12919,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id055
+            schema: *id067
   /mer/store/behalf/orderCheck:
     post:
       tags:
@@ -12561,7 +12954,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id056
+            schema: &id068
               type: object
               properties:
                 uid:
@@ -12589,7 +12982,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id056
+            schema: *id068
   /mer/store/behalf/orderCreate:
     post:
       tags:
@@ -12624,7 +13017,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id057
+            schema: &id069
               type: object
               properties:
                 uid:
@@ -12664,7 +13057,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id057
+            schema: *id069
   /mer/store/behalf/orderPay/{id}:
     post:
       tags:
@@ -12705,7 +13098,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id058
+            schema: &id070
               type: object
               properties:
                 uid:
@@ -12724,7 +13117,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id058
+            schema: *id070
   /mer/store/behalf/orderVerify:
     post:
       tags:
@@ -12759,7 +13152,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id059
+            schema: &id071
               type: object
               properties:
                 phone:
@@ -12769,7 +13162,7 @@ paths:
                   type: string
                   description: 默认 'balance'
           application/x-www-form-urlencoded:
-            schema: *id059
+            schema: *id071
   /mer/store/behalf/payConfig:
     post:
       tags:
@@ -12804,14 +13197,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id060
+            schema: &id072
               type: object
               properties:
                 uid:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id060
+            schema: *id072
   /mer/store/behalf/payStatus/{id}:
     post:
       tags:
@@ -12852,7 +13245,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id061
+            schema: &id073
               type: object
               properties:
                 uid:
@@ -12862,7 +13255,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id061
+            schema: *id073
   /mer/store/behalf/productCategory:
     get:
       tags:
@@ -13023,7 +13416,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id062
+            schema: &id074
               type: object
               properties:
                 uid:
@@ -13066,7 +13459,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id062
+            schema: *id074
   /mer/store/behalf/userAddressList:
     get:
       tags:
@@ -13155,7 +13548,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id063
+            schema: &id075
               type: object
               properties:
                 nickname:
@@ -13165,7 +13558,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id063
+            schema: *id075
   /mer/store/behalf/userInfo:
     get:
       tags:
@@ -13288,7 +13681,7 @@ paths:
       operationId: merchantStoreCategoryCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.store.StoreCategory/create`
 
@@ -13310,6 +13703,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id076
+              type: object
+              properties:
+                pid:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_show:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                data:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id076
   /mer/store/category/create/form:
     get:
       tags:
@@ -13554,14 +13974,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id064
+            schema: &id077
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id064
+            schema: *id077
   /mer/store/category/update/form/{id}:
     get:
       tags:
@@ -13678,7 +14098,7 @@ paths:
       operationId: merchantCouponCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.coupon.Coupon/create`
 
@@ -13700,6 +14120,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id078
+              type: object
+              properties:
+                use_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                use_min_price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                coupon_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                use_start_time:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                product_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                range_date:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                send_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                full_reduction:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_limited:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_timeout:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                total_count:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id078
   /mer/store/coupon/create/form:
     get:
       tags:
@@ -14088,7 +14568,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id065
+            schema: &id079
               type: object
               properties:
                 coupon_id:
@@ -14107,7 +14587,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id065
+            schema: *id079
   /mer/store/coupon/status/{id}:
     post:
       tags:
@@ -14148,14 +14628,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id066
+            schema: &id080
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id066
+            schema: *id080
   /mer/store/coupon/update/{id}:
     post:
       tags:
@@ -14196,14 +14676,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id067
+            schema: &id081
               type: object
               properties:
                 title:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id067
+            schema: *id081
   /mer/store/coupon/update/{id}/form:
     get:
       tags:
@@ -14314,7 +14794,7 @@ paths:
       operationId: merFormCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.system.form.Form/create`
 
@@ -14336,6 +14816,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id082
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                value:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                status:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id082
   /mer/store/form/delete/{id}:
     delete:
       tags:
@@ -14772,14 +15270,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id068
+            schema: &id083
               type: object
               properties:
                 library_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id068
+            schema: *id083
   /mer/store/order/chart:
     get:
       tags:
@@ -15006,7 +15504,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id069
+            schema: &id084
               type: object
               properties:
                 real_name:
@@ -15019,7 +15517,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id069
+            schema: *id084
   /mer/store/order/collectCargo/{id}/form:
     get:
       tags:
@@ -15240,7 +15738,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id070
+            schema: &id085
               type: object
               properties:
                 is_split:
@@ -15301,7 +15799,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id070
+            schema: *id085
   /mer/store/order/deliveryOrderSync:
     post:
       tags:
@@ -15336,14 +15834,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id071
+            schema: &id086
               type: object
               properties:
                 order_ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id071
+            schema: *id086
   /mer/store/order/delivery_batch:
     post:
       tags:
@@ -15378,7 +15876,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id072
+            schema: &id087
               type: object
               properties:
                 order_id:
@@ -15415,7 +15913,7 @@ paths:
                   type: string
                   description: 默认 1
           application/x-www-form-urlencoded:
-            schema: *id072
+            schema: *id087
   /mer/store/order/delivery_export:
     get:
       tags:
@@ -16404,14 +16902,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id073
+            schema: &id088
               type: object
               properties:
                 remark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id073
+            schema: *id088
   /mer/store/order/remark/{id}/form:
     get:
       tags:
@@ -16704,14 +17202,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id074
+            schema: &id089
               type: object
               properties:
                 msg:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id074
+            schema: *id089
   /mer/store/order/shipment/getPrice/{id}:
     get:
       tags:
@@ -17166,7 +17664,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id075
+            schema: &id090
               type: object
               properties:
                 total_price:
@@ -17176,7 +17674,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id075
+            schema: *id090
   /mer/store/order/update/{id}/form:
     get:
       tags:
@@ -17289,14 +17787,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id076
+            schema: &id091
               type: object
               properties:
                 verify_code:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id076
+            schema: *id091
   /mer/store/params/temp/create:
     post:
       tags:
@@ -17305,7 +17803,7 @@ paths:
       operationId: merchantStoreParameterTemplateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.parameter.ParameterTemplate/create`
 
@@ -17327,6 +17825,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id092
+              type: object
+              properties:
+                template_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                cate_ids:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                params:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                delete_params:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id092
   /mer/store/params/temp/delete/value/{id}:
     delete:
       tags:
@@ -17649,7 +18171,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id077
+            schema: &id093
               type: object
               properties:
                 type:
@@ -17680,7 +18202,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id077
+            schema: *id093
   /mer/store/printer/create/form:
     get:
       tags:
@@ -17883,14 +18405,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id078
+            schema: &id094
               type: object
               properties:
                 print_content:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id078
+            schema: *id094
   /mer/store/printer/status/{id}:
     post:
       tags:
@@ -17931,14 +18453,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id079
+            schema: &id095
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id079
+            schema: *id095
   /mer/store/printer/update/{id}:
     post:
       tags:
@@ -17979,7 +18501,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id080
+            schema: &id096
               type: object
               properties:
                 type:
@@ -18010,7 +18532,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id080
+            schema: *id096
   /mer/store/printer/update/{id}/form:
     get:
       tags:
@@ -18189,14 +18711,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id081
+            schema: &id097
               type: object
               properties:
                 mer_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id081
+            schema: *id097
   /mer/store/product/assist/lst:
     get:
       tags:
@@ -18357,14 +18879,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id082
+            schema: &id098
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id082
+            schema: *id098
   /mer/store/product/assist/status/{id}:
     post:
       tags:
@@ -18405,14 +18927,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id083
+            schema: &id099
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id083
+            schema: *id099
   /mer/store/product/assist/update/{id}:
     post:
       tags:
@@ -18675,7 +19197,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id084
+            schema: &id100
               type: object
               properties:
                 extension_one:
@@ -18688,7 +19210,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id084
+            schema: *id100
   /mer/store/product/batch_guarantee:
     post:
       tags:
@@ -18723,7 +19245,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id085
+            schema: &id101
               type: object
               properties:
                 guarantee_template_id:
@@ -18733,7 +19255,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id085
+            schema: *id101
   /mer/store/product/batch_hot:
     post:
       tags:
@@ -18768,14 +19290,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id086
+            schema: &id102
               type: object
               properties:
                 ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id086
+            schema: *id102
   /mer/store/product/batch_labels:
     post:
       tags:
@@ -18810,7 +19332,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id087
+            schema: &id103
               type: object
               properties:
                 mer_labels:
@@ -18820,7 +19342,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id087
+            schema: *id103
   /mer/store/product/batch_process:
     post:
       tags:
@@ -18855,7 +19377,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id088
+            schema: &id104
               type: object
               properties:
                 ids:
@@ -18868,7 +19390,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id088
+            schema: *id104
   /mer/store/product/batch_restore:
     post:
       tags:
@@ -18903,14 +19425,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id089
+            schema: &id105
               type: object
               properties:
                 ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id089
+            schema: *id105
   /mer/store/product/batch_status:
     post:
       tags:
@@ -18945,7 +19467,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id090
+            schema: &id106
               type: object
               properties:
                 ids:
@@ -18955,7 +19477,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id090
+            schema: *id106
   /mer/store/product/batch_svip:
     post:
       tags:
@@ -18990,7 +19512,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id091
+            schema: &id107
               type: object
               properties:
                 svip_price_type:
@@ -19000,7 +19522,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id091
+            schema: *id107
   /mer/store/product/batch_temp:
     post:
       tags:
@@ -19035,7 +19557,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id092
+            schema: &id108
               type: object
               properties:
                 temp_id:
@@ -19045,7 +19567,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id092
+            schema: *id108
   /mer/store/product/config:
     get:
       tags:
@@ -19296,7 +19818,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id093
+            schema: &id109
               type: object
               properties:
                 attrs:
@@ -19312,7 +19834,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id093
+            schema: *id109
   /mer/store/product/get_batch_list:
     get:
       tags:
@@ -19701,14 +20223,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id094
+            schema: &id110
               type: object
               properties:
                 mer_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id094
+            schema: *id110
   /mer/store/product/group/lst:
     get:
       tags:
@@ -19863,14 +20385,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id095
+            schema: &id111
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id095
+            schema: *id111
   /mer/store/product/group/status/{id}:
     post:
       tags:
@@ -19911,14 +20433,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id096
+            schema: &id112
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id096
+            schema: *id112
   /mer/store/product/group/update/{id}:
     post:
       tags:
@@ -19995,14 +20517,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id097
+            schema: &id113
               type: object
               properties:
                 mer_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id097
+            schema: *id113
   /mer/store/product/list:
     get:
       tags:
@@ -20649,14 +21171,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id098
+            schema: &id114
               type: object
               properties:
                 mer_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id098
+            schema: *id114
   /mer/store/product/presell/lst:
     get:
       tags:
@@ -20847,14 +21369,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id099
+            schema: &id115
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id099
+            schema: *id115
   /mer/store/product/presell/status/{id}:
     post:
       tags:
@@ -20895,14 +21417,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id100
+            schema: &id116
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id100
+            schema: *id116
   /mer/store/product/presell/update/{id}:
     post:
       tags:
@@ -21045,14 +21567,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id101
+            schema: &id117
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id101
+            schema: *id117
   /mer/store/product/status/{id}:
     post:
       tags:
@@ -21093,14 +21615,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id102
+            schema: &id118
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id102
+            schema: *id118
   /mer/store/product/temp_key:
     get:
       tags:
@@ -21165,7 +21687,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id103
+            schema: &id119
               type: object
               properties:
                 value_id:
@@ -21175,7 +21697,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id103
+            schema: *id119
   /mer/store/product/update/{id}:
     post:
       tags:
@@ -21523,14 +22045,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id104
+            schema: &id120
               type: object
               properties:
                 mer_mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id104
+            schema: *id120
   /mer/store/receipt/mark/{id}/form:
     get:
       tags:
@@ -21673,7 +22195,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id105
+            schema: &id121
               type: object
               properties:
                 receipt_no:
@@ -21683,7 +22205,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id105
+            schema: *id121
   /mer/store/refundorder/check/{id}:
     get:
       tags:
@@ -21754,7 +22276,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id106
+            schema: &id122
               type: object
               properties:
                 refund:
@@ -21764,7 +22286,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id106
+            schema: *id122
   /mer/store/refundorder/create:
     post:
       tags:
@@ -21799,7 +22321,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id107
+            schema: &id123
               type: object
               properties:
                 refund_message:
@@ -21818,7 +22340,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id107
+            schema: *id123
   /mer/store/refundorder/delete/{id}:
     delete:
       tags:
@@ -22225,14 +22747,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id108
+            schema: &id124
               type: object
               properties:
                 mer_mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id108
+            schema: *id124
   /mer/store/refundorder/mark/{id}/form:
     get:
       tags:
@@ -22309,7 +22831,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id109
+            schema: &id125
               type: object
               properties:
                 status:
@@ -22319,7 +22841,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id109
+            schema: *id125
   /mer/store/refundorder/refund_message:
     get:
       tags:
@@ -22390,7 +22912,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id110
+            schema: &id126
               type: object
               properties:
                 mer_delivery_user:
@@ -22409,7 +22931,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id110
+            schema: *id126
   /mer/store/refundorder/status/{id}/form:
     get:
       tags:
@@ -22594,14 +23116,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id111
+            schema: &id127
               type: object
               properties:
                 content:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id111
+            schema: *id127
   /mer/store/reply/sort/{id}:
     post:
       tags:
@@ -22642,14 +23164,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id112
+            schema: &id128
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id112
+            schema: *id128
   /mer/store/reservation/product/create:
     post:
       tags:
@@ -22827,14 +23349,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id113
+            schema: &id129
               type: object
               properties:
                 stockValue:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id113
+            schema: *id129
   /mer/store/reservation/product/showDay/{id}:
     get:
       tags:
@@ -23499,14 +24021,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id114
+            schema: &id130
               type: object
               properties:
                 mer_labels:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id114
+            schema: *id130
   /mer/store/seckill_product/list:
     get:
       tags:
@@ -24021,14 +24543,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id115
+            schema: &id131
               type: object
               properties:
                 sort:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id115
+            schema: *id131
   /mer/store/seckill_product/status/{id}:
     post:
       tags:
@@ -24069,14 +24591,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id116
+            schema: &id132
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id116
+            schema: *id132
   /mer/store/seckill_product/update/{id}:
     post:
       tags:
@@ -24117,7 +24639,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id117
+            schema: &id133
               type: object
               properties:
                 attr_value:
@@ -24127,7 +24649,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id117
+            schema: *id133
   /mer/store/shipping/create:
     post:
       tags:
@@ -24136,7 +24658,7 @@ paths:
       operationId: merchantStoreShippingTemplateCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`merchant.store.shipping.ShippingTemplate/create`
 
@@ -24158,6 +24680,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id134
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                appoint:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                undelivery:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                region:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                free:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                undelives:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                sort:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                info:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id134
   /mer/store/shipping/delete/{id}:
     delete:
       tags:
@@ -24420,7 +24978,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id118
+            schema: &id135
               type: object
               properties:
                 account:
@@ -24445,7 +25003,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id118
+            schema: *id135
   /mer/system/admin/create/form:
     get:
       tags:
@@ -24546,7 +25104,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id119
+            schema: &id136
               type: object
               properties:
                 real_name:
@@ -24556,7 +25114,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id119
+            schema: *id136
   /mer/system/admin/edit/form:
     get:
       tags:
@@ -24621,7 +25179,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id120
+            schema: &id137
               type: object
               properties:
                 pwd:
@@ -24631,7 +25189,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id120
+            schema: *id137
   /mer/system/admin/edit/password/form:
     get:
       tags:
@@ -24876,7 +25434,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id121
+            schema: &id138
               type: object
               properties:
                 pwd:
@@ -24886,7 +25444,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id121
+            schema: *id138
   /mer/system/admin/status/{id}:
     post:
       tags:
@@ -24927,14 +25485,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id122
+            schema: &id139
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id122
+            schema: *id139
   /mer/system/admin/update/form/{id}:
     get:
       tags:
@@ -25011,7 +25569,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id123
+            schema: &id140
               type: object
               properties:
                 account:
@@ -25030,7 +25588,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id123
+            schema: *id140
   /mer/system/attachment/category:
     post:
       tags:
@@ -25065,7 +25623,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id124
+            schema: &id141
               type: object
               properties:
                 ids:
@@ -25075,7 +25633,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id124
+            schema: *id141
   /mer/system/attachment/category/create:
     post:
       tags:
@@ -25308,7 +25866,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id125
+            schema: &id142
               type: object
               properties:
                 chunkNumber:
@@ -25333,7 +25891,7 @@ paths:
                   type: string
                   description: 默认 ''
           application/x-www-form-urlencoded:
-            schema: *id125
+            schema: *id142
   /mer/system/attachment/delete:
     delete:
       tags:
@@ -25470,7 +26028,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id126
+            schema: &id143
               type: object
               properties:
                 id:
@@ -25480,7 +26038,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id126
+            schema: *id143
   /mer/system/attachment/scan_upload/image/{token}:
     get:
       tags:
@@ -25556,7 +26114,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id127
+            schema: &id144
               type: object
               properties:
                 pid:
@@ -25566,7 +26124,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id127
+            schema: *id144
   /mer/system/attachment/scan_upload/qrcode/{pid}:
     get:
       tags:
@@ -25643,14 +26201,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id128
+            schema: &id145
               type: object
               properties:
                 attachment_name:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id128
+            schema: *id145
   /mer/system/attachment/update/{id}/form:
     get:
       tags:
@@ -25895,14 +26453,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id129
+            schema: &id146
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id129
+            schema: *id146
   /mer/system/role/update/form/{id}:
     get:
       tags:
@@ -26039,7 +26597,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id130
+            schema: &id147
               type: object
               properties:
                 mer_take_status:
@@ -26064,7 +26622,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id130
+            schema: *id147
   /mer/test:
     get:
       tags:
@@ -26238,14 +26796,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id131
+            schema: &id148
               type: object
               properties:
                 ueditor:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id131
+            schema: *id148
   /mer/upload/video:
     post:
       tags:
@@ -26352,14 +26910,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id132
+            schema: &id149
               type: object
               properties:
                 label_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id132
+            schema: *id149
   /mer/user/clear_search_log:
     get:
       tags:
@@ -26566,7 +27124,7 @@ paths:
       operationId: merchantUserLabelCreate
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`admin.user.UserLabel/create`
 
@@ -26588,6 +27146,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id150
+              type: object
+              properties:
+                label_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id150
   /mer/user/label/{id}:
     delete:
       tags:

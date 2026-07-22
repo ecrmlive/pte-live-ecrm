@@ -1,0 +1,4 @@
+# 单包项目配置（pnpm 11+）
+allowBuilds:
+  esbuild: true
+  core-js: true

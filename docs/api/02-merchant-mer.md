@@ -1,6 +1,6 @@
 # 商户后台 `/mer/`
 
-> 对照文档。置信度：high=589 stale=6 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)。
+> 对照文档。置信度：high=589 stale=6 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)、[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 合计 **595** 条。
 
@@ -259,11 +259,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/auto_label/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.user.LabelRule/create`
 - 源码：`app/controller/merchant/user/LabelRule.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `label_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `min` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `max` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `data` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /mer/auto_label/delete/:id` — 删除
@@ -315,11 +319,13 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/broadcast/assistant/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.broadcast.BroadcastAssistant/create`
 - 源码：`app/controller/merchant/store/broadcast/BroadcastAssistant.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `username` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `nickname` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mark` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/broadcast/assistant/create/form` — 添加表单
@@ -398,11 +404,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/broadcast/goods/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.broadcast.BroadcastGoods/create`
 - 源码：`app/controller/merchant/store/broadcast/BroadcastGoods.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cover_img` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `product_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `price` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/broadcast/goods/create/form` — 添加表单
@@ -538,11 +547,27 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/broadcast/room/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.broadcast.BroadcastRoom/create`
 - 源码：`app/controller/merchant/store/broadcast/BroadcastRoom.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cover_img` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `share_img` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `anchor_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `anchor_wechat` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `start_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `screen_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `close_like` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `close_goods` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `close_comment` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `replay_status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `close_share` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `close_kf` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `feeds_img` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_feeds_public` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/broadcast/room/create/form` — 添加表单
@@ -957,11 +982,18 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/delivery/service/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.delivery.DeliveryService/create`
 - 源码：`app/controller/merchant/store/delivery/DeliveryService.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `uid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `avatar` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `remark` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/delivery/service/create/form` — 添加表单
@@ -1093,11 +1125,34 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/delivery/station/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.delivery.DeliveryStation/create`
 - 源码：`app/controller/merchant/store/delivery/DeliveryStation.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `station_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `business` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `station_address` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `lng` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `lat` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `contact_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `username` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `password` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `city_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `card_number` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `business_date` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `business_time_start` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `business_time_end` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `switch_city` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `switch_take` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `bind_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `origin_shop_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `range_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `radius` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `region` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `fence` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /mer/delivery/station/delete/:id` — 删除
@@ -2326,11 +2381,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/openapi/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.system.openapi.OpenApi/create`
 - 源码：`app/controller/merchant/system/openapi/OpenApi.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `mark` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `auth` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /mer/openapi/create/form` — 添加Form
@@ -2455,11 +2514,12 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/product/cdkey/library/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.product.CdkeyLibrary/create`
 - 源码：`app/controller/merchant/store/product/CdkeyLibrary.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `remark` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /mer/product/cdkey/library/create/form` — 添加表单
@@ -2952,11 +3012,24 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/service/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.service.StoreService/create`
 - 源码：`app/controller/merchant/store/service/StoreService.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `uid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `nickname` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `account` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pwd` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `confirm_pwd` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_open` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `customer` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_verify` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_goods` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `notify` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `avatar` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /mer/service/create/form` — 添加表单
@@ -3017,11 +3090,14 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/service/reply/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.service.StoreServiceReply/create`
 - 源码：`app/controller/merchant/store/service/StoreServiceReply.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `keyword` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `content` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `DELETE /mer/service/reply/delete/:id` — 删除
@@ -3105,11 +3181,17 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/staffs/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.Staffs/create`
 - 源码：`app/controller/merchant/store/Staffs.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `uid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `photo` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `phone` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `remark` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：统一 JSON：`{ status: number, message: string, data?: any }`；成功 status 通常为 200，失败 400。
 
 ### `GET /mer/staffs/create/form` — 添加表单
@@ -3332,11 +3414,12 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/attr/template/create` — 添加 
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.StoreAttrTemplate/create`
 - 源码：`app/controller/merchant/store/StoreAttrTemplate.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `template_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `template_value` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/store/attr/template/list` — 筛选
@@ -3662,11 +3745,16 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/category/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.store.StoreCategory/create`
 - 源码：`app/controller/admin/store/StoreCategory.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `pid` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_show` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `pic` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `data` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/store/category/create/form` — 添加表单
@@ -3774,11 +3862,27 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/coupon/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.coupon.Coupon/create`
 - 源码：`app/controller/merchant/store/coupon/Coupon.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `use_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `title` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_price` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `use_min_price` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `coupon_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `use_start_time` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `product_id` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `range_date` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `send_type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `full_reduction` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_limited` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `is_timeout` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `total_count` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/store/coupon/create/form` — 添加表单
@@ -3933,11 +4037,13 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/form/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.system.form.Form/create`
 - 源码：`app/controller/admin/system/form/Form.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `value` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `status` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /mer/store/form/delete/:id` — 删除
@@ -4649,11 +4755,15 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/params/temp/create` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.parameter.ParameterTemplate/create`
 - 源码：`app/controller/admin/parameter/ParameterTemplate.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `template_name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `cate_ids` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `params` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `delete_params` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /mer/store/params/temp/delete/:id` — 删除
@@ -6351,11 +6461,19 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/store/shipping/create` — 添加 
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`merchant.store.shipping.ShippingTemplate/create`
 - 源码：`app/controller/merchant/store/shipping/ShippingTemplate.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `name` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `type` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `appoint` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `undelivery` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `region` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `free` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `undelives` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `sort` (body, 可选) 来自 checkParams/Validate（自动补全）
+- `info` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `DELETE /mer/store/shipping/delete/:id` — 删除
@@ -7051,11 +7169,11 @@ _（未见显式 param；或见 doc_note）_
 ### `POST /mer/user/label/user/label` — 添加
 
 - 置信度：✅ high
-- 说明：控制器方法已校验存在
+- 说明：控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 - 处理器：`admin.user.UserLabel/create`
 - 源码：`app/controller/admin/user/UserLabel.php` :: `create()`
 - 请求参数：
-_（未见显式 param；或见 doc_note）_
+- `label_name` (body, 可选) 来自 checkParams/Validate（自动补全）
 - 返回：data: 见控制器返回；成功时 status=200 | 外层: {status,message,data}
 
 ### `GET /mer/user/lst` — 列表

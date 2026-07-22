@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CRMEB 客服端
-  description: 见 ACCURACY.md。confidence 统计见 description。
+  description: 见 ACCURACY.md / FUNCTIONAL-TRUTH.md
   version: CRMEB-MER-v4.0-ref
 servers:
 - url: /

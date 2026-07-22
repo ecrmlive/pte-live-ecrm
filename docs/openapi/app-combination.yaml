@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app combination
+  version: 0.6.2
+  description: |
+    C 端拼团：列表/团次 + `/order/group/check|create`（独立于 v2）。
+    成团人数以支付成功计；满员订单 status 9→0。
+servers:
+  - url: /api/app/v1
+paths:
+  /combination/groups:
+    get:
+      summary: 进行中拼团商品列表
+  /combination/groups/{id}:
+    get:
+      summary: 拼团商品详情
+  /combination/groups/{id}/buyings:
+    get:
+      summary: 进行中的团次
+  /combination/buyings/{id}:
+    get:
+      summary: 团次详情
+  /order/group/check:
+    post:
+      summary: 拼团核对（需登录）
+  /order/group/create:
+    post:
+      summary: 开团或参团下单（需登录）；支付走 /order/pay/:id

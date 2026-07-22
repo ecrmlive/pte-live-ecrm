@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform attachment
+  version: 0.7.5
+  description: 平台素材库；上传需 attachment/upload，删除需 attachment/delete
+servers:
+  - url: /api/platform/v1
+paths:
+  /attachments/categories:
+    get:
+      summary: 分类列表
+    post:
+      summary: 创建分类
+  /attachments/categories/{id}:
+    put:
+      summary: 更新分类
+    delete:
+      summary: 删除分类（按钮权 attachment/delete）
+  /attachments:
+    get:
+      summary: 素材列表（category_id 可选）
+  /attachments/upload:
+    post:
+      summary: multipart 上传（按钮权 attachment/upload）
+  /attachments/{id}:
+    delete:
+      summary: 删除素材（按钮权 attachment/delete）

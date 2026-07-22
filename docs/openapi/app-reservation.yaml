@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app reservation
+  version: 0.6.3
+  description: |
+    C 端预约：列表/时段 → `/order/reservation/check|create` → 支付 → 核销码到店。
+servers:
+  - url: /api/app/v1
+paths:
+  /reservation/products:
+    get:
+      summary: 预约商品列表
+  /reservation/products/{id}:
+    get:
+      summary: 预约商品详情
+  /reservation/products/{id}/slots:
+    get:
+      summary: 按日时段（date=YYYY-MM-DD）
+  /order/reservation/check:
+    post:
+      summary: 预约核对（需登录）
+  /order/reservation/create:
+    post:
+      summary: 预约下单（需登录+地址）

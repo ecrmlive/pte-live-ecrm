@@ -60,7 +60,7 @@ Skill：`.cursor/skills/qixi-live-mergers/SKILL.md`（Codex 镜像：`codex-skil
 - Corepack：0.35.0
 - Docker 镜像：
   - alpine:3.24.1
-  - nginx:1.30.3-alpine3.23
+  - nginx: 宿主机安装（本仓库不使用 Docker Nginx / nginx 镜像跑业务入口）
   - node:24.18.0-alpine3.24
   - apachepulsar/pulsar:4.0.12
   - mysql:8.4.10
@@ -89,16 +89,18 @@ Skill：`.cursor/skills/qixi-live-mergers/SKILL.md`（Codex 镜像：`codex-skil
 - 商户域接口必须做 `mer_id` / `merchant_id` 隔离。
 - 禁止把密钥、证书、真实手机号/身份证样例提交进库；测试数据用明显假数据且保持 utf8mb4 中文可读。
 
-## 分析未完成前的默认行为
+## 功能基线与写代码
 
-先读 `docs/analysis-completeness.md`。在用户确认「功能基线已锁定」之前：
+先读 `docs/analysis-completeness.md`。
 
-- 默认只做需求分析、文档、对照矩阵、状态机说明。
-- **不写业务代码**（不搭 API/后台/用户端脚手架，除非用户明确要求）。
+- **功能基线已锁定**（2026-07-21）：允许技术方案与业务编码。
+- 验收以 `docs/features/` 为准；接口/状态机对照 `docs/api/FUNCTIONAL-TRUTH.md`；表前缀 `qixi_`。
+- 高风险域（订单/支付/退款/库存/券/积分/佣金/结算）改前先对齐状态机与幂等。
+- 验证与部署仅在用户明确要求时执行。
 
 ## 建议工作流
 
 1. 读 `docs/analysis-completeness.md` 与 `docs/overview.md`。
 2. 读本 Skill 的 references（功能图 / 技术栈 / 工作约定）。
 3. 需要对照原系统时再打开 `~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0` 对应 Repository / 菜单 SQL。
-4. 功能基线锁定后：出方案 → 改代码 →（用户要求时）测试/部署。
+4. 出方案 → 改代码 →（用户要求时）测试/部署。

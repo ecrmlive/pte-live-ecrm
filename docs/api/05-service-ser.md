@@ -1,6 +1,6 @@
 # 客服端 `/ser/`
 
-> 对照文档。置信度：high=18 stale=0 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)。
+> 对照文档。置信度：high=18 stale=0 unresolved=0。先读 [ACCURACY.md](./ACCURACY.md)、[FUNCTIONAL-TRUTH.md](./FUNCTIONAL-TRUTH.md)。
 
 合计 **18** 条。
 

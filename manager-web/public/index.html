@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>栖息商城 · 店员工作台</title>
+  <style>
+    :root { --bg: #f4f6f8; --card: #fff; --line: #e6e8eb; --text: #1f2329; --muted: #8a8f98; --accent: #cf1322; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--card); border-bottom: 1px solid var(--line); padding: 16px 24px; }
+    h1 { margin: 0; font-size: 18px; }
+    p.sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    main { max-width: 760px; margin: 24px auto; padding: 0 16px 40px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 14px; margin-right: 8px; margin-bottom: 8px; }
+    button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; font-size: 12px; min-height: 140px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>店员工作台 · 核销 / 代退</h1>
+    <p class="sub">阶段 6d：/api/manager/v1 · staff1 / admin123（sql/009）</p>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>API 根</label>
+          <input id="base" value="http://127.0.0.1:18080" />
+        </div>
+        <div>
+          <label>Bearer Token</label>
+          <input id="token" placeholder="先登录" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>账号</label>
+          <input id="account" value="staff1" />
+        </div>
+        <div>
+          <label>密码</label>
+          <input id="password" type="password" value="admin123" />
+        </div>
+      </div>
+      <button id="btnLogin">登录</button>
+      <button class="secondary" id="btnMe">我的资料</button>
+      <button class="secondary" id="btnOrders">待核销列表</button>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>核销码</label>
+          <input id="code" value="V000001" />
+        </div>
+        <div>
+          <label>订单 order_id</label>
+          <input id="orderId" value="1" />
+        </div>
+      </div>
+      <label>代退原因</label>
+      <input id="refundMsg" value="店员代申请仅退款演示" />
+      <button id="btnLookup">按码查单</button>
+      <button id="btnVerify">核销该订单</button>
+      <button id="btnRefund">代申请退款</button>
+    </div>
+    <div class="card"><pre id="out">等待操作…</pre></div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const out = (v) => { $("out").textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2); };
+    const base = () => $("base").value.replace(/\/$/, "");
+    const headers = () => {
+      const h = { "Content-Type": "application/json" };
+      if ($("token").value) h.Authorization = "Bearer " + $("token").value;
+      return h;
+    };
+
+    $("btnLogin").onclick = async () => {
+      try {
+        const body = await (await fetch(`${base()}/api/manager/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ account: $("account").value, password: $("password").value }),
+        })).json();
+        if (body?.data?.token?.access_token) $("token").value = body.data.token.access_token;
+        out(body);
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnMe").onclick = async () => {
+      try { out(await (await fetch(`${base()}/api/manager/v1/auth/me`, { headers: headers() })).json()); }
+      catch (e) { out(String(e)); }
+    };
+
+    $("btnOrders").onclick = async () => {
+      try { out(await (await fetch(`${base()}/api/manager/v1/orders?await_verify=1`, { headers: headers() })).json()); }
+      catch (e) { out(String(e)); }
+    };
+
+    $("btnLookup").onclick = async () => {
+      try {
+        const body = await (await fetch(`${base()}/api/manager/v1/orders/code/${encodeURIComponent($("code").value)}`, { headers: headers() })).json();
+        if (body?.data?.order_id) $("orderId").value = body.data.order_id;
+        out(body);
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnVerify").onclick = async () => {
+      try {
+        out(await (await fetch(`${base()}/api/manager/v1/orders/${$("orderId").value}/verify`, {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({ verify_code: $("code").value }),
+        })).json());
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnRefund").onclick = async () => {
+      try {
+        out(await (await fetch(`${base()}/api/manager/v1/refunds`, {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({
+            order_id: Number($("orderId").value),
+            refund_type: 1,
+            refund_message: $("refundMsg").value,
+          }),
+        })).json());
+      } catch (e) { out(String(e)); }
+    };
+  </script>
+</body>
+</html>

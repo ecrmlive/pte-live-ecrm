@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CRMEB 用户端
-  description: 见 ACCURACY.md。confidence 统计见 description。
+  description: 见 ACCURACY.md / FUNCTIONAL-TRUTH.md
   version: CRMEB-MER-v4.0-ref
 servers:
 - url: /
@@ -3135,7 +3135,7 @@ paths:
       operationId: post_api_community_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`api.community.Community/create`
 
@@ -3157,6 +3157,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id025
+              type: object
+              properties:
+                image:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                topic_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                content:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                spu_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                order_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                video_link:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id025
   /api/community/delete/{id}:
     post:
       tags:
@@ -3275,14 +3305,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id025
+            schema: &id026
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id025
+            schema: *id026
   /api/community/focus/lst:
     get:
       tags:
@@ -3713,7 +3743,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id026
+            schema: &id027
               type: object
               properties:
                 content:
@@ -3723,7 +3753,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id026
+            schema: *id027
   /api/community/reply/start/{id}:
     post:
       tags:
@@ -3764,14 +3794,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id027
+            schema: &id028
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id027
+            schema: *id028
   /api/community/show/{id}:
     get:
       tags:
@@ -3890,14 +3920,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id028
+            schema: &id029
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id028
+            schema: *id029
   /api/community/update/{id}:
     post:
       tags:
@@ -4629,14 +4659,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id029
+            schema: &id030
               type: object
               properties:
                 mer_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id029
+            schema: *id030
   /api/delivery/order/{id}/mark:
     post:
       tags:
@@ -4677,14 +4707,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id030
+            schema: &id031
               type: object
               properties:
                 remark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id030
+            schema: *id031
   /api/delivery/order/{id}/receive:
     post:
       tags:
@@ -5726,7 +5756,7 @@ paths:
       operationId: post_api_intention_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`api.store.merchant.MerchantIntention/create`
 
@@ -5748,6 +5778,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id032
+              type: object
+              properties:
+                phone:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mer_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                images:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                merchant_category_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                mer_type_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                circle_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                business_id:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id032
   /api/intention/detail/{id}:
     get:
       tags:
@@ -6314,8 +6377,10 @@ paths:
       operationId: post_api_order_check
       description: '**doc_confidence**: `stale`
 
+        【死路由】声明 StoreOrder::checkOrder，源码无此方法。勿实现。
+
         路由指向 `checkOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*`
-        为准；勿按本条实现。
+        为准；勿按本条实现。；【死路由】声明 StoreOrder::checkOrder，源码无此方法。勿实现。
 
         处理器：`api.store.order.StoreOrder/checkOrder`
 
@@ -6346,8 +6411,10 @@ paths:
       operationId: post_api_order_create
       description: '**doc_confidence**: `stale`
 
+        【死路由】声明 StoreOrder::createOrder，源码无此方法。勿实现。
+
         路由指向 `createOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*`
-        为准；勿按本条实现。
+        为准；勿按本条实现。；【死路由】声明 StoreOrder::createOrder，源码无此方法。勿实现。
 
         处理器：`api.store.order.StoreOrder/createOrder`
 
@@ -6834,7 +6901,9 @@ paths:
       operationId: post_api_order_pay__id
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【普通/拼团等组订单支付】StoreOrder::groupOrderPay；points/pay 同方法 append is_points=1
+
+        控制器方法已校验存在；【普通/拼团等组订单支付】StoreOrder::groupOrderPay；points/pay 同方法 append is_points=1
 
         处理器：`api.store.order.StoreOrder/groupOrderPay`
 
@@ -6866,7 +6935,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id031
+            schema: &id033
               type: object
               properties:
                 type:
@@ -6879,7 +6948,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id031
+            schema: *id033
   /api/order/points/pay/{id}:
     post:
       tags:
@@ -6888,7 +6957,9 @@ paths:
       operationId: post_api_order_points_pay__id
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【积分组订单再支付】同 groupOrderPay，路由 append is_points=1
+
+        控制器方法已校验存在；【积分组订单再支付】同 groupOrderPay，路由 append is_points=1
 
         处理器：`api.store.order.StoreOrder/groupOrderPay`
 
@@ -6920,7 +6991,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id032
+            schema: &id034
               type: object
               properties:
                 type:
@@ -6933,7 +7004,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id032
+            schema: *id034
   /api/order/receipt/{id}:
     post:
       tags:
@@ -6974,7 +7045,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id033
+            schema: &id035
               type: object
               properties:
                 receipt_type:
@@ -7005,7 +7076,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id033
+            schema: *id035
   /api/order/self/cancel/{id}:
     post:
       tags:
@@ -7122,7 +7193,9 @@ paths:
       operationId: post_api_order_v3_check
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【积分订单核对】PointsOrder::beforCheck → PointsOrderCreateRepository（activity_type=20）
+
+        控制器方法已校验存在；【积分订单核对】PointsOrder::beforCheck → PointsOrderCreateRepository（activity_type=20）
 
         处理器：`api.store.order.PointsOrder/beforCheck`
 
@@ -7148,7 +7221,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id034
+            schema: &id036
               type: object
               properties:
                 cart_id:
@@ -7167,7 +7240,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id034
+            schema: *id036
   /api/order/v3/create:
     post:
       tags:
@@ -7176,7 +7249,9 @@ paths:
       operationId: post_api_order_v3_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【积分订单创建】PointsOrder::createOrder；支付多在创建时发起，无独立 orderPay 方法
+
+        控制器方法已校验存在；【积分订单创建】PointsOrder::createOrder；支付多在创建时发起，无独立 orderPay 方法
 
         处理器：`api.store.order.PointsOrder/createOrder`
 
@@ -7202,7 +7277,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id035
+            schema: &id037
               type: object
               properties:
                 cart_id:
@@ -7224,7 +7299,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id035
+            schema: *id037
   /api/order/v3/pay/{id}:
     post:
       tags:
@@ -7233,7 +7308,10 @@ paths:
       operationId: post_api_order_v3_pay__id
       description: '**doc_confidence**: `stale`
 
-        路由已登记，但 `app/controller/api/store/order/PointsOrder.php` 中不存在方法 `orderPay`（原项目死路由/加密扩展/版本差异）。开发勿实现为有效接口，除非核实。
+        【死路由】声明 PointsOrder::orderPay，源码无此方法；积分单支付走 create 内 repository->pay 或普通 groupOrderPay
+
+        路由已登记，但 `app/controller/api/store/order/PointsOrder.php` 中不存在方法 `orderPay`（原项目死路由/加密扩展/版本差异）。开发勿实现为有效接口，除非核实。；【死路由】声明
+        PointsOrder::orderPay，源码无此方法；积分单支付走 create 内 repository->pay 或普通 groupOrderPay
 
         处理器：`api.store.order.PointsOrder/orderPay`
 
@@ -7326,7 +7404,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id036
+            schema: &id038
               type: object
               properties:
                 type:
@@ -7336,7 +7414,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id036
+            schema: *id038
   /api/pay/config:
     get:
       tags:
@@ -7747,7 +7825,9 @@ paths:
       operationId: post_api_presell_pay__id
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【预售尾款支付】PresellOrder::pay
+
+        控制器方法已校验存在；【预售尾款支付】PresellOrder::pay
 
         处理器：`api.store.order.PresellOrder/pay`
 
@@ -7779,7 +7859,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id037
+            schema: &id039
               type: object
               properties:
                 type:
@@ -7789,7 +7869,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id037
+            schema: *id039
   /api/product/spu/active/category/{type}:
     get:
       tags:
@@ -8878,7 +8958,9 @@ paths:
       operationId: post_api_refund_apply__id
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【用户申请退款】StoreRefundOrder::refund；type=1 单商品 / 否则批量 ids
+
+        控制器方法已校验存在；【用户申请退款】StoreRefundOrder::refund；type=1 单商品 / 否则批量 ids
 
         处理器：`api.store.order.StoreRefundOrder/refund`
 
@@ -8910,7 +8992,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id038
+            schema: &id040
               type: object
               properties:
                 type:
@@ -8938,7 +9020,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id038
+            schema: *id040
   /api/refund/back_goods/{id}:
     post:
       tags:
@@ -8979,7 +9061,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id039
+            schema: &id041
               type: object
               properties:
                 delivery_type:
@@ -8998,7 +9080,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id039
+            schema: *id041
   /api/refund/batch_product/{id}:
     get:
       tags:
@@ -9105,7 +9187,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id040
+            schema: &id042
               type: object
               properties:
                 refund:
@@ -9115,7 +9197,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id040
+            schema: *id042
   /api/refund/del/{id}:
     post:
       tags:
@@ -9432,7 +9514,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id041
+            schema: &id043
               type: object
               properties:
                 comment:
@@ -9451,7 +9533,7 @@ paths:
                   type: string
                   description: 默认 [
           application/x-www-form-urlencoded:
-            schema: *id041
+            schema: *id043
   /api/route/list:
     get:
       tags:
@@ -9534,7 +9616,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id042
+            schema: &id044
               type: object
               properties:
                 pid:
@@ -9547,7 +9629,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id042
+            schema: *id044
   /api/script:
     get:
       tags:
@@ -9654,14 +9736,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id043
+            schema: &id045
               type: object
               properties:
                 ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id043
+            schema: *id045
   /api/server/{merId}/attr/detail/{id}:
     get:
       tags:
@@ -10146,14 +10228,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id044
+            schema: &id046
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id044
+            schema: *id046
   /api/server/{merId}/category/update/{id}:
     post:
       tags:
@@ -10440,14 +10522,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id045
+            schema: &id047
               type: object
               properties:
                 cate_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id045
+            schema: *id047
   /api/server/{merId}/product/edit_mer_cate/{id}:
     post:
       tags:
@@ -10494,14 +10576,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id046
+            schema: &id048
               type: object
               properties:
                 ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id046
+            schema: *id048
   /api/server/{merId}/product/good/{id}:
     post:
       tags:
@@ -10548,14 +10630,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id047
+            schema: &id049
               type: object
               properties:
                 is_good:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id047
+            schema: *id049
   /api/server/{merId}/product/lst:
     get:
       tags:
@@ -10752,14 +10834,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id048
+            schema: &id050
               type: object
               properties:
                 status:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id048
+            schema: *id050
   /api/server/{merId}/product/title:
     get:
       tags:
@@ -10925,14 +11007,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id049
+            schema: &id051
               type: object
               properties:
                 attr_value:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id049
+            schema: *id051
   /api/server/{merId}/refund/check/{id}:
     get:
       tags:
@@ -11015,7 +11097,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id050
+            schema: &id052
               type: object
               properties:
                 refund:
@@ -11025,7 +11107,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id050
+            schema: *id052
   /api/server/{merId}/refund/confirm/{id}:
     post:
       tags:
@@ -11072,7 +11154,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id051
+            schema: &id053
               type: object
               properties:
                 status:
@@ -11082,7 +11164,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id051
+            schema: *id053
   /api/server/{merId}/refund/create:
     post:
       tags:
@@ -11123,7 +11205,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id052
+            schema: &id054
               type: object
               properties:
                 refund_message:
@@ -11142,7 +11224,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id052
+            schema: *id054
   /api/server/{merId}/refund/detail/{id}:
     get:
       tags:
@@ -11375,14 +11457,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id053
+            schema: &id055
               type: object
               properties:
                 mer_mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id053
+            schema: *id055
   /api/server/{merId}/refund/status/{id}:
     post:
       tags:
@@ -11429,7 +11511,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id054
+            schema: &id056
               type: object
               properties:
                 mer_delivery_user:
@@ -11448,7 +11530,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id054
+            schema: *id056
   /api/server/{merId}/template/create:
     post:
       tags:
@@ -11525,14 +11607,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id055
+            schema: &id057
               type: object
               properties:
                 ids:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id055
+            schema: *id057
   /api/server/{merId}/template/detail/{id}:
     get:
       tags:
@@ -11885,14 +11967,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id056
+            schema: &id058
               type: object
               properties:
                 mark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id056
+            schema: *id058
   /api/service/mer_history/{merId}/{id}:
     get:
       tags:
@@ -11987,14 +12069,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id057
+            schema: &id059
               type: object
               properties:
                 service_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id057
+            schema: *id059
   /api/service/user/{merId}/{uid}:
     get:
       tags:
@@ -12161,14 +12243,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id058
+            schema: &id060
               type: object
               properties:
                 clock_in_info:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id058
+            schema: *id060
   /api/staffs/order/{id}/dispatch:
     post:
       tags:
@@ -12245,14 +12327,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id059
+            schema: &id061
               type: object
               properties:
                 remark:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id059
+            schema: *id061
   /api/staffs/order/{id}/trace:
     post:
       tags:
@@ -12293,14 +12375,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id060
+            schema: &id062
               type: object
               properties:
                 reservation_service_voucher:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id060
+            schema: *id062
   /api/staffs/order/{id}/verifier:
     post:
       tags:
@@ -12341,14 +12423,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id061
+            schema: &id063
               type: object
               properties:
                 mer_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id061
+            schema: *id063
   /api/staffs/order_lst:
     get:
       tags:
@@ -12515,7 +12597,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id062
+            schema: &id064
               type: object
               properties:
                 key:
@@ -12525,7 +12607,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id062
+            schema: *id064
   /api/store/expr/temps:
     get:
       tags:
@@ -13892,14 +13974,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id063
+            schema: &id065
               type: object
               properties:
                 group_buying_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id063
+            schema: *id065
   /api/store/product/group/category:
     get:
       tags:
@@ -14186,7 +14268,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id064
+            schema: &id066
               type: object
               properties:
                 product_id:
@@ -14199,7 +14281,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id064
+            schema: *id066
   /api/store/product/presell/agree:
     get:
       tags:
@@ -14594,7 +14676,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id065
+            schema: &id067
               type: object
               properties:
                 address_id:
@@ -14604,7 +14686,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id065
+            schema: *id067
   /api/store/product/reservation/getDay/{id}:
     get:
       tags:
@@ -15007,7 +15089,9 @@ paths:
       operationId: post_api_svip_pay__id
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        【付费会员下单支付】Svip::createOrder
+
+        控制器方法已校验存在；【付费会员下单支付】Svip::createOrder
 
         处理器：`api.user.Svip/createOrder`
 
@@ -15039,7 +15123,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id066
+            schema: &id068
               type: object
               properties:
                 pay_type:
@@ -15049,7 +15133,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id066
+            schema: *id068
   /api/svip/pay_lst:
     get:
       tags:
@@ -15414,14 +15498,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id067
+            schema: &id069
               type: object
               properties:
                 name:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id067
+            schema: *id069
   /api/upload/video:
     post:
       tags:
@@ -15520,7 +15604,9 @@ paths:
       operationId: post_api_user_address_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        新增/编辑收货地址（同接口）
+
+        控制器方法已校验存在；参数来自 UserAddress::checkParams + UserAddressValidate
 
         处理器：`api.user.UserAddress/create`
 
@@ -15542,6 +15628,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id070
+              type: object
+              properties:
+                address_id:
+                  type: string
+                  description: 有值则编辑
+                real_name:
+                  type: string
+                  description: 收货人
+                phone:
+                  type: string
+                  description: 手机
+                area:
+                  type: string
+                  description: 地区数组[{id,name},...] 省市区街道
+                detail:
+                  type: string
+                  description: 详细地址
+                post_code:
+                  type: string
+                  description: 邮编
+                is_default:
+                  type: string
+                  description: 默认地址
+              required:
+              - real_name
+              - phone
+              - area
+              - detail
+          application/x-www-form-urlencoded:
+            schema: *id070
   /api/user/address/delete/{id}:
     post:
       tags:
@@ -15774,7 +15895,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id068
+            schema: &id071
               type: object
               properties:
                 phone:
@@ -15784,7 +15905,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id068
+            schema: *id071
   /api/user/brokerage/all:
     get:
       tags:
@@ -16017,14 +16138,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id069
+            schema: &id072
               type: object
               properties:
                 key:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id069
+            schema: *id072
   /api/user/cart/again:
     post:
       tags:
@@ -16033,7 +16154,9 @@ paths:
       operationId: post_api_user_cart_again
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        再次购买入车
+
+        控制器方法已校验存在；再次购买：校验同 create，批量
 
         处理器：`api.store.order.StoreCart/again`
 
@@ -16055,6 +16178,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id073
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: ''
+                product_attr_unique:
+                  type: string
+                  description: ''
+                cart_num:
+                  type: string
+                  description: ''
+                is_new:
+                  type: string
+                  description: ''
+                product_type:
+                  type: string
+                  description: ''
+                group_buying_id:
+                  type: string
+                  description: ''
+                spread_id:
+                  type: string
+                  description: ''
+              required:
+              - product_id
+              - product_attr_unique
+              - cart_num
+          application/x-www-form-urlencoded:
+            schema: *id073
   /api/user/cart/batchCreate:
     post:
       tags:
@@ -16089,7 +16246,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id070
+            schema: &id074
               type: object
               properties:
                 discount_id:
@@ -16099,7 +16256,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id070
+            schema: *id074
   /api/user/cart/change/{id}:
     post:
       tags:
@@ -16140,7 +16297,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id071
+            schema: &id075
               type: object
               properties:
                 cart_num:
@@ -16150,7 +16307,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id071
+            schema: *id075
   /api/user/cart/check/{id}:
     post:
       tags:
@@ -16255,7 +16412,9 @@ paths:
       operationId: post_api_user_cart_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        加购/立即购买
+
+        控制器方法已校验存在；参数来自 StoreCart::checkParams + StoreCartValidate；另见 product_type 分支逻辑
 
         处理器：`api.store.order.StoreCart/create`
 
@@ -16278,17 +16437,45 @@ paths:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
-            schema: &id072
+            schema: &id076
               type: object
               properties:
-                source:
+                product_id:
                   type: string
-                  description: ''
+                  description: 商品ID
+                product_attr_unique:
+                  type: string
+                  description: SKU unique
+                cart_num:
+                  type: string
+                  description: 数量
+                is_new:
+                  type: string
+                  description: 1=立即购买不进常驻购物车
+                product_type:
+                  type: string
+                  description: 0普通 1秒杀 2预售 3助力 4拼团 20积分
+                group_buying_id:
+                  type: string
+                  description: 拼团ID
+                spread_id:
+                  type: string
+                  description: 分销人
+                reservation_id:
+                  type: string
+                  description: 预约时段
+                reservation_date:
+                  type: string
+                  description: 预约日期
+              required:
+              - product_id
+              - product_attr_unique
+              - cart_num
           application/x-www-form-urlencoded:
-            schema: *id072
+            schema: *id076
   /api/user/cart/delete:
     post:
       tags:
@@ -16323,14 +16510,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id073
+            schema: &id077
               type: object
               properties:
                 cart_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id073
+            schema: *id077
   /api/user/cart/lst:
     get:
       tags:
@@ -16395,7 +16582,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id074
+            schema: &id078
               type: object
               properties:
                 nickname:
@@ -16405,7 +16592,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id074
+            schema: *id078
   /api/user/change/password:
     post:
       tags:
@@ -16440,7 +16627,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id075
+            schema: &id079
               type: object
               properties:
                 repassword:
@@ -16453,7 +16640,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id075
+            schema: *id079
   /api/user/change/phone:
     post:
       tags:
@@ -16488,7 +16675,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id076
+            schema: &id080
               type: object
               properties:
                 phone:
@@ -16498,7 +16685,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id076
+            schema: *id080
   /api/user/change_pwd:
     post:
       tags:
@@ -16533,7 +16720,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id077
+            schema: &id081
               type: object
               properties:
                 phone:
@@ -16546,7 +16733,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id077
+            schema: *id081
   /api/user/extract/banklst:
     get:
       tags:
@@ -16597,7 +16784,7 @@ paths:
       operationId: post_api_user_extract_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`api.user.UserExtract/create`
 
@@ -16619,6 +16806,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id082
+              type: object
+              properties:
+                extract_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bank_code:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bank_address:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                alipay_code:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                wechat:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extract_pic:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                extract_price:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                real_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bank_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id082
   /api/user/extract/detail/{id}:
     get:
       tags:
@@ -16779,7 +17002,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id078
+            schema: &id083
               type: object
               properties:
                 type:
@@ -16801,7 +17024,7 @@ paths:
                   type: string
                   description: 默认 0
           application/x-www-form-urlencoded:
-            schema: *id078
+            schema: *id083
   /api/user/feedback/detail/{id}:
     get:
       tags:
@@ -16974,14 +17197,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id079
+            schema: &id084
               type: object
               properties:
                 extend_info:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id079
+            schema: *id084
   /api/user/form/create/{id}:
     post:
       tags:
@@ -17209,14 +17432,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id080
+            schema: &id085
               type: object
               properties:
                 history_id:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id080
+            schema: *id085
   /api/user/history/delete/{id}:
     post:
       tags:
@@ -17419,7 +17642,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id081
+            schema: &id086
               type: object
               properties:
                 code:
@@ -17432,7 +17655,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id081
+            schema: *id086
   /api/user/receipt/create:
     post:
       tags:
@@ -17441,7 +17664,7 @@ paths:
       operationId: post_api_user_receipt_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已校验存在
+        控制器方法已校验存在；参数由 checkParams/Validate 自动补全
 
         处理器：`api.user.UserReceipt/create`
 
@@ -17463,6 +17686,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/CrmebResponse'
       x-doc-confidence: high
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: &id087
+              type: object
+              properties:
+                receipt_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                receipt_title:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                receipt_title_type:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                duty_paragraph:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                email:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bank_name:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                bank_code:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                address:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                tel:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+                is_default:
+                  type: string
+                  description: 来自 checkParams/Validate（自动补全）
+          application/x-www-form-urlencoded:
+            schema: *id087
   /api/user/receipt/delete/{id}:
     post:
       tags:
@@ -17773,7 +18035,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id082
+            schema: &id088
               type: object
               properties:
                 type:
@@ -17789,7 +18051,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id082
+            schema: *id088
   /api/user/recharge/brokerage:
     post:
       tags:
@@ -17824,14 +18086,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id083
+            schema: &id089
               type: object
               properties:
                 brokerage:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id083
+            schema: *id089
   /api/user/relation/batch/create:
     post:
       tags:
@@ -17866,7 +18128,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id084
+            schema: &id090
               type: object
               properties:
                 type_id:
@@ -17876,7 +18138,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id084
+            schema: *id090
   /api/user/relation/batch/delete:
     post:
       tags:
@@ -17911,7 +18173,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id085
+            schema: &id091
               type: object
               properties:
                 type_id:
@@ -17921,7 +18183,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id085
+            schema: *id091
   /api/user/relation/create:
     post:
       tags:
@@ -17956,7 +18218,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id086
+            schema: &id092
               type: object
               properties:
                 type_id:
@@ -17966,7 +18228,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id086
+            schema: *id092
   /api/user/relation/delete:
     post:
       tags:
@@ -18001,7 +18263,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id087
+            schema: &id093
               type: object
               properties:
                 type_id:
@@ -18011,7 +18273,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id087
+            schema: *id093
   /api/user/relation/merchant/lst:
     get:
       tags:
@@ -18322,7 +18584,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id088
+            schema: &id094
               type: object
               properties:
                 spread_spid:
@@ -18332,7 +18594,7 @@ paths:
                   type: string
                   description: 默认 null
           application/x-www-form-urlencoded:
-            schema: *id088
+            schema: *id094
   /api/user/spread_image:
     get:
       tags:
@@ -18643,14 +18905,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id089
+            schema: &id095
               type: object
               properties:
                 uid:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id089
+            schema: *id095
   /api/user/v2/spread_image:
     get:
       tags:
@@ -18695,7 +18957,9 @@ paths:
       operationId: post_api_v2_order_check
       description: '**doc_confidence**: `high`
 
-        控制器方法已存在；参数来自方法体 param/params
+        【普通订单核对】真实入口。StoreOrder::v2CheckOrder → StoreOrderCreateRepository::v2CartIdByOrderInfo
+
+        控制器方法已存在；参数来自方法体 param/params；【普通订单核对】真实入口。StoreOrder::v2CheckOrder → StoreOrderCreateRepository::v2CartIdByOrderInfo
 
         处理器：`api.store.order.StoreOrder/v2CheckOrder`
 
@@ -18721,7 +18985,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id090
+            schema: &id096
               type: object
               properties:
                 cart_id:
@@ -18743,7 +19007,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id090
+            schema: *id096
   /api/v2/order/create:
     post:
       tags:
@@ -18752,7 +19016,9 @@ paths:
       operationId: post_api_v2_order_create
       description: '**doc_confidence**: `high`
 
-        控制器方法已存在；参数来自方法体 param/params
+        【普通订单创建】真实入口。需先 check 拿到 key；StoreOrder::v2CreateOrder
+
+        控制器方法已存在；参数来自方法体 param/params；【普通订单创建】真实入口。需先 check 拿到 key；StoreOrder::v2CreateOrder
 
         处理器：`api.store.order.StoreOrder/v2CreateOrder`
 
@@ -18778,7 +19044,7 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id091
+            schema: &id097
               type: object
               properties:
                 cart_id:
@@ -18818,7 +19084,7 @@ paths:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id091
+            schema: *id097
   /api/v2/system/city:
     get:
       tags:
@@ -18899,8 +19165,10 @@ paths:
       operationId: post_api_v3_order_check
       description: '**doc_confidence**: `stale`
 
+        【死路由】声明 StoreOrder::v3CheckOrder，源码无此方法。勿实现。
+
         路由指向 `v3CheckOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*`
-        为准；勿按本条实现。
+        为准；勿按本条实现。；【死路由】声明 StoreOrder::v3CheckOrder，源码无此方法。勿实现。
 
         处理器：`api.store.order.StoreOrder/v3CheckOrder`
 
@@ -18931,8 +19199,10 @@ paths:
       operationId: post_api_v3_order_create
       description: '**doc_confidence**: `stale`
 
+        【死路由】声明 StoreOrder::v3CreateOrder，源码无此方法。勿实现。
+
         路由指向 `v3CreateOrder()`，但当前源码 StoreOrder.php **不存在该方法**（仅有 v2CreateOrder/v2CheckOrder）。此 CRMEB 构建下请以 `/api/v2/order/*`
-        为准；勿按本条实现。
+        为准；勿按本条实现。；【死路由】声明 StoreOrder::v3CreateOrder，源码无此方法。勿实现。
 
         处理器：`api.store.order.StoreOrder/v3CreateOrder`
 
@@ -19043,14 +19313,14 @@ paths:
         required: false
         content:
           application/json:
-            schema: &id092
+            schema: &id098
               type: object
               properties:
                 verify_code:
                   type: string
                   description: ''
           application/x-www-form-urlencoded:
-            schema: *id092
+            schema: *id098
   /api/version:
     get:
       tags:
