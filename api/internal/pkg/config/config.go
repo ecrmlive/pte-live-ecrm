@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -14,11 +15,21 @@ type Config struct {
 	Redis   RedisConfig   `yaml:"redis"`
 	NATS    NATSConfig    `yaml:"nats"`
 	Etcd    EtcdConfig    `yaml:"etcd"`
-	Minio   MinioConfig   `yaml:"minio"`
+	COS     COSConfig     `yaml:"cos"`
 	JWT     JWTConfig     `yaml:"jwt"`
 	Job     JobConfig     `yaml:"job"`
 	Upload  UploadConfig  `yaml:"upload"`
 	Payment PaymentConfig `yaml:"payment"`
+	IM      IMConfig      `yaml:"im"`
+}
+
+// IMConfig 客服 IM 桥（local=本仓会话+本地 UserSig；remote=pte-live-im S2S + WS）。
+type IMConfig struct {
+	Mode             string `yaml:"mode"` // local | remote
+	APIBase          string `yaml:"api_base"`
+	WSPublicURL      string `yaml:"ws_public_url"`
+	AppID            string `yaml:"app_id"` // 业务 app_id，默认 30001
+	IntegrationToken string `yaml:"integration_token"`
 }
 
 // PaymentConfig 第三方支付（沙箱验签闭环；真实 SDK 后续替换回调验签）。
@@ -63,12 +74,15 @@ type EtcdConfig struct {
 	Endpoints []string `yaml:"endpoints"`
 }
 
-type MinioConfig struct {
-	Endpoint  string `yaml:"endpoint"`
-	AccessKey string `yaml:"access_key"`
-	SecretKey string `yaml:"secret_key"`
+// COSConfig 腾讯云对象存储（不用 MinIO）。密钥勿提交，可用环境变量覆盖。
+type COSConfig struct {
+	Enabled   bool   `yaml:"enabled"`
 	Bucket    string `yaml:"bucket"`
-	UseSSL    bool   `yaml:"use_ssl"`
+	Region    string `yaml:"region"`
+	SecretID  string `yaml:"secret_id"`
+	SecretKey string `yaml:"secret_key"`
+	BaseURL   string `yaml:"base_url"`   // 对外 CDN/自定义域，如 https://cos.qxkejiwl.top/qixi-mergers
+	KeyPrefix string `yaml:"key_prefix"` // 对象键前缀，默认 qixi-mergers
 }
 
 type JWTConfig struct {
@@ -139,6 +153,48 @@ func Load(path string) (*Config, error) {
 	if !cfg.Payment.Wechat && !cfg.Payment.Alipay && cfg.Payment.Sandbox {
 		cfg.Payment.Wechat = true
 		cfg.Payment.Alipay = true
+	}
+	if cfg.IM.Mode == "" {
+		cfg.IM.Mode = "local"
+	}
+	if cfg.IM.AppID == "" {
+		cfg.IM.AppID = "30001"
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_IM_INTEGRATION_TOKEN")); v != "" {
+		cfg.IM.IntegrationToken = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_IM_API_BASE")); v != "" {
+		cfg.IM.APIBase = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_IM_WS_PUBLIC_URL")); v != "" {
+		cfg.IM.WSPublicURL = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_IM_MODE")); v != "" {
+		cfg.IM.Mode = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_COS_SECRET_ID")); v != "" {
+		cfg.COS.SecretID = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_COS_SECRET_KEY")); v != "" {
+		cfg.COS.SecretKey = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_COS_BUCKET")); v != "" {
+		cfg.COS.Bucket = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_COS_REGION")); v != "" {
+		cfg.COS.Region = v
+	}
+	if v := strings.TrimSpace(os.Getenv("QIXI_COS_BASE_URL")); v != "" {
+		cfg.COS.BaseURL = v
+	}
+	if cfg.COS.BaseURL == "" {
+		cfg.COS.BaseURL = "https://cos.qxkejiwl.top/qixi-mergers"
+	}
+	if cfg.COS.KeyPrefix == "" {
+		cfg.COS.KeyPrefix = "qixi-mergers"
+	}
+	if cfg.COS.Region == "" {
+		cfg.COS.Region = "ap-guangzhou"
 	}
 	return &cfg, nil
 }

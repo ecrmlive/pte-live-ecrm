@@ -12,6 +12,7 @@ var (
 	ErrAccountExists      = errors.New("账号已存在")
 	ErrNoVerifyPerm       = errors.New("无核销权限")
 	ErrNoDeliverPerm      = errors.New("无发货权限")
+	ErrNoCustomerPerm     = errors.New("无客服权限")
 	ErrNoPerm             = errors.New("无操作权限")
 	ErrBadParam           = errors.New("参数错误")
 )

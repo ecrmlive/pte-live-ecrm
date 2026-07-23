@@ -23,7 +23,8 @@ pack_db() {
 }
 
 pack_mq() {
-	finalize_release_bundle_after_build mq
+	echo ">> [mq] 已迁至 pte-live-im；本仓 pack mq 等同 pack db（仅同步 sql/）"
+	pack_db
 }
 
 pack_opts() {
@@ -45,11 +46,12 @@ pack_go_service() {
 pack_static_frontend() {
 	local key="$1" repo dest dist_src=""
 	case "${key}" in
-	admin) repo="${ROOT_DIR}/admin" ;;
-	merchant-admin) repo="${ROOT_DIR}/merchant-admin" ;;
+	admin) repo="${ROOT_DIR}/admin-platform" ;;
+	merchant-admin) repo="${ROOT_DIR}/admin-merchant" ;;
 	h5) repo="${ROOT_DIR}/app-uni" ;;
 	pc) repo="${ROOT_DIR}/app-pc" ;;
 	service-web) repo="${ROOT_DIR}/service-web" ;;
+	manager) repo="${ROOT_DIR}/app-manager" ;;
 	*) echo "未知前端: ${key}" >&2; exit 1 ;;
 	esac
 	dest="$(release_path "${key}")"
@@ -66,6 +68,23 @@ pack_static_frontend() {
 		if [[ -f "${repo}/dist/build/h5/index.html" ]]; then
 			dist_src="${repo}/dist/build/h5"
 		elif [[ -f "${repo}/dist/index.html" ]]; then
+			dist_src="${repo}/dist"
+		fi
+	elif [[ "${key}" == "admin" || "${key}" == "merchant-admin" ]]; then
+		# Vben 5 monorepo：平台在 admin-platform，商户为 workspace 成员 admin-merchant
+		echo ">> [${key}] Vben pnpm build"
+		(
+			cd "${ROOT_DIR}/admin-platform"
+			if [[ ! -d node_modules ]]; then
+				pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+			fi
+			if [[ "${key}" == "admin" ]]; then
+				pnpm run build:platform
+			else
+				pnpm run build:merchant
+			fi
+		)
+		if [[ -f "${repo}/dist/index.html" ]]; then
 			dist_src="${repo}/dist"
 		fi
 	elif [[ -f "${repo}/package.json" ]]; then
@@ -117,7 +136,7 @@ pack_service() {
 	mq) pack_mq ;;
 	opts) pack_opts ;;
 	api-admin | api-app | job) pack_go_service "${key}" ;;
-	admin | merchant-admin | h5 | pc | service-web) pack_static_frontend "${key}" ;;
+	admin | merchant-admin | h5 | pc | service-web | manager) pack_static_frontend "${key}" ;;
 	*) echo "未知服务: $1" >&2; exit 1 ;;
 	esac
 }
@@ -126,14 +145,11 @@ verify_release_bundle_ready() {
 	local key="$1" dest missing=0 bin_name
 	dest="$(release_path "${key}")"
 	case "${key}" in
-	db)
+	db | mq)
 		[[ -f "${dest}/docker-compose.yaml" ]] || missing=1
 		[[ -f "${dest}/config/${QX_RELEASE_ENV}/compose.env" ]] || missing=1
+		[[ -f "${dest}/nats/nats.conf" ]] || missing=1
 		[[ -f "${dest}/sql/000_init_schema.sql" ]] || missing=1
-		;;
-	mq)
-		[[ -f "${dest}/docker-compose.yaml" ]] || missing=1
-		[[ -f "${dest}/config/${QX_RELEASE_ENV}/compose.env" ]] || missing=1
 		;;
 	opts)
 		[[ -f "${dest}/nginx/qixi-mergers.local.conf" ]] || missing=1
@@ -146,8 +162,11 @@ verify_release_bundle_ready() {
 		[[ -f "${dest}/config/${QX_RELEASE_ENV}/compose.env" ]] || missing=1
 		[[ -f "${dest}/config/${QX_RELEASE_ENV}/app.yaml" ]] || missing=1
 		;;
-	admin | merchant-admin | h5 | pc | service-web)
+	admin | merchant-admin | h5 | pc | service-web | manager)
+		[[ -f "${dest}/docker-compose.yaml" ]] || missing=1
 		[[ -f "${dest}/dist/index.html" ]] || missing=1
+		[[ -f "${dest}/config/${QX_RELEASE_ENV}/compose.env" ]] || missing=1
+		[[ -f "${dest}/nginx/default.conf" ]] || missing=1
 		;;
 	esac
 	if (( missing != 0 )); then
@@ -165,9 +184,9 @@ print_release_bundle_manifest() {
 		bin_name="$(service_go_bin_name "${key}")"
 		ls -lh "${dest}/bin/${bin_name}" 2>/dev/null || true
 		;;
-	admin | merchant-admin | h5 | pc | service-web)
+	admin | merchant-admin | h5 | pc | service-web | manager)
 		ls -lh "${dest}/dist/index.html" 2>/dev/null || true
-		echo "    （由宿主机 Nginx 托管，见 release/opts/nginx/）"
+		echo "    （compose project: qixi_mergers）"
 		;;
 	opts)
 		ls "${dest}/nginx/"*.conf* 2>/dev/null || true

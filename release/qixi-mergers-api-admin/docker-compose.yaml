@@ -19,8 +19,12 @@ services:
     networks:
       qixi_mergers_net:
         ipv4_address: 172.30.80.20
+      pte_live_net: {}
 
 networks:
   qixi_mergers_net:
     external: true
     name: qixi_mergers_net
+  pte_live_net:
+    external: true
+    name: pte_live_net

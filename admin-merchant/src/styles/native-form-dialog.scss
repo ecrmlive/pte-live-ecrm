@@ -1,0 +1,64 @@
+/** 弹窗表单：标题/底栏固定，中间 native-form-scroll 滚动 */
+.native-form-dialog.el-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: min(88vh, 900px);
+  margin: var(--el-dialog-margin-top, 15vh) auto 24px;
+  overflow: hidden;
+}
+
+.native-form-dialog .el-dialog__header {
+  flex-shrink: 0;
+  margin-right: 0;
+  padding-bottom: 12px;
+}
+
+.native-form-dialog .el-dialog__body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 4px;
+  padding-bottom: 8px;
+}
+
+.native-form-dialog .el-dialog__footer {
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.native-form-dialog .native-form-scroll {
+  max-height: min(62vh, 680px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/** Element Plus 下拉/日期面板需高于 Vben Modal (z-popup) */
+/** Element Plus 嵌套弹窗（图片选择器等）需高于创建直播间 ElDialog */
+.el-overlay.el-modal-dialog {
+  z-index: 3000;
+}
+
+body > .el-popper.is-pure,
+body > .el-select__popper,
+body > .el-picker__popper,
+.native-modal-popper.el-popper {
+  z-index: 3500 !important;
+}
+
+/** 多层 Vben Modal：仅最上层遮罩响应点击，避免嵌套弹窗（素材库/图片选择）被父级遮罩挡住 */
+body > [data-dismissable-modal].bg-overlay:not(:last-of-type) {
+  pointer-events: none !important;
+}
+
+/** Element Plus 弹窗（append-to-body）需高于 Vben Modal */
+body > .el-overlay-dialog {
+  z-index: calc(var(--popup-z-index) + 2);
+}
+
+/** 已关闭的 Element Plus 弹窗容器不应拦截列表页点击 */
+body > .el-overlay-dialog:not(:has(.el-dialog)) {
+  display: none !important;
+  pointer-events: none !important;
+}

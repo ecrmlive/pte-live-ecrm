@@ -3,150 +3,304 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>栖息商城 · 客服查单</title>
+  <title>栖息商城 · 客服工作台</title>
   <style>
     :root { --bg: #f4f6f8; --card: #fff; --line: #e6e8eb; --text: #1f2329; --muted: #8a8f98; --accent: #1677ff; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: var(--bg); color: var(--text); }
-    header { background: var(--card); border-bottom: 1px solid var(--line); padding: 16px 24px; }
+    header { background: var(--card); border-bottom: 1px solid var(--line); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     h1 { margin: 0; font-size: 18px; }
     p.sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
-    main { max-width: 760px; margin: 24px auto; padding: 0 16px 40px; }
+    main { max-width: 980px; margin: 24px auto; padding: 0 16px 40px; }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
     label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-    input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+    input, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
     button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 14px; }
     button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); margin-left: 8px; }
-    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; font-size: 12px; min-height: 120px; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; font-size: 12px; min-height: 80px; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .replies { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .replies button { background: #f0f5ff; color: #1d39c4; border: 1px solid #adc6ff; }
-    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+    .replies button { background: #f0f5ff; color: #1d39c4; border: 1px solid #adc6ff; margin: 0; }
+    .layout { display: grid; grid-template-columns: 280px 1fr; gap: 12px; }
+    .thread { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+    .thread.active { border-color: var(--accent); background: #f0f5ff; }
+    .thread .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .msgs { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+    .msg { margin-bottom: 10px; font-size: 13px; }
+    .msg .who { color: var(--muted); font-size: 11px; }
+    .msg.service .bubble { background: #e6f4ff; }
+    .msg.user .bubble { background: #fff; border: 1px solid var(--line); }
+    .bubble { display: inline-block; padding: 8px 10px; border-radius: 8px; margin-top: 2px; max-width: 90%; word-break: break-word; }
+    .hidden { display: none; }
+    @media (max-width: 800px) { .row, .layout { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <header>
-    <h1>客服工作台 · 查单</h1>
-    <p class="sub">阶段 6b：/api/service/v1 查单 + 快捷回复；亦可演示 OpenAPI 签名换票</p>
+    <div>
+      <h1>客服工作台</h1>
+      <p class="sub">JWT · 查单 · 快捷回复 · 本仓会话 · pte-live-im WS 建连</p>
+    </div>
+    <div id="userBar" class="hidden"><span id="userLabel"></span>
+      <span id="wsStatus" style="margin:0 12px;font-size:12px;color:var(--muted)">WS: 未连接</span>
+      <button class="secondary" id="btnLogout" type="button">退出</button>
+    </div>
   </header>
   <main>
-    <div class="card">
+    <div class="card" id="loginCard">
       <div class="row">
         <div>
           <label>API 根（api-admin）</label>
           <input id="base" value="http://127.0.0.1:18080" />
         </div>
         <div>
-          <label>客服 Token（X-Service-Token）</label>
-          <input id="svcToken" value="service_demo_token" />
+          <label>账号（staff1 / admin123）</label>
+          <input id="account" value="staff1" />
         </div>
       </div>
       <div class="row">
         <div>
-          <label>商户 mer_id</label>
-          <input id="merId" value="1" />
+          <label>密码</label>
+          <input id="password" type="password" value="admin123" />
         </div>
-        <div>
-          <label>订单 order_id</label>
-          <input id="orderId" value="1" />
+        <div style="display:flex;align-items:flex-end;padding-bottom:12px;">
+          <button id="btnLogin" type="button">登录客服</button>
         </div>
       </div>
-      <button id="btnService">客服查单</button>
-      <button class="secondary" id="btnReplies">加载快捷回复</button>
-      <button class="secondary" id="btnOpen">OpenAPI 签名换票并查单</button>
-      <div class="replies" id="replyBox"></div>
     </div>
-    <div class="card">
-      <label>OpenAPI 演示凭证（sql/008）</label>
-      <div class="row">
-        <input id="ak" value="demo_mer1_ak" placeholder="access_key" />
-        <input id="sk" value="demo_mer1_sk" placeholder="secret_key" />
+
+    <div id="work" class="hidden">
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>订单 order_id</label>
+            <input id="orderId" value="1" />
+          </div>
+          <div style="display:flex;align-items:flex-end;padding-bottom:12px;gap:8px;">
+            <button id="btnOrder" type="button">查单</button>
+            <button class="secondary" id="btnReplies" type="button">快捷回复</button>
+            <button class="secondary" id="btnCred" type="button">IM 凭证</button>
+            <button class="secondary" id="btnWS" type="button">连接 IM WS</button>
+          </div>
+        </div>
+        <div class="replies" id="replyBox"></div>
       </div>
-      <pre id="out">等待查询…</pre>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong>会话</strong>
+          <button class="secondary" id="btnThreads" type="button">刷新列表</button>
+        </div>
+        <div class="layout">
+          <div id="threadList"></div>
+          <div>
+            <div class="msgs" id="msgBox">选择左侧会话</div>
+            <textarea id="msgText" rows="3" placeholder="输入回复…"></textarea>
+            <button id="btnSend" type="button" disabled>发送</button>
+            <button class="secondary" id="btnClaim" type="button" disabled>承接会话</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>输出</label>
+        <pre id="out">已登录，可查单 / 会话…</pre>
+      </div>
     </div>
   </main>
   <script>
     const $ = (id) => document.getElementById(id);
     const out = (v) => { $("out").textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2); };
-
-    async function hmacSHA256Hex(secret, message) {
-      const enc = new TextEncoder();
-      const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-      const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
-      return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const state = { token: localStorage.getItem("svc_access") || "", refresh: localStorage.getItem("svc_refresh") || "", user: null, threadId: 0, ws: null, cred: null };
+    function setWSStatus(text, ok) {
+      const el = $("wsStatus");
+      if (!el) return;
+      el.textContent = "WS: " + text;
+      el.style.color = ok ? "#389e0d" : "var(--muted)";
     }
 
-    function ymdHisCST(unixSec) {
-      const d = new Date((unixSec + 8 * 3600) * 1000);
-      const p = (n) => String(n).padStart(2, "0");
-      return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
+    function base() { return $("base").value.replace(/\/$/, ""); }
+    function authHeaders() {
+      return { "Authorization": "Bearer " + state.token, "Content-Type": "application/json" };
+    }
+    function showWork(user) {
+      state.user = user;
+      $("loginCard").classList.add("hidden");
+      $("work").classList.remove("hidden");
+      $("userBar").classList.remove("hidden");
+      $("userLabel").textContent = (user?.nickname || user?.account || "") + " · mer " + (user?.mer_id || "");
+    }
+    function logout() {
+      if (state.ws) { try { state.ws.close(); } catch (_) {} }
+      state.token = ""; state.refresh = ""; state.user = null; state.threadId = 0; state.ws = null; state.cred = null;
+      localStorage.removeItem("svc_access"); localStorage.removeItem("svc_refresh");
+      $("loginCard").classList.remove("hidden");
+      $("work").classList.add("hidden");
+      $("userBar").classList.add("hidden");
+      setWSStatus("未连接", false);
     }
 
-    async function openSignature(ak, sk, unique, expiration) {
-      const policy = {
-        access_key: ak,
-        conditions: `${ak}/mer/openapi`,
-        expiration: ymdHisCST(expiration),
-        unique,
-      };
-      const keys = Object.keys(policy).sort();
-      const ordered = {};
-      keys.forEach((k) => { ordered[k] = policy[k]; });
-      const json = JSON.stringify(ordered);
-      const b64 = btoa(json);
-      return hmacSHA256Hex(sk, b64);
+    async function api(path, opts = {}) {
+      const res = await fetch(base() + path, opts);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || json.msg || ("HTTP " + res.status));
+      return json.data !== undefined ? json : json;
     }
 
-    $("btnService").onclick = async () => {
+    $("btnLogin").onclick = async () => {
       try {
-        const base = $("base").value.replace(/\/$/, "");
-        const url = `${base}/api/service/v1/orders/${$("orderId").value}?mer_id=${$("merId").value}`;
-        const res = await fetch(url, { headers: { "X-Service-Token": $("svcToken").value } });
-        out(await res.json());
+        const res = await api("/api/service/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ account: $("account").value, password: $("password").value }),
+        });
+        const data = res.data || res;
+        state.token = data.token.access_token;
+        state.refresh = data.token.refresh_token;
+        localStorage.setItem("svc_access", state.token);
+        localStorage.setItem("svc_refresh", state.refresh);
+        showWork(data.user);
+        out(data);
+        await loadThreads();
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnLogout").onclick = logout;
+
+    $("btnOrder").onclick = async () => {
+      try {
+        const res = await api(`/api/service/v1/orders/${$("orderId").value}`, { headers: authHeaders() });
+        out(res.data || res);
       } catch (e) { out(String(e)); }
     };
 
     $("btnReplies").onclick = async () => {
       try {
-        const base = $("base").value.replace(/\/$/, "");
-        const res = await fetch(`${base}/api/service/v1/quick-replies?mer_id=${$("merId").value}`, {
-          headers: { "X-Service-Token": $("svcToken").value },
-        });
-        const json = await res.json();
-        out(json);
+        const res = await api("/api/service/v1/quick-replies", { headers: authHeaders() });
+        const data = res.data || res;
+        out(data);
         const box = $("replyBox");
         box.innerHTML = "";
-        (json.data?.list || []).forEach((item) => {
+        (data.list || []).forEach((item) => {
           const b = document.createElement("button");
-          b.textContent = item.title;
-          b.onclick = () => out({ reply: item });
+          b.type = "button";
+          b.textContent = item.title || item.keyword;
+          b.onclick = () => { $("msgText").value = item.content; };
           box.appendChild(b);
         });
       } catch (e) { out(String(e)); }
     };
 
-    $("btnOpen").onclick = async () => {
+    $("btnCred").onclick = async () => {
       try {
-        const base = $("base").value.replace(/\/$/, "");
-        const ak = $("ak").value;
-        const sk = $("sk").value;
-        const unique = `svc-${Date.now()}`;
-        const expiration = Math.floor(Date.now() / 1000);
-        const signature = await openSignature(ak, sk, unique, expiration);
-        const authRes = await fetch(`${base}/api/open/v1/auth`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ unique, expiration, access_key: ak, signature }),
-        });
-        const auth = await authRes.json();
-        if (auth.status !== 200) { out(auth); return; }
-        const token = auth.data.token;
-        const detailRes = await fetch(`${base}/api/open/v1/order/detail/${$("orderId").value}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        out({ auth: auth.data, order: await detailRes.json() });
+        const q = state.threadId ? `?thread_id=${state.threadId}` : "";
+        const res = await api("/api/service/v1/im/credential" + q, { headers: authHeaders() });
+        state.cred = res.data || res;
+        out(state.cred);
       } catch (e) { out(String(e)); }
     };
+
+    $("btnWS").onclick = async () => {
+      try {
+        if (state.ws) { try { state.ws.close(); } catch (_) {} state.ws = null; }
+        const q = state.threadId ? `?thread_id=${state.threadId}` : "";
+        const res = await api("/api/service/v1/im/credential" + q, { headers: authHeaders() });
+        const cred = res.data || res;
+        state.cred = cred;
+        if (cred.mode !== "remote" || !cred.ws_url || !cred.user_sig || !cred.sdk_app_id) {
+          setWSStatus("需 im.mode=remote 且 IM 可用", false);
+          out(cred);
+          return;
+        }
+        const u = new URL(cred.ws_url);
+        u.searchParams.set("sdkAppID", cred.sdk_app_id);
+        u.searchParams.set("identifier", cred.identifier || cred.im_user_id);
+        u.searchParams.set("userSig", cred.user_sig);
+        const ws = new WebSocket(u.toString());
+        state.ws = ws;
+        setWSStatus("连接中…", false);
+        ws.onopen = () => {
+          setWSStatus("已连接", true);
+          ws.send(JSON.stringify({ protocolVersion: 1, action: "login", requestId: "login-1", payload: {} }));
+          out({ connected: true, ws: u.origin + u.pathname, conversation_id: cred.im_conversation_id, note: cred.note });
+        };
+        ws.onmessage = (ev) => {
+          try { out(JSON.parse(ev.data)); } catch (_) { out(String(ev.data)); }
+        };
+        ws.onerror = () => setWSStatus("错误", false);
+        ws.onclose = () => { setWSStatus("已断开", false); state.ws = null; };
+      } catch (e) {
+        setWSStatus("失败", false);
+        out(String(e));
+      }
+    };
+
+    async function loadThreads() {
+      const res = await api("/api/service/v1/threads", { headers: authHeaders() });
+      const data = res.data || res;
+      const box = $("threadList");
+      box.innerHTML = "";
+      (data.list || []).forEach((t) => {
+        const el = document.createElement("div");
+        el.className = "thread" + (t.thread_id === state.threadId ? " active" : "");
+        el.innerHTML = `<div>${t.user_nickname || ("用户 " + t.uid)}</div><div class="meta">${t.last_msg || ""} · 未读 ${t.service_unread || 0}</div>`;
+        el.onclick = () => selectThread(t.thread_id);
+        box.appendChild(el);
+      });
+      if (!(data.list || []).length) box.innerHTML = "<div class='meta'>暂无会话（用户端 POST /cs/threads 后出现）</div>";
+    }
+
+    async function selectThread(id) {
+      state.threadId = id;
+      $("btnSend").disabled = false;
+      $("btnClaim").disabled = false;
+      await loadThreads();
+      const res = await api(`/api/service/v1/threads/${id}/messages?limit=50`, { headers: authHeaders() });
+      const data = res.data || res;
+      const box = $("msgBox");
+      box.innerHTML = "";
+      (data.list || []).forEach((m) => {
+        const d = document.createElement("div");
+        d.className = "msg " + (m.sender_role || "");
+        d.innerHTML = `<div class="who">${m.sender_role} #${m.sender_id} · ${m.create_time || ""}</div><div class="bubble">${m.content}</div>`;
+        box.appendChild(d);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    $("btnThreads").onclick = async () => {
+      try { await loadThreads(); out("会话已刷新"); } catch (e) { out(String(e)); }
+    };
+
+    $("btnClaim").onclick = async () => {
+      try {
+        const res = await api(`/api/service/v1/threads/${state.threadId}/claim`, { method: "POST", headers: authHeaders() });
+        out(res.data || res);
+      } catch (e) { out(String(e)); }
+    };
+
+    $("btnSend").onclick = async () => {
+      try {
+        const content = $("msgText").value.trim();
+        if (!content) return;
+        await api(`/api/service/v1/threads/${state.threadId}/messages`, {
+          method: "POST", headers: authHeaders(),
+          body: JSON.stringify({ msg_type: "text", content }),
+        });
+        $("msgText").value = "";
+        await selectThread(state.threadId);
+      } catch (e) { out(String(e)); }
+    };
+
+    (async () => {
+      if (!state.token) return;
+      try {
+        const res = await api("/api/service/v1/auth/me", { headers: authHeaders() });
+        showWork(res.data || res);
+        await loadThreads();
+      } catch (_) { logout(); }
+    })();
   </script>
 </body>
 </html>

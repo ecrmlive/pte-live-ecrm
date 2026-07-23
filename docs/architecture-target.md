@@ -19,7 +19,7 @@
 | Redis | 8.8.0 |
 | etcd | v3.7.0 |
 | NATS | 2.12.0-alpine |
-| MinIO（对象存储） | RELEASE.2025-10-15T17-29-55Z |
+| 对象存储 | 腾讯云 COS（非本仓容器） |
 
 配置文件统一使用 `.yaml`。
 
@@ -36,8 +36,8 @@ qixi-live-mergers/
 │   ├── internal/domain/    # 共享领域
 │   ├── internal/{platform,merchant,app,...}/
 │   └── conf/{admin,app,job}.yaml
-├── admin/                  # Vben 平台 → qixi-mergers-admin
-├── merchant-admin/         # Vben 商户 → qixi-mergers-merchant-admin
+├── admin-platform/         # Vben 5 平台源码 → pack key `admin` → qixi-mergers-admin
+├── admin-merchant/         # Vben 5 商户源码 → pack key `merchant-admin` → qixi-mergers-merchant-admin
 ├── app-uni/                # uni-app x → qixi-mergers-h5
 ├── app-pc/                 # Vue3 PC 商城 → qixi-mergers-pc
 ├── sql/
@@ -71,7 +71,8 @@ qixi-live-mergers/
 
 ## 5. Docker 与部署
 
-- 网络：`qixi_mergers_net` / `172.30.80.0/24`；业务容器：`api_admin .20`、`job .21`、`api_app .22`。
+- 网络：本仓 `qixi_mergers_net` / `172.30.80.0/24`（业务）；共享基建挂 `pte_live_net`（MySQL/Redis/NATS/etcd 由 **pte-live-im** 启动）。对象存储用腾讯云 COS。
+- 业务容器：`api_admin .20`、`job .21`、`api_app .22`（均另挂 `pte_live_net`）。
 - 本机构建产物 → `release/<svc>/` → rsync → 远程 Compose **挂载**运行（后端）。
 - 前端仅 `dist/`；**Nginx 统一宿主机**；后台反代 api-admin，C 端反代 api-app。
 - `config/local` · `config/prod`；禁止服务器源码构建。

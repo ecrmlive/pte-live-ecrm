@@ -1,5 +1,6 @@
 # 本机 go run：cp conf/admin.local.yaml.example conf/admin.local.yaml
 # go run ./cmd/api-admin -config conf/admin.local.yaml
+# COS 密钥优先用环境变量 QIXI_COS_*，勿把真实密钥写进文件。
 server:
   addr: ":8080"
   mode: debug
@@ -19,14 +20,20 @@ etcd:
   endpoints:
     - "127.0.0.1:12379"
 
-minio:
-  endpoint: "127.0.0.1:19000"
-  access_key: "qixi_minio"
-  secret_key: "qixi_minio_secret"
-  bucket: "qixi-mergers"
-  use_ssl: false
+cos:
+  enabled: true
+  bucket: ""
+  region: "ap-guangzhou"
+  secret_id: ""
+  secret_key: ""
+  base_url: "https://cos.qxkejiwl.top/qixi-mergers"
+  key_prefix: "qixi-mergers"
 
 jwt:
   secret: "qixi-mergers-dev-jwt-secret-change-me"
   access_ttl_hours: 12
   refresh_ttl_hours: 168
+
+upload:
+  dir: "data/uploads"
+  public_base: "/uploads"

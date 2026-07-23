@@ -1,0 +1,179 @@
+{
+  "entries": [
+    {
+      "at": "2026-06-25T14:24:27+08:00",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E测试直播间 via API (live_id=5)",
+      "method": "api"
+    },
+    {
+      "at": "2026-06-25T14:54:02.536Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环17987 (live_id=7)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T15:00:00.000Z",
+      "module": "满减",
+      "action": "create",
+      "detail": "E2E满减活动",
+      "method": "api"
+    },
+    {
+      "at": "2026-06-25T15:08:57.543Z",
+      "module": "直播中控",
+      "action": "link-product",
+      "detail": "live_id=7 product_id=4",
+      "method": "api"
+    },
+    {
+      "at": "2026-06-25T16:22:21.855Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环35539 (live_id=8)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:30:05.617Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环99241 (live_id=9)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:32:42.064Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环55631 (live_id=10)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:34:04.744Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环38336 (live_id=11)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:37:21.957Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环35493 (live_id=12)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:39:41.471Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环75078 (live_id=13)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:49:08.785Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环39549 (live_id=14)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:50:19.467Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环13032 (live_id=15)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:50:37.263Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环30853 (live_id=16)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T16:54:01.509Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环35053 (live_id=17)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T17:07:22.412Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环35970 (live_id=18)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T17:11:48.135Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环1690 (live_id=19)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T17:18:40.117Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环13772 (live_id=20)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T22:12:18.969Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环32665 (live_id=21)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T22:16:25.924Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环79549 (live_id=23)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T22:33:13.153Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环86881 (live_id=5)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T22:38:47.437Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环21173 (live_id=6)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T22:51:43.711Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环97472 (live_id=7)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T23:00:10.386Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环4079 (live_id=8)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T23:04:11.466Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环45207 (live_id=9)",
+      "method": "ui"
+    },
+    {
+      "at": "2026-06-25T23:11:45.587Z",
+      "module": "直播",
+      "action": "create",
+      "detail": "E2E循环99219 (live_id=10)",
+      "method": "ui"
+    }
+  ]
+}

@@ -1,42 +1,39 @@
 # Pack and Config
 
-权威服务/IP 表：[SERVICE-MATRIX.md](./SERVICE-MATRIX.md)。
+权威表：[SERVICE-MATRIX.md](./SERVICE-MATRIX.md)。
 
-## 铁律
+## Compose 分组
 
-1. `local` / `prod`；`QX_RELEASE_ENV` 选择。
-2. Go 配置源码主文件（按进程）：
-   - `api/conf/admin.yaml` → pack **覆盖** `release/qixi-mergers-api-admin/config/local/app.yaml`
-   - `api/conf/app.yaml` → 同上 → `qixi-mergers-api-app`
-   - `api/conf/job.yaml` → 同上 → `qixi-mergers-job`
-   - `config/prod/app.yaml`：**仅首次**从 `*.example` 种子，后续 pack **不覆盖**（本机改密后保留）；模板见 `config/prod/app.yaml.example`
-3. `pack db` 将仓库 `sql/` 同步到 `release/qixi-mergers-db/sql/`；compose 挂载 `./sql`（可 rsync 部署）。
-4. rsync 整目录，排除 `config/local/**`。
-5. **后台 API 与 C 端 API 进程分立**；领域代码可共享同一 `api/internal/domain`。
-6. 前端只 `dist/`（含 `service-web`）；Nginx 仅宿主机。
-7. 禁止服务器源码构建。
+| project | 内容 |
+| --- | --- |
+| （无 compose） | `qixi-mergers-db` 仅同步 `sql/`；网络由脚本创建 |
+| `qixi_mergers` | API + Job + 前端 |
+| （外部）IM db/mq | MySQL、Redis、NATS、etcd — 由 **pte-live-im** 启动 |
+| （外部）腾讯云 COS | 对象存储 — `cos:` 配置 / `QIXI_COS_*` |
 
 ## Release 树
 
 ```text
 release/
-  qixi-mergers-db/
-  qixi-mergers-mq/
-  qixi-mergers-api-admin/    # 后台 API
-  qixi-mergers-api-app/      # C 端 API
+  qixi-mergers-db/           # 仅 sql/（无容器；历史 nats/ 可忽略）
+  qixi-mergers-api-admin/
+  qixi-mergers-api-app/
   qixi-mergers-job/
-  qixi-mergers-admin/        # dist
-  qixi-mergers-merchant-admin/
+  qixi-mergers-admin/        # pack key admin ← 源码 admin-platform/
+  qixi-mergers-merchant-admin/  # pack key merchant-admin ← 源码 admin-merchant/
   qixi-mergers-h5/
-  qixi-mergers-pc/           # PC 商城 dist
+  qixi-mergers-pc/
   qixi-mergers-service-web/
+  qixi-mergers-manager/      # 店员端 app-manager
   opts/nginx/
 ```
 
-## 网络固定 IP（业务）
+## 铁律
 
-| 容器 | IP |
-| --- | ---: |
-| `qixi_mergers_api_admin` | `.20` |
-| `qixi_mergers_job` | `.21` |
-| `qixi_mergers_api_app` | `.22` |
+1. `local` / `prod`；`QX_RELEASE_ENV`。
+2. Go：`api/conf/{admin,app,job}.yaml` → 各 release `config/*/app.yaml`。DSN 指向 `pte_live_*`；对象存储为 `cos:`（密钥用 `QIXI_COS_*`，勿提交）。
+3. rsync 整目录，排除 `config/local/**`。
+4. 共享 db/mq 不进本仓 `deploy-all`；先起 IM，再 `deploy-db-reload`（sql+网络）与业务。
+5. 全量菜单：`sql/043_crmeb_system_menu_full.sql`（可由 `python3 scripts/gen_crmeb_menu_sql.py` 从 CRMEB 安装包重生成）。
+6. IM remote：`im.mode=remote` + `QIXI_IM_INTEGRATION_TOKEN`；对端 `PTE_MALL_INTEGRATION_*`（见 `docs/integration-pte-live-im.md`）。
+7. 后台源码目录是 `admin-platform/`、`admin-merchant/`；pack key 仍为 `admin` / `merchant-admin`（≠ 源码目录名）。根目录不要再放 `admin`、`merchant-admin` 软链。

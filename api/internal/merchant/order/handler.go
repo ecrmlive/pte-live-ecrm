@@ -7,18 +7,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/identity"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/logistics"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/trade"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/pkg/middleware"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/pkg/response"
 )
 
 type Handler struct {
-	svc *trade.Service
-	id  *identity.Service
+	svc       *trade.Service
+	id        *identity.Service
+	logistics *logistics.Service
 }
 
-func NewHandler(svc *trade.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *trade.Service, id *identity.Service, logisticsSvc *logistics.Service) *Handler {
+	return &Handler{svc: svc, id: id, logistics: logisticsSvc}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
@@ -70,6 +72,11 @@ func (h *Handler) Deliver(c *gin.Context) {
 	if err := c.ShouldBindJSON(&in); err != nil {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
+	}
+	if in.ExpressID > 0 && in.DeliveryName == "" && h.logistics != nil {
+		if name, err := h.logistics.GetExpressName(c.Request.Context(), in.ExpressID); err == nil {
+			in.DeliveryName = name
+		}
 	}
 	if err := h.svc.Deliver(c.Request.Context(), middleware.MerID(c), uint(id), in); err != nil {
 		writeErr(c, err)

@@ -7,14 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	appaddress "github.com/qixi-live/qixi-live-mergers/api/internal/app/address"
+	apparticle "github.com/qixi-live/qixi-live-mergers/api/internal/app/article"
 	appauth "github.com/qixi-live/qixi-live-mergers/api/internal/app/auth"
 	appcallback "github.com/qixi-live/qixi-live-mergers/api/internal/app/callback"
 	appcart "github.com/qixi-live/qixi-live-mergers/api/internal/app/cart"
 	appcatalog "github.com/qixi-live/qixi-live-mergers/api/internal/app/catalog"
+	appchat "github.com/qixi-live/qixi-live-mergers/api/internal/app/chat"
 	appcombination "github.com/qixi-live/qixi-live-mergers/api/internal/app/combination"
 	appassist "github.com/qixi-live/qixi-live-mergers/api/internal/app/assist"
 	appbroadcast "github.com/qixi-live/qixi-live-mergers/api/internal/app/broadcast"
 	appcommunity "github.com/qixi-live/qixi-live-mergers/api/internal/app/community"
+	appinvoice "github.com/qixi-live/qixi-live-mergers/api/internal/app/invoice"
 	apppresell "github.com/qixi-live/qixi-live-mergers/api/internal/app/presell"
 	appreservation "github.com/qixi-live/qixi-live-mergers/api/internal/app/reservation"
 	appcontent "github.com/qixi-live/qixi-live-mergers/api/internal/app/content"
@@ -25,13 +28,16 @@ import (
 	apprefund "github.com/qixi-live/qixi-live-mergers/api/internal/app/refund"
 	appseckill "github.com/qixi-live/qixi-live-mergers/api/internal/app/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/aftersale"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/article"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/assist"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/cart"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/catalog"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/chat"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/combination"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/content"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/diy"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/identity"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/invoice"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/broadcast"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/community"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/presell"
@@ -40,15 +46,18 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/trade"
 	aftersalepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/aftersale"
+	articlepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/article"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/assist"
 	broadcastpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/broadcast"
 	cartpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/cart"
+	chatpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/chat"
 	communitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/community"
 	catalogpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/catalog"
 	combinationpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/combination"
 	contentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/content"
 	diypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/diy"
 	identitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/identity"
+	invoicepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/invoice"
 	presellpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/presell"
 	promotionpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/promotion"
 	reservationpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/reservation"
@@ -97,6 +106,12 @@ func main() {
 	broadcastSvc := broadcast.NewService(broadcastpersist.NewRepo(gdb))
 	communitySvc := community.NewService(communitypersist.NewRepo(gdb))
 	assistSvc := assist.NewService(assistpersist.NewRepo(gdb))
+	chatSvc := chat.NewService(chatpersist.NewRepo(gdb), chat.IMSettings{
+		Mode: cfg.IM.Mode, APIBase: cfg.IM.APIBase, WSPublicURL: cfg.IM.WSPublicURL,
+		AppID: cfg.IM.AppID, Token: cfg.IM.IntegrationToken, Secret: cfg.JWT.Secret,
+	})
+	invoiceSvc := invoice.NewService(invoicepersist.NewRepo(gdb))
+	articleSvc := article.NewService(articlepersist.NewRepo(gdb))
 	tradeSvc.SetSeckill(seckillSvc)
 	tradeSvc.SetCombination(combination.NewTradeBridge(comboSvc))
 	tradeSvc.SetPresell(presell.NewTradeBridge(presellSvc))
@@ -120,6 +135,9 @@ func main() {
 	appBroadcastH := appbroadcast.NewHandler(broadcastSvc)
 	appCommunityH := appcommunity.NewHandler(communitySvc)
 	appAssistH := appassist.NewHandler(assistSvc, tradeSvc)
+	appChatH := appchat.NewHandler(chatSvc)
+	appInvoiceH := appinvoice.NewHandler(invoiceSvc)
+	appArticleH := apparticle.NewHandler(articleSvc)
 
 	gin.SetMode(cfg.Server.Mode)
 	r := gin.New()
@@ -135,6 +153,7 @@ func main() {
 	appH.Register(appPublic, appAuthed)
 	appCatH.Register(appPublic)
 	appContentH.Register(appPublic)
+	appArticleH.Register(appPublic)
 	appDiyH.Register(appPublic)
 	appSeckillH.Register(appPublic)
 	appComboH.RegisterPublic(appPublic)
@@ -155,6 +174,8 @@ func main() {
 	appRefundH.Register(appAuthed)
 	appCouponH.Register(appAuthed)
 	appCommunityH.RegisterAuthed(appAuthed)
+	appChatH.Register(appAuthed)
+	appInvoiceH.Register(appAuthed)
 
 	cb := r.Group("/api/callback/v1")
 	cb.GET("/ping", func(c *gin.Context) {

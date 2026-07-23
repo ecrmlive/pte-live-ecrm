@@ -1,6 +1,6 @@
 # qixi-live-mergers — 根目录 Make
 # 约定见 docs/release/COMMANDS.md · SERVICE-MATRIX.md
-# API 分立：api-admin（后台）/ api-app（C 端）；Nginx 仅宿主机
+# API 分立：api-admin / api-app；业务 compose project「qixi_mergers」含 API+前端（含店员/客服）
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -15,11 +15,11 @@ export QX_RELEASE_ENV := $(ENV)
 .PHONY: help init-env init-env-prod check-config \
 	pack pack-infra pack-backend pack-frontend pack-all \
 	local local-db local-mq local-api-admin local-api-app local-job \
-	local-admin local-merchant-admin local-h5 local-pc local-service-web \
+	local-admin local-merchant-admin local-h5 local-pc local-service-web local-manager \
 	local-backend-all local-frontend-all local-up local-compose-check \
 	up down restart ps \
 	deploy-db-reload deploy-mq-reload deploy-api-admin deploy-api-app deploy-job \
-	deploy-admin deploy-merchant-admin deploy-h5 deploy-pc deploy-service-web \
+	deploy-admin deploy-merchant-admin deploy-h5 deploy-pc deploy-service-web deploy-manager \
 	deploy-backend-all deploy-frontend-all deploy-all update-nginx
 
 help:
@@ -27,11 +27,11 @@ help:
 	@echo "qixi-live-mergers — release 命令"
 	@echo ""
 	@echo "  make init-env / init-env-prod"
-	@echo "  make local-db / local-mq"
+	@echo "  make local-db            # 同步 sql/ + 确保网络；基建在 IM，存储用腾讯云 COS"
 	@echo "  make local-api-admin    # 后台 :18080"
 	@echo "  make local-api-app      # C 端 :18085"
 	@echo "  make local-job"
-	@echo "  make local-admin / local-merchant-admin / local-h5 / local-pc / local-service-web"
+	@echo "  make local-admin / local-merchant-admin / local-h5 / local-pc / local-service-web / local-manager"
 	@echo "  make local-backend-all / local-frontend-all"
 	@echo "  make update-nginx"
 	@echo ""
@@ -72,7 +72,7 @@ local-db:
 	@$(QX) local db
 
 local-mq:
-	@$(QX) local mq
+	@echo "已废弃: 请在 pte-live-im 启动 mq/（NATS+etcd）" >&2; exit 1
 
 local-api-admin:
 	@$(QX) local api-admin
@@ -97,6 +97,9 @@ local-pc:
 
 local-service-web:
 	@$(QX) local service-web
+
+local-manager:
+	@$(QX) local manager
 
 local-backend-all:
 	@$(QX) local backend-all
@@ -127,7 +130,7 @@ deploy-db-reload:
 	@$(QX) release db
 
 deploy-mq-reload:
-	@$(QX) release mq
+	@echo "已废弃: NATS/etcd 由 pte-live-im 的 mq/ 启动；本仓不再 deploy-mq-reload" >&2; exit 1
 
 deploy-api-admin:
 	@$(QX) release api-admin
@@ -152,6 +155,9 @@ deploy-pc:
 
 deploy-service-web:
 	@$(QX) release service-web
+
+deploy-manager:
+	@$(QX) release manager
 
 deploy-backend-all:
 	@$(QX) release backend-all

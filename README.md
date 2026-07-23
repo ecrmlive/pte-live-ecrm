@@ -35,10 +35,10 @@ release/qixi-mergers-*/
 
 ```bash
 make init-env
-make local-db && make local-mq
-make local-api-admin   # 后台 http://127.0.0.1:18080/healthz
-make local-api-app     # C 端 http://127.0.0.1:18085/healthz
-make local-admin       # pack dist；宿主机 Nginx 见 release/opts/nginx
+make local-db          # 同步 sql/ + 确保网络（基建在 IM；存储用腾讯云 COS）
+make local-api-admin   # :18080
+make local-api-app     # :18085
+make local-admin       # 前端容器，project: qixi_mergers
 ```
 
 ## Agent

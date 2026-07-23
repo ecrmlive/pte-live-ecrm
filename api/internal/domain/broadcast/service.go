@@ -98,6 +98,7 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Room, 
 	r := &Room{
 		MerID: merID, Name: strings.TrimSpace(in.Name),
 		CoverImg: strings.TrimSpace(in.CoverImg), FeedsImg: strings.TrimSpace(in.FeedsImg),
+		PlayURL: strings.TrimSpace(in.PlayURL), PushURL: strings.TrimSpace(in.PushURL),
 		AnchorName: strings.TrimSpace(in.AnchorName), Phone: strings.TrimSpace(in.Phone),
 		StartTime: start, EndTime: end, LiveStatus: live, Status: AuditPending,
 		IsShow: 1, Star: 1, Mark: strings.TrimSpace(in.Mark), CreateTime: time.Now(),
@@ -136,6 +137,12 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Ro
 	}
 	if in.FeedsImg != "" {
 		r.FeedsImg = strings.TrimSpace(in.FeedsImg)
+	}
+	if in.PlayURL != "" {
+		r.PlayURL = strings.TrimSpace(in.PlayURL)
+	}
+	if in.PushURL != "" {
+		r.PushURL = strings.TrimSpace(in.PushURL)
 	}
 	if in.AnchorName != "" {
 		r.AnchorName = strings.TrimSpace(in.AnchorName)

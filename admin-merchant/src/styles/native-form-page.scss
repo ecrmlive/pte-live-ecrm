@@ -1,0 +1,172 @@
+/** 原生表单页 — Vben 主题，不依赖 legacy 全局 reset */
+
+/* 外壳：标题/Tab/底栏固定，仅 native-form-scroll 滚动 */
+.native-form-page.native-form-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.native-form-page.native-form-shell .common-form,
+.native-form-page.native-form-shell .native-form-tabs {
+  flex-shrink: 0;
+}
+
+.native-form-page .native-form-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.native-form-page {
+  box-sizing: border-box;
+  min-height: 100%;
+  margin: 0;
+  padding: 16px 16px 72px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px rgb(15 23 42 / 6%);
+}
+
+.native-form-page.native-form-shell {
+  padding-bottom: 0;
+}
+
+.native-form-page.native-form-shell .form-footer {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+/* Page-level title (fixed top bar); NOT for in-form section headers — use .native-section-title */
+.native-form-page .common-form {
+  position: relative;
+  height: 40px;
+  padding-left: 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 40px;
+}
+
+.native-form-page .common-form::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4px;
+  height: 14px;
+  content: '';
+  background: hsl(var(--primary));
+  transform: translateY(-50%);
+}
+
+/* In-form section header: single accent bar + title, left-aligned, no horizontal rules */
+.native-section-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.native-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: hsl(var(--foreground));
+
+  &::before {
+    flex-shrink: 0;
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: hsl(var(--primary));
+    content: '';
+  }
+}
+
+.native-section-title-block .native-section-title {
+  margin-bottom: 0;
+}
+
+.native-section-title__hint {
+  margin: 0 0 12px 11px;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.native-form-page .native-section-title-item {
+  margin-bottom: 0;
+
+  .el-form-item__label {
+    display: none;
+  }
+
+  .el-form-item__content {
+    margin-left: 0 !important;
+    max-width: none;
+  }
+}
+
+.native-form-page .form-field-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 460px;
+}
+
+.native-form-page .form-field-block .max-w460 {
+  width: 100%;
+}
+
+.native-form-page .form-tip {
+  width: 100%;
+  margin-top: 4px;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.native-form-page .max-w460 {
+  max-width: 460px;
+}
+
+.native-form-page .common-level-rail {
+  margin-bottom: 12px;
+}
+
+.native-form-page .recommend-products-field,
+.native-form-page .agent-apply-products-field {
+  max-width: none;
+}
+
+.native-form-page .form-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 24px -16px -16px;
+  padding: 12px 16px;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 95%);
+  backdrop-filter: blur(8px);
+}
+
+.native-form-page .preview-img {
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}

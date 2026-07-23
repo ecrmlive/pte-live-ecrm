@@ -7,11 +7,13 @@ ROOT_DIR="$(cd "${RELEASE_LIB_DIR}/../.." && pwd)"
 RELEASE_DIR="${ROOT_DIR}/release"
 ENV_FILE="${ROOT_DIR}/scripts/release.env"
 
-INFRA_ALL_ORDER=(db mq)
+# 基建：本仓无 Docker 基建容器。MySQL/Redis/NATS/etcd → pte-live-im；对象存储 → 腾讯云 COS。
+# pack db 仅同步 sql/。INFRA_ALL_ORDER 保留 db 以便 pack 灌库脚本。
+INFRA_ALL_ORDER=(db)
 BACKEND_ALL_ORDER=(api-admin api-app job)
-FRONTEND_ALL_ORDER=(admin merchant-admin h5 pc service-web)
-ALL_ORDER=(api-admin api-app job admin merchant-admin h5 pc service-web)
-START_ORDER=(db mq api-admin api-app job)
+FRONTEND_ALL_ORDER=(admin merchant-admin h5 pc service-web manager)
+ALL_ORDER=(api-admin api-app job admin merchant-admin h5 pc service-web manager)
+START_ORDER=(api-admin api-app job admin merchant-admin h5 pc service-web manager)
 
 load_release_env() {
 	if [[ -f "${ENV_FILE}" ]]; then
@@ -25,6 +27,7 @@ load_release_env() {
 	: "${RELEASE_GOOS:=linux}"
 	: "${RELEASE_GOARCH:=amd64}"
 	: "${QIXI_MERGERS_DOCKER_NET:=qixi_mergers_net}"
+	: "${PTE_LIVE_DOCKER_NET:=pte_live_net}"
 }
 
 require_remote_env() {
@@ -59,6 +62,7 @@ normalize_service() {
 	h5 | app-h5) echo h5 ;;
 	pc | app-pc) echo pc ;;
 	service-web | cs-web) echo service-web ;;
+	manager | app-manager | staff) echo manager ;;
 	infra-all) echo infra-all ;;
 	backend-all) echo backend-all ;;
 	frontend-all) echo frontend-all ;;
@@ -74,7 +78,7 @@ normalize_service() {
 service_release_dir() {
 	case "$1" in
 	db) echo qixi-mergers-db ;;
-	mq) echo qixi-mergers-mq ;;
+	mq) echo qixi-mergers-db ;;
 	opts) echo opts ;;
 	api-admin) echo qixi-mergers-api-admin ;;
 	api-app) echo qixi-mergers-api-app ;;
@@ -84,26 +88,37 @@ service_release_dir() {
 	h5) echo qixi-mergers-h5 ;;
 	pc) echo qixi-mergers-pc ;;
 	service-web) echo qixi-mergers-service-web ;;
+	manager) echo qixi-mergers-manager ;;
 	*) echo "未知服务: $1" >&2; return 1 ;;
 	esac
 }
 
 service_compose_project() {
 	case "$1" in
-	db) echo qixi_mergers_db ;;
-	mq) echo qixi_mergers_mq ;;
-	api-admin | api-app | job) echo qixi_mergers ;;
-	*) echo "错误: ${1} 无 Docker compose（前端由宿主机 Nginx 托管）" >&2; return 1 ;;
+	db | mq)
+		echo "错误: 本仓无 db/mq Docker 服务（IM 基建 + 腾讯云 COS）" >&2
+		return 1
+		;;
+	api-admin | api-app | job | admin | merchant-admin | h5 | pc | service-web | manager) echo qixi_mergers ;;
+	*) echo "错误: ${1} 无 Docker compose" >&2; return 1 ;;
 	esac
 }
 
 service_container_names() {
 	case "$1" in
-	db) echo "qixi_mergers_mysql qixi_mergers_redis qixi_mergers_etcd qixi_mergers_minio" ;;
-	mq) echo "qixi_mergers_nats" ;;
+	db | mq)
+		echo "错误: 本仓无 db/mq 容器" >&2
+		return 1
+		;;
 	api-admin) echo qixi_mergers_api_admin ;;
 	api-app) echo qixi_mergers_api_app ;;
 	job) echo qixi_mergers_job ;;
+	admin) echo qixi_mergers_admin ;;
+	merchant-admin) echo qixi_mergers_merchant_admin ;;
+	h5) echo qixi_mergers_h5 ;;
+	pc) echo qixi_mergers_pc ;;
+	service-web) echo qixi_mergers_service_web ;;
+	manager) echo qixi_mergers_manager ;;
 	*) echo "错误: ${1} 无容器" >&2; return 1 ;;
 	esac
 }
@@ -137,9 +152,21 @@ service_go_conf_src() {
 
 service_has_compose() {
 	case "$1" in
-	db | mq | api-admin | api-app | job) return 0 ;;
+	api-admin | api-app | job | admin | merchant-admin | h5 | pc | service-web | manager) return 0 ;;
+	db | mq) return 1 ;;
 	*) return 1 ;;
 	esac
+}
+
+print_im_infra_hint() {
+	cat <<'EOF'
+MySQL / Redis / NATS / etcd 由 pte-live-im 启动（db/ + mq/，网络 pte_live_net）。
+对象存储使用腾讯云 COS（api/conf 中 cos:，密钥用 QIXI_COS_* 环境变量）。
+请先在 IM 仓库启动基建，再对本仓执行：
+  docker exec -i pte_live_mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < sql/000_shared_im_mysql_bootstrap.sql
+  # 然后按 sql/README.md 灌入业务迁移
+本仓 make local-db 仅确保 Docker 网络 qixi_mergers_net 存在（无容器）。
+EOF
 }
 
 release_path() {
@@ -200,16 +227,28 @@ expand_service_list() {
 
 ensure_docker_network() {
 	local net="${QIXI_MERGERS_DOCKER_NET:-qixi_mergers_net}"
+	local im_net="${PTE_LIVE_DOCKER_NET:-pte_live_net}"
 	if ! docker network inspect "${net}" >/dev/null 2>&1; then
-		echo "提示: Docker 网络 ${net} 尚未创建；先 make local-db" >&2
+		echo ">> 创建 Docker 网络 ${net} (172.30.80.0/24)"
+		docker network create \
+			--driver bridge \
+			--subnet 172.30.80.0/24 \
+			"${net}" >/dev/null
+	fi
+	if ! docker network inspect "${im_net}" >/dev/null 2>&1; then
+		echo "提示: 缺少 ${im_net}；请先在 pte-live-im 启动 db/mq（IM 会创建该网络）" >&2
 	fi
 }
 
 ensure_docker_network_remote_snippet() {
 	cat <<'EOS'
 NET_NAME="${QIXI_MERGERS_DOCKER_NET:-qixi_mergers_net}"
+IM_NET="${PTE_LIVE_DOCKER_NET:-pte_live_net}"
 if ! docker network inspect "${NET_NAME}" >/dev/null 2>&1; then
-  echo "错误: 缺少网络 ${NET_NAME}，请先 deploy-db-reload" >&2
+  docker network create --driver bridge --subnet 172.30.80.0/24 "${NET_NAME}" >/dev/null
+fi
+if ! docker network inspect "${IM_NET}" >/dev/null 2>&1; then
+  echo "错误: 缺少网络 ${IM_NET}；请先在 pte-live-im 部署 db/mq" >&2
   exit 1
 fi
 EOS

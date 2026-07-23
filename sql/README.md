@@ -10,6 +10,15 @@
 
 ## 应用方式（本机）
 
+MySQL 由 **pte-live-im** 的 `pte_live_mysql` 提供（宿主口仍 `13306`）。首次：
+
+```bash
+# 创建库与账号 qixi/qixi_local（需 IM root 密码）
+docker exec -i pte_live_mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < sql/000_shared_im_mysql_bootstrap.sql
+```
+
+然后灌迁移：
+
 ```bash
 mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/000_init_schema.sql
 mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/001_identity.sql
@@ -53,9 +62,10 @@ mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/038_stage7_sett
 mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/039_stage7_service_reply.sql
 mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/040_stage7_merchant_community_write.sql
 mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/041_stage7_agreement_notice.sql
+mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/046_diy_visual_doc.sql
 ```
 
-容器内：`qixi_mergers_mysql:3306`。
+容器内主机名：`pte_live_mysql:3306`（库 `qixi_mergers`）。
 
 ## 阶段进度
 
@@ -103,3 +113,4 @@ mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/041_stage7_agre
 | `039_stage7_service_reply.sql` | 7 | 客服快捷回复表 + 菜单163/按钮164；mer1 种子；service 按 mer_id 读库 |
 | `040_stage7_merchant_community_write.sql` | 7 | 商户社区发帖/编辑/删除按钮；meract/mersub 无写 |
 | `041_stage7_agreement_notice.sql` | 7 | 协议 qixi_cache + 菜单52/按钮53；C 端公告闭环 |
+| `046_diy_visual_doc.sql` | DIY | 页面外观字段 + `{page,items[]}` 文档协议种子升级 |

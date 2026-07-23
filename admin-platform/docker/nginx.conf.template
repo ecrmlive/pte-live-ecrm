@@ -1,0 +1,28 @@
+server {
+    listen 80;
+    server_name platform.qxkejiwl.top;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Vue Hash 路由 + 静态资源
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API 只能经 api-platform 域名访问，禁止落入 SPA。
+    location = /admin {
+        return 404;
+    }
+
+    location /admin/ {
+        return 404;
+    }
+
+    location = /api {
+        return 404;
+    }
+
+    location /api/ {
+        return 404;
+    }
+}

@@ -37,7 +37,7 @@ func JWTRequired(mgr *authjwt.Manager, portal string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if (portal == authjwt.PortalMerchant || portal == authjwt.PortalOpen || portal == authjwt.PortalManager) && claims.MerID == 0 {
+		if (portal == authjwt.PortalMerchant || portal == authjwt.PortalOpen || portal == authjwt.PortalManager || portal == authjwt.PortalService) && claims.MerID == 0 {
 			response.Fail(c, http.StatusForbidden, "缺少商户上下文")
 			c.Abort()
 			return

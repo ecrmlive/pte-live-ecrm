@@ -20,8 +20,8 @@
 | **后台 API** | `api/cmd/api-admin` | Docker `.20` `:18080` | platform / merchant / manager / service / open |
 | **C 端 API** | `api/cmd/api-app` | Docker `.22` `:18085` | app / callback |
 | Job | `api/cmd/job` | Docker `.21` | NATS |
-| 平台后台 | `admin/` | dist + 宿主机 Nginx `:18081` | → api-admin |
-| 商户后台 | `merchant-admin/` | Nginx `:18082` | → api-admin |
+| 平台后台 | `admin-platform/`（pack key `admin`） | dist + 宿主机 Nginx `:18081` | → api-admin |
+| 商户后台 | `admin-merchant/`（pack key `merchant-admin`） | Nginx `:18082` | → api-admin |
 | 用户端 H5 | `app-uni/` | Nginx `:18083` | → **api-app** |
 | 用户端 PC | `app-pc/` | Nginx `:18086` | → **api-app** |
 | 客服工作台 | `service-web/` | Nginx `:18084`（P1） | → api-admin |
@@ -202,7 +202,7 @@ api/
   internal/{platform,merchant,app,open,callback,manager,service}/
 docs/openapi/
 sql/00N_*.sql
-admin/ · merchant-admin/ · app-uni/ · app-pc/ · service-web/
+admin-platform/ · admin-merchant/ · app-uni/ · app-pc/ · service-web/
 ```
 
 每阶段结束更新：
@@ -310,11 +310,12 @@ admin/ · merchant-admin/ · app-uni/ · app-pc/ · service-web/
 | C 端：积分商品列表 + PC/H5 兑换结算；公告只读 | ✅ |
 | 平台：公告 CRUD 页（6a） | ✅ |
 | OpenAPI：`app-loyalty` · `platform-content` | ✅ |
-| 6b 客服：查单 + 快捷回复（`/api/service/v1` + service-web） | ✅ |
+| 6b 客服：JWT + 查单 + 快捷回复 + 本地会话桥（`/api/service/v1` + service-web） | ✅ |
 | 6c OpenAPI 6 条（签名换票→JWT，`sql/008` + `/api/open/v1`） | ✅ |
-| 6d manager：店员登录/核销/代退（`sql/009` + `app-manager` + `/api/manager/v1`） | ✅ |
+| 6d manager：店员登录/核销/代退（`sql/009` + `app-manager` + `/api/manager/v1` + release `:18087`） | ✅ |
 | 商户后台订单核销按钮 | ✅ |
 | 6a DIY：`sql/010` + 平台 CRUD/启用 + C 端 `/diy/home`（banners/menus） | ✅ |
+| DIY 可视化：`sql/046` + `{page,items[]}` + Vben 三栏编辑器（platform/merchant）+ uni `DiyRenderer` | ✅ |
 | 秒杀：场次/活动 + 三端 UI；v2 改价、`product_type=1`/`activity_id`、限购、清店铺券 | ✅ |
 | OpenAPI：`app-diy-seckill` · `platform-diy-seckill` · `merchant-seckill` | ✅ |
 | 拼团：`sql/011` + 商户 CRUD + 平台监管 + C 端开团/参团；`/order/group/*`；支付计人满员 status 9→0 | ✅ |
@@ -427,29 +428,35 @@ admin/ · merchant-admin/ · app-uni/ · app-pc/ · service-web/
 | 商户社区 | `meradmin` 可发帖/改帖/删帖；改后待平台审；`meract`/`mersub` 无写 | `040` |
 | 协议/公告 | 平台改协议 → C 端读；首页/我的进公告与用户协议 | `041` |
 | 支付沙箱 | H5/PC：wechat/alipay → 意图 → 回调验签 → 已支付 | `payment` 配置 |
-| release | `pack db` 含 sql；`local-service-web`；frontend-all 含 CS | pack 脚本 |
+| 物流/辅资料/文章/标签 | 平台快递·文章·用户标签；商户运费模板·商品标签/保障/参数；C 端读文章；商户发票审 | `045` |
+| release | `pack db` 含 sql；`local-service-web` / `local-manager`；frontend-all 含 CS+店员 | pack 脚本 |
 
 演示账号（种子）：平台 `admin`·`auditor` / 商户 `meradmin`·`mer2`·`merprod`·`meract` / 子账号 `mersub` / C 端 `demo` / 店员 `staff1`；密码均为 `admin123`。
 
 ### 7.3 已知缺口（明确不做 / 后续按需）
 
-- 直播：无微信推流 / 实时弹幕；仅房间元数据 + 挂货跳转。
-- 社区：商户可发帖/改帖/删帖（平台审）；无复杂话题运营/推荐流。
+- 直播：无微信推流 / 实时弹幕；房间含 `play_url`/`push_url` stub + 挂货；**非**真实推流。
+- 社区：商户可发帖/改帖/删帖（平台审）；热门话题列表已加深；无复杂推荐流。
 - 支付：wechat/alipay **沙箱验签闭环**已接（`payment.sandbox` + HMAC `notify_token`）；**非**真实微信/支付宝 SDK / 商户证书。
-- 客服：查单 + 可配置快捷回复（非完整 IM / 会话）。
-- 设置：菜单 + 按钮竖切已通（含商户社区写/快捷回复/协议保存等）；非全量 CRMEB 按钮导入。
-- 协议：常用键最小竖切（用户/隐私/SVIP/预售/入驻/分销/关于我们）；非 CRMEB 全量协议键。
-- 前端：父级目录不再误进 Placeholder；未注册叶子仍走 Placeholder。
+- 客服：正式 JWT + 本仓会话；`im.mode=remote` 时 S2S UserSig + open-single + service-web **WS 建连**（见 `docs/integration-pte-live-im.md`）；IM 密聊正文仍待 SDK（E2EE）。
+- 菜单/按钮：`sql/043` 全量导入 CRMEB `eb_system_menu`（冲突 id +20000；`is_mer`/`is_menu` 重映射；超管/商户模板 rules 重建）。Vben 仅绑定本刀已实现叶子（物流/文章/用户标签/运费模板/商品辅资料/发票等）；其余 CRMEB `route` 仍走 Placeholder。
+- 店员端：`app-manager` 已纳入 release（`:18087` / `.35`）。
+- 配送员 / 发票 / 短信：最小竖切；无第三方短信/税控/骑手调度。商户发票页已接 `/api/merchant/v1/invoices`。
+- **物流 / 商品辅资料 / 文章 / 用户标签**：`sql/045` + `domain/logistics|productmeta|article|usertag` 已落地（平台快递/城市、商户运费模板、标签/保障/参数模板、平台文章 CRUD、用户标签/打标、C 端文章公开读）。无真实物流轨迹/电子面单 SDK。
+- 仍缺（后续刀）：用户余额充值/提现真支付、收藏/签到、代客下单、卡密库、打印机 SDK、微信自动回复、财务对账列表深化。
+- 协议：常用键已扩；非法律文本审核。
+- 前端：未注册叶子仍走 Placeholder。
 
 ### 7.4 下一刀建议
 
-已有库执行：`sql/019`–`041`。
+已有库执行：`sql/019`–`045`（含 `043` 全量菜单、`044` IM、`045` 物流/辅资料/文章/标签）。
 
-本刀已落地：协议规则 + C 端公告闭环（`041`；平台 `/setting/agreements`；H5/PC 公告与协议页；OpenAPI `app-content` / `platform-content`）。
+本刀（缺口竖切）：物流（快递/城市/运费模板）+ 商品辅资料 + 平台文章/用户标签 + C 端文章公开 + 商户发票 FE 接线。发货可选 `express_id` 回填快递名。
 
-阶段 7 打磨已收口。用户明确要求时再做其一：
-1. 真实微信/支付宝 SDK / 推流等按需加深；
-2. 本机 `local-*` 联调或 `deploy-*`（须用户授权验证/部署）。
+用户明确要求时再做其一：
+1. 余额充值/提现、收藏/签到、代客下单、卡密、打印机、微信自动回复；
+2. H5/uni 接 pte-im-sdk 密聊；真实微信/支付宝 SDK / 推流；
+3. 本机 `local-*` 联调或 `deploy-*`（须用户授权验证/部署）。
 
 ---
 

@@ -52,6 +52,33 @@ func (s *Service) ListTopics(ctx context.Context) ([]Topic, error) {
 	return s.store.ListTopics(ctx, true)
 }
 
+// ListHotTopics 热门话题（is_hot=1 优先；已由仓库按 is_hot DESC 排序）。
+func (s *Service) ListHotTopics(ctx context.Context, limit int) ([]Topic, error) {
+	list, err := s.store.ListTopics(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+	hot := make([]Topic, 0, limit)
+	for _, t := range list {
+		if t.IsHot == 1 {
+			hot = append(hot, t)
+		}
+		if len(hot) >= limit {
+			break
+		}
+	}
+	if len(hot) == 0 && len(list) > 0 {
+		if len(list) < limit {
+			limit = len(list)
+		}
+		return list[:limit], nil
+	}
+	return hot, nil
+}
+
 func (s *Service) ListApp(ctx context.Context, topicID uint, page, limit int) (*PageResult[Post], error) {
 	page, limit = normalize(page, limit)
 	list, total, err := s.store.ListPosts(ctx, ListFilter{TopicID: topicID, OnlyPublic: true, Page: page, Limit: limit})

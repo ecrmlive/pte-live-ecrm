@@ -18,6 +18,7 @@ func NewHandler(svc *community.Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) RegisterPublic(r gin.IRoutes) {
 	r.GET("/community/categories", h.ListCategories)
 	r.GET("/community/topics", h.ListTopics)
+	r.GET("/community/topics/hot", h.ListHotTopics)
 	r.GET("/community/posts", h.ListPosts)
 	r.GET("/community/posts/:id", h.GetPost)
 	r.GET("/community/posts/:id/replies", h.ListReplies)
@@ -39,6 +40,16 @@ func (h *Handler) ListCategories(c *gin.Context) {
 
 func (h *Handler) ListTopics(c *gin.Context) {
 	list, err := h.svc.ListTopics(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, gin.H{"list": list})
+}
+
+func (h *Handler) ListHotTopics(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	list, err := h.svc.ListHotTopics(c.Request.Context(), limit)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

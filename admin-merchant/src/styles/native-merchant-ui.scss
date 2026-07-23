@@ -1,0 +1,132 @@
+/** 商户 native 通用控件 — 日期、下拉、Tab、表单页（列表高度见 merchant-list-page.scss） */
+
+:root {
+  --native-field-min-w-input: 180px;
+  --native-field-min-w-select: 120px;
+  --native-field-min-w-tree: 160px;
+  --native-field-min-w-cascader: 160px;
+  --native-search-popper-min-w: 200px;
+}
+
+.native-search-select-popper.el-select__popper,
+.native-search-select-popper.el-select-v2__popper,
+.native-search-select-popper.el-popper {
+  min-width: var(--native-search-popper-min-w) !important;
+}
+
+.native-search-cascader-popper.el-popper {
+  min-width: var(--native-search-popper-min-w) !important;
+}
+
+.native-search-cascader-popper .el-cascader-panel {
+  min-width: var(--native-search-popper-min-w);
+}
+
+.native-search-cascader-popper .el-cascader-node__label,
+.native-search-tree-popper .el-tree-node__label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* 列表行内 link 操作钮：对齐 legacy type="text" primary 悬停 */
+.vxe-grid .vxe-table--body-wrapper .el-button.is-link {
+  padding: 0 4px;
+  margin-right: 2px;
+  font-weight: 400;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.vxe-grid .vxe-table--body-wrapper .el-button.is-link:hover {
+  opacity: 0.82;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.vxe-grid .vxe-table--body-wrapper .el-button.is-link:active {
+  opacity: 0.65;
+}
+
+/* 状态 Tab（商品/订单等） */
+.native-status-tabs .el-tabs__header {
+  margin-bottom: 12px;
+}
+
+.native-status-tabs .el-tabs__item {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  transition: color 0.15s ease;
+}
+
+.native-status-tabs .el-tabs__item:hover {
+  color: hsl(var(--primary));
+}
+
+.native-status-tabs .el-tabs__item.is-active {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.native-status-tabs .el-tabs__active-bar {
+  background-color: hsl(var(--primary));
+}
+
+.native-status-tabs .el-tabs__nav-wrap::after {
+  background-color: hsl(var(--border));
+}
+
+.native-status-tabs .el-tag {
+  margin-left: 4px;
+  border-color: hsl(var(--primary) / 35%);
+  background: hsl(var(--primary) / 10%);
+  color: hsl(var(--primary));
+}
+
+/* 表单页 card Tab */
+.native-form-page .native-form-tabs .el-tabs__header {
+  margin-bottom: 16px;
+}
+
+.native-form-page .native-form-tabs .el-tabs__item {
+  font-size: 13px;
+}
+
+/* 表单内日期、下拉 */
+.native-form-page .el-date-editor,
+.native-form-page .el-select {
+  width: 100%;
+  max-width: 460px;
+}
+
+.native-form-page .el-date-editor.el-date-editor--datetimerange {
+  max-width: 520px;
+}
+
+.native-form-page .el-input__wrapper,
+.native-form-page .el-select__wrapper {
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.native-form-page .el-input__wrapper:hover,
+.native-form-page .el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 25%) inset;
+}
+
+.native-form-page .el-button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.native-form-page .el-button:not(.is-link):hover {
+  opacity: 0.92;
+}
+
+.native-form-page .el-button:not(.is-link):active {
+  opacity: 0.85;
+}
+
+/* Vben 顶栏 Tab：裁剪 chrome 装饰，避免遮挡列表页工具栏按钮 */
+header.flex section.border-b,
+header.flex .border-b.border-border {
+  overflow: hidden;
+  isolation: isolate;
+}

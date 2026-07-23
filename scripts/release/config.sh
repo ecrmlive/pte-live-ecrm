@@ -16,7 +16,7 @@ release_config_dir() {
 init_config_from_examples() {
 	local env_name="${1:-local}" key svc_dir source_dir example target created=0
 	# 仅 Docker 服务有 compose.env
-	for key in db mq api-admin api-app job; do
+	for key in db api-admin api-app job admin merchant-admin h5 pc service-web manager; do
 		svc_dir="$(release_path "${key}")"
 		source_dir="${svc_dir}/config/${env_name}"
 		[[ -d "${source_dir}" ]] || continue
@@ -60,9 +60,7 @@ sync_project_app_yaml() {
 
 bootstrap_service_config() {
 	local key="$1" cfg_dir f
-	case "${key}" in
-	opts | admin | merchant-admin | h5 | pc | service-web) return 0 ;;
-	esac
+	[[ "${key}" == opts ]] && return 0
 	cfg_dir="$(release_config_dir "$(release_path "${key}")")"
 	[[ -d "${cfg_dir}" ]] || return 1
 	local -a required=(compose.env)
@@ -79,9 +77,7 @@ bootstrap_service_config() {
 
 require_service_config() {
 	local key="$1" cfg_dir f missing=0
-	case "${key}" in
-	opts | admin | merchant-admin | h5 | pc | service-web) return 0 ;;
-	esac
+	[[ "${key}" == opts ]] && return 0
 	cfg_dir="$(release_config_dir "$(release_path "${key}")")"
 	if [[ ! -d "${cfg_dir}" ]]; then
 		echo "错误: 缺少 ${cfg_dir}，请 make init-env" >&2

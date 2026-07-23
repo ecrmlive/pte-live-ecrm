@@ -55,16 +55,36 @@ func (h *Handler) Home(c *gin.Context) {
 		if page != nil {
 			diyID = page.ID
 			diyTitle = page.Title
-			pv := page.ParseValue()
-			for _, b := range pv.Banners {
-				banners = append(banners, gin.H{
-					"id": b.ID, "title": b.Title, "image": b.Image, "url": b.URL,
-				})
-			}
-			for _, m := range pv.Menus {
-				menus = append(menus, gin.H{
-					"id": m.ID, "name": m.Name, "icon": m.Icon, "url": m.URL,
-				})
+			doc := page.ParseDoc()
+			for _, item := range doc.Items {
+				t, _ := item["type"].(string)
+				rawData, _ := item["data"].([]any)
+				switch t {
+				case "banner":
+					for i, row := range rawData {
+						m, _ := row.(map[string]any)
+						if m == nil {
+							continue
+						}
+						banners = append(banners, gin.H{
+							"id": i + 1, "title": m["imgName"], "image": m["imgUrl"], "url": m["linkUrl"],
+						})
+					}
+				case "navBar", "option":
+					for i, row := range rawData {
+						m, _ := row.(map[string]any)
+						if m == nil {
+							continue
+						}
+						text := m["text"]
+						if text == nil {
+							text = m["title"]
+						}
+						menus = append(menus, gin.H{
+							"id": i + 1, "name": text, "icon": m["imgUrl"], "url": m["linkUrl"],
+						})
+					}
+				}
 			}
 		}
 	}

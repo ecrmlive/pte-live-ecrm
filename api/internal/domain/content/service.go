@@ -98,7 +98,7 @@ func (s *Service) Delete(ctx context.Context, id uint) error {
 	return s.store.SoftDeleteNotice(ctx, id)
 }
 
-// AgreeCatalog 平台可维护的协议键（对齐 CRMEB CacheRepository 常用项）。
+// AgreeCatalog 平台可维护的协议键（对齐 CRMEB CacheRepository 常用项；key≤32）。
 func AgreeCatalog() []AgreeMeta {
 	return []AgreeMeta{
 		{Key: "sys_user_agree", Label: "用户协议"},
@@ -108,6 +108,13 @@ func AgreeCatalog() []AgreeMeta {
 		{Key: "business_entry_agree", Label: "商户入驻协议"},
 		{Key: "promoter_explain", Label: "分销说明"},
 		{Key: "sys_about_us", Label: "关于我们"},
+		{Key: "sys_refund_agree", Label: "退款协议"},
+		{Key: "sys_cancel_agree", Label: "取消订单说明"},
+		{Key: "sys_recharge_agree", Label: "充值协议"},
+		{Key: "sys_integral_agree", Label: "积分规则"},
+		{Key: "mer_settle_agree", Label: "商户结算说明"},
+		{Key: "sys_lottery_agree", Label: "抽奖活动说明"},
+		{Key: "sys_deposit_agree", Label: "保证金说明"},
 	}
 }
 
@@ -165,6 +172,31 @@ func agreeMeta(key string) (AgreeMeta, bool) {
 		}
 	}
 	return AgreeMeta{}, false
+}
+
+const smsConfigKey = "sms_config"
+
+// GetSMSConfig 短信通道配置 stub（存 qixi_cache，未发真实短信）。
+func (s *Service) GetSMSConfig(ctx context.Context) (string, error) {
+	row, err := s.store.GetCache(ctx, smsConfigKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return `{"enabled":false,"provider":"stub","sign":"栖息商城","remark":"未配置"}`, nil
+		}
+		return "", err
+	}
+	return row.Result, nil
+}
+
+func (s *Service) SaveSMSConfig(ctx context.Context, raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", ErrBadParam
+	}
+	if err := s.store.UpsertCache(ctx, &Cache{Key: smsConfigKey, ExpireTime: 0, Result: raw}); err != nil {
+		return "", err
+	}
+	return raw, nil
 }
 
 func normalize(page, limit int) (int, int) {

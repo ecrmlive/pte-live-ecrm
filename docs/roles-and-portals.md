@@ -14,9 +14,9 @@
 | 客服坐席 | 客服工作台 (P1) | 授权店铺会话 | `qixi-mergers-service-web` → `:18084` |
 | 配送员 / 服务人员 | 配送/服务端 (P2) | 分配单据 | 后挂 `/api/manager` 等 |
 
-后台 API：`qixi-mergers-api-admin` → `:18080`（`.20`）— platform / merchant / manager / service / open。  
-C 端 API：`qixi-mergers-api-app` → `:18085`（`.22`）— app / callback。  
-前端入口：**仅宿主机 Nginx**；后台站反代 api-admin，H5/PC 反代 api-app。
+后台 API：`qixi_mergers_api_admin` → `:18080`（`.20`）。  
+C 端 API：`qixi_mergers_api_app` → `:18085`（`.22`）。  
+前端：同属 compose project **`qixi_mergers`**（admin `.30` / merchant `.31` / h5 `.32` / service `.33` / pc `.34`）。
 
 ## 端与 API 前缀
 

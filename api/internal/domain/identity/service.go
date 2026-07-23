@@ -106,7 +106,8 @@ type StoreServiceProfile struct {
 	Account   string `json:"account"`
 	Nickname  string `json:"nickname"`
 	IsVerify  int8   `json:"is_verify"`
-	IsGoods   int8   `json:"is_goods"` // 1=可发货
+	IsGoods   int8   `json:"is_goods"`  // 1=可发货
+	Customer  int8   `json:"customer"` // 1=可客服
 }
 
 func (s *Service) LoginPlatform(ctx context.Context, account, password, ip string) (*SystemAdmin, error) {
@@ -341,6 +342,18 @@ func (s *Service) LoginStoreService(ctx context.Context, account, password strin
 	return row, mer, nil
 }
 
+// LoginCustomerService 客服门户：店员账号且 customer=1。
+func (s *Service) LoginCustomerService(ctx context.Context, account, password string) (*StoreService, *Merchant, error) {
+	row, mer, err := s.LoginStoreService(ctx, account, password)
+	if err != nil {
+		return nil, nil, err
+	}
+	if row.Customer != 1 {
+		return nil, nil, ErrNoCustomerPerm
+	}
+	return row, mer, nil
+}
+
 func (s *Service) StoreServiceProfile(ctx context.Context, serviceID uint) (*StoreServiceProfile, error) {
 	row, err := s.store.FindStoreServiceByID(ctx, serviceID)
 	if err != nil {
@@ -364,6 +377,7 @@ func (s *Service) StoreServiceProfile(ctx context.Context, serviceID uint) (*Sto
 		Nickname:  row.Nickname,
 		IsVerify:  row.IsVerify,
 		IsGoods:   row.IsGoods,
+		Customer:  row.Customer,
 	}, nil
 }
 

@@ -1,0 +1,173 @@
+/* merchant-admin 列表页：以 Vben useVbenVxeGrid 为准，Page 仅作外层壳 */
+
+.merchant-list-page__body {
+  width: 100%;
+}
+
+.merchant-list-page--embedded {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  max-height: min(560px, calc(70vh - 120px));
+}
+
+.merchant-list-table-wrap {
+  flex: 0 1 auto;
+  width: 100%;
+}
+
+/* Grid 随内容增高，避免表体 minHeight 撑出空白 */
+.merchant-list-page .h-full.rounded-md.bg-card {
+  height: auto !important;
+  min-height: 0;
+}
+
+.merchant-vxe-grid.vxe-grid {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.merchant-vxe-grid .vxe-grid--layout-body-content-wrapper,
+.merchant-vxe-grid .vxe-table--render-wrapper,
+.merchant-vxe-grid .vxe-table--main-wrapper {
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* 保留纵向随内容增高，同时给 fixed 列提供横向滚动容器 */
+.merchant-vxe-grid .vxe-grid--table-container {
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+.merchant-vxe-grid .vxe-table--body-wrapper,
+.merchant-vxe-grid .vxe-table--body-inner-wrapper {
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+.merchant-vxe-grid .vxe-table--fixed-right-wrapper,
+.merchant-vxe-grid .vxe-table--fixed-left-wrapper {
+  overflow: hidden;
+}
+
+.merchant-vxe-grid .vxe-grid--pager-wrapper {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+/* 行高随内容增高：关闭 vxe ellipsis 固定行高后的单元格换行与内边距 */
+.merchant-vxe-grid .vxe-body--column .vxe-cell {
+  overflow: visible;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.merchant-vxe-grid .vxe-body--column.col--ellipsis,
+.merchant-vxe-grid .vxe-body--column.col--ellipsis .vxe-cell {
+  height: auto !important;
+  max-height: none !important;
+  text-overflow: clip;
+}
+
+.merchant-vxe-grid .vxe-header--column .vxe-cell {
+  white-space: nowrap;
+}
+
+.merchant-list-page--embedded .merchant-vxe-grid .vxe-grid--table-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.merchant-list-page--embedded {
+  overflow: auto;
+}
+
+/* 搜索表单字段宽度（Grid formOptions） */
+.vxe-grid--form-wrapper .el-input,
+.vxe-grid--form-wrapper .el-input-number {
+  min-width: var(--native-field-min-w-input, 180px);
+}
+
+.vxe-grid--form-wrapper .el-select,
+.vxe-grid--form-wrapper .el-select-v2 {
+  width: 100%;
+  min-width: var(--native-field-min-w-select, 120px);
+}
+
+.vxe-grid--form-wrapper .el-tree-select,
+.vxe-grid--form-wrapper .el-cascader {
+  width: 100%;
+  min-width: var(--native-field-min-w-cascader, 160px);
+}
+
+.vxe-grid--form-wrapper form[class*='grid-cols'] {
+  width: 100%;
+}
+
+.vxe-grid--form-wrapper .flex-auto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vxe-grid--form-wrapper .native-search-field--category .flex-auto {
+  min-width: var(--native-field-min-w-cascader, 160px);
+}
+
+.vxe-grid--form-wrapper .native-search-field--type .flex-auto {
+  min-width: var(--native-field-min-w-select, 120px);
+}
+
+.vxe-grid--form-wrapper .native-search-field--name .flex-auto {
+  min-width: var(--native-field-min-w-input, 180px);
+}
+
+.vxe-grid--form-wrapper .flex-auto .el-select,
+.vxe-grid--form-wrapper .flex-auto .el-select-v2,
+.vxe-grid--form-wrapper .flex-auto .el-cascader,
+.vxe-grid--form-wrapper .flex-auto .el-tree-select,
+.vxe-grid--form-wrapper .flex-auto .el-input {
+  width: 100%;
+  min-width: 100%;
+}
+
+.vxe-grid--form-wrapper .el-form-item__label {
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+}
+
+.vxe-grid--form-wrapper .el-input__wrapper,
+.vxe-grid--form-wrapper .el-select__wrapper,
+.vxe-grid--form-wrapper .el-date-editor {
+  min-height: 32px;
+}
+
+.vxe-grid--form-wrapper .el-date-editor {
+  width: 100%;
+  max-width: 280px;
+}
+
+.vxe-grid--form-wrapper .native-search-grid {
+  width: 100%;
+}
+
+.vxe-grid--form-wrapper .native-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 2px;
+}

@@ -1,0 +1,23 @@
+/** legacy 页在 Vben 壳层内的布局修正 */
+.legacy-page-root {
+  box-sizing: border-box;
+  min-height: calc(100vh - 120px);
+}
+
+.legacy-page-root .common-button-wrapper {
+  position: sticky;
+  right: auto;
+  bottom: 0;
+  left: auto;
+  z-index: 10;
+  margin-top: 24px;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 95%);
+}
+
+.legacy-page-root .subject-wrap > div,
+.legacy-page-root.subject-wrap > div {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}

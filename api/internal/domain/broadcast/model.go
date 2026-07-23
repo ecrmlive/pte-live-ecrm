@@ -22,6 +22,8 @@ type Room struct {
 	Name            string     `gorm:"column:name" json:"name"`
 	CoverImg        string     `gorm:"column:cover_img" json:"cover_img"`
 	FeedsImg        string     `gorm:"column:feeds_img" json:"feeds_img"`
+	PlayURL         string     `gorm:"column:play_url" json:"play_url"`
+	PushURL         string     `gorm:"column:push_url" json:"push_url"`
 	StartTime       *time.Time `gorm:"column:start_time" json:"start_time"`
 	EndTime         *time.Time `gorm:"column:end_time" json:"end_time"`
 	AnchorName      string     `gorm:"column:anchor_name" json:"anchor_name"`
@@ -60,6 +62,8 @@ type SaveInput struct {
 	Name       string `json:"name"`
 	CoverImg   string `json:"cover_img"`
 	FeedsImg   string `json:"feeds_img"`
+	PlayURL    string `json:"play_url"`
+	PushURL    string `json:"push_url"`
 	AnchorName string `json:"anchor_name"`
 	Phone      string `json:"phone"`
 	StartTime  string `json:"start_time"`

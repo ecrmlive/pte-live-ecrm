@@ -17,10 +17,10 @@ import (
 type Handler struct {
 	svc    *attachment.Service
 	id     *identity.Service
-	upload upload.Local
+	upload upload.Store
 }
 
-func NewHandler(svc *attachment.Service, id *identity.Service, up upload.Local) *Handler {
+func NewHandler(svc *attachment.Service, id *identity.Service, up upload.Store) *Handler {
 	return &Handler{svc: svc, id: id, upload: up}
 }
 

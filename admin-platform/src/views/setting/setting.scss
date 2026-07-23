@@ -1,0 +1,249 @@
+.setting-layout {
+  display: flex;
+  gap: 20px;
+  min-height: calc(100vh - 180px);
+}
+
+.setting-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.setting-nav__group {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  background: hsl(var(--card));
+}
+
+.setting-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.setting-nav__item:hover {
+  background: hsl(var(--accent));
+}
+
+.setting-nav__item.is-active {
+  background: hsl(var(--primary) / 12%);
+  color: hsl(var(--primary));
+}
+
+.setting-nav__label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.setting-nav__desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: hsl(var(--muted-foreground));
+}
+
+.setting-nav__item.is-active .setting-nav__desc {
+  color: hsl(var(--primary) / 75%);
+}
+
+.setting-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 8px 10px;
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid hsl(var(--border));
+}
+
+.setting-subnav__item {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.setting-subnav__item:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+
+.setting-subnav__item.is-active {
+  background: hsl(var(--primary) / 10%);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.setting-main {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 24px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  background: hsl(var(--card));
+  overflow: visible;
+}
+
+.setting-main__header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.setting-main__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.setting-main__desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+}
+
+.setting-form .el-form-item__content {
+  display: block;
+  line-height: normal;
+  min-width: 0;
+}
+
+.setting-form .el-form-item__label {
+  align-items: center;
+}
+
+.setting-form .max-w460 {
+  width: 460px;
+  max-width: 100%;
+}
+
+.setting-form .el-select.max-w460 {
+  width: 460px;
+  max-width: 100%;
+}
+
+.setting-form .el-select.max-w460 .el-select__wrapper {
+  width: 100%;
+}
+
+.setting-form .el-select.max-w460 .el-select__selection {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-form .el-select.max-w460 .el-select__selected-item {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setting-form .el-input-number.max-w460 {
+  position: relative;
+}
+
+.tips {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.block-tips {
+  margin: -8px 0 16px;
+  padding-left: 2px;
+}
+
+.setting-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.setting-form .el-switch {
+  --el-switch-on-color: hsl(var(--primary));
+}
+
+.setting-form .el-radio-button__inner {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.setting-form .el-radio-button__original-radio:checked + .el-radio-button__inner {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground, 0 0% 100%));
+  box-shadow: -1px 0 0 0 hsl(var(--primary));
+}
+
+.button-wrapper {
+  display: flex;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+@media (max-width: 960px) {
+  .setting-layout {
+    flex-direction: column;
+  }
+
+  .setting-sidebar {
+    width: 100%;
+  }
+
+  .setting-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .setting-nav__item {
+    width: auto;
+    min-width: 120px;
+  }
+
+  .setting-subnav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .setting-subnav__item {
+    width: auto;
+  }
+}

@@ -1,0 +1,32 @@
+name: pte_live
+services:
+  pte_live_platform:
+    image: nginx:1.30.3-alpine3.23
+    container_name: pte_live_platform
+    volumes:
+    - ./dist:/usr/share/nginx/html:ro
+    - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+    - ${ADMIN_PORT:-11524}:80
+    restart: unless-stopped
+    networks:
+      pte_live_net:
+        aliases:
+        - admin-vben-platform
+        - pte_live_platform
+        ipv4_address: 172.30.0.52
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://127.0.0.1/
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+networks:
+  pte_live_net:
+    external: true
+    name: pte_live_net

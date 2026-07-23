@@ -43,8 +43,8 @@
   - redis:8.8.0
   - mongo:8.0.26
   - gcr.io/etcd-development/etcd:v3.7.0
-  - minio/minio:RELEASE.2025-10-15T17-29-55Z
   - nats:2.12.0-alpine
+  - 对象存储：腾讯云 COS（本仓不启 MinIO）
 - API 技术栈：Gin、GORM、Swagger、MySQL、etcd、NATS。
 
 ## 多项目与客户端技术规范

@@ -29,6 +29,8 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/agreements", h.ListAgreements)
 	r.GET("/agreements/:key", h.GetAgreement)
 	r.PUT("/agreements/:key", middleware.RequirePlatformMenu(h.id, identity.PlatPermAgreementUpdate), h.SaveAgreement)
+	r.GET("/setting/sms", h.GetSMS)
+	r.PUT("/setting/sms", h.SaveSMS)
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -110,6 +112,33 @@ func (h *Handler) SaveAgreement(c *gin.Context) {
 		return
 	}
 	response.OK(c, row)
+}
+
+type smsSaveReq struct {
+	Config string `json:"config" binding:"required"`
+}
+
+func (h *Handler) GetSMS(c *gin.Context) {
+	raw, err := h.svc.GetSMSConfig(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, gin.H{"config": raw, "note": "仅配置存储，未接真实短信通道"})
+}
+
+func (h *Handler) SaveSMS(c *gin.Context) {
+	var req smsSaveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	raw, err := h.svc.SaveSMSConfig(c.Request.Context(), req.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"config": raw})
 }
 
 func writeErr(c *gin.Context, err error) {

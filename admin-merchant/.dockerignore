@@ -1,0 +1,19 @@
+node_modules
+.git
+.env
+.env.development
+.env.local
+notify.env
+*.md
+
+# dist/ 必须打入镜像（本地 pack 或上传后 docker build）
+
+# 编辑器 / IDE / 工具链（不参与镜像构建）
+.cursor
+.vscode
+.idea
+coverage
+*.log
+tests
+**/*.map
+.DS_Store

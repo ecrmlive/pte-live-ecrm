@@ -10,21 +10,25 @@
     </view>
 
     <scroll-view scroll-y class="body" :style="{ paddingTop: navPad + 'px' }">
-      <view class="banner">
-        <swiper circular autoplay interval="4000" indicator-dots class="banner-swiper">
-          <swiper-item v-for="b in banners" :key="b.id" @click="goUrl(b.url)">
-            <view class="banner-item">
-              <text class="banner-title">{{ b.title }}</text>
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
+      <DiyRenderer v-if="diyItems.length" :items="diyItems" />
 
-      <view v-if="menus.length" class="menus">
-        <view v-for="m in menus" :key="m.id" class="menu-item" @click="goUrl(m.url)">
-          <text class="menu-name">{{ m.name }}</text>
+      <template v-else>
+        <view class="banner">
+          <swiper circular autoplay interval="4000" indicator-dots class="banner-swiper">
+            <swiper-item v-for="b in banners" :key="b.id" @click="goUrl(b.url)">
+              <view class="banner-item">
+                <text class="banner-title">{{ b.title }}</text>
+              </view>
+            </swiper-item>
+          </swiper>
         </view>
-      </view>
+
+        <view v-if="menus.length" class="menus">
+          <view v-for="m in menus" :key="m.id" class="menu-item" @click="goUrl(m.url)">
+            <text class="menu-name">{{ m.name }}</text>
+          </view>
+        </view>
+      </template>
 
       <view class="section">
         <view class="section-head">
@@ -137,7 +141,8 @@ import { computed, ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import { fetchHome, type ProductItem } from "@/api/catalog";
 import { fetchNotices, type Notice } from "@/api/content";
-import { fetchDiyHome, type DiyBanner, type DiyMenu } from "@/api/diy";
+import { fetchDiyHome, type DiyBanner, type DiyItem, type DiyMenu } from "@/api/diy";
+import DiyRenderer from "@/components/diy/DiyRenderer.vue";
 import { fetchSeckillList, type SeckillActive } from "@/api/seckill";
 import { fetchGroups, type ProductGroup } from "@/api/combination";
 
@@ -146,6 +151,7 @@ const navPad = computed(() => statusBar.value + 44);
 const homeTitle = ref("");
 const banners = ref<DiyBanner[]>([{ id: 1, title: "栖息商城" }]);
 const menus = ref<DiyMenu[]>([]);
+const diyItems = ref<DiyItem[]>([]);
 const hot = ref<ProductItem[]>([]);
 const seckill = ref<SeckillActive[]>([]);
 const groups = ref<ProductGroup[]>([]);
@@ -164,6 +170,7 @@ onShow(async () => {
     ]);
     if (diy) {
       homeTitle.value = diy.title || diy.name || "";
+      diyItems.value = Array.isArray(diy.items) ? diy.items : [];
       if (diy.banners?.length) banners.value = diy.banners;
       menus.value = diy.menus || [];
     } else if (home.banners?.length) {

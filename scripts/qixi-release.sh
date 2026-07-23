@@ -34,13 +34,14 @@ usage() {
   upload-opts             rsync release/opts（含宿主机 Nginx 配置）
 
 服务:
-  db | mq | api-admin | api-app | job | admin | merchant-admin | h5 | pc | service-web | opts
+  db | mq | api-admin | api-app | job | admin | merchant-admin | h5 | pc | service-web | manager | opts
   infra-all | backend-all | frontend-all | all
 
 说明:
   - 后台 API 与 C 端 API 分立：api-admin / api-app
-  - C 端前端：h5（app-uni）· pc（app-pc），均反代 api-app
-  - 不使用 Docker Nginx；见 release/opts/nginx/
+  - 本仓 compose：仅 qixi_mergers（API+前端）；无 db/mq 容器
+  - MySQL/Redis/NATS/etcd → pte-live-im；对象存储 → 腾讯云 COS
+  - make local-db：同步 sql/ + 确保 qixi_mergers_net；make local-mq 已废弃
 EOF
 }
 
@@ -87,35 +88,47 @@ run_for_services() {
 		pack) pack_service "${s}" ;;
 		local)
 			pack_service "${s}"
-			if service_has_compose "${s}"; then
+			if [[ "${s}" == db ]]; then
+				ensure_docker_network
+				print_im_infra_hint
+			elif service_has_compose "${s}"; then
 				compose_service up "${s}"
 				case "${s}" in
 				api-admin | api-app | job) compose_service restart "${s}" ;;
 				esac
-			else
-				echo ">> [${s}] 已 pack dist；请用宿主机 Nginx（release/opts/nginx/qixi-mergers.local.conf）"
 			fi
 			;;
 		up | down | restart | ps)
-			compose_service "${cmd}" "${s}"
+			if [[ "${s}" == db ]]; then
+				ensure_docker_network
+				echo ">> db 无容器；已确保网络 qixi_mergers_net"
+			else
+				compose_service "${cmd}" "${s}"
+			fi
 			;;
 		check-config) require_service_config "${s}" ;;
 		release)
 			if [[ "${s}" == opts ]]; then
 				upload_opts
-			elif service_has_compose "${s}"; then
+			elif [[ "${s}" == db ]]; then
+				export QX_RELEASE_ENV=prod
+				pack_service "${s}"
+				rsync_service "${s}"
+				require_remote_env
+				ssh_release "bash -s" <<EOF
+set -euo pipefail
+export QIXI_MERGERS_DOCKER_NET='${QIXI_MERGERS_DOCKER_NET:-qixi_mergers_net}'
+$(ensure_docker_network_remote_snippet)
+echo ">> 远程已确保 qixi_mergers_net；sql 在 $(remote_path db)/sql/"
+EOF
+				export QX_RELEASE_ENV=local
+				print_im_infra_hint
+			else
 				export QX_RELEASE_ENV=prod
 				pack_service "${s}"
 				rsync_service "${s}"
 				compose_remote_restart_or_up "${s}" recreate
 				export QX_RELEASE_ENV=local
-			else
-				# 前端：local pack + rsync dist（校验用 local env 的 dist 产物）
-				pack_service "${s}"
-				export QX_RELEASE_ENV=prod
-				rsync_service "${s}"
-				export QX_RELEASE_ENV=local
-				echo ">> [${s}] dist 已上传；宿主机 Nginx root 指向该目录后 reload"
 			fi
 			;;
 		*) echo "未知命令: ${cmd}" >&2; exit 1 ;;
@@ -133,6 +146,10 @@ main() {
 	upload-opts) upload_opts ;;
 	pack | local | up | down | restart | ps | release | check-config)
 		[[ -n "${target}" ]] || { usage; exit 1; }
+		if [[ "$(normalize_service "${target}")" == mq ]]; then
+			print_im_infra_hint
+			exit 1
+		fi
 		run_for_services "${cmd}" "${target}"
 		;;
 	*) usage; exit 1 ;;

@@ -1,0 +1,1 @@
+export { getPageThemeApi } from './diy';

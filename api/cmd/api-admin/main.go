@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/aftersale"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/article"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/assist"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/attachment"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/broadcast"
@@ -15,39 +16,52 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/combination"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/community"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/content"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/chat"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/cs"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/diy"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/distribution"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/finance"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/fulfillment"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/identity"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/invoice"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/logistics"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/merchant"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/openapi"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/presell"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/productmeta"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/promotion"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/reservation"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/trade"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/usertag"
 	aftersalepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/aftersale"
+	articlepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/article"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/assist"
 	attachmentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/attachment"
 	broadcastpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/broadcast"
 	cartpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/cart"
 	catalogpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/catalog"
+	chatpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/chat"
 	combinationpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/combination"
 	communitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/community"
 	contentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/content"
 	cspersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/cs"
+	fulfillmentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/fulfillment"
+	invoicepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/invoice"
 	diypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/diy"
 	distributionpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/distribution"
 	financepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/finance"
 	identitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/identity"
+	logisticspersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/logistics"
 	merchantpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/merchant"
 	openapipersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/openapi"
 	presellpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/presell"
+	productmetapersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/productmeta"
 	promotionpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/promotion"
 	reservationpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/reservation"
 	seckillpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/seckill"
 	tradepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/trade"
+	usertagpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/usertag"
 	managerauth "github.com/qixi-live/qixi-live-mergers/api/internal/manager/auth"
 	managerorder "github.com/qixi-live/qixi-live-mergers/api/internal/manager/order"
 	managerrefund "github.com/qixi-live/qixi-live-mergers/api/internal/manager/refund"
@@ -61,8 +75,12 @@ import (
 	merchantcoupon "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/coupon"
 	merchantcs "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/cs"
 	merchantfinance "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/finance"
+	merchantfulfillment "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/fulfillment"
+	merchantinvoice "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/invoice"
+	merchantlogistics "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/logistics"
 	merchantorder "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/order"
 	merchantpresell "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/presell"
+	merchantproductmeta "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/productmeta"
 	merchantrefund "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/refund"
 	merchantreservation "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/reservation"
 	merchantseckill "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/seckill"
@@ -75,6 +93,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api/internal/pkg/middleware"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/pkg/response"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/pkg/upload"
+	platformarticle "github.com/qixi-live/qixi-live-mergers/api/internal/platform/article"
 	platformassist "github.com/qixi-live/qixi-live-mergers/api/internal/platform/assist"
 	platformattachment "github.com/qixi-live/qixi-live-mergers/api/internal/platform/attachment"
 	platformauth "github.com/qixi-live/qixi-live-mergers/api/internal/platform/auth"
@@ -84,16 +103,20 @@ import (
 	platformcommunity "github.com/qixi-live/qixi-live-mergers/api/internal/platform/community"
 	platformcontent "github.com/qixi-live/qixi-live-mergers/api/internal/platform/content"
 	platformcoupon "github.com/qixi-live/qixi-live-mergers/api/internal/platform/coupon"
+	merchantdiy "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/diy"
 	platformdiy "github.com/qixi-live/qixi-live-mergers/api/internal/platform/diy"
 	platformfinance "github.com/qixi-live/qixi-live-mergers/api/internal/platform/finance"
+	platformlogistics "github.com/qixi-live/qixi-live-mergers/api/internal/platform/logistics"
 	platformmerchant "github.com/qixi-live/qixi-live-mergers/api/internal/platform/merchant"
 	platformorder "github.com/qixi-live/qixi-live-mergers/api/internal/platform/order"
 	platformpresell "github.com/qixi-live/qixi-live-mergers/api/internal/platform/presell"
+	platformproductmeta "github.com/qixi-live/qixi-live-mergers/api/internal/platform/productmeta"
 	platformrefund "github.com/qixi-live/qixi-live-mergers/api/internal/platform/refund"
 	platformseckill "github.com/qixi-live/qixi-live-mergers/api/internal/platform/seckill"
 	platformsetting "github.com/qixi-live/qixi-live-mergers/api/internal/platform/setting"
 	platformspread "github.com/qixi-live/qixi-live-mergers/api/internal/platform/spread"
 	platformsvip "github.com/qixi-live/qixi-live-mergers/api/internal/platform/svip"
+	platformusertag "github.com/qixi-live/qixi-live-mergers/api/internal/platform/usertag"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/serviceportal"
 )
 
@@ -132,7 +155,27 @@ func main() {
 	assistSvc := assist.NewService(assistpersist.NewRepo(gdb))
 	attachSvc := attachment.NewService(attachmentpersist.NewRepo(gdb))
 	csSvc := cs.NewService(cspersist.NewRepo(gdb))
-	localUp := upload.Local{Dir: cfg.Upload.Dir, PublicBase: cfg.Upload.PublicBase}
+	chatSvc := chat.NewService(chatpersist.NewRepo(gdb), chat.IMSettings{
+		Mode: cfg.IM.Mode, APIBase: cfg.IM.APIBase, WSPublicURL: cfg.IM.WSPublicURL,
+		AppID: cfg.IM.AppID, Token: cfg.IM.IntegrationToken, Secret: cfg.JWT.Secret,
+	})
+	fulfillSvc := fulfillment.NewService(fulfillmentpersist.NewRepo(gdb))
+	invoiceSvc := invoice.NewService(invoicepersist.NewRepo(gdb))
+	logisticsSvc := logistics.NewService(logisticspersist.NewRepo(gdb))
+	productMetaSvc := productmeta.NewService(productmetapersist.NewRepo(gdb))
+	articleSvc := article.NewService(articlepersist.NewRepo(gdb))
+	userTagSvc := usertag.NewService(usertagpersist.NewRepo(gdb))
+	cosStore := upload.COS{
+		Bucket: cfg.COS.Bucket, Region: cfg.COS.Region,
+		SecretID: cfg.COS.SecretID, SecretKey: cfg.COS.SecretKey,
+		BaseURL: cfg.COS.BaseURL, KeyPrefix: cfg.COS.KeyPrefix,
+	}
+	var fileUp upload.Store
+	if cfg.COS.Enabled && cosStore.Configured() {
+		fileUp = cosStore
+	} else {
+		fileUp = upload.Local{Dir: cfg.Upload.Dir, PublicBase: cfg.Upload.PublicBase}
+	}
 	tradeSvc.SetSeckill(seckillSvc)
 	tradeSvc.SetCombination(combination.NewTradeBridge(comboSvc))
 	tradeSvc.SetPresell(presell.NewTradeBridge(presellSvc))
@@ -156,12 +199,16 @@ func main() {
 	platformBroadcastH := platformbroadcast.NewHandler(broadcastSvc, idSvc)
 	platformCommunityH := platformcommunity.NewHandler(communitySvc, idSvc)
 	platformAssistH := platformassist.NewHandler(assistSvc)
-	platformAttachH := platformattachment.NewHandler(attachSvc, idSvc, localUp)
+	platformAttachH := platformattachment.NewHandler(attachSvc, idSvc, fileUp)
 	platformSvipH := platformsvip.NewHandler(idSvc)
 	platformSettingH := platformsetting.NewHandler(idSvc)
+	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc)
+	platformProductMetaH := platformproductmeta.NewHandler(productMetaSvc)
+	platformArticleH := platformarticle.NewHandler(articleSvc)
+	platformUserTagH := platformusertag.NewHandler(userTagSvc)
 	merchantAuthH := merchantauth.NewHandler(idSvc, jwtMgr)
 	merchantCatH := merchantcatalog.NewHandler(catSvc, idSvc)
-	merchantOrderH := merchantorder.NewHandler(tradeSvc, idSvc)
+	merchantOrderH := merchantorder.NewHandler(tradeSvc, idSvc, logisticsSvc)
 	merchantRefundH := merchantrefund.NewHandler(aftersaleSvc, idSvc)
 	merchantFinanceH := merchantfinance.NewHandler(financeSvc)
 	merchantCouponH := merchantcoupon.NewHandler(promoSvc, idSvc)
@@ -171,13 +218,18 @@ func main() {
 	merchantBroadcastH := merchantbroadcast.NewHandler(broadcastSvc, idSvc)
 	merchantCommunityH := merchantcommunity.NewHandler(communitySvc, idSvc)
 	merchantAssistH := merchantassist.NewHandler(assistSvc, idSvc)
-	merchantAttachH := merchantattachment.NewHandler(attachSvc, idSvc, localUp)
+	merchantAttachH := merchantattachment.NewHandler(attachSvc, idSvc, fileUp)
 	merchantReserveH := merchantreservation.NewHandler(reserveSvc, idSvc)
 	merchantSvipH := merchantsvip.NewHandler(merSvc, idSvc)
 	merchantSettingH := merchantsetting.NewHandler(idSvc, merSvc)
 	merchantCsH := merchantcs.NewHandler(csSvc, idSvc)
+	merchantFulfillH := merchantfulfillment.NewHandler(fulfillSvc)
+	merchantInvoiceH := merchantinvoice.NewHandler(invoiceSvc)
+	merchantLogisticsH := merchantlogistics.NewHandler(logisticsSvc)
+	merchantProductMetaH := merchantproductmeta.NewHandler(productMetaSvc)
+	merchantDiyH := merchantdiy.NewHandler(diySvc)
 	openH := openapihttp.NewHandler(openSvc, catSvc, tradeSvc)
-	serviceH := serviceportal.NewHandler(tradeSvc, csSvc, "service_demo_token")
+	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 	managerAuthH := managerauth.NewHandler(idSvc, jwtMgr)
 	managerOrderH := managerorder.NewHandler(tradeSvc, idSvc)
 	managerRefundH := managerrefund.NewHandler(aftersaleSvc, tradeSvc, idSvc)
@@ -213,6 +265,10 @@ func main() {
 	platformAttachH.Register(platformAuthed)
 	platformSvipH.Register(platformAuthed)
 	platformSettingH.Register(platformAuthed)
+	platformLogisticsH.Register(platformAuthed)
+	platformProductMetaH.Register(platformAuthed)
+	platformArticleH.Register(platformAuthed)
+	platformUserTagH.Register(platformAuthed)
 
 	merchantPublic := r.Group("/api/merchant/v1")
 	merchantAuthed := r.Group("/api/merchant/v1")
@@ -229,11 +285,16 @@ func main() {
 	merchantSvipH.Register(merchantAuthed)
 	merchantSettingH.Register(merchantAuthed)
 	merchantCsH.Register(merchantAuthed)
+	merchantFulfillH.Register(merchantAuthed)
+	merchantInvoiceH.Register(merchantAuthed)
+	merchantLogisticsH.Register(merchantAuthed)
+	merchantProductMetaH.Register(merchantAuthed)
 	merchantReserveH.Register(merchantAuthed)
 	merchantBroadcastH.Register(merchantAuthed)
 	merchantCommunityH.Register(merchantAuthed)
 	merchantAssistH.Register(merchantAuthed)
 	merchantAttachH.Register(merchantAuthed)
+	merchantDiyH.Register(merchantAuthed)
 
 	openPublic := r.Group("/api/open/v1")
 	openAuthed := r.Group("/api/open/v1")
@@ -243,8 +304,10 @@ func main() {
 		response.OK(c, gin.H{"prefix": "/api/open/v1"})
 	})
 
-	serviceGroup := r.Group("/api/service/v1")
-	serviceH.Register(serviceGroup)
+	servicePublic := r.Group("/api/service/v1")
+	serviceAuthed := r.Group("/api/service/v1")
+	serviceAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalService))
+	serviceH.Register(servicePublic, serviceAuthed)
 
 	managerPublic := r.Group("/api/manager/v1")
 	managerAuthed := r.Group("/api/manager/v1")

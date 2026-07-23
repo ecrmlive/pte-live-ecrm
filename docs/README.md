@@ -19,6 +19,7 @@
 12. **[服务命名 · Docker 网络/IP](./release/SERVICE-MATRIX.md)** — 各端命名、固定 IP、发布形态
 13. [发布命令](./release/COMMANDS.md) · [Pack/Config](./release/PACK-AND-CONFIG.md)
 14. **[全端开发计划](./dev-plan-full.md)** — 竖切阶段、各端交付与里程碑（阶段 1 起）
+15. **[接入 pte-live-im（客服）](./integration-pte-live-im.md)** — 与现有 IM 项目对接分析
 
 > 功能基线以 `docs/features/` 为准（**已锁定**，见 `analysis-completeness.md`）；表前缀一律 `qixi_`。缺口结案见 `docs/features/08-gaps.md`。
 

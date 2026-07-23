@@ -1,0 +1,58 @@
+/**
+ * legacy 全局样式在 @layer 外，会压过 Vben Tailwind utilities。
+ * legacy CSS 已改为进入业务页时按需加载；本文件始终加载以保护壳层与挂 body 的 Drawer/Modal。
+ */
+
+/* 顶栏 */
+header.flex {
+  display: flex !important;
+}
+
+header.flex > .flex {
+  display: flex !important;
+}
+
+/* Vben 常用 flex 工具类（偏好设置主题色块、顶栏按钮等） */
+.flex {
+  display: flex !important;
+}
+
+.inline-flex {
+  display: inline-flex !important;
+}
+
+.flex-col {
+  flex-direction: column !important;
+}
+
+.flex-wrap {
+  flex-wrap: wrap !important;
+}
+
+.flex-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.items-center {
+  align-items: center !important;
+}
+
+.justify-between {
+  justify-content: space-between !important;
+}
+
+.justify-center {
+  justify-content: center !important;
+}
+
+.w-full {
+  width: 100% !important;
+}
+
+/* legacy 全局 border:none 不影响 outline，但 h3 重置会导致偏好设置标题间距异常 */
+[data-radix-scroll-area-viewport] h3,
+[role='dialog'] h3 {
+  margin-bottom: 0.75rem;
+}

@@ -23,9 +23,11 @@
 - `config/local`（本机）与 `config/prod`（服务器）分离
 - 禁止服务器源码构建；Dockerfile 只复制产物
 - 遵循全局 Skill `unified-docker-release`
+- **MySQL / Redis / NATS / etcd**：由 `pte-live-im` 的 `db/` + `mq/` 启动（`pte_live_net`）
+- **对象存储**：腾讯云 COS（`api/conf` 的 `cos:`）；本仓无 MinIO
 
 ## 建议目录（落地后）
 
 ```text
-api/  admin/  merchant-admin/  app-uni/  app-pc/  sql/  release/  docs/
+api/  admin-platform/  admin-merchant/  app-uni/  app-pc/  sql/  release/  docs/
 ```

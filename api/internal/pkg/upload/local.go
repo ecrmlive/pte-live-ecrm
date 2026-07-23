@@ -17,6 +17,8 @@ type Local struct {
 	PublicBase string // URL 前缀，如 /uploads
 }
 
+var _ Store = Local{}
+
 func (l Local) Save(scope string, fh *multipart.FileHeader) (publicURL, name string, err error) {
 	if l.Dir == "" {
 		l.Dir = "data/uploads"

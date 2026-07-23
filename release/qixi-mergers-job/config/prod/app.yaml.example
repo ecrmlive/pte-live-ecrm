@@ -1,29 +1,33 @@
-# Job prod 模板；首次 pack 种子为 config/prod/app.yaml（后续 pack 不覆盖）
+# Job 主配置；pack 同步到 release/qixi-mergers-job/config/{local,prod}/app.yaml
 server:
   addr: ":8080"
-  mode: release
+  mode: debug
 
 mysql:
-  dsn: "qixi:CHANGE_ME@tcp(qixi_mergers_mysql:3306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "qixi:qixi_local@tcp(pte_live_mysql:3306)/qixi_mergers?charset=utf8mb4&parseTime=True&loc=Local"
 
 redis:
-  addr: "qixi_mergers_redis:6379"
+  addr: "pte_live_redis:6379"
   password: ""
   db: 0
 
 nats:
-  url: "nats://qixi_mergers_nats:4222"
+  url: "nats://pte_live_nats1:4222,nats://pte_live_nats2:4222,nats://pte_live_nats3:4222"
 
 etcd:
   endpoints:
-    - "qixi_mergers_etcd:2379"
+    - "pte_live_etcd1:2379"
+    - "pte_live_etcd2:2379"
+    - "pte_live_etcd3:2379"
 
-minio:
-  endpoint: "qixi_mergers_minio:9000"
-  access_key: "CHANGE_ME"
-  secret_key: "CHANGE_ME"
-  bucket: "qixi-mergers"
-  use_ssl: false
+cos:
+  enabled: true
+  bucket: ""
+  region: "ap-guangzhou"
+  secret_id: ""
+  secret_key: ""
+  base_url: "https://cos.qxkejiwl.top/qixi-mergers"
+  key_prefix: "qixi-mergers"
 
 job:
   tick_seconds: 30

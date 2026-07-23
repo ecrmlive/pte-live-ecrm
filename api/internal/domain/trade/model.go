@@ -248,6 +248,8 @@ type DeliveryInput struct {
 	DeliveryName string `json:"delivery_name"`
 	DeliveryID   string `json:"delivery_id"`
 	DeliveryType string `json:"delivery_type"`
+	ExpressID    uint   `json:"express_id"`    // 可选：平台快递公司 id，用于回填 delivery_name
+	TemplateName string `json:"template_name"` // 可选备注，不影响发货主流程
 }
 
 type PageResult[T any] struct {
