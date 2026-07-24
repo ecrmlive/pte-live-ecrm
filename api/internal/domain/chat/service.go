@@ -2,9 +2,6 @@ package chat
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -47,8 +44,9 @@ type Service struct {
 }
 
 func NewService(store Store, im IMSettings) *Service {
+	// Production path is remote-only; local fake UserSig is not used.
 	if im.Mode == "" {
-		im.Mode = "local"
+		im.Mode = "remote"
 	}
 	if im.AppID == "" {
 		im.AppID = "30001"
@@ -192,6 +190,13 @@ func (s *Service) send(ctx context.Context, t *Thread, role string, senderID uin
 	if msgType == "" {
 		msgType = MsgText
 	}
+	// Text body must go through PTE E2EE SDK; /cs only keeps business metadata (order cards, etc.).
+	if msgType == MsgText || msgType == "" {
+		return nil, ErrTextViaCS
+	}
+	if msgType != MsgOrder && msgType != MsgSystem {
+		return nil, ErrBadParam
+	}
 	now := time.Now()
 	m := &Message{
 		ThreadID: t.ThreadID, MerID: t.MerID, SenderRole: role, SenderID: senderID,
@@ -238,34 +243,28 @@ func (s *Service) IssueCredentialForThread(ctx context.Context, portal string, l
 		}
 	}
 
-	if s.remote != nil && s.remote.Enabled() {
-		userType := "user"
-		if portal == "service" {
-			userType = "staff"
-		}
-		res, err := s.remote.IssueUserSig(ctx, num, ident, userType, "qixi-web", "web")
-		if err != nil {
-			return nil, fmt.Errorf("im usersig: %w", err)
-		}
-		ws := strings.TrimSpace(s.im.WSPublicURL)
-		if ws == "" {
-			ws = res.WsURL
-		}
-		return &Credential{
-			Mode: "remote", AppID: firstNonEmpty(res.AppID, s.im.AppID), SDKAppID: res.SDKAppID,
-			ImUserID: ident, Identifier: firstNonEmpty(res.Identifier, ident),
-			UserSig: res.UserSig, ExpireAt: res.ExpireAt, WSURL: ws, WSHint: ws,
-			ImConversationID: convID,
-			Note:             "pte-live-im UserSig；文本仍走本仓 /cs，WS 用于建连/推送（消息 E2EE 需 SDK）",
-		}, nil
+	if s.remote == nil || !s.remote.Enabled() {
+		return nil, ErrIMRemoteRequired
 	}
-
-	exp := time.Now().Add(12 * time.Hour).Unix()
-	sig := localUserSig(s.im.Secret, ident, exp)
+	userType := "user"
+	if portal == "service" {
+		userType = "staff"
+	}
+	res, err := s.remote.IssueUserSig(ctx, num, ident, userType, "qixi-web", "web")
+	if err != nil {
+		return nil, fmt.Errorf("im usersig: %w", err)
+	}
+	ws := strings.TrimSpace(s.im.WSPublicURL)
+	if ws == "" {
+		ws = res.WsURL
+	}
+	apiURL := strings.TrimSpace(s.im.APIBase)
 	return &Credential{
-		Mode: "local", AppID: s.im.AppID, ImUserID: ident, Identifier: ident,
-		UserSig: sig, ExpireAt: exp, ImConversationID: convID,
-		Note: "本地 UserSig（im.mode!=remote 或未配置 token）；会话消息走本仓 /cs",
+		Mode: "remote", AppID: firstNonEmpty(res.AppID, s.im.AppID), SDKAppID: res.SDKAppID,
+		ImUserID: ident, Identifier: firstNonEmpty(res.Identifier, ident),
+		UserSig: res.UserSig, ExpireAt: res.ExpireAt, APIURL: apiURL, WSURL: ws, WSHint: ws,
+		ImConversationID: convID,
+		Note:             "pte-live-im UserSig；文本经 Web SDK E2EE 发送，本仓 /cs 仅订单卡片等元数据",
 	}, nil
 }
 
@@ -328,15 +327,6 @@ func (s *Service) enrichThread(ctx context.Context, t *Thread) *Thread {
 		t.MerName = name
 	}
 	return t
-}
-
-func localUserSig(secret, imUserID string, exp int64) string {
-	if secret == "" {
-		secret = "qixi-mergers-dev-jwt-secret-change-me"
-	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte(fmt.Sprintf("%s:%d", imUserID, exp)))
-	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func firstNonEmpty(vals ...string) string {

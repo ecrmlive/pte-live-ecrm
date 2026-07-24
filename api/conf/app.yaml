@@ -42,8 +42,8 @@ payment:
   alipay: true
 
 im:
-  mode: local
+  mode: remote
   api_base: "http://pte_live_api_im:11504"
   ws_public_url: "ws://127.0.0.1:11510/ws"
   app_id: "30001"
-  integration_token: ""
+  integration_token: "" # 运营前必须注入；禁止 local 假 UserSig

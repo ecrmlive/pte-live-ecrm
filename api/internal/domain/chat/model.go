@@ -75,6 +75,7 @@ type Credential struct {
 	Identifier       string `json:"identifier,omitempty"`
 	UserSig          string `json:"user_sig"`
 	ExpireAt         int64  `json:"expire_at"`
+	APIURL           string `json:"api_url,omitempty"`
 	WSURL            string `json:"ws_url,omitempty"`
 	WSHint           string `json:"ws_hint,omitempty"`
 	ImConversationID uint64 `json:"im_conversation_id,omitempty"`

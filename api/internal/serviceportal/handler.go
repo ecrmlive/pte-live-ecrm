@@ -230,7 +230,7 @@ func writeIDErr(c *gin.Context, err error) {
 
 func writeChatErr(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, chat.ErrBadParam):
+	case errors.Is(err, chat.ErrBadParam), errors.Is(err, chat.ErrTextViaCS), errors.Is(err, chat.ErrIMRemoteRequired):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	case errors.Is(err, chat.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())

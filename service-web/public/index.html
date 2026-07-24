@@ -40,10 +40,10 @@
   <header>
     <div>
       <h1>客服工作台</h1>
-      <p class="sub">JWT · 查单 · 快捷回复 · 本仓会话 · pte-live-im WS 建连</p>
+      <p class="sub">JWT · 查单 · 快捷回复 · 本仓会话元数据 · PTE Web SDK E2EE 密聊</p>
     </div>
     <div id="userBar" class="hidden"><span id="userLabel"></span>
-      <span id="wsStatus" style="margin:0 12px;font-size:12px;color:var(--muted)">WS: 未连接</span>
+      <span id="wsStatus" style="margin:0 12px;font-size:12px;color:var(--muted)">IM: 未连接</span>
       <button class="secondary" id="btnLogout" type="button">退出</button>
     </div>
   </header>
@@ -81,7 +81,7 @@
             <button id="btnOrder" type="button">查单</button>
             <button class="secondary" id="btnReplies" type="button">快捷回复</button>
             <button class="secondary" id="btnCred" type="button">IM 凭证</button>
-            <button class="secondary" id="btnWS" type="button">连接 IM WS</button>
+            <button class="secondary" id="btnWS" type="button">连接 IM SDK</button>
           </div>
         </div>
         <div class="replies" id="replyBox"></div>
@@ -109,14 +109,16 @@
       </div>
     </div>
   </main>
-  <script>
+  <script type="module">
+    import { PteLiveIMWebClient } from "./pte-im-web-sdk.js";
+
     const $ = (id) => document.getElementById(id);
     const out = (v) => { $("out").textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2); };
-    const state = { token: localStorage.getItem("svc_access") || "", refresh: localStorage.getItem("svc_refresh") || "", user: null, threadId: 0, ws: null, cred: null };
+    const state = { token: localStorage.getItem("svc_access") || "", refresh: localStorage.getItem("svc_refresh") || "", user: null, threadId: 0, im: null, cred: null };
     function setWSStatus(text, ok) {
       const el = $("wsStatus");
       if (!el) return;
-      el.textContent = "WS: " + text;
+      el.textContent = "IM: " + text;
       el.style.color = ok ? "#389e0d" : "var(--muted)";
     }
 
@@ -132,8 +134,8 @@
       $("userLabel").textContent = (user?.nickname || user?.account || "") + " · mer " + (user?.mer_id || "");
     }
     function logout() {
-      if (state.ws) { try { state.ws.close(); } catch (_) {} }
-      state.token = ""; state.refresh = ""; state.user = null; state.threadId = 0; state.ws = null; state.cred = null;
+      if (state.im) { try { state.im.stop(); } catch (_) {} }
+      state.token = ""; state.refresh = ""; state.user = null; state.threadId = 0; state.im = null; state.cred = null;
       localStorage.removeItem("svc_access"); localStorage.removeItem("svc_refresh");
       $("loginCard").classList.remove("hidden");
       $("work").classList.add("hidden");
@@ -203,33 +205,40 @@
 
     $("btnWS").onclick = async () => {
       try {
-        if (state.ws) { try { state.ws.close(); } catch (_) {} state.ws = null; }
+        if (state.im) { try { state.im.stop(); } catch (_) {} state.im = null; }
         const q = state.threadId ? `?thread_id=${state.threadId}` : "";
         const res = await api("/api/service/v1/im/credential" + q, { headers: authHeaders() });
         const cred = res.data || res;
         state.cred = cred;
-        if (cred.mode !== "remote" || !cred.ws_url || !cred.user_sig || !cred.sdk_app_id) {
-          setWSStatus("需 im.mode=remote 且 IM 可用", false);
+        if (cred.mode !== "remote" || !cred.ws_url || !cred.api_url || !cred.user_sig || !cred.sdk_app_id) {
+          setWSStatus("需 im.mode=remote + api_url/ws/UserSig", false);
           out(cred);
           return;
         }
-        const u = new URL(cred.ws_url);
-        u.searchParams.set("sdkAppID", cred.sdk_app_id);
-        u.searchParams.set("identifier", cred.identifier || cred.im_user_id);
-        u.searchParams.set("userSig", cred.user_sig);
-        const ws = new WebSocket(u.toString());
-        state.ws = ws;
         setWSStatus("连接中…", false);
-        ws.onopen = () => {
-          setWSStatus("已连接", true);
-          ws.send(JSON.stringify({ protocolVersion: 1, action: "login", requestId: "login-1", payload: {} }));
-          out({ connected: true, ws: u.origin + u.pathname, conversation_id: cred.im_conversation_id, note: cred.note });
-        };
-        ws.onmessage = (ev) => {
-          try { out(JSON.parse(ev.data)); } catch (_) { out(String(ev.data)); }
-        };
-        ws.onerror = () => setWSStatus("错误", false);
-        ws.onclose = () => { setWSStatus("已断开", false); state.ws = null; };
+        const client = new PteLiveIMWebClient({
+          provider: "pte-live-im",
+          apiUrl: String(cred.api_url).replace(/\/$/, ""),
+          wsUrl: String(cred.ws_url).replace(/\/$/, ""),
+          sdkAppId: String(cred.sdk_app_id),
+          identifier: String(cred.identifier || cred.im_user_id),
+          userSig: String(cred.user_sig),
+          userId: String(cred.identifier || cred.im_user_id),
+          expireAt: Number(cred.expire_at || 0),
+        });
+        client.addListener({
+          onConnectionChanged: (ok) => setWSStatus(ok ? "已连接" : "已断开", ok),
+          onMessage: (m) => out({ im_message: m }),
+          onError: (msg) => out({ im_error: msg }),
+        });
+        await client.start();
+        state.im = client;
+        out({
+          connected: true,
+          conversation_id: cred.im_conversation_id,
+          note: cred.note,
+          sdk: "PteLiveIMWebClient",
+        });
       } catch (e) {
         setWSStatus("失败", false);
         out(String(e));
@@ -284,12 +293,30 @@
       try {
         const content = $("msgText").value.trim();
         if (!content) return;
-        await api(`/api/service/v1/threads/${state.threadId}/messages`, {
-          method: "POST", headers: authHeaders(),
-          body: JSON.stringify({ msg_type: "text", content }),
-        });
+        if (!state.im) {
+          out("请先点击「连接 IM SDK」");
+          return;
+        }
+        let convId = Number(state.cred && state.cred.im_conversation_id) || 0;
+        if (!convId) {
+          const q = `?thread_id=${state.threadId}`;
+          const res = await api("/api/service/v1/im/credential" + q, { headers: authHeaders() });
+          state.cred = res.data || res;
+          convId = Number(state.cred.im_conversation_id) || 0;
+        }
+        if (!convId) {
+          out("缺少 im_conversation_id，请先 claim 会话并确保 remote IM 可用");
+          return;
+        }
+        const clientMsgId = await state.im.sendText(convId, content);
         $("msgText").value = "";
-        await selectThread(state.threadId);
+        const box = $("msgBox");
+        const d = document.createElement("div");
+        d.className = "msg service";
+        d.innerHTML = `<div class="who">service · PTE E2EE</div><div class="bubble">${content}</div>`;
+        box.appendChild(d);
+        box.scrollTop = box.scrollHeight;
+        out({ sent: true, clientMsgId, conversationId: convId, via: "pte-im-sdk" });
       } catch (e) { out(String(e)); }
     };
 

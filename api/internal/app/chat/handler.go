@@ -79,7 +79,7 @@ func (h *Handler) IMCredential(c *gin.Context) {
 	threadID, _ := strconv.ParseUint(c.DefaultQuery("thread_id", "0"), 10, 64)
 	cred, err := h.svc.IssueCredentialForThread(c.Request.Context(), "app", middleware.UID(c), uint(threadID))
 	if err != nil {
-		response.Fail(c, http.StatusBadGateway, err.Error())
+		writeErr(c, err)
 		return
 	}
 	response.OK(c, cred)
@@ -87,7 +87,7 @@ func (h *Handler) IMCredential(c *gin.Context) {
 
 func writeErr(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, chat.ErrBadParam):
+	case errors.Is(err, chat.ErrBadParam), errors.Is(err, chat.ErrTextViaCS), errors.Is(err, chat.ErrIMRemoteRequired):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	case errors.Is(err, chat.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
