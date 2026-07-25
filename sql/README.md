@@ -19,50 +19,56 @@ docker exec -i pte_live_mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < sql/000_sh
 
 然后灌迁移：
 
+> 导入时必须显式使用 `--default-character-set=utf8mb4`，避免中文种子数据按错误连接字符集写入数据库。
+
 ```bash
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/000_init_schema.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/001_identity.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/002_platform_merchant_catalog.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/003_merchant_product_app_catalog.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/004_trade_cart_order.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/005_aftersale_finance.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/006_promotion_coupon_spread.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/007_loyalty_points.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/008_openapi.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/009_manager_service.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/010_diy_seckill.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/011_combination.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/012_svip.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/013_reservation.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/014_presell.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/015_presell_deposit.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/016_broadcast.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/017_community.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/018_assist.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/019_stage7_menu_fix.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/020_stage7_hide_settings.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/021_stage7_settings_crud.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/022_stage7_rbac_menu.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/023_stage7_merchant_admins.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/024_stage7_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/025_stage7_refund_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/026_stage7_attachment.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/027_stage7_platform_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/028_stage7_product_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/029_stage7_product_community_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/030_stage7_marketing_broadcast_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/031_stage7_coupon_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/032_stage7_presell_assist_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/033_stage7_coupon_create_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/034_stage7_coupon_activity_crud_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/035_stage7_reservation_svip_broadcast_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/036_stage7_broadcast_attachment_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/037_stage7_diy_staff_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/038_stage7_setting_write_button_perms.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/039_stage7_service_reply.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/040_stage7_merchant_community_write.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/041_stage7_agreement_notice.sql
-mysql -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/046_diy_visual_doc.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/000_init_schema.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/001_identity.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/002_platform_merchant_catalog.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/003_merchant_product_app_catalog.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/004_trade_cart_order.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/005_aftersale_finance.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/006_promotion_coupon_spread.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/007_loyalty_points.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/008_openapi.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/009_manager_service.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/010_diy_seckill.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/011_combination.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/012_svip.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/013_reservation.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/014_presell.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/015_presell_deposit.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/016_broadcast.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/017_community.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/018_assist.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/019_stage7_menu_fix.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/020_stage7_hide_settings.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/021_stage7_settings_crud.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/022_stage7_rbac_menu.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/023_stage7_merchant_admins.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/024_stage7_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/025_stage7_refund_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/026_stage7_attachment.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/027_stage7_platform_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/028_stage7_product_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/029_stage7_product_community_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/030_stage7_marketing_broadcast_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/031_stage7_coupon_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/032_stage7_presell_assist_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/033_stage7_coupon_create_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/034_stage7_coupon_activity_crud_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/035_stage7_reservation_svip_broadcast_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/036_stage7_broadcast_attachment_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/037_stage7_diy_staff_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/038_stage7_setting_write_button_perms.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/039_stage7_service_reply.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/040_stage7_merchant_community_write.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/041_stage7_agreement_notice.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/042_gap_fill_cs_delivery_invoice.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/043_crmeb_system_menu_full.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/044_im_remote_bridge.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/045_gap_logistics_productmeta_article_usertag.sql
+mysql --default-character-set=utf8mb4 -h127.0.0.1 -P13306 -uqixi -pqixi_local qixi_mergers < sql/046_diy_visual_doc.sql
 ```
 
 容器内主机名：`pte_live_mysql:3306`（库 `qixi_mergers`）。

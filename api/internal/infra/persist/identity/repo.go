@@ -208,7 +208,8 @@ func (r *Repo) ListMenusManage(ctx context.Context, isMer uint8) ([]identity.Sys
 	// 角色勾选树：菜单 + 按钮权限
 	var rows []identity.SystemMenu
 	err := r.db.WithContext(ctx).
-		Where("is_mer = ? AND is_menu IN ?", isMer, []uint8{1, 2}).
+		Where("is_mer = ?", isMer).
+		Where("is_menu IN ?", []uint8{1, 2}).
 		Order("sort DESC, menu_id ASC").Find(&rows).Error
 	return rows, err
 }
