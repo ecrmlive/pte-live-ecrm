@@ -15,9 +15,9 @@ export function resolveLiveApiBaseUrl() {
   return resolveApiBaseUrl();
 }
 
-export const QIXI_SHOP_TOKEN_KEY = 'qixiLiveShopToken';
-export const QIXI_SHOP_MENU_KEY = 'qixiLiveShopMenus';
-export const QIXI_SHOP_RENDER_MENU_KEY = 'qixiLiveShopRenderMenus';
+export const QIXI_SHOP_TOKEN_KEY = 'qixiMergersMerchantAdminToken';
+export const QIXI_SHOP_MENU_KEY = 'qixiMergersMerchantAdminMenus';
+export const QIXI_SHOP_RENDER_MENU_KEY = 'qixiMergersMerchantAdminRenderMenus';
 
 /** 全屏独立页（不走 BasicLayout、不重建动态菜单） */
 export const STANDALONE_ROUTE_NAMES = new Set(['LiveControlCenter']);

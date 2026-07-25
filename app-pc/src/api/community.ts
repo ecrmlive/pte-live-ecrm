@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { http } from "@/utils/request";
 
 export interface CommunityTopic {
   topic_id: number;
@@ -20,18 +20,19 @@ export interface CommunityPost {
 }
 
 export function fetchCommunityTopics() {
-  return http.get<{ list: CommunityTopic[] }>("/community/topics");
+  return http.get<{ list: CommunityTopic[] }>("/community/topics", false);
 }
 
 export function fetchCommunityPosts(page = 1, limit = 20, topicId = 0) {
   const q = topicId ? `&topic_id=${topicId}` : "";
   return http.get<{ list: CommunityPost[]; total: number }>(
     `/community/posts?page=${page}&limit=${limit}${q}`,
+    false,
   );
 }
 
 export function fetchCommunityPost(id: number) {
-  return http.get<CommunityPost>(`/community/posts/${id}`);
+  return http.get<CommunityPost>(`/community/posts/${id}`, false);
 }
 
 export function createCommunityPost(body: {

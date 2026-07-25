@@ -24,6 +24,16 @@ export interface ShopSessionResponse {
   };
 }
 
+interface MerchantProfileResponse {
+  merchant_admin_id: number;
+  mer_id: number;
+  mer_name: string;
+  account: string;
+  real_name: string;
+  phone: string;
+  roles: string;
+}
+
 export function mapShopSessionUser(
   user: ShopSessionResponse['user'],
 ): UserInfo {
@@ -39,6 +49,7 @@ export function mapShopSessionUser(
     roles,
     userId: String(user?.app_id || ''),
     username: userName,
+    token: '',
     app_id: user?.app_id,
     logoUrl: user?.logoUrl,
     shopName,
@@ -73,11 +84,23 @@ export function clearShopSessionCache() {
 }
 
 async function fetchShopSessionApiInner() {
-  const data = await requestClient.post<ShopSessionResponse>(
-    '/shop/auth/session',
-    {},
-  );
-  const menus = data?.menus ?? [];
+  const [profile, menuRes, permissionRes] = await Promise.all([
+    requestClient.get<MerchantProfileResponse>('/auth/me'),
+    requestClient.get<{ menus: ShopAccessMenuItem[] }>('/auth/menus'),
+    requestClient.get<{ permissions: string[] }>('/auth/permissions'),
+  ]);
+  const data: ShopSessionResponse = {
+    codes: permissionRes?.permissions ?? [],
+    menus: menuRes?.menus ?? [],
+    user: {
+      app_id: profile.merchant_admin_id,
+      homePath: '/dashboard',
+      roles: profile.roles.split(',').filter(Boolean),
+      shop_name: profile.mer_name,
+      user_name: profile.real_name || profile.account,
+    },
+  };
+  const menus = data.menus;
   persistMenus(menus);
   syncShopPathAuthCache();
   applyTenantAppBranding(data?.user?.shop_name, data?.user?.logoUrl);

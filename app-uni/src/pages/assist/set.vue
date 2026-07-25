@@ -17,10 +17,10 @@
     </view>
 
     <view class="footer">
-      <button v-if="set && set.status === 1" class="cta" type="primary" @click="onHelp">
+      <button v-if="set && set.status === 1" class="cta" @click="onHelp">
         帮 TA 助力
       </button>
-      <button v-else-if="set && set.status === 10 && isOwner" class="cta" type="primary" @click="onOrder">
+      <button v-else-if="set && set.status === 10 && isOwner" class="cta" @click="onOrder">
         助力价下单
       </button>
       <view v-else-if="set && set.status === 20" class="done">已支付完成</view>

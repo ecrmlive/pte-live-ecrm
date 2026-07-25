@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { fetchStore, type ProductItem } from "@/api/catalog";
+import { fetchStoreHome, type ProductItem } from "@/api/catalog";
 import ProductCard from "@/components/ProductCard.vue";
 
 const route = useRoute();
@@ -14,7 +14,7 @@ async function load() {
   if (!merId.value) return;
   hint.value = "加载中…";
   try {
-    const data = await fetchStore(merId.value);
+    const data = await fetchStoreHome(merId.value);
     merName.value = data.mer_name || `店铺 #${merId.value}`;
     products.value = data.products || [];
     hint.value = products.value.length ? `共 ${data.total} 件在售` : "暂无在售商品";

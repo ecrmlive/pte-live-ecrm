@@ -35,4 +35,4 @@ export function resolvePlatformLogoUrl(
 }
 
 export const QIXI_PLATFORM_APP_ID = 10000;
-export const QIXI_ADMIN_TOKEN_KEY = 'qixiLiveAdminToken';
+export const QIXI_ADMIN_TOKEN_KEY = 'qixiMergersPlatformAdminToken';

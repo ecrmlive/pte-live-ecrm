@@ -279,6 +279,9 @@ func (r *Repo) AddBrokerage(ctx context.Context, uid uint, amount float64) (floa
 }
 
 func (r *Repo) CreateBill(ctx context.Context, b *promotion.UserBill) error {
+	if b.CreateTime.IsZero() {
+		b.CreateTime = time.Now()
+	}
 	return r.db.WithContext(ctx).Create(b).Error
 }
 

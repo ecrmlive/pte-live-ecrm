@@ -13,13 +13,12 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/broadcast"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/cart"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/catalog"
+	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/chat"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/combination"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/community"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/content"
-	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/chat"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/cs"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/diy"
-	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/distribution"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/finance"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/fulfillment"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/domain/identity"
@@ -46,12 +45,11 @@ import (
 	communitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/community"
 	contentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/content"
 	cspersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/cs"
-	fulfillmentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/fulfillment"
-	invoicepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/invoice"
 	diypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/diy"
-	distributionpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/distribution"
 	financepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/finance"
+	fulfillmentpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/fulfillment"
 	identitypersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/identity"
+	invoicepersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/invoice"
 	logisticspersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/logistics"
 	merchantpersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/merchant"
 	openapipersist "github.com/qixi-live/qixi-live-mergers/api/internal/infra/persist/openapi"
@@ -74,6 +72,7 @@ import (
 	merchantcommunity "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/community"
 	merchantcoupon "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/coupon"
 	merchantcs "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/cs"
+	merchantdiy "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/diy"
 	merchantfinance "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/finance"
 	merchantfulfillment "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/fulfillment"
 	merchantinvoice "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/invoice"
@@ -103,7 +102,6 @@ import (
 	platformcommunity "github.com/qixi-live/qixi-live-mergers/api/internal/platform/community"
 	platformcontent "github.com/qixi-live/qixi-live-mergers/api/internal/platform/content"
 	platformcoupon "github.com/qixi-live/qixi-live-mergers/api/internal/platform/coupon"
-	merchantdiy "github.com/qixi-live/qixi-live-mergers/api/internal/merchant/diy"
 	platformdiy "github.com/qixi-live/qixi-live-mergers/api/internal/platform/diy"
 	platformfinance "github.com/qixi-live/qixi-live-mergers/api/internal/platform/finance"
 	platformlogistics "github.com/qixi-live/qixi-live-mergers/api/internal/platform/logistics"
@@ -114,7 +112,6 @@ import (
 	platformrefund "github.com/qixi-live/qixi-live-mergers/api/internal/platform/refund"
 	platformseckill "github.com/qixi-live/qixi-live-mergers/api/internal/platform/seckill"
 	platformsetting "github.com/qixi-live/qixi-live-mergers/api/internal/platform/setting"
-	platformspread "github.com/qixi-live/qixi-live-mergers/api/internal/platform/spread"
 	platformsvip "github.com/qixi-live/qixi-live-mergers/api/internal/platform/svip"
 	platformusertag "github.com/qixi-live/qixi-live-mergers/api/internal/platform/usertag"
 	"github.com/qixi-live/qixi-live-mergers/api/internal/serviceportal"
@@ -140,7 +137,6 @@ func main() {
 	catSvc := catalog.NewService(catalogpersist.NewStoreAdapter(catalogpersist.NewRepo(gdb)))
 	cartSvc := cart.NewService(cartpersist.NewStoreAdapter(cartpersist.NewRepo(gdb)))
 	promoSvc := promotion.NewService(promotionpersist.NewStoreAdapter(promotionpersist.NewRepo(gdb)))
-	distSvc := distribution.NewService(distributionpersist.NewStoreAdapter(distributionpersist.NewRepo(gdb)))
 	tradeSvc := trade.NewService(tradepersist.NewStoreAdapter(tradepersist.NewRepo(gdb)), cartSvc, promoSvc)
 	aftersaleSvc := aftersale.NewService(aftersalepersist.NewStoreAdapter(aftersalepersist.NewRepo(gdb)))
 	financeSvc := finance.NewService(financepersist.NewStoreAdapter(financepersist.NewRepo(gdb)))
@@ -190,7 +186,6 @@ func main() {
 	platformRefundH := platformrefund.NewHandler(aftersaleSvc, idSvc)
 	platformFinanceH := platformfinance.NewHandler(financeSvc, idSvc)
 	platformCouponH := platformcoupon.NewHandler(promoSvc, idSvc)
-	platformSpreadH := platformspread.NewHandler(distSvc)
 	platformContentH := platformcontent.NewHandler(contentSvc, idSvc)
 	platformDiyH := platformdiy.NewHandler(diySvc, idSvc)
 	platformSeckillH := platformseckill.NewHandler(seckillSvc)
@@ -253,7 +248,6 @@ func main() {
 	platformRefundH.Register(platformAuthed)
 	platformFinanceH.Register(platformAuthed)
 	platformCouponH.Register(platformAuthed)
-	platformSpreadH.Register(platformAuthed)
 	platformContentH.Register(platformAuthed)
 	platformDiyH.Register(platformAuthed)
 	platformSeckillH.Register(platformAuthed)
@@ -339,7 +333,7 @@ func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type")
+		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type,Accept-Language,AppID,App-Id")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return

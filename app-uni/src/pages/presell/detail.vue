@@ -12,7 +12,7 @@
       <text v-if="active.delivery_day" class="sub">约 {{ active.delivery_day }} 天内发货</text>
     </view>
     <view class="footer">
-      <button class="cta" type="primary" @click="buy">
+      <button class="cta" @click="buy">
         {{ active?.presell_type === 2 ? "支付定金" : "立即预订" }}
       </button>
     </view>

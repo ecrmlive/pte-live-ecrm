@@ -293,6 +293,9 @@ func (r *Repo) HasBill(ctx context.Context, uid uint, category, typ, linkID stri
 }
 
 func (r *Repo) CreateBill(ctx context.Context, b *trade.UserBill) error {
+	if b.CreateTime.IsZero() {
+		b.CreateTime = time.Now()
+	}
 	return r.db.WithContext(ctx).Create(b).Error
 }
 
@@ -469,7 +472,7 @@ func (r *Repo) ListPresellOrdersByUID(ctx context.Context, uid uint, unpaidOnly 
 		return nil, 0, err
 	}
 	var rows []trade.PresellOrder
-	err := q.Order("presell_order_id DESC").Offset((page-1)*limit).Limit(limit).Find(&rows).Error
+	err := q.Order("presell_order_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
 }
 

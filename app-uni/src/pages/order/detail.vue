@@ -76,7 +76,12 @@ function goRefund(orderId: number) {
 
 async function pay() {
   try {
-    order.value = await payGroup(id.value, "mock");
+    const result = await payGroup(id.value, "mock");
+    if ("group_order_sn" in result) {
+      order.value = result;
+    } else {
+      await load();
+    }
     uni.showToast({ title: "支付成功", icon: "success" });
   } catch (e) {
     uni.showToast({ title: (e as Error).message || "支付失败", icon: "none" });

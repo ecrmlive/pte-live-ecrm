@@ -15,7 +15,7 @@
     </view>
 
     <view class="footer">
-      <button class="cta" type="primary" @click="open()">我要开团</button>
+      <button class="cta" @click="open()">我要开团</button>
     </view>
   </view>
 </template>

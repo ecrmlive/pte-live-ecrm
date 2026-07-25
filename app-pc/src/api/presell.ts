@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { http } from "@/utils/request";
 
 export interface PresellActive {
   product_presell_id: number;
@@ -19,11 +19,12 @@ export interface PresellActive {
 export function fetchPresells(page = 1, limit = 20) {
   return http.get<{ list: PresellActive[]; total: number }>(
     `/presell/actives?page=${page}&limit=${limit}`,
+    false,
   );
 }
 
 export function fetchPresell(id: number) {
-  return http.get<PresellActive>(`/presell/actives/${id}`);
+  return http.get<PresellActive>(`/presell/actives/${id}`, false);
 }
 
 export function presellCreate(body: {

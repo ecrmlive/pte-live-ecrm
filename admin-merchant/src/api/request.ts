@@ -10,7 +10,6 @@ import {
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { ElMessage } from 'element-plus';
-import qs from 'qs';
 
 import { resolveApiBaseUrl } from '#/utils/qixi-live-api';
 import { attachShopAppId } from '#/utils/qixi-live-shop-app-id';
@@ -48,7 +47,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     ...options,
     baseURL,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'Content-Type': 'application/json;charset=UTF-8',
     },
   });
 
@@ -72,20 +71,11 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const token = accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers['authori-zation'] = bearer;
         config.headers.Authorization = bearer;
       }
       attachShopAppId(config, userStore.userInfo, token || undefined);
       config.headers['Accept-Language'] = preferences.app.locale;
 
-      if (
-        config.method?.toLowerCase() === 'post' &&
-        config.data &&
-        !(config.data instanceof FormData) &&
-        !config.headers?.uploadImg
-      ) {
-        config.data = qs.stringify(config.data);
-      }
       return attachAPIEncryption(config, baseURL);
     },
   });

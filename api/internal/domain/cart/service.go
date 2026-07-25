@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -98,7 +99,7 @@ func (s *Service) Add(ctx context.Context, uid uint, in AddInput) (*Cart, error)
 	}
 	c := &Cart{
 		UID: uid, MerID: pv.MerID, ProductID: in.ProductID,
-		ProductAttrUnique: unique, CartNum: in.CartNum, IsNew: in.IsNew,
+		ProductAttrUnique: unique, CartNum: in.CartNum, IsNew: in.IsNew, CreateTime: time.Now(),
 	}
 	if err := s.store.Create(ctx, c); err != nil {
 		return nil, err

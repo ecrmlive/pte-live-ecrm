@@ -112,8 +112,8 @@ function toggle(id: number) {
   void refreshCheck();
 }
 
-function onIntegralSwitch(e: { detail: { value: boolean } }) {
-  useIntegralOn.value = !!e.detail.value;
+function onIntegralSwitch(e: Event) {
+  useIntegralOn.value = !!(e as Event & { detail?: { value?: boolean } }).detail?.value;
   void refreshCheck();
 }
 

@@ -26,7 +26,7 @@
     </view>
 
     <view class="footer">
-      <button class="cta" type="primary" @click="start()">发起助力</button>
+      <button class="cta" @click="start()">发起助力</button>
     </view>
   </view>
 </template>

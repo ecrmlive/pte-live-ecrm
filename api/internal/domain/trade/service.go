@@ -226,6 +226,7 @@ func (s *Service) V2Create(ctx context.Context, uid uint, in CreateInput) (*Grou
 			Cost:          sumCost(rows),
 			Paid:          0,
 			ActivityType:  actType,
+			CreateTime:    time.Now(),
 		}
 		if err := tx.CreateGroupOrder(ctx, g); err != nil {
 			return err
@@ -303,6 +304,7 @@ func (s *Service) V2Create(ctx context.Context, uid uint, in CreateInput) (*Grou
 				GiveIntegral:        merGive,
 				VerifyCode:          ensureVerifyCode(""),
 				ActivityType:        merAct,
+				CreateTime:          time.Now(),
 			}
 			if err := tx.CreateStoreOrder(ctx, o); err != nil {
 				return err

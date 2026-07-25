@@ -1,5 +1,5 @@
 /**
- * 七禧 qixi-live-api 请求适配：code===1、Authorize、qs POST、AppID=10000
+ * 栖息多商户平台 API 请求适配。
  */
 import type { RequestClientOptions } from '@vben/request';
 
@@ -13,7 +13,6 @@ import {
 import { useAccessStore } from '@vben/stores';
 
 import { ElMessage } from 'element-plus';
-import qs from 'qs';
 
 import {
   QIXI_PLATFORM_APP_ID,
@@ -56,7 +55,7 @@ function createRequestClient(
     baseURL,
     timeout: 12_000,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'Content-Type': 'application/json;charset=UTF-8',
     },
   });
 
@@ -80,20 +79,11 @@ function createRequestClient(
         accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers['authori-zation'] = bearer;
         config.headers.Authorization = bearer;
       }
       config.headers.AppID = String(QIXI_PLATFORM_APP_ID);
       config.headers['Accept-Language'] = preferences.app.locale;
 
-      if (
-        config.method?.toLowerCase() === 'post' &&
-        config.data &&
-        !(config.data instanceof FormData) &&
-        !config.headers?.uploadImg
-      ) {
-        config.data = qs.stringify(config.data);
-      }
 		return attachAPIEncryption(config, baseURL);
     },
   });
@@ -160,7 +150,7 @@ function createAdminApiClient() {
     baseURL: apiURL,
     timeout: 12_000,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'Content-Type': 'application/json;charset=UTF-8',
     },
   });
 
@@ -183,20 +173,11 @@ function createAdminApiClient() {
       const token = accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers['authori-zation'] = bearer;
         config.headers.Authorization = bearer;
       }
       config.headers.AppID = String(QIXI_PLATFORM_APP_ID);
       config.headers['Accept-Language'] = preferences.app.locale;
 
-      if (
-        config.method?.toLowerCase() === 'post' &&
-        config.data &&
-        !(config.data instanceof FormData) &&
-        !config.headers?.uploadImg
-      ) {
-        config.data = qs.stringify(config.data);
-      }
 		return attachAPIEncryption(config, baseURL);
     },
   });

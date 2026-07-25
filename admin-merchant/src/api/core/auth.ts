@@ -12,18 +12,28 @@ export namespace AuthApi {
   }
 
   export interface LoginResult {
-    app_id: number | string;
-    logoUrl?: string;
-    shop_name?: string;
-    token: string;
-    update_password?: boolean;
-    user_name: string;
-    version?: string;
+    token: {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    };
+    user: {
+      merchant_admin_id: number;
+      mer_id: number;
+      mer_name: string;
+      account: string;
+      real_name: string;
+      phone: string;
+      roles: string;
+    };
   }
 }
 
 export async function loginApi(data: AuthApi.LoginParams) {
-  return requestClient.post<AuthApi.LoginResult>('/shop/passport/login', data);
+  return requestClient.post<AuthApi.LoginResult>('/auth/login', {
+    account: data.username,
+    password: data.password,
+  });
 }
 
 export async function logoutApi() {
@@ -32,16 +42,15 @@ export async function logoutApi() {
   if (!token) {
     return null;
   }
-  return requestClient.post<null>('/shop/passport/logout', {});
+  return null;
 }
 
-/** 平台跳转商户后台时校验已有 shop JWT（需 Header 带 token） */
+/** 平台跳转商户后台时校验已有 merchant JWT（需 Header 带 token） */
 export async function saasLoginApi() {
-  return requestClient.post<string>('/shop/passport/saasLogin', {});
+  return requestClient.get<{ account: string }>('/auth/me');
 }
 
 export async function getAccessCodesApi() {
   const session = await fetchShopSessionApi();
   return session.accessCodes;
 }
-

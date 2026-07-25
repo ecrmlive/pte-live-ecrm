@@ -52,8 +52,8 @@ onLoad(async (q) => {
   }
 });
 
-function onDefault(e: { detail: { value: boolean } }) {
-  form.is_default = e.detail.value ? 1 : 0;
+function onDefault(e: Event) {
+  form.is_default = (e as Event & { detail?: { value?: boolean } }).detail?.value ? 1 : 0;
 }
 
 async function save() {
