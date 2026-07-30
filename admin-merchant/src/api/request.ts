@@ -71,11 +71,10 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const token = accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers.Authorization = bearer;
+        config.headers['Authori-zation'] = bearer;
       }
       attachShopAppId(config, userStore.userInfo, token || undefined);
-      config.headers['Accept-Language'] = preferences.app.locale;
-
+		config.headers['Accept-Language'] = preferences.app.locale;
       return attachAPIEncryption(config, baseURL);
     },
   });

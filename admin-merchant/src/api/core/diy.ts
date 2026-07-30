@@ -24,6 +24,24 @@ export interface DiyEditorBootstrap {
   opts?: Record<string, unknown>;
 }
 
+export interface DiyPageCategory {
+	children?: DiyPageCategory[];
+	id: number;
+	level: number;
+	name: string;
+	pid: number;
+	status: number;
+}
+
+export interface DiyPageLink {
+	cate_id: number;
+	category?: DiyPageCategory;
+	id: number;
+	name: string;
+	status: number;
+	url: string;
+}
+
 export type DiyEditorMode =
   | 'center-add'
   | 'center-edit'
@@ -37,6 +55,7 @@ export async function listDiyPagesApi(params: {
   limit?: number;
   is_diy?: number;
   name?: string;
+  status?: number;
 }) {
   return requestClient.get<{ list: DiyPageRow[]; total: number; page: number; limit: number }>(
     '/diy/pages',
@@ -62,6 +81,22 @@ export async function activeDiyPageApi(id: number) {
 
 export async function copyDiyPageApi(id: number) {
   return requestClient.post<DiyPageRow>(`/diy/pages/${id}/copy`, {});
+}
+
+export async function recoveryDiyPageApi(id: number) {
+  return requestClient.post<DiyPageRow>(`/diy/pages/${id}/recovery`, {});
+}
+
+/** 商户只读取平台配置的商户装修链接，不能越权修改。 */
+export async function listDiyPageCategoriesApi() {
+	return requestClient.get<{ list: DiyPageCategory[] }>('/diy/page-categories');
+}
+
+export async function listDiyPageLinksApi(params?: { limit?: number; page?: number }) {
+	return requestClient.get<{ limit: number; list: DiyPageLink[]; page: number; total: number }>(
+		'/diy/page-links',
+		{ params },
+	);
 }
 
 export async function loadDiyEditorApi(mode: DiyEditorMode, pageId?: number) {

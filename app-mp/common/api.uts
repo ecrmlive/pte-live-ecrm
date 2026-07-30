@@ -1,0 +1,12 @@
+/** C 端 API：H5 同源；小程序开发工具直连本机 api-business。 */
+const MP_DEV_BASE = 'http://127.0.0.1:18082'
+const APP_API_PREFIX = '/api/app/v1'
+
+export function appApiURL(path: string): string {
+  let base = MP_DEV_BASE
+  // #ifdef H5
+  base = ''
+  // #endif
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return `${base}${APP_API_PREFIX}${normalized}`
+}

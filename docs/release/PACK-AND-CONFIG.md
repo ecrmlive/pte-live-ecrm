@@ -1,39 +1,39 @@
-# Pack and Config
+# 打包与 YAML 配置
 
-权威表：[SERVICE-MATRIX.md](./SERVICE-MATRIX.md)。
-
-## Compose 分组
-
-| project | 内容 |
-| --- | --- |
-| （无 compose） | `qixi-mergers-db` 仅同步 `sql/`；网络由脚本创建 |
-| `qixi_mergers` | API + Job + 前端 |
-| （外部）IM db/mq | MySQL、Redis、NATS、etcd — 由 **pte-live-im** 启动 |
-| （外部）腾讯云 COS | 对象存储 — `cos:` 配置 / `QIXI_COS_*` |
-
-## Release 树
+## 后端产物
 
 ```text
-release/
-  qixi-mergers-db/           # 仅 sql/（无容器；历史 nats/ 可忽略）
-  qixi-mergers-api-admin/
-  qixi-mergers-api-app/
-  qixi-mergers-job/
-  qixi-mergers-admin/        # pack key admin ← 源码 admin-platform/
-  qixi-mergers-merchant-admin/  # pack key merchant-admin ← 源码 admin-merchant/
-  qixi-mergers-h5/
-  qixi-mergers-pc/
-  qixi-mergers-service-web/
-  qixi-mergers-manager/      # 店员端 app-manager
-  opts/nginx/
+api-platform/  -> release/qixi-mergers-api-platform/bin/api-platform
+api-business/  -> release/qixi-mergers-api-business/bin/api-business
+api-merchant/  -> release/qixi-mergers-api-merchant/bin/api-merchant
+job/           -> release/qixi-mergers-job/bin/job
 ```
 
-## 铁律
+每个服务都是独立 Go module，在本机构建静态 Linux 二进制；Compose 仅以只读卷挂载产物运行。禁止在 Docker 容器或服务器上传源码后构建。禁止回退为 `api/cmd/*` 单 module 构建。
 
-1. `local` / `prod`；`QX_RELEASE_ENV`。
-2. Go：`api/conf/{admin,app,job}.yaml` → 各 release `config/*/app.yaml`。DSN 指向 `pte_live_*`；对象存储为 `cos:`（密钥用 `QIXI_COS_*`，勿提交）。
-3. rsync 整目录，排除 `config/local/**`。
-4. 共享 db/mq 不进本仓 `deploy-all`；先起 IM，再 `deploy-db-reload`（sql+网络）与业务。
-5. 全量菜单：`sql/043_crmeb_system_menu_full.sql`（可由 `python3 scripts/gen_crmeb_menu_sql.py` 从 CRMEB 安装包重生成）。
-6. IM remote：`im.mode=remote` + `QIXI_IM_INTEGRATION_TOKEN`；对端 `PTE_MALL_INTEGRATION_*`（见 `docs/integration-pte-live-im.md`）。
-7. 后台源码目录是 `admin-platform/`、`admin-merchant/`；pack key 仍为 `admin` / `merchant-admin`（≠ 源码目录名）。根目录不要再放 `admin`、`merchant-admin` 软链。
+`job` 已保留目录和 Compose profile，但其数据访问仍依赖旧单库，未迁移前不得启动或交付。
+
+## 配置唯一来源
+
+运行配置均为 YAML：
+
+| 文件 | 用途 |
+| --- | --- |
+| `release/config.yaml` | Compose 的 MySQL 初始化密码 |
+| `release/config/api-platform/app.yaml` | 统一后台 API |
+| `release/config/api-business/app.yaml` | PC、小程序&H5、iOS、Android、鸿蒙 C 端 API |
+| `release/config/api-merchant/app.yaml` | 店铺系统 API |
+| `release/config/job/app.yaml` | 异步任务（迁移完成后启用） |
+
+所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
+
+三套目标 API 只允许读取各自所属库的 `databases.<scope>.dsn`：`api-platform → admin`、`api-business → business`、`api-merchant → merchant`。跨库数据只能通过受控 API 或 NATS 事件读模型同步，禁止共享单一 `mysql.dsn`。
+
+JWT 规则：
+
+- PC、小程序、H5、iOS、Android、鸿蒙使用同一 C 端 JWT。
+- 平台、商户、区域、客服、运营使用同一统一后台 JWT。
+- 店铺系统使用独立 JWT。
+- local 与 test 在不同宿主机使用完全相同的上述配置值。
+
+IM 只填写 pte-live-im 的受控 API/SDK 地址和凭证；不直连其数据库、不引用其 Docker 网络、容器名或 Redis/NATS/etcd。

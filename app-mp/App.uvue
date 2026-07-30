@@ -1,0 +1,53 @@
+<script lang="uts">
+export default {
+  onLaunch() {
+    console.log('七禧商城 uni-app x 已启动')
+  },
+}
+</script>
+
+<style>
+page {
+  --qx-brand: #d72828;
+  --qx-text: #1f2329;
+  --qx-secondary: #86909c;
+  --qx-line: #e5e6eb;
+  --qx-bg: #f6f7f9;
+  background-color: var(--qx-bg);
+  color: var(--qx-text);
+  font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+}
+
+.qx-nav {
+  height: 44px;
+  padding-top: var(--status-bar-height);
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--qx-line);
+  display: flex;
+  align-items: center;
+  box-sizing: content-box;
+}
+
+.qx-nav__title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.qx-page {
+  min-height: 100vh;
+}
+
+.qx-card {
+  margin: 12px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+}
+
+.qx-primary {
+  color: #ffffff;
+  background-color: var(--qx-brand);
+}
+</style>

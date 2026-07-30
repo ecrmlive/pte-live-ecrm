@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform community
-  version: 0.6.7
-  description: 平台社区种草审核（status 1 通过 / -1 驳回）
+  version: 0.7.0
+  description: 平台社区种草监管（审核、驳回、展示、置顶、评论删除）
 servers:
   - url: /api/platform/v1
 paths:
@@ -16,6 +16,14 @@ paths:
         - name: limit
           in: query
           schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema: { type: integer, enum: [-1, 0, 1] }
+          description: -1 已驳回，0 待审核，1 已通过
+        - name: keyword
+          in: query
+          schema: { type: string, maxLength: 100 }
+          description: 按标题或正文模糊检索
   /community/posts/{id}:
     get:
       summary: 详情
@@ -33,7 +41,8 @@ paths:
           schema: { type: integer }
   /community/posts/{id}/audit:
     post:
-      summary: 审核 status=1 通过 / -1 驳回
+      summary: 审核或调整已通过帖的展示/置顶
+      description: 需 community/audit。status=1/-1 仅可审核待审帖；驳回必须提供 refusal。status=0 仅可调整已通过帖的 is_show 或 is_hot。
       parameters:
         - name: id
           in: path
@@ -47,13 +56,27 @@ paths:
               type: object
               required: [status]
               properties:
-                status: { type: integer, description: "1 通过 / -1 驳回" }
-                refusal: { type: string }
-                is_show: { type: integer }
-                is_hot: { type: integer }
+                status: { type: integer, enum: [-1, 0, 1], description: "1 通过 / -1 驳回 / 0 仅调整展示或置顶" }
+                refusal: { type: string, maxLength: 200, description: "status=-1 时必填" }
+                is_show: { type: integer, enum: [0, 1] }
+                is_hot: { type: integer, enum: [0, 1] }
+  /community/posts/{id}/replies:
+    get:
+      summary: 帖子评论列表
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
   /community/replies/{id}:
     delete:
-      summary: 删除评论
+      summary: 删除评论（需 community/delete）
       parameters:
         - name: id
           in: path

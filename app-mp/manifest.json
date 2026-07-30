@@ -1,0 +1,35 @@
+{
+	"name": "七禧商城",
+	"appid": "__UNI__D374CEE",
+	"description": "七禧多商户商城用户端（uni-app x：H5 与微信小程序共用同一工程）",
+	"versionName": "1.0.0",
+	"versionCode": "200",
+	"uni-app-x": {},
+	"h5": {
+		"title": "七禧商城",
+		"router": {
+			"mode": "hash",
+			"base": "./"
+		}
+	},
+	"mp-weixin": {
+		"appid": "wx355c3f642c588462",
+		"setting": {
+			"urlCheck": true,
+			"es6": true,
+			"minified": true,
+			"postcss": true
+		},
+		"usingComponents": true,
+		"lazyCodeLoading": "requiredComponents"
+	},
+	"web": {
+		"router": {
+			"mode": "hash"
+		},
+		"title": "七禧商城",
+		"devServer": {
+			"https": false
+		}
+	}
+}

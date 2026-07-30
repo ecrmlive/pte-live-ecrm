@@ -1,0 +1,4 @@
+import { requestClient } from '#/api/request';
+export interface PlatformCombination { buying_count_num: number; create_time: string; end_time: string; mer_id: number; mer_name?: string; price: number; product_group_id: number; product_id: number; start_time: string; status: number; store_name?: string; }
+export interface PlatformCombinationPage { limit: number; list: PlatformCombination[]; page: number; total: number; }
+export function listPlatformCombinationsApi(params: { limit: number; mer_id?: number; page: number }) { return requestClient.get<PlatformCombinationPage>('/combination/groups', { params }); }

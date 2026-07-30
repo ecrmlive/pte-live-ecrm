@@ -14,13 +14,13 @@
 
 - 平台 / 商户管理后台：Vben 5+
 - 用户端 H5/小程序：uni-app x（UTS / HBuilderX 5.0+）
-- 用户端 PC：Vue 3 + Vite + TypeScript（`app-pc/`）
+- 用户端 PC：Vue 3 + Vite + TypeScript（`app-web/`）
 - 可选原生端规范见 `AGENTS.md`
 
 ## 部署
 
-- 本机 pack → rsync `release/<service>/` → 远程 Docker Compose 挂载
-- `config/local`（本机）与 `config/prod`（服务器）分离
+- 本机 pack 到 `release/<service>/`；后端通过同名 `docker-compose.yaml` 运行
+- `config/local` 与 `config/test` 分离；两环境共用 `qixi_mergers` 容器名和固定 IP，不能并行运行
 - 禁止服务器源码构建；Dockerfile 只复制产物
 - 遵循全局 Skill `unified-docker-release`
 - **MySQL / Redis / NATS / etcd**：由 `pte-live-im` 的 `db/` + `mq/` 启动（`pte_live_net`）
@@ -29,5 +29,5 @@
 ## 建议目录（落地后）
 
 ```text
-api/  admin-platform/  admin-merchant/  app-uni/  app-pc/  sql/  release/  docs/
+api-platform/  api-business/  api-merchant/  job/  admin-platform/  admin-merchant/  app-web/  app-mp/  app-ios/  app-adnroid/  app-harmony/  sql/  release/  docs/
 ```

@@ -1,77 +1,19 @@
-# 服务命名 · Docker 网络 · IP 矩阵（权威）
+# 服务、容器与网络矩阵
 
-项目：`qixi-live-mergers`。与 `unified-docker-release` 对齐。  
-全端开发计划：[`docs/dev-plan-full.md`](../dev-plan-full.md)。  
-打包命令：[COMMANDS.md](./COMMANDS.md)、[PACK-AND-CONFIG.md](./PACK-AND-CONFIG.md)。
+| 类别 | 服务 | 容器 | 固定 IP | 数据边界 |
+| --- | --- | --- | --- | --- |
+| 基础设施 | MySQL | `qixi_mergers_mysql` | `172.31.24.10` | `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` |
+| 基础设施 | Redis | `qixi_mergers_redis` | `172.31.24.11` | 七禧独立缓存 |
+| 基础设施 | etcd | `qixi_mergers_etcd` | `172.31.24.12` | 七禧独立服务发现 |
+| 基础设施 | NATS | `qixi_mergers_nats` | `172.31.24.13` | 七禧独立事件总线 |
+| 初始化 | SQL 导入 | `qixi_mergers_db_init` | `172.31.24.14` | 顺序导入三个库的五类 SQL |
+| API | 统一后台 | `qixi_mergers_api_platform` | `172.31.24.21` | admin 身份、权限、后台配置与客服入口 |
+| API | C 端业务 | `qixi_mergers_api_business` | `172.31.24.22` | C 用户、交易、营销、资产与内容消费 |
+| API | 店铺 | `qixi_mergers_api_merchant` | `172.31.24.23` | 店铺、员工、商品经营、库存与履约 |
+| 异步 | job | `qixi_mergers_job` | `172.31.24.24` | profile 保留，待旧单库迁移完成后启用 |
 
-## 1. Token
+Compose project 与前缀固定为 `qixi_mergers`，网络固定为 `qixi_mergers_net (172.31.24.0/24)`。local/test 仅是不同执行宿主机，矩阵不得变更。
 
-| 用途 | 值 |
-| --- | --- |
-| release 目录前缀 | `qixi-mergers-` |
-| Compose project / 容器名前缀 | `qixi_mergers` |
-| 本仓 Docker 网络 | `qixi_mergers_net` / `172.30.80.0/24` |
-| 共享基建网络 | `pte_live_net`（由 **pte-live-im** 创建） |
+宿主机独立映射：MySQL `23306`、Redis `26379`、etcd `22379`、NATS `24222`；不得复用 pte-live 的 `13306`、`16379`、`12379` 或 `14222`。
 
-`qixi_mergers_net` 由 release 脚本 `docker network create` 按需创建（`make local-db` / 业务 up）；业务服务 `external: true`。  
-API / Job 另挂 `pte_live_net`，以访问 IM 侧 MySQL / Redis / NATS / etcd。
-
-## 2. Compose 分组
-
-| project `name` | release 目录 | 成员 |
-| --- | --- | --- |
-| （无 compose） | `qixi-mergers-db` | 仅同步 `sql/`；无容器 |
-| **`qixi_mergers`** | 各业务目录 | api-admin、api-app、job、admin、merchant-admin、h5、pc、service-web、manager |
-
-### 2.1 共享基建（pte-live-im，不在本仓启动）
-
-| 组件 | 容器名（IM） | 说明 |
-| --- | --- | --- |
-| MySQL | `pte_live_mysql` | 宿主 `127.0.0.1:13306`；库名 `qixi_mergers`（见 `sql/000_shared_im_mysql_bootstrap.sql`） |
-| Redis | `pte_live_redis` | 宿主 `127.0.0.1:16379` |
-| NATS | `pte_live_nats1..3` | JetStream 集群 |
-| etcd | `pte_live_etcd1..3` | 服务发现 |
-
-请在 `~/Documents/GitHub/pte-live-im` 启动 `db/` + `mq/`。本仓 `make local-mq` / `deploy-mq-reload` 已废弃。
-
-### 2.2 对象存储
-
-| 组件 | 说明 |
-| --- | --- |
-| 腾讯云 COS | `api/conf/*.yaml` 的 `cos:`；密钥用 `QIXI_COS_BUCKET` / `QIXI_COS_SECRET_ID` / `QIXI_COS_SECRET_KEY` 等环境变量；`cos.enabled=false` 时本地 `upload` 目录回退 |
-
-## 3. 业务（`qixi_mergers`）
-
-### 3.1 后端
-
-| 职责 | release | 容器名 | IP（`qixi_mergers_net`） | 宿主端口 |
-| --- | --- | --- | ---: | --- |
-| 后台 API | `qixi-mergers-api-admin` | `qixi_mergers_api_admin` | `.20` | `18080` |
-| Job | `qixi-mergers-job` | `qixi_mergers_job` | `.21` | 无 |
-| C 端 API | `qixi-mergers-api-app` | `qixi_mergers_api_app` | `.22` | `18085` |
-
-### 3.2 前端（nginx 容器）
-
-| 端 | 容器名 | IP | 宿主端口 | 反代 |
-| --- | --- | ---: | ---: | --- |
-| 平台 | `qixi_mergers_admin` | `.30` | `18081` | api-admin |
-| 商户 | `qixi_mergers_merchant_admin` | `.31` | `18082` | api-admin |
-| H5 | `qixi_mergers_h5` | `.32` | `18083` | api-app |
-| 客服 | `qixi_mergers_service_web` | `.33` | `18084` | api-admin |
-| PC | `qixi_mergers_pc` | `.34` | `18086` | api-app |
-| 店员 | `qixi_mergers_manager` | `.35` | `18087` | api-admin |
-
-## 4. 本机 URL
-
-| 用途 | URL |
-| --- | --- |
-| 后台 API | `http://127.0.0.1:18080/healthz` |
-| C 端 API | `http://127.0.0.1:18085/healthz` |
-| 平台 / 商户 / H5 / 客服 / PC / 店员 | `:18081` … `:18084`、`:18086`、`:18087` |
-| 共享 MySQL（IM） | `127.0.0.1:13306` → 库 `qixi_mergers` |
-| COS 对外域 | 见配置 `cos.base_url`（如 `https://cos.qxkejiwl.top/qixi-mergers`） |
-
-## 5. Prod
-
-- IM：先部署 `pte-live-im` 的 db + mq。  
-- 本仓：`deploy-db-reload`（sql + 网络）→ 灌库 → 配置 COS 密钥 → `deploy-all`（业务，不含共享 db/mq）。
+`app-web`、`app-mp`（H5/小程序）、`admin-platform` 与 `admin-merchant` 是本机构建的前端产物，不作为开发期 Nginx 容器启动。原生端 `app-ios`、`app-adnroid`、`app-harmony` 使用各自原生构建链路。pte-live-im 完全独立，不在此矩阵中。

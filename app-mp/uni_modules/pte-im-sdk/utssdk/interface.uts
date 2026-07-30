@@ -1,0 +1,218 @@
+/**
+ * Host-provided envelope encryption for durable UTS cache data.
+ * The implementation must keep its key out of uni storage and source code.
+ */
+export type PteIMLocalStorageCipher = {
+  encrypt(plaintext: string): string
+  decrypt(ciphertext: string): string
+}
+
+/** Platform secure-random bridge used internally by the UTS E2EE implementation. */
+export type PteIMSecureRandomSource = {
+  getBytes(length: number, callback: (bytes: Uint8Array | null, error: string | null) => void): void
+}
+
+export type PteIMBaseConfig = {
+  apiDomain: string
+  imDomain: string
+  cosDomain: string
+  /** Optional host-owned AMap configuration. Never place a server Web Service secret here. */
+  map?: PteIMMapConfig
+  /** Optional Commerce extension origin. It reuses the active IM UserSig. */
+  commerceDomain?: string
+  themeMode?: 'system' | 'light' | 'dark'
+  language?: 'system' | 'zh-CN' | 'en-US'
+  /** Required to persist UTS messages, outbox data, or sync cursors on H5/mini-program. */
+  localStorageCipher?: PteIMLocalStorageCipher
+  /** Supplied by the H5/WeChat entry module; applications normally do not set this themselves. */
+  cryptoRandomSource?: PteIMSecureRandomSource
+}
+
+/** Keys must be restricted by H5 origin or WeChat Mini Program AppID in the AMap console. */
+export type PteIMMapConfig = {
+  provider: 'amap'
+  h5Key?: string
+  wechatMiniProgramKey?: string
+}
+
+export type PteIMLoginConfig = {
+  sdkAppId: number
+  userId: string
+  userSig: string
+  /** Unix seconds; enables Core to schedule an automatic refresh before expiry. */
+  userSigExpireAt?: number
+  /** Host-owned business-auth bridge. It must never expose a signing secret to the SDK. */
+  userSigProvider?: PteIMUserSigProvider
+}
+
+export type PteIMUserSigRefreshResult = { userSig: string, expireAt: number }
+/**
+ * Business authentication stays with the host application. Core invokes this
+ * provider before UserSig expiry, after a 401, and after a WSS expiry event.
+ */
+export type PteIMUserSigProvider = { refreshUserSig: () => Promise<PteIMUserSigRefreshResult> }
+
+export type PteIMAppearance = {
+  themeMode: 'system' | 'light' | 'dark'
+  language: 'system' | 'zh-CN' | 'en-US'
+}
+export type PteIMGender = 'unknown' | 'male' | 'female'
+export type PteIMUserProfile = { userId: number, nickname?: string, avatar?: string, gender: PteIMGender, birthday?: string, province?: string, city?: string, district?: string }
+/** Exactly one mutable profile property per request. */
+export type PteIMUserProfileUpdate = { field: 'nickname' | 'avatar' | 'gender' | 'birthday' | 'province' | 'city' | 'district', value: string }
+export type PteIMContact = { userId: string, remark: string, nickname: string, avatar: string, gender: PteIMGender, followedAt: number }
+export type PteIMContactPage = { list: PteIMContact[], nextCursor: string, hasMore: boolean }
+export type PteIMMember = { userId: number, role: number, alias: string, muteUntil: number, joinedAt: number }
+export type PteIMMemberPage = { list: PteIMMember[], nextCursor: string, hasMore: boolean }
+export type PteIMGroupPage = { list: PteIMRemoteConversation[], nextCursor: string, hasMore: boolean }
+export type PteIMStateChange = { id: string, entityType: string, entityId: string, operation: string, createdAt: number }
+export type PteIMStateChangePage = { changes: PteIMStateChange[], nextCursor: string, hasMore: boolean }
+export type PteIMDefaultSetting = { chatPrerequisite: string, notificationEnabled: boolean, groupJoinMode: string }
+/** Platform label is future-compatible: U-Push uses android/ios/harmony; web and WeChat await their own push providers. */
+export type PteIMPushPlatform = 'android' | 'ios' | 'harmony' | 'web' | 'wechat'
+/** Registration acknowledgement deliberately never includes the provider token. */
+export type PteIMPushDevice = { deviceId: string, platform: PteIMPushPlatform, notificationEnabled: boolean, lastSeenAt: number }
+
+export type PteIMMedia = {
+  url?: string
+  thumbnailUrl?: string
+  coverUrl?: string
+  width?: number
+  height?: number
+  durationMs?: number
+  sizeBytes?: number
+  fileName?: string
+  mimeType?: string
+}
+
+export type PteIMVoice = { url: string, durationMs: number, waveform?: string, sizeBytes?: number }
+export type PteIMLocation = { latitude: number, longitude: number, name: string, address?: string }
+export type PteIMBusinessContent = { businessId: string, title: string, subtitle?: string, actionUrl?: string }
+export type PteIMSendState = 'pending' | 'uploading' | 'sent' | 'failed'
+export type PteIMIncomingMessage = {
+  clientMsgId: string
+  serverMsgId?: string
+  conversationId: string
+  senderId?: string
+  type: string
+  createdAt: number
+  serverSeq?: number
+  quoteMessageId?: string
+  quoteSnapshot?: string
+  /** 1=normal, 2=recalled, 3=globally deleted. */
+  status?: number
+  recalledAt?: number
+  deletedAt?: number
+  content: any
+}
+export type PteIMMessageStateChange = { clientMsgId: string, state: PteIMSendState }
+/**
+ * Independently registered Core event receiver. Keep the listener owned by the
+ * host or UI controller and remove it when the owner is disposed.
+ */
+export type PteIMListener = {
+  onConnectionChanged?: (connected: boolean) => void
+  onMessage?: (message: PteIMIncomingMessage) => void
+  onMessageStateChanged?: (event: PteIMMessageStateChange) => void
+  onUserSigRefreshFailed?: (message: string) => void
+  onThemeModeChanged?: (themeMode: 'system' | 'light' | 'dark') => void
+  onLanguageChanged?: (language: 'system' | 'zh-CN' | 'en-US') => void
+  onError?: (message: string) => void
+  onStateChanges?: (changes: PteIMStateChange[]) => void
+}
+/**
+ * Locally rendered conversation row. The optional summary fields are populated
+ * when the server conversation cache is available, while message-only clients
+ * continue to work without it.
+ */
+export type PteIMConversation = { conversationId: string, lastMessage: PteIMIncomingMessage, updatedAt: number, title?: string, avatar?: string, unreadCount?: number }
+export type PteIMRemoteConversation = { id: number, type: string, title: string, singleKey?: string, avatar?: string, lastMessageSeq: number, lastMessageSnapshot?: string, lastMessageAt: number, unreadCount: number }
+export type PteIMConversationPage = { total: number, items: PteIMRemoteConversation[] }
+export type PteIMRemoteMessage = { messageId: number, conversationId: number, senderId: number, clientMsgId: string, type: string, content: string, payload?: string, seq: number, sentAt: number, recalledAt?: number }
+export type PteIMMessagePage = { items: PteIMRemoteMessage[] }
+/** Commerce keeps business state server-side; all amounts are integer minor units. */
+export type PteIMCommerce = {
+  capabilities(callback: (result: any | null, error: string | null) => void): void
+  gifts(callback: (result: any | null, error: string | null) => void): void
+  wallet(callback: (result: any | null, error: string | null) => void): void
+  backpack(callback: (result: any | null, error: string | null) => void): void
+  orders(limit: number, callback: (result: any | null, error: string | null) => void): void
+  sendGift(request: any, callback: (result: any | null, error: string | null) => void): void
+  useBackpack(request: any, callback: (result: any | null, error: string | null) => void): void
+  createRedPacket(request: any, callback: (result: any | null, error: string | null) => void): void
+  redPacket(id: string, callback: (result: any | null, error: string | null) => void): void
+  claimRedPacket(id: string, callback: (result: any | null, error: string | null) => void): void
+}
+
+export interface PteIMSDKClient {
+  /** Optional first-party Commerce extension; no second socket or login. */
+  commerce: PteIMCommerce
+  start(): void
+  stop(): void
+  /** Refreshes through the host provider when the UserSig is near expiry or force=true. */
+  refreshUserSig(force?: boolean): Promise<boolean>
+  updateAppearance(themeMode?: 'system' | 'light' | 'dark', language?: 'system' | 'zh-CN' | 'en-US'): PteIMAppearance
+  currentAppearance(): PteIMAppearance
+  /** Read-only map configuration supplied during SDK bootstrap. */
+  mapConfig(): PteIMMapConfig | null
+  currentUserId(): string
+  fetchMyProfile(callback: (result: PteIMUserProfile | null, error: string | null) => void): void
+  updateMyProfile(update: PteIMUserProfileUpdate, callback: (result: PteIMUserProfile | null, error: string | null) => void): void
+  fetchFriends(cursor: string, limit: number, callback: (result: PteIMContactPage | null, error: string | null) => void): void
+  fetchFollows(cursor: string, limit: number, callback: (result: PteIMContactPage | null, error: string | null) => void): void
+  follow(userId: number, remark: string | null, callback: (error: string | null) => void): void
+  unfollow(userId: number, callback: (error: string | null) => void): void
+  block(userId: number, callback: (error: string | null) => void): void
+  unblock(userId: number, callback: (error: string | null) => void): void
+  fetchGroups(cursor: string, limit: number, callback: (result: PteIMGroupPage | null, error: string | null) => void): void
+  fetchGroupMembers(conversationId: number, cursor: string, limit: number, callback: (result: PteIMMemberPage | null, error: string | null) => void): void
+  joinGroup(conversationId: number, callback: (error: string | null) => void): void
+  inviteGroupMembers(conversationId: number, memberIds: number[], callback: (error: string | null) => void): void
+  removeGroupMember(conversationId: number, memberId: number, callback: (error: string | null) => void): void
+  leaveGroup(conversationId: number, callback: (error: string | null) => void): void
+  registerPushDevice(deviceId: string, platform: PteIMPushPlatform, token: string, notificationEnabled: boolean, callback: (result: PteIMPushDevice | null, error: string | null) => void): void
+  setPushDeviceNotification(deviceId: string, platform: PteIMPushPlatform, enabled: boolean, callback: (result: PteIMPushDevice | null, error: string | null) => void): void
+  unregisterPushDevice(deviceId: string, platform: PteIMPushPlatform, callback: (error: string | null) => void): void
+  syncState(cursor: string, limit: number, callback: (result: PteIMStateChangePage | null, error: string | null) => void): void
+  fetchDefaultSetting(callback: (result: PteIMDefaultSetting | null, error: string | null) => void): void
+  syncNow(): void
+  /** Cursor-syncs server conversation summaries into encrypted local platform storage. */
+  syncConversationsNow(): void
+  localMessages(conversationId: string, limit?: number): PteIMIncomingMessage[]
+  localConversations(limit?: number): PteIMConversation[]
+  localRemoteConversations(limit?: number): PteIMRemoteConversation[]
+  fetchConversationPage(page: number, pageSize: number, callback: (result: PteIMConversationPage | null, error: string | null) => void): void
+  openSingleConversation(peerUserId: number, callback: (result: PteIMRemoteConversation | null, error: string | null) => void): void
+  createGroupConversation(title: string, memberIds: number[], avatar: string | null, callback: (result: PteIMRemoteConversation | null, error: string | null) => void): void
+  markConversationRead(conversationId: number, seq: number, callback: (error: string | null) => void): void
+  /** Per-device delivery/read receipts. Message ids remain strings to avoid JS precision loss. */
+  acknowledgeMessages(conversationId: number, messageIds: string[], ackType: 'delivered' | 'read', deviceId: string, callback: (error: string | null) => void): void
+  recallMessage(serverMsgId: string, callback: (error: string | null) => void): void
+  /** Hides a message only for the signed-in user. */
+  deleteMessage(serverMsgId: string, callback: (error: string | null) => void): void
+  /** Immediately retries a queued send after a transient transport failure. */
+  retryMessage(clientMsgId: string): boolean
+  fetchMessageHistory(conversationId: number, beforeSeq: number, limit: number, callback: (result: PteIMMessagePage | null, error: string | null) => void): void
+  sendText(conversationId: string, text: string): string
+  sendEmoji(conversationId: string, packageId: string, emojiId: string): string
+  sendImage(conversationId: string, media: PteIMMedia): string
+  sendVideo(conversationId: string, media: PteIMMedia): string
+  sendFile(conversationId: string, media: PteIMMedia): string
+  uploadAndSendImage(conversationId: string, filePath: string): string
+  uploadAndSendVideo(conversationId: string, filePath: string): string
+  /** `fileName` and `mimeType` preserve H5 File metadata when its temporary URL has no extension. */
+  uploadAndSendFile(conversationId: string, filePath: string, fileName?: string, mimeType?: string): string
+  /** H5 may provide a blob filename and MIME type because its temporary URL has no extension. */
+  uploadAndSendVoice(conversationId: string, filePath: string, durationMs: number, waveform?: string, fileName?: string, mimeType?: string): string
+  sendVoice(conversationId: string, voice: PteIMVoice): string
+  sendLocation(conversationId: string, location: PteIMLocation): string
+  sendGift(conversationId: string, content: PteIMBusinessContent): string
+  sendRedPacket(conversationId: string, content: PteIMBusinessContent): string
+  sendOrder(conversationId: string, content: PteIMBusinessContent): string
+  addListener(listener: PteIMListener): void
+  removeListener(listener: PteIMListener): void
+}
+
+export interface PteIMSDKBootstrap {
+  login(config: PteIMLoginConfig): PteIMSDKClient
+}

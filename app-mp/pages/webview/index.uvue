@@ -1,0 +1,19 @@
+<script setup lang="uts">
+const url = ref('')
+onLoad((query) => {
+  const raw = String(query['url'] || '')
+  if (raw.startsWith('https://') || raw.startsWith('http://')) url.value = decodeURIComponent(raw)
+})
+</script>
+
+<template>
+  <view class="page">
+    <web-view v-if="url.length > 0" :src="url" />
+    <view v-else class="error">链接地址无效</view>
+  </view>
+</template>
+
+<style>
+.page { height: 100%; background: #fff; }
+.error { padding: 48px 20px; color: #86909c; text-align: center; }
+</style>

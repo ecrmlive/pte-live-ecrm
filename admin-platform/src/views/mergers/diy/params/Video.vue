@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { computed } from 'vue';
+import { ElButton } from 'element-plus';
+import { computed, ref } from 'vue';
 
+import ImagePickerDialog from '#/components/shop/image-picker-dialog.vue';
 import {
   diyColor,
   diyInput,
@@ -26,6 +28,7 @@ const props = defineProps<{
 }>();
 
 const editor = useDiyEditor();
+const videoPickerOpen = ref(false);
 
 const schema = computed((): VbenFormSchema[] => [
   diySection('组件样式'),
@@ -50,6 +53,12 @@ const { Form } = useDiyCurItemForm(
     },
   },
 );
+
+function selectVideo(items: Array<{ file_path: string }>) {
+  if (props.curItem.params && items[0]?.file_path) {
+    props.curItem.params.videoUrl = items[0].file_path;
+  }
+}
 </script>
 
 <template>
@@ -58,6 +67,9 @@ const { Form } = useDiyCurItemForm(
       <span>{{ curItem.name }}</span>
     </div>
     <Form />
+    <div class="form-item ml-[100px] mt-2">
+      <ElButton type="primary" plain @click="videoPickerOpen = true">从素材库选择视频</ElButton>
+    </div>
     <div class="gray ml-[100px]">滑块可用键盘的左右方向键精确调整</div>
     <div class="form-item ml-[100px] mt-2">
       <div class="form-label mb-2">视频封面：</div>
@@ -69,6 +81,7 @@ const { Form } = useDiyCurItemForm(
         />
       </div>
     </div>
+    <ImagePickerDialog v-model:open="videoPickerOpen" kind="video" @select="selectVideo" />
   </div>
 </template>
 

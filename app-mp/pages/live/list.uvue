@@ -1,0 +1,9 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+type Room={broadcast_room_id:number;name:string;mer_name:string;anchor_name:string;live_status:number};type RoomPage={list:Room[]};const items=ref<Room[]>([])
+function label(status:number):string{if(status==101)return '直播中';if(status==103)return '已结束';return '未开始'}
+function load():void{appRequest('/live/rooms?page=1&limit=30','GET',null,false).then((data)=>{items.value=(data as RoomPage).list||[]}).catch((error)=>uni.showToast({title:error.message||'直播间加载失败',icon:'none'}))}
+function detail(id:number):void{uni.navigateTo({url:`/pages/live/detail?id=${id}`})} onShow(()=>load())
+</script>
+<template><view class="qx-page"><qx-nav title="直播间"/><view class="tip">直播内容由商户配置；播放能力由已配置的腾讯云播放器授权提供。</view><view v-if="items.length==0" class="qx-card empty">暂无直播间</view><view v-for="item in items" :key="item.broadcast_room_id" class="qx-card item" @click="detail(item.broadcast_room_id)"><text class="name">{{item.name}}</text><text class="sub">{{item.mer_name||'店铺'}} · 主播 {{item.anchor_name||'-'}}</text><text :class="item.live_status==101?'living':'status'">{{label(item.live_status)}}</text></view></view></template>
+<style>.tip{padding:12px;color:#86909c;font-size:13px}.empty{color:#86909c;text-align:center}.name,.sub,.status,.living{display:block}.name{font-size:16px;font-weight:600}.sub{margin-top:7px;color:#86909c;font-size:12px}.status,.living{margin-top:10px;font-size:14px}.living{color:#d72828;font-weight:600}.status{color:#86909c}</style>

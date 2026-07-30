@@ -1,69 +1,86 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app auth
-  version: 0.1.0
-  description: 阶段 1 C 端用户身份接口（api-app）；JWT portal=app，强制含 uid
+  title: 七禧 C 端认证 API
+  version: 1.0.0
+  description: >-
+    api-business 的统一 C 端认证。PC、小程序、H5、iOS、Android、鸿蒙共用同一 user_id
+    与 JWT；channel 仅记录认证来源，不能复制用户、订单或资产。
 servers:
   - url: /api/app/v1
 paths:
   /auth/login:
     post:
-      summary: 用户账号密码登录
+      summary: C 端账号密码登录
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [account, password]
-              properties:
-                account: { type: string }
-                password: { type: string, format: password }
+              $ref: '#/components/schemas/CredentialRequest'
       responses:
-        '200':
-          description: OK（token + user）
+        '200': { description: token 和用户资料 }
+        '400': { description: 参数或来源错误 }
+        '401': { description: 账号或密码错误 }
   /auth/register:
     post:
-      summary: 用户注册并登录
+      summary: C 端注册并登录
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [account, password]
-              properties:
-                account: { type: string }
-                password: { type: string, format: password }
-                nickname: { type: string }
+              allOf:
+                - $ref: '#/components/schemas/CredentialRequest'
+                - type: object
+                  properties:
+                    nickname: { type: string, maxLength: 64 }
       responses:
-        '200':
-          description: OK（token + user）
+        '200': { description: token 和用户资料 }
+        '400': { description: 参数、来源或账户重复 }
   /auth/refresh:
     post:
-      summary: 刷新 access token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [refresh_token]
-              properties:
-                refresh_token: { type: string }
+      summary: 通过 Authori-zation 头的 refresh token 刷新 C 端 access token
+      security: [{ qixiJWT: [] }]
       responses:
-        '200':
-          description: OK
+        '200': { description: 新 token }
   /auth/me:
     get:
-      summary: 当前用户资料
-      security: [{ bearerAuth: [] }]
+      summary: 当前 C 端用户资料
+      security: [{ qixiJWT: [] }]
       responses:
-        '200':
-          description: OK
+        '200': { description: 当前用户资料 }
+  /auth/store-context:
+    post:
+      summary: 使用 X-AppId 换发带商户、店铺和当前 IM SDK AppId 的 C 端上下文 JWT
+      description: >-
+        客户端不得提交 merchant_id、store_id 或 im_sdk_app_id。服务端只从业务库店铺与 IM
+        只读投影解析；平台首页等无店铺上下文场景无需调用此接口。
+      security: [{ qixiJWT: [] }]
+      parameters:
+        - name: X-AppId
+          in: header
+          required: true
+          schema: { type: string, maxLength: 64 }
+          description: 商户店铺应用标识，不是微信 AppID 或 IM SDK AppId。
+      responses:
+        '200': { description: 新 token 与已解析的店铺上下文 }
+        '400': { description: 缺少 X-AppId }
+        '401': { description: C 端 JWT 无效或身份版本已失效 }
+        '404': { description: 店铺不存在或未启用 }
 components:
+  schemas:
+    CredentialRequest:
+      type: object
+      required: [account, password, channel]
+      properties:
+        account: { type: string, maxLength: 191 }
+        password: { type: string, format: password, minLength: 6 }
+        channel:
+          type: string
+          enum: [wechat, mini_program, h5, pc, ios, android, harmony]
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    qixiJWT:
+      type: apiKey
+      in: header
+      name: Authori-zation
+      description: "Bearer <JWT>；店铺范围业务接口另需 X-AppId。"

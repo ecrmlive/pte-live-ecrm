@@ -145,7 +145,7 @@ client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 	config.headers = config.headers || {};
 	const bearerToken = getBearerToken(token);
 	if (bearerToken) {
-		config.headers['authori-zation'] = bearerToken;
+		config.headers['Authori-zation'] = bearerToken;
 	}
 	attachShopAppId(config, userStore.userInfo, token);
 	if (

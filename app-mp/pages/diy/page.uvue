@@ -1,0 +1,25 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+const pageID = ref(0)
+const title = ref('装修页面')
+const items = ref<any[]>([])
+const page = ref<any>({})
+
+function load(): void {
+  if (pageID.value <= 0) return
+  appRequest(`/diy/pages/${pageID.value}`, 'GET', null, false)
+    .then((data) => {
+      title.value = String(data['title'] || data['name'] || '装修页面')
+      items.value = (data['items'] as any[]) || []
+      page.value = data['page'] || {}
+    })
+    .catch((error) => uni.showToast({ title: error.message || '页面加载失败', icon: 'none' }))
+}
+
+onLoad((query) => { pageID.value = Number(query['id'] || 0); load() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav :title="title" /><qx-diy-home :items="items" :page="page" /></view>
+</template>

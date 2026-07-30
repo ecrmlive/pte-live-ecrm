@@ -2,8 +2,9 @@
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page } from '@vben/common-ui';
-import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus';
-import { useRouter } from 'vue-router';
+import { ElButton, ElMessage, ElMessageBox, ElRadioButton, ElRadioGroup, ElTag } from 'element-plus';
+import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -11,11 +12,16 @@ import {
   copyDiyPageApi,
   deleteDiyPageApi,
   listDiyPagesApi,
+  recoveryDiyPageApi,
   type DiyPageRow,
 } from '#/api/core/diy';
 
 const router = useRouter();
+const route = useRoute();
 const editorPath = '/setting/diy/index';
+const pageKind = ref<'home' | 'micro'>(
+  route.path.includes('/micro/') || route.query.kind === 'micro' ? 'micro' : 'home',
+);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
@@ -33,7 +39,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
       {
         field: 'action',
         title: '操作',
-        width: 320,
+        width: 380,
         fixed: 'right',
         slots: { default: 'action' },
       },
@@ -46,7 +52,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
           const res = await listDiyPagesApi({
             page: page.currentPage,
             limit: page.pageSize,
-            is_diy: 1,
+            is_diy: pageKind.value === 'home' ? 1 : 0,
           });
           return { items: res.list || [], total: res.total || 0 };
         },
@@ -59,7 +65,9 @@ const [Grid, gridApi] = useVbenVxeGrid({
 function openEditor(id?: number) {
   router.push({
     path: editorPath,
-    query: id ? { id: String(id), types: '1' } : { types: '1' },
+    query: id
+      ? { id: String(id), types: pageKind.value === 'home' ? '1' : '0' }
+      : { types: pageKind.value === 'home' ? '1' : '0' },
   });
 }
 
@@ -75,8 +83,19 @@ async function onCopy(row: DiyPageRow) {
   gridApi.reload();
 }
 
+async function onRecovery(row: DiyPageRow) {
+  await ElMessageBox.confirm(
+    `恢复会覆盖「${row.name}」当前的组件和页面设置，确认继续？`,
+    '恢复默认页面',
+    { cancelButtonText: '取消', confirmButtonText: '确认恢复', type: 'warning' },
+  );
+  await recoveryDiyPageApi(row.id);
+  ElMessage.success('已恢复默认页面');
+  gridApi.reload();
+}
+
 async function onDelete(row: DiyPageRow) {
-  if (row.status === 1) {
+  if (pageKind.value === 'home' && row.status === 1) {
     ElMessage.warning('请先取消启用再删除');
     return;
   }
@@ -85,23 +104,28 @@ async function onDelete(row: DiyPageRow) {
   ElMessage.success('已删除');
   gridApi.reload();
 }
+
+function onKindChange() {
+  gridApi.reload();
+}
 </script>
 
 <template>
-  <Page title="页面装修" description="平台首页 DIY 可视化装修">
+  <Page :title="pageKind === 'home' ? '页面装修' : '微页面'" :description="pageKind === 'home' ? '平台首页 DIY 可视化装修' : '可被首页组件链接引用的独立 H5 / 小程序页面'">
     <template #extra>
-      <ElButton type="primary" @click="openEditor()">新建首页</ElButton>
+      <ElRadioGroup v-model="pageKind" class="mr-3" @change="onKindChange"><ElRadioButton value="home">首页</ElRadioButton><ElRadioButton value="micro">微页面</ElRadioButton></ElRadioGroup>
+      <ElButton type="primary" @click="openEditor()">{{ pageKind === 'home' ? '新建首页' : '新建微页面' }}</ElButton>
     </template>
     <Grid>
       <template #status="{ row }">
         <ElTag :type="row.status === 1 ? 'success' : 'info'">
-          {{ row.status === 1 ? '使用中' : '未启用' }}
+          {{ row.status === 1 ? (pageKind === 'home' ? '使用中' : '已发布') : '未启用' }}
         </ElTag>
       </template>
       <template #action="{ row }">
         <ElButton link type="primary" @click="openEditor(row.id)">装修</ElButton>
         <ElButton
-          v-if="row.status !== 1"
+          v-if="pageKind === 'home' && row.status !== 1"
           link
           type="success"
           @click="onActive(row)"
@@ -109,6 +133,7 @@ async function onDelete(row: DiyPageRow) {
           设为首页
         </ElButton>
         <ElButton link @click="onCopy(row)">复制</ElButton>
+        <ElButton link type="warning" @click="onRecovery(row)">恢复</ElButton>
         <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
       </template>
     </Grid>

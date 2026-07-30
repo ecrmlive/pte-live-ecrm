@@ -84,7 +84,7 @@ Skill：`.cursor/skills/qixi-live-mergers/SKILL.md`（Codex 镜像：`codex-skil
 
 - 功能验收以 `docs/features/` 为准；产品全景以 `docs/product-understanding.md` 为准。
 - 对照 CRMEB 时只读外部源码：`~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0`。
-- **表前缀固定为 `qixi_`**（由 CRMEB `eb_` 映射）。见 `docs/schema/`。禁止新代码使用 `eb_` 表前缀。
+- **数据库与表前缀固定为**：`qixi_crm_admin.qixi_crm_a_`（统一后台）、`qixi_crm_business.qixi_crm_b_`（C 端业务）、`qixi_crm_merchant.qixi_crm_m_`（店铺）。IM 表规则严格以 pte-live-im 仓库 `sql/init_im_schema.sql` 的实际定义为准，七禧不得重定义。禁止新代码使用 `qixi_m_*`、裸 `qixi_` 或 `eb_` 表前缀。见 `docs/SYSTEM-ARCHITECTURE.md`。
 - 订单、支付、退款、库存、优惠、积分、佣金、商户结算为高风险域；改前先理清状态机与幂等。
 - 商户域接口必须做 `mer_id` / `merchant_id` 隔离。
 - 禁止把密钥、证书、真实手机号/身份证样例提交进库；测试数据用明显假数据且保持 utf8mb4 中文可读。
@@ -94,7 +94,7 @@ Skill：`.cursor/skills/qixi-live-mergers/SKILL.md`（Codex 镜像：`codex-skil
 先读 `docs/analysis-completeness.md`。
 
 - **功能基线已锁定**（2026-07-21）：允许技术方案与业务编码。
-- 验收以 `docs/features/` 为准；接口/状态机对照 `docs/api/FUNCTIONAL-TRUTH.md`；表前缀 `qixi_`。
+- 验收以 `docs/features/` 为准；接口/状态机对照 `docs/api/FUNCTIONAL-TRUTH.md`；系统、JWT、数据库与目录边界以 `docs/SYSTEM-ARCHITECTURE.md` 为准。
 - 高风险域（订单/支付/退款/库存/券/积分/佣金/结算）改前先对齐状态机与幂等。
 - 验证与部署仅在用户明确要求时执行。
 

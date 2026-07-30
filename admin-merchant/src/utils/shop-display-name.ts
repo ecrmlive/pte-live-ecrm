@@ -1,7 +1,7 @@
 import { updatePreferences } from '@vben/preferences';
 
 /** 产品名（登录页 / 未登录壳层），与 i18n authentication.pageTitle 一致 */
-export const MERCHANT_PRODUCT_NAME = '栖息多商户·商户';
+export const MERCHANT_PRODUCT_NAME = '七禧多商户·商户';
 
 /**
  * 管理后台的侧栏、页签和浏览器标题统一使用产品品牌。

@@ -1,0 +1,86 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
+import { activateMerchantContext } from '../../common/store-context'
+
+type ProductDetail = {
+  id: number
+  mer_id: number
+  mer_name: string
+  store_id: number
+  store_name: string
+  shop_name: string
+  store_info: string
+  image: string
+  slider_image: string[]
+  price: string
+  ot_price: string
+  stock: number
+  sales: number
+  merchant_app_id: string
+  unit_name: string
+  delivery_way: string
+}
+
+const detail = ref<ProductDetail | null>(null)
+const productID = ref(0)
+const adding = ref(false)
+const activeImage = ref(0)
+
+function productName(): string { return detail.value == null ? '' : (detail.value.store_name || '商品') }
+function images(): string[] {
+  if (detail.value == null) return []
+  const values = detail.value.slider_image || []
+  if (values.length > 0) return values.filter((value) => String(value || '').trim().length > 0)
+  const image = String(detail.value.image || '').trim()
+  return image.length > 0 ? [image] : []
+}
+function load(id: number): void {
+  appRequest(`/catalog/products/${id}`, 'GET', null, false).then((data) => {
+    detail.value = data as ProductDetail
+    activeImage.value = 0
+    const product = detail.value as ProductDetail
+    if (getAccessToken().length > 0 && product.merchant_app_id.length > 0) {
+      activateMerchantContext(product.merchant_app_id).catch(() => uni.showToast({ title: '请重新登录后再购买此店铺商品', icon: 'none' }))
+    }
+  }).catch((error) => uni.showToast({ title: error.message || '商品加载失败', icon: 'none' }))
+}
+function addCart(): void {
+  if (detail.value == null || adding.value) return
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }
+  adding.value = true
+  appRequest('/cart', 'POST', { product_id: detail.value.id, cart_num: 1 } as UTSJSONObject).then(() => {
+    uni.showToast({ title: '已加入购物车', icon: 'none' })
+  }).catch((error) => uni.showToast({ title: error.message || '加购失败', icon: 'none' })).finally(() => { adding.value = false })
+}
+function goStore(): void { if (detail.value != null && detail.value.mer_id > 0) uni.navigateTo({ url: `/pages/store/home?mer_id=${detail.value.mer_id}` }) }
+function contactService(): void {
+  if (detail.value == null) return
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }
+  uni.navigateTo({ url: `/pages/cs/chat?mer_id=${detail.value.mer_id}` })
+}
+function goCart(): void { uni.switchTab({ url: '/pages/cart/index' }) }
+
+onLoad((query) => { productID.value = Number(query['id'] || 0); if (productID.value > 0) load(productID.value) })
+</script>
+
+<template>
+  <view v-if="detail != null" class="detail-page">
+    <view class="detail-header"><text class="detail-header__back" @click="uni.navigateBack()">‹</text><text class="detail-header__title">商品详情</text><text class="detail-header__cart" @click="goCart">购物车</text></view>
+    <swiper v-if="images().length > 0" class="detail-gallery" circular indicator-dots @change="(event) => activeImage = event.detail.current"><swiper-item v-for="(image, index) in images()" :key="`${image}-${index}`"><image class="detail-gallery__image" :src="image" mode="aspectFill" /></swiper-item></swiper>
+    <view v-else class="detail-gallery detail-gallery--empty"><text>暂无商品图片</text></view>
+    <view class="detail-price-card"><view><text class="detail-price-card__price">¥{{ detail.price }}</text><text v-if="detail.ot_price" class="detail-price-card__original">¥{{ detail.ot_price }}</text></view><text class="detail-price-card__sales">已售 {{ detail.sales }}</text></view>
+    <view class="detail-main"><text class="detail-main__name">{{ productName() }}</text><text v-if="detail.store_info" class="detail-main__description">{{ detail.store_info }}</text><view class="detail-main__line"><text>商品规格</text><text>默认规格 · 库存 {{ detail.stock }} {{ detail.unit_name || '件' }}</text></view><view class="detail-main__line"><text>配送服务</text><text>{{ detail.delivery_way == 'express' ? '快递配送' : detail.delivery_way }}</text></view></view>
+    <view class="detail-shop" @click="goStore"><view class="detail-shop__badge">店</view><view class="detail-shop__content"><text class="detail-shop__name">{{ detail.shop_name || detail.mer_name || '平台自营' }}</text><text class="detail-shop__hint">进入店铺查看全部商品</text></view><text class="detail-shop__arrow">›</text></view>
+    <view class="detail-service"><text>服务保障</text><text>正品保障 · 售后无忧 · 安全支付</text></view>
+    <view class="detail-footer"><view class="detail-footer__service" @click="contactService"><text>客服</text></view><view class="detail-footer__service" @click="goCart"><text>购物车</text></view><button :loading="adding" class="detail-footer__add" @click="addCart">加入购物车</button></view>
+  </view>
+</template>
+
+<style>
+.detail-page { min-height: 100vh; padding-bottom: 62px; background-color: #f6f6f6; }.detail-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; justify-content: space-between; padding-left: 12px; padding-right: 12px; box-sizing: content-box; background-color: #ffffff; }.detail-header__back { width: 27px; color: #333333; font-size: 31px; line-height: 31px; text-align: center; }.detail-header__title { color: #222222; font-size: 17px; font-weight: 600; }.detail-header__cart { width: 44px; color: #555555; font-size: 12px; text-align: right; }.detail-gallery { width: 100%; height: 330px; background-color: #f1f1f1; }.detail-gallery__image { width: 100%; height: 330px; display: block; }.detail-gallery--empty { display: flex; align-items: center; justify-content: center; color: #999999; background-color: #fff0ee; font-size: 14px; }
+.detail-price-card { min-height: 55px; padding: 0 13px; display: flex; align-items: center; justify-content: space-between; color: #ffffff; background: linear-gradient(100deg, #e72b2b, #ff6449); }.detail-price-card__price { font-size: 27px; font-weight: 700; }.detail-price-card__original { margin-left: 7px; color: #ffd8d2; font-size: 12px; text-decoration: line-through; }.detail-price-card__sales { font-size: 12px; }
+.detail-main { margin-bottom: 10px; padding: 14px 13px 1px; background-color: #ffffff; }.detail-main__name { display: block; color: #222222; font-size: 18px; font-weight: 700; line-height: 25px; }.detail-main__description { display: block; margin-top: 8px; color: #888888; font-size: 13px; line-height: 19px; }.detail-main__line { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #888888; border-top: 1px solid #f4f4f4; font-size: 13px; }.detail-main__line:first-of-type { margin-top: 14px; }.detail-main__line text:first-child { color: #333333; }.detail-main__line text:last-child { overflow: hidden; text-align: right; white-space: nowrap; text-overflow: ellipsis; }
+.detail-shop { margin-bottom: 10px; padding: 14px 13px; display: flex; align-items: center; background-color: #ffffff; }.detail-shop__badge { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #ffffff; background-color: #d72828; font-size: 16px; font-weight: 700; }.detail-shop__content { min-width: 0; flex: 1; margin-left: 10px; display: flex; flex-direction: column; }.detail-shop__name { overflow: hidden; color: #333333; font-size: 15px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }.detail-shop__hint { margin-top: 5px; color: #999999; font-size: 12px; }.detail-shop__arrow { color: #999999; font-size: 23px; }.detail-service { padding: 13px; display: flex; align-items: center; justify-content: space-between; color: #777777; background-color: #ffffff; font-size: 12px; }.detail-service text:first-child { color: #333333; font-weight: 600; }
+.detail-footer { position: fixed; right: 0; bottom: 0; left: 0; z-index: 10; height: 61px; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box; border-top: 1px solid #eeeeee; background-color: #ffffff; }.detail-footer__service { width: 48px; display: flex; flex-direction: column; align-items: center; color: #555555; font-size: 11px; }.detail-footer__add { height: 38px; flex: 1; margin: 0 0 0 8px; border-radius: 20px; color: #ffffff; background: linear-gradient(90deg, #ff6a47, #d72828); font-size: 15px; line-height: 38px; }
+</style>

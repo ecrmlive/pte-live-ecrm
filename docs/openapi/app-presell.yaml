@@ -27,3 +27,6 @@ paths:
   /presell/pay/{id}:
     post:
       summary: 支付尾款（type=mock|balance）；成功后订单 status 10→0
+  /order/presell/final/pay/{id}:
+    post:
+      summary: 支付尾款兼容入口（与 /presell/pay/{id} 语义一致）

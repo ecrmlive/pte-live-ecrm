@@ -1,92 +1,32 @@
 # 目标技术架构
 
-本仓库重建栈，不以 CRMEB PHP/Swoole 为运行时。
+系统边界以 [SYSTEM-ARCHITECTURE.md](./SYSTEM-ARCHITECTURE.md) 为唯一口径。本文件只说明实现技术，不保留旧目录、旧库或旧服务拓扑。
 
-**服务命名 / Docker 网络 / IP / 分阶段计划**（权威）：[`docs/release/SERVICE-MATRIX.md`](./release/SERVICE-MATRIX.md)。
+## 固定技术
 
-## 1. 固定版本
+- Go 1.26.5、Gin、GORM、Swagger/OpenAPI、MySQL 8.4.10、Redis 8.8.0、etcd、NATS。
+- 统一后台与店铺后台均使用 Vben 5.7+。
+- H5 与小程序使用同一套 uni-app x（UTS / HBuilderX 5.0+）；PC 使用 Vue 3 + Vite + TypeScript。
+- 所有运行配置使用 `.yaml`。
+- IM 只使用 pte-live-im 与 pte-live-im-sdk。
 
-| 组件 | 版本 |
-| --- | --- |
-| Go | 1.26.5 |
-| Node.js | 24.18.0 |
-| npm | 11.16.0 |
-| Corepack | 0.35.0 |
-| alpine | 3.24.1 |
-| nginx | 宿主机安装（本仓库不用 Docker Nginx） |
-| node 镜像 | 24.18.0-alpine3.24 |
-| MySQL | 8.4.10 |
-| Redis | 8.8.0 |
-| etcd | v3.7.0 |
-| NATS | 2.12.0-alpine |
-| 对象存储 | 腾讯云 COS（非本仓容器） |
+## 应用边界
 
-配置文件统一使用 `.yaml`。
+| 应用 | 前端/服务 | 数据所有权 |
+| --- | --- | --- |
+| 统一后台管理系统 | `admin-platform/` + `api-platform` | `qixi_crm_admin` |
+| 店铺管理系统 | `admin-merchant/` + `api-merchant` | `qixi_crm_merchant` |
+| PC / H5 / 小程序 / iOS / Android / 鸿蒙用户端 | `app-web/`、`app-mp/`、`app-ios/`、`app-adnroid/`、`app-harmony/` + `api-business` | `qixi_crm_business` |
+| 异步任务 | `job` | 事件消费、对账、通知；不越过各库所有权 |
 
-## 2. 仓库形态
+统一后台按平台、商户、区域、客服、运营角色动态返回菜单；店铺后台独立部署、独立 JWT 与独立数据库边界。PC、小程序、H5、iOS、Android、鸿蒙六端共享用户 JWT 配置和用户主体，功能闭环必须对齐 H5。
 
-```text
-qixi-live-mergers/
-├── AGENTS.md
-├── docs/
-├── api/                    # Go 同仓；进程分立
-│   ├── cmd/api-admin/      # 后台：platform/merchant/manager/service/open
-│   ├── cmd/api-app/        # C 端：app + callback
-│   ├── cmd/job/            # NATS 消费
-│   ├── internal/domain/    # 共享领域
-│   ├── internal/{platform,merchant,app,...}/
-│   └── conf/{admin,app,job}.yaml
-├── admin-platform/         # Vben 5 平台源码 → pack key `admin` → qixi-mergers-admin
-├── admin-merchant/         # Vben 5 商户源码 → pack key `merchant-admin` → qixi-mergers-merchant-admin
-├── app-uni/                # uni-app x → qixi-mergers-h5
-├── app-pc/                 # Vue3 PC 商城 → qixi-mergers-pc
-├── sql/
-├── release/                # 见 SERVICE-MATRIX
-└── scripts/
-```
+## 数据与跨域
 
-**API 形态**：**后台 API 与 C 端 API 独立进程**（`api-admin` / `api-app`）+ `job`；领域代码共享，不按业务再拆微服务。
+- 表前缀只能是 `qixi_crm_a_`、`qixi_crm_b_`、`qixi_crm_m_`、`pte_im_a_`、`pte_im_`。
+- 服务只写自己所有的 qixi CRM 数据库；跨域调用使用 API / NATS 事件，跨库只保存稳定 ID，禁止跨库外键和事务。
+- 支付、退款、库存、优惠、积分、佣金、结算在各自所有库中以幂等键和事务实现。
 
-## 3. API 技术选型
+## 网络与发布目标
 
-| 层 | 选型 |
-| --- | --- |
-| HTTP | Gin |
-| ORM | GORM |
-| 文档 | Swagger / OpenAPI（本仓库契约在 `docs/openapi/`，CRMEB `docs/api/` 仅对照） |
-| DB | MySQL 8.4 |
-| 缓存/锁 | Redis |
-| 配置/服务发现 | etcd |
-| 消息 | NATS |
-| 认证 | JWT；平台与商户 RBAC 隔离 |
-
-## 4. 客户端规范
-
-| 端 | 规范 |
-| --- | --- |
-| 管理后台 | Vben 5+ |
-| 用户端 H5/小程序 | uni-app x（UTS / HBuilderX 5.0+） |
-| 用户端 PC | Vue 3 + Vite + TypeScript（`app-pc/`，功能表 4） |
-| 导航栏（新 App） | 高度 44，紧贴状态栏底部，按钮 44px |
-
-## 5. Docker 与部署
-
-- 网络：本仓 `qixi_mergers_net` / `172.30.80.0/24`（业务）；共享基建挂 `pte_live_net`（MySQL/Redis/NATS/etcd 由 **pte-live-im** 启动）。对象存储用腾讯云 COS。
-- 业务容器：`api_admin .20`、`job .21`、`api_app .22`（均另挂 `pte_live_net`）。
-- 本机构建产物 → `release/<svc>/` → rsync → 远程 Compose **挂载**运行（后端）。
-- 前端仅 `dist/`；**Nginx 统一宿主机**；后台反代 api-admin，C 端反代 api-app。
-- `config/local` · `config/prod`；禁止服务器源码构建。
-- 必读：[`docs/release/COMMANDS.md`](./release/COMMANDS.md)、[`PACK-AND-CONFIG.md`](./release/PACK-AND-CONFIG.md)。
-- 部署须用户授权；完成后反馈服务器 IP。
-
-## 6. 领域横切要求
-
-- 多租户：商户域带 `merchant_id`，商户接口强制隔离。
-- 订单：平台主单 + 商户子单。
-- 资金/退款/结算：状态机见 `docs/api/FUNCTIONAL-TRUTH.md`。
-- 营销：价格计算单一入口。
-- 中文测试数据：utf8mb4。
-
-## 7. 数据库前缀
-
-业务表前缀 `qixi_`。详见 `docs/schema/`。
+qixi 使用独立 Compose project `qixi_mergers`、独立 `qixi_mergers_net` 与固定 IP；不得接入 `pte_live_net`，不得复用 pte-live 的 MySQL、Redis、NATS、etcd 或容器名。前端本地开发直连 `127.0.0.1`，不安装本机 Nginx。构建、Make 和 Compose 具体命令在第 3 步目录迁移完成后重写。

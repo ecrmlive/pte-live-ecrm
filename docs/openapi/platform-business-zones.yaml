@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: 七禧平台区域代理 API
+  version: 0.1.0
+  description: 区域商圈、代理人员与代理审核。所有接口需要平台 JWT 与对应菜单权限。
+servers:
+  - url: /api/platform/v1
+paths:
+  /business-zones:
+    get:
+      summary: 区域商圈分页列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建区域商圈
+      security: [{ bearerAuth: [] }]
+  /business-zones/{id}:
+    get:
+      summary: 区域商圈详情
+      security: [{ bearerAuth: [] }]
+    put:
+      summary: 更新区域商圈（不允许直接变更父级）
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 删除无下级的区域商圈
+      security: [{ bearerAuth: [] }]
+  /business-zone-agents:
+    get:
+      summary: 区域代理分页列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 新建区域代理申请
+      security: [{ bearerAuth: [] }]
+  /business-zone-agents/{id}:
+    get:
+      summary: 区域代理详情
+      security: [{ bearerAuth: [] }]
+    put:
+      summary: 编辑待审核代理申请
+      security: [{ bearerAuth: [] }]
+  /business-zone-agents/{id}/audit:
+    post:
+      summary: 审核区域代理（status=1 通过，-1 驳回；驳回原因必填）
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

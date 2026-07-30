@@ -42,7 +42,7 @@
 - 路径端前缀：`sys/` `mer/` `api/` `openapi/` `ser/`（全量检查 0 错误）
 - 商户开放接口 6 条：路径、控制器、鉴权参数、与源码一致
 - 关键用户接口：`POST /api/auth/login`、`POST /api/v2/order/create|check`、`GET /api/user` 为 **high**；`/api/order/create|check` 与 `/api/v3/order/create|check` 为 **stale**（控制器无对应方法）
-- 表前缀参考 DDL：165 张均为 `qixi_`，无残留 `eb_` 表名
+- 旧表前缀映射已废止；七禧新设计使用 `qixi_crm_a_` / `qixi_crm_b_` / `qixi_crm_m_`，见 `docs/SYSTEM-ARCHITECTURE.md`
 
 **不能保证 100% 的部分（开发必须知道）：**
 
@@ -56,7 +56,7 @@
 1. 只实现 `doc_confidence=high` 的接口，或你亲自在源码核对过的接口。  
 2. 实现前打开 `controller_file` 与 `route` 再对一次路径和参数。  
 3. 本仓库重建 API 的正式契约以**将来的 qixi OpenAPI**为准；本目录是 CRMEB **对照文档**。  
-4. 表结构以 `docs/schema/` 的 `qixi_` 为准。
+4. 表结构以 `docs/schema/` 的三库边界与 `qixi_crm_a_` / `qixi_crm_b_` / `qixi_crm_m_` 为准。
 
 ## 校验产物
 

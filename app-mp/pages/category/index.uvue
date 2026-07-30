@@ -1,0 +1,49 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Category = { id: number; name: string; pid: number }
+const categories = ref<Category[]>([])
+const activeID = ref(0)
+const loading = ref(true)
+
+function roots(): Category[] { return categories.value.filter((item) => item.pid == 0) }
+function children(): Category[] { return categories.value.filter((item) => item.pid == activeID.value) }
+function activeName(): string {
+  const target = roots().find((item) => item.id == activeID.value)
+  return target == null ? '商品分类' : target.name
+}
+function select(category: Category): void { activeID.value = category.id }
+function goods(id: number): void { uni.navigateTo({ url: `/pages/goods/list?cate_id=${id}` }) }
+function allGoods(): void { uni.navigateTo({ url: '/pages/goods/list' }) }
+function load(): void {
+  loading.value = true
+  appRequest('/catalog/categories', 'GET', null, false).then((data) => {
+    categories.value = data as Category[]
+    const rootsList = roots()
+    if (rootsList.length > 0 && activeID.value == 0) activeID.value = rootsList[0].id
+  }).catch((error) => {
+    categories.value = []
+    uni.showToast({ title: error.message || '分类加载失败', icon: 'none' })
+  }).finally(() => { loading.value = false })
+}
+onShow(() => load())
+</script>
+
+<template>
+  <view class="category-page">
+    <view class="category-header"><text class="category-header__title">分类</text><view class="category-header__search" @click="allGoods"><text>⌕</text><text>搜索商品</text></view></view>
+    <view v-if="loading" class="category-loading">正在加载分类…</view>
+    <view v-else-if="roots().length == 0" class="category-empty"><text class="category-empty__title">暂未发布商品分类</text><text class="category-empty__hint">分类由店铺商品发布后同步展示</text><button class="category-empty__button" @click="allGoods">浏览全部商品</button></view>
+    <view v-else class="category-content">
+      <scroll-view class="category-aside" scroll-y><view v-for="category in roots()" :key="category.id" class="category-aside__item" :class="{ 'category-aside__item--active': category.id == activeID }" @click="select(category)"><text>{{ category.name }}</text></view></scroll-view>
+      <scroll-view class="category-main" scroll-y><view class="category-main__head"><text>{{ activeName() }}</text><text @click="goods(activeID)">查看全部 ›</text></view><view v-if="children().length == 0" class="category-main__empty"><text>该分类暂无子分类</text><button @click="goods(activeID)">查看商品</button></view><view v-else class="category-grid"><view v-for="category in children()" :key="category.id" class="category-grid__item" @click="goods(category.id)"><view class="category-grid__image"><text>{{ category.name.slice(0, 1) }}</text></view><text>{{ category.name }}</text></view></view></scroll-view>
+    </view>
+  </view>
+</template>
+
+<style>
+.category-page { height: 100vh; display: flex; flex-direction: column; background-color: #ffffff; }.category-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 16px; padding-left: 15px; padding-right: 15px; box-sizing: content-box; border-bottom: 1px solid #eeeeee; }.category-header__title { color: #1f2329; font-size: 18px; font-weight: 700; }.category-header__search { height: 31px; flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 16px; color: #999999; background-color: #f5f5f5; font-size: 13px; }.category-header__search text:first-child { color: #666666; font-size: 18px; }
+.category-content { min-height: 0; flex: 1; display: flex; }.category-aside { width: 94px; flex-shrink: 0; background-color: #f7f7f7; }.category-aside__item { min-height: 49px; padding: 0 9px; display: flex; align-items: center; justify-content: center; color: #666666; font-size: 14px; text-align: center; }.category-aside__item--active { position: relative; color: #d72828; background-color: #ffffff; font-weight: 700; }.category-aside__item--active::before { position: absolute; left: 0; width: 3px; height: 20px; border-radius: 2px; background-color: #d72828; content: ''; }
+.category-main { min-width: 0; flex: 1; padding: 17px 14px; box-sizing: border-box; }.category-main__head { display: flex; align-items: center; justify-content: space-between; color: #222222; font-size: 16px; font-weight: 700; }.category-main__head text:last-child { color: #999999; font-size: 12px; font-weight: 400; }.category-grid { display: flex; flex-wrap: wrap; margin-top: 19px; }.category-grid__item { width: 33.333%; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; color: #555555; font-size: 12px; }.category-grid__image { width: 54px; height: 54px; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; border-radius: 27px; color: #d72828; background-color: #fff0ee; font-size: 20px; font-weight: 700; }.category-main__empty { padding: 50px 0; display: flex; flex-direction: column; align-items: center; color: #999999; font-size: 13px; }.category-main__empty button, .category-empty__button { margin-top: 13px; color: #d72828; border: 1px solid #d72828; border-radius: 16px; background-color: #ffffff; font-size: 13px; }
+.category-loading, .category-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 14px; }.category-empty__title { color: #555555; font-size: 16px; font-weight: 600; }.category-empty__hint { margin-top: 8px; color: #999999; font-size: 12px; }
+</style>

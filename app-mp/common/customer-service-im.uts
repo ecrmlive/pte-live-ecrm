@@ -1,0 +1,98 @@
+import { appRequest } from './request'
+import { PteIMBaseConfig, PteIMLoginConfig, PteIMSDKClient, PteIMUserSigProvider, PteIMUserSigRefreshResult } from '../uni_modules/pte-im-sdk/utssdk/interface.uts'
+// #ifdef WEB
+import { createPteIMSDK } from '../uni_modules/pte-im-sdk/utssdk/web/index.uts'
+// #endif
+// #ifdef MP-WEIXIN
+import { createPteIMSDK } from '../uni_modules/pte-im-sdk/utssdk/mp-weixin/index.uts'
+// #endif
+
+type CustomerServiceCredential = {
+  mode: string
+  sdkAppId: number
+  imUserId: string
+  userSig: string
+  expireAt: number
+  apiURL: string
+  wsURL: string
+  conversationID: string
+}
+
+export type CustomerServiceSession = {
+  threadID: number
+  conversationID: string
+  client: PteIMSDKClient
+}
+
+let activeClient: PteIMSDKClient | null = null
+
+function errorMessage(error: any): string {
+  return error instanceof Error ? error.message : String(error ?? '客服连接失败')
+}
+
+function parseCredential(raw: UTSJSONObject): CustomerServiceCredential {
+  const credential: CustomerServiceCredential = {
+    mode: String(raw['mode'] ?? ''),
+    sdkAppId: Number(raw['sdk_app_id'] ?? 0),
+    imUserId: String(raw['im_user_id'] ?? raw['identifier'] ?? ''),
+    userSig: String(raw['user_sig'] ?? ''),
+    expireAt: Number(raw['expire_at'] ?? 0),
+    apiURL: String(raw['api_url'] ?? ''),
+    wsURL: String(raw['ws_url'] ?? ''),
+    conversationID: String(raw['im_conversation_id'] ?? ''),
+  }
+  if (credential.mode !== 'remote') throw new Error('客服 IM 必须使用 pte-live-im remote 模式')
+  if (credential.sdkAppId <= 0 || credential.imUserId.length === 0 || credential.userSig.length === 0 || credential.expireAt <= 0) throw new Error('客服 IM 凭证不完整')
+  if (credential.apiURL.length === 0 || credential.wsURL.length === 0) throw new Error('客服 IM 公网地址未配置')
+  if (Number(credential.conversationID) <= 0) throw new Error('商户暂未配置可用客服，请稍后重试')
+  return credential
+}
+
+async function credentialFor(threadID: number): Promise<CustomerServiceCredential> {
+  const raw = await appRequest(`/cs/im/credential?thread_id=${threadID}`)
+  return parseCredential(raw)
+}
+
+/** 创建业务会话并启动 pte-live-im 共享 SDK；UserSig 不写入任何本地持久化。 */
+export async function openCustomerServiceSession(merID: number): Promise<CustomerServiceSession> {
+  if (merID <= 0) throw new Error('商户信息不完整')
+  const opened = await appRequest('/cs/threads', 'POST', { mer_id: merID } as UTSJSONObject)
+  const threadID = Number(opened['thread_id'] ?? 0)
+  if (threadID <= 0) throw new Error('客服会话创建失败')
+  const initial = await credentialFor(threadID)
+  if (activeClient != null) activeClient.stop()
+
+  const base: PteIMBaseConfig = {
+    apiDomain: initial.apiURL,
+    imDomain: initial.wsURL,
+    cosDomain: initial.apiURL,
+    themeMode: 'light',
+    language: 'zh-CN',
+  }
+  const provider: PteIMUserSigProvider = {
+    refreshUserSig: async (): Promise<PteIMUserSigRefreshResult> => {
+      const renewed = await credentialFor(threadID)
+      return { userSig: renewed.userSig, expireAt: renewed.expireAt }
+    },
+  }
+  const login: PteIMLoginConfig = {
+    sdkAppId: initial.sdkAppId,
+    userId: initial.imUserId,
+    userSig: initial.userSig,
+    userSigExpireAt: initial.expireAt,
+    userSigProvider: provider,
+  }
+  try {
+    const client = createPteIMSDK(base).login(login)
+    client.start()
+    activeClient = client
+    return { threadID, conversationID: initial.conversationID, client }
+  } catch (error) {
+    throw new Error(errorMessage(error))
+  }
+}
+
+export function stopCustomerServiceSession(): void {
+  if (activeClient != null) activeClient.stop()
+  activeClient = null
+}

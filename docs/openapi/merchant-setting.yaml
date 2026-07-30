@@ -1,16 +1,46 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers merchant setting
-  version: 0.7.7
-  description: 商户设置（店铺/店员/子账号/本店角色/快捷回复）；写操作需 shop/update·staff/write·admins/write·roles/write·reply/write
+  version: 0.8.0
+  description: 商户设置（店铺/店员/子账号/本店角色/快捷回复/IM SDK AppId）；受保护接口使用 Authori-zation 与 X-AppId。
 servers:
   - url: /api/merchant/v1
 paths:
+  /payment/channels:
+    get:
+      summary: 当前店铺支付方式开关
+      description: 返回微信支付和支付宝支付的本店独立配置状态；平台支付配置不会参与或兜底。
+  /payment/channels/{channel}:
+    put:
+      summary: 加密保存当前店铺独立支付商户配置并启停渠道
+      parameters:
+        - name: channel
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [wechat, alipay]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  description: 微信使用 app_id/mch_id/api_v3_key/serial_no/private_key/notify_url；支付宝使用 app_id/private_key/public_key/notify_url；均包含 enabled=true|false。
+      responses:
+        '200':
+          description: 已保存
+        '400':
+          description: 渠道或请求参数不合法
   /setting/shop:
     get:
       summary: 本店资料
     put:
-      summary: 更新本店资料（mer_id 隔离；按钮权 shop/update）
+      summary: 更新本店资料（店铺名称、联系人、联系电话、地址、简介；mer_id 隔离；按钮权 shop/update）
   /setting/staff:
     get:
       summary: 店员列表
@@ -48,3 +78,53 @@ paths:
   /setting/menus/tree:
     get:
       summary: 商户菜单+按钮树（角色勾选；is_menu=1 菜单 / 2 按钮）
+  /settings/im-sdk-apps:
+    get:
+      summary: 当前商户的 pte-live-im SDK AppId 映射列表
+    post:
+      summary: 新增 SDK AppId 映射（不接收或保存 pte 集成 Token）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IMSDKAppInput'
+  /settings/im-sdk-apps/{id}:
+    put:
+      summary: 更新 SDK AppId 映射资料；SDK AppId 本身不可变
+      parameters:
+        - $ref: '#/components/parameters/ID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IMSDKAppInput'
+  /settings/im-sdk-apps/{id}/activate:
+    post:
+      summary: 事务化切换为该商户唯一当前启用 SDK AppId
+      parameters:
+        - $ref: '#/components/parameters/ID'
+  /settings/im-sdk-apps/{id}/disable:
+    post:
+      summary: 停用 SDK AppId，并取消当前启用状态
+      parameters:
+        - $ref: '#/components/parameters/ID'
+components:
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  schemas:
+    IMSDKAppInput:
+      type: object
+      required: [sdk_app_id, name]
+      properties:
+        sdk_app_id: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 128 }
+        status: { type: string, enum: [enabled, disabled] }
+        api_public_url: { type: string, maxLength: 1024 }
+        ws_public_url: { type: string, maxLength: 1024 }
+        pte_profile_id: { type: string, maxLength: 128, description: pte 受控配置引用，不是密钥 }

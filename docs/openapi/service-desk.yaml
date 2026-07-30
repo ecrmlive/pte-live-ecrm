@@ -1,33 +1,81 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers service desk
-  version: 0.7.7
-  description: 阶段 6b/7 客服查单 + 快捷回复（演示 Token；回复读 qixi_store_service_reply）
+  version: 0.7.9
+  description: 客服工作台：正式 service JWT、商户隔离的查单/快捷回复/会话管理，以及 IM 凭据获取。
 servers:
   - url: /api/service/v1
 paths:
   /ping:
     get:
       summary: 健康探测
+  /auth/login:
+    post:
+      summary: 客服账号登录
+  /auth/refresh:
+    post:
+      summary: 刷新客服 access token
+  /auth/me:
+    get:
+      summary: 当前客服资料
+      security: [{ bearerAuth: [] }]
   /orders/{id}:
     get:
-      summary: 按 mer_id + order_id 查单
-      parameters:
-        - in: query
-          name: mer_id
-          required: true
-        - in: header
-          name: X-Service-Token
-          required: true
-          description: 演示值 service_demo_token
+      summary: 本商户订单详情
+      security: [{ bearerAuth: [] }]
   /quick-replies:
     get:
-      summary: 快捷回复列表（仅 status=1；按 mer_id）
+      summary: 本商户启用的快捷回复
+      security: [{ bearerAuth: [] }]
+  /threads:
+    get:
+      summary: 客服会话列表
+      security: [{ bearerAuth: [] }]
+  /threads/{id}/claim:
+    post:
+      summary: 认领客服会话
+      security: [{ bearerAuth: [] }]
+  /threads/{id}/messages:
+    get:
+      summary: 会话消息元数据列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 写入订单卡片或系统消息（不接收文本正文）
+      security: [{ bearerAuth: [] }]
+  /im/credential:
+    get:
+      summary: 获取短期 IM UserSig、客户端 API 公网地址与 WebSocket 凭据
+      security: [{ bearerAuth: [] }]
       parameters:
-        - in: query
-          name: mer_id
-          required: false
-          description: 默认 1
-        - in: header
-          name: X-Service-Token
+        - name: thread_id
+          in: query
           required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: 使用 pte-live-im-sdk 连接；UserSig 禁止持久化、日志和缓存。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    required: [mode, sdk_app_id, im_user_id, user_sig, expire_at, api_url, ws_url, im_conversation_id]
+                    properties:
+                      mode: { type: string, enum: [remote] }
+                      sdk_app_id: { type: string, example: '30001' }
+                      im_user_id: { type: string, example: '2000000001' }
+                      user_sig: { type: string, writeOnly: true, description: 短期凭据，禁止持久化、日志和接口缓存 }
+                      expire_at: { type: integer, format: int64, description: Unix 秒 }
+                      api_url: { type: string, format: uri, description: IM API 客户端公网地址，不得为 Docker 服务名 }
+                      ws_url: { type: string, description: IM WebSocket 客户端公网地址 }
+                      im_conversation_id: { type: integer, format: int64 }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -3,6 +3,8 @@
 > 主来源：`eb_system_menu` 按钮权限。
 > 若页面无按钮权限节点，则用同页 `route` 的 `_path` 接口补全（标注来源=路由）。
 > CRUD：`C`创建 · `R`读取 · `U`更新 · `D`删除 · `O`其他。
+>
+> 本页的页面覆盖与操作统计为生成时的展示快照。全量逐项验收以 [`../generated/features-master.tsv`](../generated/features-master.tsv) 为唯一口径，其中商户后台为 **615** 项；总验收入口见 [`../CRMEB-FULL-FUNCTION-CHECKLIST.md`](../CRMEB-FULL-FUNCTION-CHECKLIST.md)。
 
 ## 统计
 

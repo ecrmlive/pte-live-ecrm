@@ -1,0 +1,128 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Product = {
+  id: number
+  title: string
+  store_name: string
+  shop_name: string
+  image: string
+  price: string
+  ot_price: string
+  sales: number
+}
+type Banner = { id: number; title: string; image: string; url: string }
+type Home = { banners: Banner[]; hot: Product[] }
+type Shortcut = { title: string; icon: string; path: string }
+
+const shortcuts: Shortcut[] = [
+  { title: '全部商品', icon: '商', path: '/pages/goods/list' },
+  { title: '领券中心', icon: '券', path: '/pages/coupon/center' },
+  { title: '秒杀专区', icon: '秒', path: '/pages/seckill/list' },
+  { title: '拼团好物', icon: '团', path: '/pages/combination/list' },
+  { title: '预售专区', icon: '预', path: '/pages/presell/list' },
+  { title: '直播间', icon: '播', path: '/pages/live/list' },
+  { title: '积分商城', icon: '积', path: '/pages/points/list' },
+  { title: '平台公告', icon: '告', path: '/pages/notice/list' }
+]
+
+const banners = ref<Banner[]>([])
+const hot = ref<Product[]>([])
+const diyItems = ref<any[]>([])
+const diyPage = ref<any>({})
+const diyEnabled = ref(false)
+const loading = ref(true)
+
+function productName(product: Product): string { return product.title || product.store_name || '商品' }
+function productImage(product: Product): string { return String(product.image || '').trim() }
+
+function load(): void {
+  loading.value = true
+  appRequest('/diy/home', 'GET', null, false).then((data) => {
+    diyItems.value = (data['items'] as any[]) || []
+    diyPage.value = data['page'] || {}
+    diyEnabled.value = diyItems.value.length > 0
+  }).catch(() => {
+    diyItems.value = []
+    diyPage.value = {}
+    diyEnabled.value = false
+  })
+  appRequest('/catalog/home', 'GET', null, false).then((data) => {
+    const home = data as Home
+    banners.value = home.banners || []
+    hot.value = home.hot || []
+  }).catch(() => {
+    banners.value = []
+    hot.value = []
+  }).finally(() => { loading.value = false })
+}
+
+function go(path: string): void {
+  if (path == '/pages/index/index' || path == '/pages/category/index' || path == '/pages/cart/index' || path == '/pages/user/index') {
+    uni.switchTab({ url: path })
+    return
+  }
+  uni.navigateTo({ url: path })
+}
+function goBanner(banner: Banner): void {
+  const link = String(banner.url || '').trim()
+  if (link.length == 0) return
+  if (link.startsWith('/pages/')) go(link)
+}
+function goGoods(id: number): void { uni.navigateTo({ url: `/pages/goods/detail?id=${id}` }) }
+
+onShow(() => load())
+</script>
+
+<template>
+  <view v-if="diyEnabled" class="qx-page">
+    <qx-nav title="七禧商城" />
+    <qx-diy-home :items="diyItems" :page="diyPage" />
+  </view>
+  <view v-else class="qx-page home-page">
+    <view class="home-header">
+      <view class="home-header__brand"><text class="home-header__brand-mark">Q</text><text>七禧商城</text></view>
+      <view class="home-header__search" @click="go('/pages/goods/list')"><text class="home-header__search-icon">⌕</text><text>搜索商品</text></view>
+      <view class="home-header__message" @click="go('/pages/notice/list')">公告</view>
+    </view>
+
+    <view v-if="banners.length > 0" class="banner-wrap">
+      <swiper class="banner" circular autoplay indicator-dots interval="4000">
+        <swiper-item v-for="banner in banners" :key="banner.id" @click="goBanner(banner)">
+          <image v-if="banner.image" class="banner__image" :src="banner.image" mode="aspectFill" />
+          <view v-else class="banner__fallback"><text>{{ banner.title || '七禧精选好物' }}</text></view>
+        </swiper-item>
+      </swiper>
+    </view>
+    <view v-else class="banner-wrap"><view class="banner__fallback"><text>好商品，来自好商家</text><text class="banner__sub">发现七禧多商户精选好物</text></view></view>
+
+    <view class="shortcut-grid">
+      <view v-for="item in shortcuts" :key="item.path" class="shortcut-item" @click="go(item.path)">
+        <view class="shortcut-item__icon"><text>{{ item.icon }}</text></view><text>{{ item.title }}</text>
+      </view>
+    </view>
+
+    <view class="section-head"><view><text class="section-head__title">精选推荐</text><text class="section-head__sub">品质商品</text></view><text class="section-head__more" @click="go('/pages/goods/list')">更多 ›</text></view>
+    <view v-if="loading" class="home-loading"><text>正在加载商品…</text></view>
+    <view v-else-if="hot.length == 0" class="home-empty"><text>暂无可售商品</text><button class="home-empty__button" @click="go('/pages/goods/list')">浏览全部商品</button></view>
+    <view v-else class="product-grid">
+      <view v-for="product in hot" :key="product.id" class="product-card" @click="goGoods(product.id)">
+        <image v-if="productImage(product).length > 0" class="product-card__image" :src="productImage(product)" mode="aspectFill" />
+        <view v-else class="product-card__image product-card__image--empty"><text>商品</text></view>
+        <view class="product-card__body"><text class="product-card__name">{{ productName(product) }}</text><text v-if="product.shop_name" class="product-card__shop">{{ product.shop_name }}</text><view class="product-card__price-row"><text class="product-card__price">¥{{ product.price }}</text><text class="product-card__sales">已售 {{ product.sales }}</text></view></view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<style>
+.home-page { padding-bottom: 20px; background-color: #f6f6f6; }
+.home-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 10px; padding-left: 12px; padding-right: 12px; color: #ffffff; background-color: #d72828; box-sizing: content-box; }
+.home-header__brand { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; white-space: nowrap; }.home-header__brand-mark { width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #ffffff; font-size: 13px; }
+.home-header__search { height: 32px; flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 17px; color: #9b9b9b; background-color: #ffffff; font-size: 13px; }.home-header__search-icon { color: #777777; font-size: 20px; line-height: 20px; }.home-header__message { font-size: 12px; white-space: nowrap; }
+.banner-wrap { margin: 12px 12px 0; overflow: hidden; border-radius: 10px; }.banner { height: 160px; }.banner__image, .banner__fallback { width: 100%; height: 160px; }.banner__fallback { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 22px; box-sizing: border-box; color: #ffffff; background: linear-gradient(135deg, #fd6658, #d72828); font-size: 23px; font-weight: 700; }.banner__sub { margin-top: 9px; color: #ffe4e1; font-size: 13px; font-weight: 400; }
+.shortcut-grid { display: flex; flex-wrap: wrap; margin: 12px; padding: 12px 0 7px; border-radius: 10px; background-color: #ffffff; }.shortcut-item { width: 25%; margin-bottom: 11px; display: flex; flex-direction: column; align-items: center; color: #363636; font-size: 12px; }.shortcut-item__icon { width: 37px; height: 37px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; border-radius: 19px; color: #d72828; background-color: #fff0ee; font-size: 16px; font-weight: 700; }
+.section-head { margin: 18px 12px 10px; display: flex; align-items: center; justify-content: space-between; }.section-head__title { font-size: 18px; font-weight: 700; }.section-head__sub { margin-left: 8px; color: #9a9a9a; font-size: 12px; }.section-head__more { color: #888888; font-size: 13px; }
+.product-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 12px; }.product-card { width: calc(50% - 5px); overflow: hidden; border-radius: 9px; background-color: #ffffff; }.product-card__image { width: 100%; height: 164px; display: block; background-color: #f0f0f0; }.product-card__image--empty { display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #fff0ee; font-size: 16px; }.product-card__body { padding: 9px 9px 10px; }.product-card__name { min-height: 36px; color: #282828; font-size: 14px; line-height: 18px; overflow: hidden; }.product-card__shop { display: block; margin-top: 4px; overflow: hidden; color: #999999; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }.product-card__price-row { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; }.product-card__price { color: #d72828; font-size: 17px; font-weight: 700; }.product-card__sales { color: #999999; font-size: 10px; }
+.home-loading, .home-empty { margin: 0 12px; padding: 32px 16px; display: flex; flex-direction: column; align-items: center; color: #999999; border-radius: 9px; background-color: #ffffff; font-size: 13px; }.home-empty__button { margin-top: 13px; padding: 0 16px; color: #d72828; border: 1px solid #d72828; border-radius: 16px; background-color: #ffffff; font-size: 13px; }
+</style>

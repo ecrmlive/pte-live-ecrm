@@ -24,6 +24,35 @@ export interface DiyEditorBootstrap {
   opts?: Record<string, unknown>;
 }
 
+export type DiyLinkScope = 'merchant' | 'platform';
+
+export interface DiyPageCategory {
+	add_time?: string;
+	children?: DiyPageCategory[];
+	id: number;
+	is_mer: number;
+	level: number;
+	name: string;
+	pid: number;
+	sort: number;
+	status: number;
+	type: string;
+}
+
+export interface DiyPageLink {
+	add_time?: string;
+	cate_id: number;
+	category?: DiyPageCategory;
+	example: string;
+	id: number;
+	is_mer: number;
+	name: string;
+	param: string;
+	sort: number;
+	status: number;
+	url: string;
+}
+
 export type DiyEditorMode =
   | 'center-add'
   | 'center-edit'
@@ -37,6 +66,7 @@ export async function listDiyPagesApi(params: {
   limit?: number;
   is_diy?: number;
   name?: string;
+  status?: number;
 }) {
   return requestClient.get<{ list: DiyPageRow[]; total: number; page: number; limit: number }>(
     '/diy/pages',
@@ -62,6 +92,61 @@ export async function activeDiyPageApi(id: number) {
 
 export async function copyDiyPageApi(id: number) {
   return requestClient.post<DiyPageRow>(`/diy/pages/${id}/copy`, {});
+}
+
+export async function recoveryDiyPageApi(id: number) {
+  return requestClient.post<DiyPageRow>(`/diy/pages/${id}/recovery`, {});
+}
+
+export async function listDiyPageCategoriesApi(scope: DiyLinkScope) {
+	return requestClient.get<{ list: DiyPageCategory[] }>('/diy/page-categories', {
+		params: { scope },
+	});
+}
+
+export async function createDiyPageCategoryApi(
+	scope: DiyLinkScope,
+	body: Partial<DiyPageCategory>,
+) {
+	return requestClient.post<DiyPageCategory>('/diy/page-categories', body, { params: { scope } });
+}
+
+export async function updateDiyPageCategoryApi(
+	id: number,
+	scope: DiyLinkScope,
+	body: Partial<DiyPageCategory>,
+) {
+	return requestClient.put<DiyPageCategory>(`/diy/page-categories/${id}`, body, { params: { scope } });
+}
+
+export async function deleteDiyPageCategoryApi(id: number, scope: DiyLinkScope) {
+	return requestClient.delete(`/diy/page-categories/${id}`, { params: { scope } });
+}
+
+export async function listDiyPageLinksApi(
+	scope: DiyLinkScope,
+	params?: { limit?: number; name?: string; page?: number; status?: number },
+) {
+	return requestClient.get<{ limit: number; list: DiyPageLink[]; page: number; total: number }>(
+		'/diy/page-links',
+		{ params: { ...params, scope } },
+	);
+}
+
+export async function createDiyPageLinkApi(scope: DiyLinkScope, body: Partial<DiyPageLink>) {
+	return requestClient.post<DiyPageLink>('/diy/page-links', body, { params: { scope } });
+}
+
+export async function updateDiyPageLinkApi(
+	id: number,
+	scope: DiyLinkScope,
+	body: Partial<DiyPageLink>,
+) {
+	return requestClient.put<DiyPageLink>(`/diy/page-links/${id}`, body, { params: { scope } });
+}
+
+export async function deleteDiyPageLinkApi(id: number, scope: DiyLinkScope) {
+	return requestClient.delete(`/diy/page-links/${id}`, { params: { scope } });
 }
 
 export async function loadDiyEditorApi(mode: DiyEditorMode, pageId?: number) {

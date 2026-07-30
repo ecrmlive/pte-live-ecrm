@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform logistics
+  version: 0.7.9
+  description: 平台快递公司 CRUD 与城市查询。
+servers:
+  - url: /api/platform/v1
+paths:
+  /express:
+    get: { summary: 快递公司列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建快递公司, security: [{ bearerAuth: [] }] }
+  /express/{id}:
+    put: { summary: 更新快递公司, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除快递公司, security: [{ bearerAuth: [] }] }
+  /city:
+    get: { summary: 城市列表, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

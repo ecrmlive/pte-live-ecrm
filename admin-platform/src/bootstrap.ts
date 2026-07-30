@@ -8,6 +8,7 @@ import '@vben/styles';
 import '@vben/styles/ele';
 
 import { useTitle } from '@vueuse/core';
+import ElementPlus from 'element-plus';
 import { $t, setupI18n } from '#/locales';
 
 import { initComponentAdapter } from './adapter/component';
@@ -22,6 +23,11 @@ async function bootstrap(namespace: string) {
   await initSetupVbenForm();
 
   const app = createApp(App);
+
+  // 业务页使用 Element Plus 原生组件。Vben 的表单适配器只服务于
+  // schema 表单，不会全局注册 el-table、el-card、el-form 等模板组件。
+  // 未注册时 Vue 会把这些组件当成未知标签，最终导致页面渲染中断。
+  app.use(ElementPlus);
 
   registerLoadingDirective(app, {
     loading: false,

@@ -1,50 +1,88 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform merchant & catalog
-  version: 0.2.0
+  version: 0.2.2
   description: 阶段 2 平台侧商户审核 / 类目品牌 / 商品审核
 servers:
   - url: /api/platform/v1
 paths:
   /merchants:
     get:
-      summary: 商户列表
+      summary: 商户列表（区域管理员仅返回其 region_ids 内商户）
       security: [{ bearerAuth: [] }]
   /merchants/{id}:
     get:
-      summary: 商户详情
+      summary: 商户详情（受区域数据范围限制）
       security: [{ bearerAuth: [] }]
   /merchants/{id}/status:
     put:
-      summary: 启用/锁定商户
+      summary: 启用/锁定商户（受区域数据范围限制）
       security: [{ bearerAuth: [] }]
   /merchant-intentions:
     get:
       summary: 入驻申请列表
       security: [{ bearerAuth: [] }]
+  /merchant-intentions/{id}:
+    get:
+      summary: 入驻申请详情
+      security: [{ bearerAuth: [] }]
   /merchant-intentions/{id}/audit:
     post:
-      summary: 审核入驻（通过则创建商户+主账号）
+      summary: 审核入驻（通过则创建商户+主账号；可传 region_id 绑定所属区域）
       security: [{ bearerAuth: [] }]
   /merchant-categories:
     get:
       summary: 商户分类列表
       security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建商户分类
+      security: [{ bearerAuth: [] }]
+  /merchant-categories/{id}:
+    put:
+      summary: 更新商户分类
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 删除商户分类
+      security: [{ bearerAuth: [] }]
   /product-categories:
     get:
       summary: 平台商品分类树
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建平台商品分类（需 product/category/manage）
+      security: [{ bearerAuth: [] }]
+  /product-categories/{id}:
+    put:
+      summary: 更新平台商品分类（需 product/category/manage）
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 删除平台商品分类（需 product/category/manage）
       security: [{ bearerAuth: [] }]
   /brands:
     get:
       summary: 品牌列表
       security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建品牌（需 product/brand/manage）
+      security: [{ bearerAuth: [] }]
+  /brands/{id}:
+    put:
+      summary: 更新品牌（需 product/brand/manage）
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 删除品牌（需 product/brand/manage）
+      security: [{ bearerAuth: [] }]
   /products:
     get:
       summary: 商品监管列表
       security: [{ bearerAuth: [] }]
+  /products/{id}:
+    get:
+      summary: 商品监管详情
+      security: [{ bearerAuth: [] }]
   /products/{id}/audit:
     post:
-      summary: 商品审核 status=1/-1/-2
+      summary: 商品审核 status=1/-1/-2（写操作需 product/audit 按钮权限，区域账号不可访问）
       security: [{ bearerAuth: [] }]
 components:
   securitySchemes:

@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
-const route = useRoute();
-const title = computed(() => (route.meta.title as string) || '功能建设中');
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { createPlatformCategoryApi, deletePlatformCategoryApi, listPlatformCategoriesApi, updatePlatformCategoryApi, type PlatformCategory } from '#/api/core/platform-catalog';
+const rows = ref<PlatformCategory[]>([]); const loading = ref(false); const open = ref(false); const editing = ref<PlatformCategory>(); const form = reactive({ cate_name: '', is_show: 1, pid: 0, sort: 0 });
+const options = computed(() => flatten(rows.value));
+function flatten(items: PlatformCategory[], prefix = ''): Array<{ label: string; value: number }> { return items.flatMap((item) => [{ label: `${prefix}${item.cate_name}`, value: item.store_category_id }, ...flatten(item.children || [], `${prefix}— `)]); }
+async function load() { loading.value = true; try { rows.value = (await listPlatformCategoriesApi()).list || []; } finally { loading.value = false; } }
+function add() { editing.value = undefined; Object.assign(form, { cate_name: '', is_show: 1, pid: 0, sort: 0 }); open.value = true; }
+function edit(row: PlatformCategory) { editing.value = row; Object.assign(form, { cate_name: row.cate_name, is_show: row.is_show, pid: row.pid, sort: row.sort }); open.value = true; }
+async function save() { if (!form.cate_name.trim()) { ElMessage.warning('请填写分类名称'); return; } if (editing.value) await updatePlatformCategoryApi(editing.value.store_category_id, { cate_name: form.cate_name.trim(), is_show: form.is_show, sort: form.sort }); else await createPlatformCategoryApi({ cate_name: form.cate_name.trim(), is_show: form.is_show, pid: form.pid, sort: form.sort }); open.value = false; ElMessage.success('分类已保存'); await load(); }
+async function remove(row: PlatformCategory) { try { await ElMessageBox.confirm(`删除“${row.cate_name}”后不可恢复，是否继续？`, '删除分类', { type: 'warning' }); await deletePlatformCategoryApi(row.store_category_id); ElMessage.success('分类已删除'); await load(); } catch { /* 取消或请求错误统一提示 */ } }
+onMounted(() => void load());
 </script>
 <template>
-  <Page :title="title" description="Vben 壳已就绪，业务页待迁移。">
-    <div class="text-muted-foreground p-4 text-sm">path: {{ route.path }}</div>
-  </Page>
+  <Page title="平台分类" description="维护全平台商品分类树；新增、编辑、删除均受 product/category/manage 按钮权限控制。"><template #extra><el-button type="primary" @click="add">新增分类</el-button></template><el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="store_category_id" default-expand-all><el-table-column label="分类名称" min-width="240" prop="cate_name" /><el-table-column label="排序" prop="sort" width="90" /><el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '显示' : '隐藏' }}</el-tag></template></el-table-column><el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table></el-card><el-dialog v-model="open" :title="editing ? '编辑分类' : '新增分类'" width="520px" destroy-on-close><el-form label-width="96px"><el-form-item label="上级分类"><el-select v-model="form.pid" class="w-full"><el-option label="顶级分类" :value="0" /><el-option v-for="item in options" :key="item.value" :disabled="item.value === editing?.store_category_id" :label="item.label" :value="item.value" /></el-select></el-form-item><el-form-item label="分类名称" required><el-input v-model="form.cate_name" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" class="w-full" /></el-form-item><el-form-item label="显示"><el-switch v-model="form.is_show" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template></el-dialog></Page>
 </template>

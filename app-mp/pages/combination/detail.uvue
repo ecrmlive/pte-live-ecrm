@@ -1,0 +1,58 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
+
+type ProductGroup = { product_group_id: number; store_name: string; mer_name: string; price: number; buying_count_num: number }
+type Buying = { group_buying_id: number; yet_buying_num: number; buying_count_num: number; remain: number; status: number }
+type BuyingData = { list: Buying[] }
+type Address = { address_id: number; is_default: number }
+type AddressData = { list: Address[] }
+type GroupCheck = { store_name: string; pay_price: number }
+type GroupOrder = { group_order_id: number }
+
+const id = ref(0)
+const item = ref<ProductGroup | null>(null)
+const buyings = ref<Buying[]>([])
+const submitting = ref(false)
+
+function load(): void {
+  if (id.value <= 0) return
+  appRequest(`/combination/groups/${id.value}`, 'GET', null, false).then((data) => { item.value = data as ProductGroup }).catch((error) => uni.showToast({ title: error.message || '拼团活动加载失败', icon: 'none' }))
+  appRequest(`/combination/groups/${id.value}/buyings`, 'GET', null, false).then((data) => { buyings.value = (data as BuyingData).list || [] }).catch((error) => uni.showToast({ title: error.message || '拼团列表加载失败', icon: 'none' }))
+}
+function submit(groupBuyingID: number): void {
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }
+  if (id.value <= 0) return
+  submitting.value = true
+  let addressID = 0
+  appRequest('/address').then((data) => {
+    const addresses = (data as AddressData).list || []
+    const address = addresses.find((row) => row.is_default == 1) || (addresses.length > 0 ? addresses[0] : null)
+    if (address == null) { uni.showToast({ title: '请先添加收货地址', icon: 'none' }); uni.navigateTo({ url: '/pages/address/list' }); throw new Error('缺少收货地址') }
+    addressID = address.address_id
+    return appRequest('/order/group/check', 'POST', { product_group_id: id.value, group_buying_id: groupBuyingID, cart_num: 1, address_id: address.address_id } as UTSJSONObject)
+  }).then((data) => {
+    const checked = data as GroupCheck
+    if (checked.pay_price < 0) throw new Error('拼团订单金额异常')
+    return appRequest('/order/group/create', 'POST', { product_group_id: id.value, group_buying_id: groupBuyingID, cart_num: 1, address_id: addressID } as UTSJSONObject)
+  }).then((data) => {
+    const created = data as GroupOrder
+    uni.navigateTo({ url: `/pages/order/detail?id=${created.group_order_id}` })
+  }).catch((error) => {
+    if (error.message != '缺少收货地址') uni.showToast({ title: error.message || '拼团下单失败', icon: 'none' })
+  }).finally(() => { submitting.value = false })
+}
+function open(): void { submit(0) }
+function join(groupBuyingID: number): void { submit(groupBuyingID) }
+
+onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+onShow(() => { if (id.value > 0) load() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="拼团详情" /><view v-if="item != null" class="hero"><text class="hero__title">{{ item.store_name }}</text><text class="hero__sub">{{ item.mer_name }} · {{ item.buying_count_num }} 人成团</text><text class="hero__price">拼团价 ¥{{ item.price }}</text></view><view class="qx-card"><text class="title">进行中的团</text><view v-if="buyings.length == 0" class="empty">暂无可参团订单，您可以发起新团</view><view v-for="buying in buyings" :key="buying.group_buying_id" class="buying"><text>还差 {{ buying.remain }} 人 · 已有 {{ buying.yet_buying_num }}/{{ buying.buying_count_num }} 人</text><button :loading="submitting" class="join" @click="join(buying.group_buying_id)">参团</button></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="open">发起拼团</button></view></view>
+</template>
+
+<style>
+.hero { margin: 12px; padding: 20px; color: #ffffff; background: linear-gradient(135deg, #5e3ca4, #8d73d5); border-radius: 12px; }.hero__title, .hero__sub, .hero__price { display: block; }.hero__title { font-size: 21px; font-weight: 700; }.hero__sub { margin-top: 8px; font-size: 13px; opacity: 0.9; }.hero__price { margin-top: 14px; font-size: 22px; font-weight: 700; }.title { display: block; font-size: 16px; font-weight: 600; }.empty { padding: 20px 0 4px; color: #86909c; text-align: center; }.buying { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-top: 1px solid #f0f0f0; color: #4e5969; font-size: 13px; }.join { width: 64px; margin: 0; color: #d72828; background-color: #ffffff; border: 1px solid #d72828; border-radius: 16px; font-size: 12px; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }
+</style>

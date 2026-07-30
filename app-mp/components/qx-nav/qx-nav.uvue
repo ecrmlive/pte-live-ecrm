@@ -1,0 +1,9 @@
+<script setup lang="uts">
+const props = defineProps<{ title: string }>()
+</script>
+
+<template>
+  <view class="qx-nav">
+    <text class="qx-nav__title">{{ props.title }}</text>
+  </view>
+</template>

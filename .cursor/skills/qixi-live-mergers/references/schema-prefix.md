@@ -1,4 +1,4 @@
-# 表前缀 `qixi_`
+# 表前缀 `qixi_m_admin_`（平台/商户）与 `qixi_m_app_`（C 端）
 
 - 参考库：CRMEB `eb_*`（外部 SQL，不入库运行）
 - 本仓库：一律 `qixi_*`

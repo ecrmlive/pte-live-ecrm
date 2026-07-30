@@ -45,11 +45,11 @@ export async function refreshLiveJwtToken(
   const appId = options.appId ?? resolveShopAppId();
   const headers: Record<string, string> = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-    'authori-zation': `Bearer ${token}`,
+    'Authori-zation': `Bearer ${token}`,
     'X-Login-Platform': options.loginPlatform,
   };
   if (appId) {
-    headers.AppID = String(appId);
+		headers['X-AppId'] = String(appId);
   }
 
   try {
@@ -60,7 +60,7 @@ export async function refreshLiveJwtToken(
     );
     const res = await axios.post(
       `${baseURL}/api/v1/auth/refresh`,
-      qs.stringify({ login_platform: options.loginPlatform, app_id: appId }),
+		qs.stringify({ login_platform: options.loginPlatform }),
       config,
     );
     await decryptAPIResponse(res);

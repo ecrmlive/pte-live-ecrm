@@ -1,0 +1,11 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+type PresellFinal = { presell_order_id: number; presell_order_sn: string; store_name: string; pay_price: number; final_start_time: string; final_end_time: string }
+type PresellFinalPage = { list: PresellFinal[] }
+const items = ref<PresellFinal[]>([])
+function load(): void { appRequest('/presell/finals?page=1&limit=30').then((data) => { items.value = (data as PresellFinalPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '尾款列表加载失败', icon: 'none' })) }
+function pay(id: number): void { uni.navigateTo({ url: `/pages/presell/final-pay?id=${id}` }) }
+onShow(() => load())
+</script>
+<template><view class="qx-page"><qx-nav title="待付尾款" /><view class="tip">仅展示支付窗口内的待付尾款单。</view><view v-if="items.length == 0" class="qx-card empty">暂无待付尾款</view><view v-for="item in items" :key="item.presell_order_id" class="qx-card item" @click="pay(item.presell_order_id)"><text class="name">{{ item.store_name || '预售尾款' }}</text><text class="sub">尾款单号：{{ item.presell_order_sn }}</text><text class="sub">支付截止：{{ item.final_end_time }}</text><text class="price">¥{{ item.pay_price }}</text></view></view></template>
+<style>.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.name, .sub, .price { display: block; }.name { font-size: 16px; font-weight: 600; }.sub { margin-top: 7px; color: #86909c; font-size: 12px; }.price { margin-top: 10px; color: #d72828; font-size: 19px; font-weight: 700; }</style>

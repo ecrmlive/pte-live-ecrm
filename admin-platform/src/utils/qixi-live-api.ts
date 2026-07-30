@@ -5,8 +5,8 @@ export function resolveApiBaseUrl() {
     return String(raw).replace(/\/$/, '');
   }
   return import.meta.env.MODE === 'test'
-    ? 'http://127.0.0.1:18080'
-    : 'http://127.0.0.1:18080';
+    ? 'http://127.0.0.1:18081'
+    : 'http://127.0.0.1:18081';
 }
 
 /** B 端统一 api-platform（平台 Go 接口 + 直播运行时反代） */

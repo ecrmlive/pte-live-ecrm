@@ -1,0 +1,40 @@
+{
+  "name": "@pte-live/pte-im-uniappx-core",
+  "id": "pte-im-sdk",
+  "displayName": "PteIMSDK UTS",
+  "version": "1.0.0",
+  "description": "PteIMSDK UTS for H5/Web and WeChat mini-program targets",
+  "main": "utssdk/cross-platform.uts",
+  "license": "Apache-2.0",
+  "author": "pte-live",
+  "homepage": "https://github.com/pte-live/pte-live-im-sdk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pte-live/pte-live-im-sdk.git",
+    "directory": "uni_modules/pte-im-sdk"
+  },
+  "keywords": [
+    "im",
+    "chat",
+    "uni-app",
+    "uts",
+    "pte-live"
+  ],
+  "dependencies": {
+    "@noble/ciphers": "2.0.1",
+    "@noble/curves": "2.0.1",
+    "@noble/hashes": "2.0.1"
+  },
+  "files": [
+    "utssdk",
+    "readme.md",
+    "uni_modules",
+    "static"
+  ],
+  "uni_modules": {
+    "platforms": [
+      "web",
+      "mp-weixin"
+    ]
+  }
+}

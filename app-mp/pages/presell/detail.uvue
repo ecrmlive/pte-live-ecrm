@@ -1,0 +1,18 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
+type Presell = { product_presell_id: number; store_name: string; mer_name: string; price: number; down_price: number; final_price: number; presell_type: number; stock: number; delivery_day: number }
+type Address = { address_id: number; is_default: number }
+type AddressData = { list: Address[] }
+type PresellCheck = { pay_price: number; total_price: number; presell_type: number }
+type GroupOrder = { group_order_id: number }
+const id = ref(0); const item = ref<Presell | null>(null); const submitting = ref(false)
+function load(): void { if (id.value > 0) appRequest(`/presell/actives/${id.value}`, 'GET', null, false).then((data) => { item.value = data as Presell }).catch((error) => uni.showToast({ title: error.message || '预售活动加载失败', icon: 'none' })) }
+function buy(): void {
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }; submitting.value = true; let addressID = 0
+  appRequest('/address').then((data) => { const list = (data as AddressData).list || []; const address = list.find((row) => row.is_default == 1) || (list.length > 0 ? list[0] : null); if (address == null) { uni.showToast({ title: '请先添加收货地址', icon: 'none' }); uni.navigateTo({ url: '/pages/address/list' }); throw new Error('缺少收货地址') }; addressID = address.address_id; return appRequest('/order/presell/check', 'POST', { product_presell_id: id.value, cart_num: 1, address_id: addressID } as UTSJSONObject) }).then((data) => { const checked = data as PresellCheck; if (checked.pay_price < 0 || checked.total_price < 0) throw new Error('预售订单金额异常'); return appRequest('/order/presell/create', 'POST', { product_presell_id: id.value, cart_num: 1, address_id: addressID } as UTSJSONObject) }).then((data) => { const created = data as GroupOrder; uni.navigateTo({ url: `/pages/order/detail?id=${created.group_order_id}` }) }).catch((error) => { if (error.message != '缺少收货地址') uni.showToast({ title: error.message || '预售下单失败', icon: 'none' }) }).finally(() => { submitting.value = false })
+}
+onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+</script>
+<template><view class="qx-page"><qx-nav title="预售详情" /><view v-if="item != null" class="hero"><text class="name">{{ item.store_name }}</text><text class="sub">{{ item.mer_name }} · 库存 {{ item.stock }}</text><text class="price">¥{{ item.price }}</text><text v-if="item.presell_type == 2" class="sub">先付定金 ¥{{ item.down_price }}，后付尾款 ¥{{ item.final_price }}</text><text v-else class="sub">全款预售，一次支付完成</text><text v-if="item.delivery_day > 0" class="sub">预计 {{ item.delivery_day }} 天内发货</text></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="buy">{{ item != null && item.presell_type == 2 ? '支付定金' : '立即预订' }}</button></view></view></template>
+<style>.hero { margin: 12px; padding: 20px; color: #ffffff; background: linear-gradient(135deg, #7f4b27, #c47b3d); border-radius: 12px; }.name, .sub, .price { display: block; }.name { font-size: 21px; font-weight: 700; }.sub { margin-top: 10px; font-size: 13px; opacity: 0.9; }.price { margin-top: 16px; font-size: 24px; font-weight: 700; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

@@ -1,0 +1,48 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Address = { address_id: number; real_name: string; phone: string; province: string; city: string; district: string; detail: string; is_default: number }
+type AddressData = { list: Address[] }
+type PointsCheck = { store_name: string; mer_name: string; cart_num: number; integral: number; user_integral: number; stock: number }
+type GroupOrder = { group_order_id: number }
+
+const productID = ref(0)
+const address = ref<Address | null>(null)
+const check = ref<PointsCheck | null>(null)
+const submitting = ref(false)
+
+function loadAddress(): void {
+  appRequest('/address').then((data) => {
+    const list = (data as AddressData).list || []
+    address.value = list.find((item) => item.is_default == 1) || (list.length > 0 ? list[0] : null)
+  }).catch((error) => uni.showToast({ title: error.message || '地址加载失败', icon: 'none' }))
+}
+function loadCheck(): void {
+  if (productID.value == 0) return
+  appRequest('/order/v3/check', 'POST', { product_id: productID.value, cart_num: 1 } as UTSJSONObject).then((data) => { check.value = data as PointsCheck }).catch((error) => uni.showToast({ title: error.message || '积分订单核对失败', icon: 'none' }))
+}
+function goAddress(): void { uni.navigateTo({ url: '/pages/address/list' }) }
+function submit(): void {
+  if (productID.value == 0 || address.value == null || check.value == null) { uni.showToast({ title: '请先选择收货地址和商品', icon: 'none' }); return }
+  if (check.value.user_integral < check.value.integral) { uni.showToast({ title: '当前积分不足', icon: 'none' }); return }
+  submitting.value = true
+  appRequest('/order/v3/create', 'POST', { product_id: productID.value, cart_num: 1, address_id: address.value.address_id } as UTSJSONObject).then((data) => {
+    const created = data as GroupOrder
+    return appRequest(`/order/points/pay/${created.group_order_id}`, 'POST')
+  }).then((data) => {
+    const paid = data as GroupOrder
+    uni.redirectTo({ url: `/pages/order/detail?id=${paid.group_order_id}` })
+  }).catch((error) => uni.showToast({ title: error.message || '兑换失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+
+onLoad((query) => { productID.value = Number(query['product_id'] || 0); loadCheck(); loadAddress() })
+onShow(() => { if (productID.value > 0) loadAddress() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="确认积分兑换" /><view class="qx-card" @click="goAddress"><text v-if="address != null" class="name">{{ address.real_name }} {{ address.phone }}<text class="next">›</text></text><text v-if="address != null" class="detail">{{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}</text><text v-else class="empty">请新增收货地址 ›</text></view><view v-if="check != null" class="qx-card"><text class="title">{{ check.store_name }}</text><text class="line">{{ check.mer_name }} · 数量 {{ check.cart_num }}</text><text class="points">需 {{ check.integral }} 积分</text><text class="line">我的积分：{{ check.user_integral }}</text><text class="line">现金支付：¥0.00</text></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">确认兑换</button></view></view>
+</template>
+
+<style>
+.name { display: block; font-size: 16px; font-weight: 600; }.next { float: right; color: #86909c; }.detail, .line { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; }.empty { color: #d72828; }.title { display: block; font-size: 17px; font-weight: 600; }.points { display: block; margin-top: 16px; color: #d72828; font-size: 21px; font-weight: 700; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }
+</style>

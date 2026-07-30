@@ -15,3 +15,12 @@ paths:
   /agreements/{key}:
     get:
       summary: 协议正文（白名单键）
+  /articles:
+    get:
+      summary: 已发布文章列表
+  /articles/{id}:
+    get:
+      summary: 已发布文章详情
+  /article/categories:
+    get:
+      summary: 文章分类列表

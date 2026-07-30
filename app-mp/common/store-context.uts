@@ -1,0 +1,21 @@
+import { appRequest } from './request'
+import { clearMerchantAppID, getAccessToken, getMerchantAppID, setAccessToken, setMerchantAppID } from './session'
+
+/**
+ * 只接受店铺消费视图返回的 AppId，并由服务端签发店铺上下文 JWT。
+ * 商户 ID 与 IM SDK AppId 永远不由客户端提交或保存。
+ */
+export function activateMerchantContext(appID: string): Promise<void> {
+  const previousToken = getAccessToken()
+  const previousAppID = getMerchantAppID()
+  setMerchantAppID(appID)
+  return appRequest('/auth/store-context', 'POST', null, true).then((data) => {
+    const token = data['token'] as UTSJSONObject
+    setAccessToken(token['access_token'] as string)
+  }).catch((error) => {
+    if (previousToken.length > 0) setAccessToken(previousToken)
+    if (previousAppID.length > 0) setMerchantAppID(previousAppID)
+    else clearMerchantAppID()
+    throw error
+  })
+}

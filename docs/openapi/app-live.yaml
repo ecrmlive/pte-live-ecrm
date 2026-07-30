@@ -1,14 +1,59 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers app live
-  version: 0.6.5
-  description: C 端直播间列表/详情（无微信推流 stub）
+  version: 1.0.0
+  description: >-
+    PC、小程序、H5、iOS、Android、鸿蒙共用的直播消费视图。只读取
+    qixi_crm_b_live_room 与商品消费视图；绝不返回推流地址或腾讯云密钥。
 servers:
   - url: /api/app/v1
 paths:
   /live/rooms:
     get:
-      summary: 直播间列表
+      summary: 公开直播间列表
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200': { description: 只返回 scheduled、living、ended 的公开直播间 }
   /live/rooms/{id}:
     get:
-      summary: 直播间详情（含挂货）
+      summary: 直播间详情（含已上架挂货商品）
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: 仅 living 状态返回 play_url；推流地址永不返回 }
+        '404': { description: 直播间不存在或未公开 }
+  /live/rooms/{id}/reservation:
+    post:
+      summary: 预约公开直播间
+      security: [{ authorization: [] }]
+      responses:
+        '200': { description: 已预约 }
+    delete:
+      summary: 取消直播预约
+      security: [{ authorization: [] }]
+      responses:
+        '200': { description: 已取消预约 }
+components:
+  securitySchemes:
+    authorization:
+      type: apiKey
+      in: header
+      name: Authori-zation
+      description: 唯一 JWT 请求头，格式 Bearer token。
+  schemas:
+    LiveRoom:
+      type: object
+      required: [id, name, store_id, status, live_status, goods]
+      properties:
+        id: { type: integer, format: int64 }
+        broadcast_room_id: { type: integer, format: int64, description: C 端旧字段兼容值，等于 id }
+        name: { type: string }
+        store_id: { type: integer, format: int64 }
+        merchant_id: { type: integer, format: int64 }
+        cover_img: { type: string, format: uri }
+        status: { type: string, enum: [scheduled, living, ended] }
+        live_status: { type: integer, enum: [101, 102, 103], description: 与旧 C 端状态兼容 }
+        play_url: { type: string, format: uri, description: 仅直播中且已配置时返回；不是推流地址 }
+        goods: { type: array, items: { type: object } }

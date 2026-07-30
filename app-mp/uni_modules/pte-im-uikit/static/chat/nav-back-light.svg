@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Chevron left; display at 22×22 inside 44×44 hit area -->
+  <path fill="#1C222D" fill-rule="evenodd" d="M14.78 4.72a1.15 1.15 0 0 1 0 1.63L9.12 12l5.66 5.65a1.15 1.15 0 1 1-1.63 1.63l-6.47-6.47a1.15 1.15 0 0 1 0-1.62l6.47-6.47a1.15 1.15 0 0 1 1.63 0z"/>
+</svg>

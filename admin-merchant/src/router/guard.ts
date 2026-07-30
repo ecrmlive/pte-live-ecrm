@@ -76,7 +76,7 @@ function restoreMerchantUserFromStorage() {
   }
   userStore.setUserInfo(
     mapShopSessionUser({
-      app_id: legacy.app_id ?? legacy.AppID,
+      store_app_id: legacy.store_app_id,
       homePath: '/home',
       logoUrl: legacy.logoUrl,
       roles: ['merchant_user'],
@@ -333,8 +333,7 @@ function setupAccessGuard(router: Router) {
         accessStore.setAccessCodes(accessCodes);
         markShopSessionBootstrapped();
         syncLegacyUserSession({
-          AppID: (userInfo as any).app_id,
-          app_id: (userInfo as any).app_id,
+	        store_app_id: (userInfo as any).store_app_id,
           logoUrl: (userInfo as any).logoUrl,
           shopName: (userInfo as any).shopName || userInfo.realName,
           userName: userInfo.username,

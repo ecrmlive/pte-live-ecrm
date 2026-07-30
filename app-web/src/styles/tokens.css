@@ -1,0 +1,15 @@
+:root {
+  --pc-bg: #ffffff;
+  --pc-surface: #ffffff;
+  --pc-ink: #282828;
+  --pc-muted: #999999;
+  --pc-line: #eeeeee;
+  --pc-brand: #f13728;
+  --pc-brand-soft: #fff1ef;
+  --pc-accent: #f13728;
+  --pc-danger: #d9362b;
+  --pc-radius: 0;
+  --pc-shadow: 0 8px 28px rgba(28, 28, 28, 0.08);
+  --pc-max: 1200px;
+  --pc-font: "DM Sans", "Noto Sans SC", "PingFang SC", sans-serif;
+}

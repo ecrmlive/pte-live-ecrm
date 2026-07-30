@@ -9,6 +9,9 @@ info:
 servers:
   - url: /api/open/v1
 paths:
+  /ping:
+    get:
+      summary: 开放接口健康探测
   /auth:
     post:
       summary: 换取开放接口 Token（data.token / data.exp）

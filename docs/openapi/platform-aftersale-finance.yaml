@@ -1,29 +1,29 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform aftersale & finance
-  version: 0.7.5
-  description: 平台退款监管写操作 + 提现审核（按钮权限 RequirePlatformMenu）
+  version: 0.7.8
+  description: 平台退款监管写操作 + 提现审核（按钮权限 RequirePlatformMenu）；区域账号仅可读取其 region_ids 内商户退款和提现，不能审核、拒绝或打款。
 servers:
   - url: /api/platform/v1
 paths:
   /refunds:
     get:
-      summary: 退款监管列表
+      summary: 退款监管列表（区域管理员仅返回其 region_ids 内商户退款）
   /refunds/{id}:
     get:
-      summary: 退款详情
+      summary: 退款详情（受区域数据范围限制）
   /refunds/{id}/approve:
     post:
-      summary: 平台同意仅退款（需 order/refund/approve）
+      summary: 平台同意待审核或平台介入的仅退款（需 order/refund/approve；区域账号服务端拒绝）
   /refunds/{id}/reject:
     post:
-      summary: 平台拒绝退款（需 order/refund/reject）
+      summary: 平台拒绝待审核或平台介入的仅退款（需 order/refund/reject；区域账号服务端拒绝）
   /finance/withdraws:
     get:
-      summary: 提现审核列表
+      summary: 提现审核列表（区域管理员仅返回其 region_ids 内商户提现）
   /finance/withdraws/{id}:
     get:
-      summary: 提现详情
+      summary: 提现详情（受区域数据范围限制）
   /finance/withdraws/{id}/approve:
     post:
       summary: 审核通过（需 accounts/withdraw/approve）

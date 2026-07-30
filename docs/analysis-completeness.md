@@ -2,7 +2,8 @@
 
 **当前标准（按你的要求）**：功能点必须落到各端、具体功能、按钮级，增删改查尽量齐全。
 
-权威清单入口：[`docs/features/README.md`](./features/README.md)
+权威清单入口：[CRMEB 全端功能验收总清单](./CRMEB-FULL-FUNCTION-CHECKLIST.md)。
+操作数量和逐项记录以 `generated/features-master.tsv` 为唯一口径；各端 Markdown 的页面覆盖统计是较早的展示快照，不能覆盖总表。
 
 ## 锁定状态
 
@@ -12,17 +13,17 @@
 | 允许写业务代码 | **是**（按方案开发；高风险域先对齐状态机） |
 | 验收主文档 | `docs/features/` |
 | 接口/状态机对照 | `docs/api/FUNCTIONAL-TRUTH.md`、`docs/api/ACCURACY.md` |
-| 表结构 | `docs/schema/`（前缀 `qixi_`） |
+| 表结构 | `docs/schema/`（`qixi_crm_a_` / `qixi_crm_b_` / `qixi_crm_m_`，详见系统架构总则） |
 
 ## 1. 已落实
 
 | 端 | 粒度 | 文档 | 操作数（约） |
 | --- | --- | --- | ---: |
-| 平台后台 | 页面 → 按钮权限（不足则路由补全） | `features/01-platform-admin.md` | 1295 |
-| 商户后台 | 同上 | `features/02-merchant-admin.md` | 600 |
+| 平台后台 | 页面 → 按钮权限（不足则路由补全） | `generated/features-master.tsv` | 1333 |
+| 商户后台 | 同上 | `generated/features-master.tsv` | 615 |
 | 用户端 | API 路由 = 操作；附录小程序页 | `features/03-user-app.md` | 342 |
-| 商户手机端/店员 | API 路由 = 操作 | `features/04-merchant-mobile.md` | 95 |
-| 客服端 | API 路由 = 操作 | `features/05-customer-service.md` | 18 |
+| 店铺系统员工履约角色 | API 路由 = 操作 | `features/04-merchant-mobile.md` | 95 |
+| 统一后台客服角色 | API 路由 = 操作 | `features/05-customer-service.md` | 18 |
 | OpenAPI | API 路由 = 操作 | `features/06-openapi.md` | 6 |
 | 总表 | TSV 可检索 | `generated/features-master.tsv` | 2409 |
 
@@ -71,5 +72,5 @@
 
 1. 方案 → 编码；验收以 `docs/features/` 为准。  
 2. 高风险域（下单/支付/退款/库存/券/积分/佣金/结算）先读 `FUNCTIONAL-TRUTH.md` 与状态机。  
-3. 表前缀一律 `qixi_`；商户接口强制 `mer_id` 隔离。  
+3. 表前缀按系统架构总则使用 `qixi_crm_a_`、`qixi_crm_b_` 或 `qixi_crm_m_`；店铺接口强制店铺范围隔离。
 4. 验证与部署仅在你明确要求时执行。

@@ -1,0 +1,18 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+const orderID = ref(0)
+const message = ref('不想要了')
+const submitting = ref(false)
+
+function submit(): void {
+  if (orderID.value == 0 || message.value.trim().length == 0) { uni.showToast({ title: '请填写退款原因', icon: 'none' }); return }
+  submitting.value = true
+  appRequest('/refund/apply', 'POST', { order_id: orderID.value, refund_type: 1, refund_message: message.value.trim() } as UTSJSONObject).then((data) => { const item = data as UTSJSONObject; uni.showToast({ title: '申请已提交', icon: 'success' }); uni.redirectTo({ url: `/pages/refund/detail?id=${item['refund_order_id'] as number}` }) }).catch((error) => uni.showToast({ title: error.message || '申请失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+onLoad((query) => { orderID.value = Number(query['order_id'] || 0) })
+</script>
+
+<template><view class="qx-page"><qx-nav title="申请仅退款" /><view class="qx-card"><text class="label">订单 ID：{{ orderID }}</text><textarea v-model="message" class="textarea" maxlength="100" placeholder="请填写退款原因" /></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">提交申请</button></view></view></template>
+
+<style>.label { display: block; margin-bottom: 14px; color: #4e5969; font-size: 14px; }.textarea { width: 100%; height: 140px; padding: 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

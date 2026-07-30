@@ -23,6 +23,7 @@ import {
   deleteShippingTemplate,
   fetchShippingTemplates,
   getShippingTemplate,
+  setDefaultShippingTemplate,
   updateShippingTemplate,
   type ShippingTemplate,
 } from '#/api/core/mergers';
@@ -81,7 +82,8 @@ const gridOptions: VxeGridProps<ShippingTemplate> = {
         ] || String(cellValue),
     },
     { field: 'sort', title: '排序', width: 80 },
-    { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 160 },
+    { field: 'is_default', title: '默认', width: 90, slots: { default: 'default' } },
+    { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 220 },
   ],
   height: 'auto',
   pagerConfig: { enabled: true, pageSize: 20 },
@@ -145,6 +147,20 @@ async function onDelete(row: ShippingTemplate) {
   ElMessage.success('已删除');
   gridApi.reload();
 }
+
+async function setDefault(row: ShippingTemplate) {
+  if (row.is_default === 1) return;
+  try {
+    await ElMessageBox.confirm(`设「${row.name}」为默认运费模板？`, '确认设置', {
+      type: 'warning',
+    });
+  } catch {
+    return;
+  }
+  await setDefaultShippingTemplate(row.template_id);
+  ElMessage.success('已设为默认模板');
+  gridApi.reload();
+}
 </script>
 
 <template>
@@ -154,8 +170,12 @@ async function onDelete(row: ShippingTemplate) {
         <ElButton :icon="Plus" type="primary" @click="openCreate">新建模板</ElButton>
       </template>
       <template #action="{ row }">
+        <ElButton :disabled="row.is_default === 1" link type="primary" @click="setDefault(row)">设为默认</ElButton>
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-        <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
+        <ElButton :disabled="row.is_default === 1" link type="danger" @click="onDelete(row)">删除</ElButton>
+      </template>
+      <template #default="{ row }">
+        <el-tag :type="row.is_default === 1 ? 'success' : 'info'">{{ row.is_default === 1 ? '默认' : '—' }}</el-tag>
       </template>
     </Grid>
     <FormModal>

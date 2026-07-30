@@ -1,0 +1,13 @@
+# 复制为 release/admin-users.yaml 后填写本机或测试服务器的初始化账号。
+# 此文件包含密码，已被 .gitignore 忽略；不得提交到仓库。
+admins:
+  - username: ""
+    password: ""
+    display_name: "平台管理员"
+    roles:
+      - platform
+  - username: ""
+    password: ""
+    display_name: "商户管理员"
+    roles:
+      - merchant

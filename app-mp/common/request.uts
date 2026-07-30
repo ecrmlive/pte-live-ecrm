@@ -1,0 +1,35 @@
+import { appApiURL } from './api'
+import { clearSession, getAccessToken, getMerchantAppID } from './session'
+
+/** 所有 C 端页面共用的 JWT 请求入口。 */
+export function appRequest(path: string, method: string = 'GET', data: UTSJSONObject | null = null, auth: boolean = true): Promise<UTSJSONObject> {
+  const header = { 'Content-Type': 'application/json' } as UTSJSONObject
+  if (auth) {
+    const token = getAccessToken()
+    if (token.length > 0) header['Authori-zation'] = `Bearer ${token}`
+  }
+  const merchantAppID = getMerchantAppID()
+  if (merchantAppID.length > 0) header['X-AppId'] = merchantAppID
+  return new Promise<UTSJSONObject>((resolve, reject) => {
+    uni.request({
+      url: appApiURL(path),
+      method: method,
+      data: data,
+      header: header,
+      success: (res) => {
+        const body = res.data as UTSJSONObject
+        if (res.statusCode == 401 || body['status'] == 401) {
+          clearSession()
+          reject(new Error((body['message'] as string) || '登录已失效'))
+          return
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300 && body['status'] == 200) {
+          resolve(body['data'] as UTSJSONObject)
+          return
+        }
+        reject(new Error((body['message'] as string) || '请求失败'))
+      },
+      fail: () => reject(new Error('网络连接失败'))
+    })
+  })
+}

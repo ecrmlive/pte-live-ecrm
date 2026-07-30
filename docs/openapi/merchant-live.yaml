@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers merchant live
-  version: 0.7.5
+  version: 0.8.0
   description: >-
     商户直播间 CRUD + 挂货；create/delete/live/goods 分别需
-    broadcast/create|delete|live|goods
+    broadcast/create|delete|live|goods。创建时携带 product_ids 同样需要 broadcast/goods。
 servers:
   - url: /api/merchant/v1
 paths:
@@ -12,7 +12,7 @@ paths:
     get:
       summary: 本店直播间
     post:
-      summary: 创建直播间（按钮权 broadcast/create）
+      summary: 创建直播间（按钮权 broadcast/create；携带 product_ids 还需 broadcast/goods）
   /broadcast/rooms/{id}:
     get:
       summary: 详情
@@ -23,3 +23,6 @@ paths:
   /broadcast/rooms/{id}/goods:
     put:
       summary: 设置挂货商品（按钮权 broadcast/goods）
+  /broadcast/rooms/{id}/live:
+    put:
+      summary: 设置直播状态（按钮权 broadcast/live）

@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant fulfillment
+  version: 0.7.9
+  description: 商户配送人员管理与发票审核；所有资源按 mer_id 隔离。
+servers:
+  - url: /api/merchant/v1
+paths:
+  /delivery/staff:
+    get: { summary: 配送人员列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建配送人员, security: [{ bearerAuth: [] }] }
+  /delivery/staff/{id}:
+    put: { summary: 更新配送人员, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除配送人员, security: [{ bearerAuth: [] }] }
+  /invoices:
+    get: { summary: 本店发票申请列表, security: [{ bearerAuth: [] }] }
+  /invoices/{id}/audit:
+    put: { summary: 审核发票申请, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

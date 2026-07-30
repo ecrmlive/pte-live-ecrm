@@ -1,0 +1,27 @@
+<script setup lang="uts">
+import { clearSession, getAccessToken } from '../../common/session'
+
+const loggedIn = ref(getAccessToken().length > 0)
+
+function loginOrLogout(): void {
+  if (loggedIn.value) {
+    clearSession()
+    loggedIn.value = false
+    return
+  }
+  uni.navigateTo({ url: '/pages/login/index' })
+}
+
+function go(path: string): void {
+  if (!loggedIn.value) { uni.navigateTo({ url: '/pages/login/index' }); return }
+  uni.navigateTo({ url: path })
+}
+function goPublic(path: string): void { uni.navigateTo({ url: path }) }
+onShow(() => { loggedIn.value = getAccessToken().length > 0 })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="我的" /><view class="qx-card profile"><text class="avatar">七</text><view><text class="name">{{ loggedIn ? '七禧用户' : '未登录' }}</text><text class="hint">{{ loggedIn ? '查看订单、地址、权益与推广收入' : '登录后体验完整服务' }}</text></view></view><view class="qx-card"><view class="item" @click="go('/pages/order/list')"><text>我的订单</text><text>›</text></view><view class="item" @click="go('/pages/address/list')"><text>收货地址</text><text>›</text></view><view class="item" @click="go('/pages/coupon/mine')"><text>我的优惠券</text><text>›</text></view><view class="item" @click="go('/pages/points/list')"><text>积分商城</text><text>›</text></view><view class="item" @click="go('/pages/spread/index')"><text>分销中心</text><text>›</text></view><view class="item" @click="go('/pages/refund/list')"><text>售后服务</text><text>›</text></view></view><view class="qx-card"><view class="item" @click="goPublic('/pages/notice/list')"><text>平台公告</text><text>›</text></view><view class="item" @click="goPublic('/pages/agreement/detail?key=sys_user_agree')"><text>用户协议</text><text>›</text></view></view><view class="qx-card"><button class="qx-primary" @click="loginOrLogout">{{ loggedIn ? '退出登录' : '登录 / 注册' }}</button></view></view>
+</template>
+
+<style>.profile { display: flex; align-items: center; gap: 12px; }.avatar { width: 48px; height: 48px; border-radius: 24px; color: #ffffff; background-color: #d72828; text-align: center; line-height: 48px; font-size: 20px; }.name { display: block; font-size: 17px; font-weight: 600; }.hint { display: block; margin-top: 6px; color: #86909c; font-size: 13px; }.item { height: 52px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

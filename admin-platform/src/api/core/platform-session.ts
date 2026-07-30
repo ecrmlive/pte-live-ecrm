@@ -18,11 +18,11 @@ export async function fetchPlatformSessionApi(): Promise<PlatformSession> {
     getAccessCodesApi(),
   ]);
   const userInfo: UserInfo = {
-    userId: String(user.admin_id),
-    username: user.account,
-    realName: user.real_name || user.account,
+    userId: String(user.admin_id || user.id),
+    username: user.account || user.username,
+    realName: user.real_name || user.display_name || user.account,
     avatar: '',
-    desc: user.roles || '',
+    desc: (user.roles || []).join(', '),
     homePath: '/dashboard',
     token: '',
   };

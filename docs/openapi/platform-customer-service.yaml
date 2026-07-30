@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers unified admin customer service
+  version: 1.0.0
+  description: >-
+    统一后台客服队列。仅 platform 角色或具有 customer_service 角色且已配置
+    service_queue store_ids 数据范围的后台 JWT 可访问。IM 消息、UserSig 和 WebSocket
+    不由本契约代理，继续由 pte-live-im 按当前商户 IM SDK AppID 提供。
+servers:
+  - url: /api/platform/v1
+paths:
+  /customer-service/threads:
+    get:
+      summary: 查询获授权店铺的客服会话队列
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: status, schema: { type: string, enum: [open, closed] } }
+        - { in: query, name: mine, schema: { type: integer, enum: [0, 1] } }
+      responses:
+        '200': { description: 客服会话分页，含该商户当前 IM SDK AppId 快照（不含 UserSig） }
+        '403': { description: 无 customer_service 角色或无 service_queue 数据范围 }
+  /customer-service/threads/{id}:
+    get:
+      summary: 查询单个获授权客服会话元数据
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: 客服会话元数据；不含 IM 消息或凭据 }
+        '404': { description: 不存在或不在当前数据范围 }
+  /customer-service/threads/{id}/claim:
+    post:
+      summary: 领取开放的客服会话
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: 领取成功 }
+        '409': { description: 会话已关闭或已由其他客服领取 }
+components:
+  securitySchemes:
+    authorization:
+      type: apiKey
+      in: header
+      name: Authori-zation
+      description: 唯一 JWT 请求头，格式 Bearer token。

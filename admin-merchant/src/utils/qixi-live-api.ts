@@ -6,8 +6,8 @@ export function resolveApiBaseUrl() {
     return String(raw).replace(/\/$/, '');
   }
   return import.meta.env.MODE === 'test'
-    ? 'http://127.0.0.1:18080'
-    : 'http://127.0.0.1:18080';
+    ? 'http://127.0.0.1:18083'
+    : 'http://127.0.0.1:18083';
 }
 
 /** B 端（平台/商户）统一 api-platform；直播运行时亦走同一基址 `/api/v1/shop/live/*`（终态不 HTTP 反代 api-live） */

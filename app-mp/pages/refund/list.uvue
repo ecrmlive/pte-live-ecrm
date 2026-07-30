@@ -1,0 +1,30 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Refund = { refund_order_id: number; refund_order_sn: string; refund_price: number; status: number; create_time: string }
+type RefundPage = { list: Refund[] }
+const items = ref<Refund[]>([])
+const loading = ref(false)
+
+function statusText(status: number): string {
+  if (status == 0) return '待审核'
+  if (status == 1) return '待退货'
+  if (status == 2) return '待收货'
+  if (status == 3) return '已退款'
+  if (status == 4) return '平台介入'
+  if (status == -1) return '已拒绝'
+  if (status == -2) return '已取消'
+  return `状态 ${status}`
+}
+
+function load(): void {
+  loading.value = true
+  appRequest('/refunds?page=1&limit=30').then((data) => { items.value = (data as RefundPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+function goDetail(id: number): void { uni.navigateTo({ url: `/pages/refund/detail?id=${id}` }) }
+onShow(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="售后服务" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无售后单</view><view v-for="item in items" :key="item.refund_order_id" class="qx-card card" @click="goDetail(item.refund_order_id)"><text class="sn">{{ item.refund_order_sn }}</text><view class="line"><text>¥{{ item.refund_price }}</text><text class="status">{{ statusText(item.status) }}</text></view><text class="time">{{ item.create_time }}</text></view></view></template>
+
+<style>.empty { text-align: center; color: #86909c; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 17px; }.status { color: #d72828; font-size: 14px; }.time { color: #86909c; font-size: 12px; }</style>

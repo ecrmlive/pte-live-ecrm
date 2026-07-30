@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant product metadata
+  version: 0.7.9
+  description: 商户商品标签、保障服务与参数模板 CRUD；所有资源按 mer_id 隔离。
+servers:
+  - url: /api/merchant/v1
+paths:
+  /product/labels:
+    get: { summary: 商品标签列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建商品标签, security: [{ bearerAuth: [] }] }
+  /product/labels/{id}:
+    put: { summary: 更新商品标签, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除商品标签, security: [{ bearerAuth: [] }] }
+  /product/guarantees:
+    get: { summary: 商品保障服务列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建商品保障服务, security: [{ bearerAuth: [] }] }
+  /product/guarantees/{id}:
+    put: { summary: 更新商品保障服务, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除商品保障服务, security: [{ bearerAuth: [] }] }
+  /product/attr-templates:
+    get: { summary: 商品参数模板列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建商品参数模板, security: [{ bearerAuth: [] }] }
+  /product/attr-templates/{id}:
+    put: { summary: 更新商品参数模板, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除商品参数模板, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

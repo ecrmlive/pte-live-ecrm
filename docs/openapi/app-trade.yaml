@@ -1,26 +1,46 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers app trade
-  version: 0.3.0
+  version: 0.5.0
   description: |
     阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。
     真实路径对齐 FUNCTIONAL-TRUTH：/v2/order/check|create、/order/pay/:id。
-    wechat/alipay：POST /order/pay/:id 返回 PayIntent（沙箱含 notify_token）；
-    回调 POST /api/callback/v1/pay/{wechat|alipay} HMAC 验签后 paySuccess。
+    平台自营商品仅使用平台加密配置；入驻商户商品仅使用所属店铺自己的加密配置，二者不共用。不同支付主体商品必须分别结算；客户端先读取支付方式，再发起支付。
+    当前 mock 为唯一已闭环的本地测试通道；微信/支付宝真实下单与官方回调验签接入中，未完成前不会伪造支付成功。
     积分商城见 app-loyalty.yaml（/order/v3/*、/order/points/pay/:id）。
-    禁止 stale：/order/create、/order/check、/v3/order/*、/order/v2/*。
+    禁止 stale：/order/create、/order/check、/order/v2/*、/v3/order/*。
 servers:
   - url: /api/app/v1
 paths:
   /address:
-    get: { summary: 地址列表, security: [{ bearerAuth: [] }] }
-    post: { summary: 新增地址, security: [{ bearerAuth: [] }] }
+    get:
+      summary: 地址列表
+      description: 读取 qixi_crm_b_user_address，按默认地址优先排序。
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 新增地址
+      description: 收货人、手机号、详细地址必填；is_default=1 时在同一事务内取消同用户其他默认地址。
+      security: [{ bearerAuth: [] }]
   /address/{id}:
     put: { summary: 更新地址, security: [{ bearerAuth: [] }] }
     delete: { summary: 删除地址, security: [{ bearerAuth: [] }] }
   /cart:
-    get: { summary: 购物车按商户分组, security: [{ bearerAuth: [] }] }
-    post: { summary: 加购, security: [{ bearerAuth: [] }] }
+    get:
+      summary: 购物车按商户分组
+      description: 仅读取 `qixi_crm_b_cart` 与 `qixi_crm_b_product_view`；响应中的 title 是商品名，store_name 是店铺名。
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 加购
+      description: >-
+        在业务库事务内校验商品消费视图的在售状态与库存；最终库存扣减由下单事务负责。
+        入驻商户商品必须携带 X-AppId，且该值必须与服务端签发的店铺上下文 JWT 中 merchant_app_id、merchant_id、store_id 一致；仅伪造 X-AppId 会被拒绝。
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: X-AppId
+          in: header
+          required: false
+          schema: { type: string, maxLength: 64 }
+          description: 入驻商户商品必填；平台自营商品不使用该头。
   /cart/{id}:
     put: { summary: 改数量, security: [{ bearerAuth: [] }] }
     delete: { summary: 删除, security: [{ bearerAuth: [] }] }
@@ -30,15 +50,26 @@ paths:
     post: { summary: 创建主单+商户子单, security: [{ bearerAuth: [] }] }
   /order/pay/{id}:
     post:
-      summary: 支付 mock|balance 同步成功；wechat|alipay 返回 PayIntent
+      summary: mock 本地闭环支付；微信/支付宝必须先通过支付方式资格校验
+      security: [{ bearerAuth: [] }]
+  /order/pay/{id}/channels:
+    get:
+      summary: 查询订单可用支付方式
+      description: 平台自营订单只校验平台配置；入驻商户订单只校验该店铺独立配置。不会在两套配置间回退。
       security: [{ bearerAuth: [] }]
   /orders:
     get: { summary: 用户主单列表, security: [{ bearerAuth: [] }] }
   /orders/{id}:
     get: { summary: 主单详情, security: [{ bearerAuth: [] }] }
+  /order/{id}:
+    get: { summary: 商户子订单详情, security: [{ bearerAuth: [] }] }
+  /invoices:
+    get: { summary: 我的发票申请列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 提交发票申请, security: [{ bearerAuth: [] }] }
 components:
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: apiKey
+      in: header
+      name: Authori-zation
+      description: "Bearer <JWT>；所有 JWT 请求只接受 Authori-zation，拒绝 Authorization。"

@@ -55,6 +55,8 @@ release/qixi-mergers-*/config/local/compose.env
 release/qixi-mergers-*/config/local/app.yaml
 release/qixi-mergers-*/config/prod/compose.env
 release/qixi-mergers-*/config/prod/app.yaml
+release/qixi-mergers-*/config/test/compose.env
+release/qixi-mergers-*/config/test/app.yaml
 release/qixi-mergers-*/bin/
 release/qixi-mergers-*/dist/
 release/qixi-mergers-db/sql/
@@ -76,3 +78,8 @@ data/uploads/
 node_modules/
 **/node_modules/
 .pnpm-store/
+
+# 单 Compose 运行时 YAML（只保留仓库中的 config.yaml.example）
+release/config.yaml
+release/config/
+release/admin-users.yaml

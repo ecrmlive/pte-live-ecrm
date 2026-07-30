@@ -8,7 +8,7 @@ servers:
 paths:
   /orders:
     get:
-      summary: 全平台子单列表
+      summary: 平台子单列表（区域管理员仅返回其 region_ids 内商户订单）
   /orders/{id}:
     get:
-      summary: 子单详情
+      summary: 子单详情（受区域数据范围限制）

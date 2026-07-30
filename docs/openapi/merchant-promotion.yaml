@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers merchant promotion
-  version: 0.7.3
-  description: 商户店铺券；create/delete/toggle 分别需对应按钮权
+  version: 0.8.0
+  description: 商户店铺券；创建、启停、删除、定向发券均由商户权限与 mer_id 隔离保护。
 servers:
   - url: /api/merchant/v1
 paths:
@@ -19,3 +19,12 @@ paths:
   /coupons/{id}/status:
     post:
       summary: 启停店铺券（按钮权 coupon/toggle）
+  /coupons/{id}/send:
+    post:
+      summary: 向本商户已支付订单用户定向发券（按钮权 merchantCouponSendCoupon）
+  /coupons/records:
+    get:
+      summary: 店铺券领取、发送及使用记录（按 mer_id 隔离）
+  /coupons/sends:
+    get:
+      summary: 定向发券批次记录（按 mer_id 隔离）

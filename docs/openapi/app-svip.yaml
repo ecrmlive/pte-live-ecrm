@@ -9,9 +9,9 @@ info:
 servers:
   - url: /api/app/v1
 paths:
-  /order/v2/check:
+  /v2/order/check:
     post:
       summary: 结算预览（含 used_svip / svip_discount）
-  /order/v2/create:
+  /v2/order/create:
     post:
       summary: 创建订单（子单记录 svip_discount）

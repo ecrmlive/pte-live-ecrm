@@ -1,0 +1,38 @@
+package trade
+
+import "errors"
+
+var (
+	ErrNotFound         = errors.New("订单不存在")
+	ErrForbidden        = errors.New("无权操作")
+	ErrInvalidPayType   = errors.New("支付方式无效")
+	ErrChannelDisabled  = errors.New("支付渠道未开启")
+	ErrPaymentConfig    = errors.New("真实支付渠道尚未配置或未接入")
+	ErrBadNotify        = errors.New("支付回调验签失败")
+	ErrAlreadyPaid      = errors.New("订单已支付")
+	ErrPresellFinal     = errors.New("尾款支付失败")
+	ErrBalanceNotEnough = errors.New("余额不足")
+	ErrBadStatus        = errors.New("订单状态不允许此操作")
+	ErrStockNotEnough   = errors.New("库存不足")
+	ErrEmptyCart        = errors.New("购物车为空")
+	ErrDeliveryParam    = errors.New("物流信息不完整")
+	ErrAddressRequired  = errors.New("请选择收货地址")
+	ErrBadParam         = errors.New("参数错误")
+	ErrNotPaid            = errors.New("订单未支付")
+	ErrVerifyCodeMismatch = errors.New("核销码不匹配")
+	ErrCoupon             = errors.New("优惠券不可用")
+	ErrIntegralNotEnough = errors.New("积分不足")
+	ErrMerIntegralOff    = errors.New("商户未开启积分抵扣")
+	ErrPointsAlone       = errors.New("积分商品必须单独购买")
+	ErrNotPointsProduct  = errors.New("请使用积分商城入口下单")
+	ErrPointsProductMix  = errors.New("普通订单不能包含积分商品")
+	ErrSeckillLimit         = errors.New("超过秒杀单次限购数量")
+	ErrPresellLimit         = errors.New("超过预售单次限购数量")
+	ErrIntegralOnActivity   = errors.New("活动商品不可积分抵扣")
+
+	ErrPresellFinalNotFound = errors.New("尾款单不存在")
+	ErrPresellFinalNotOpen  = errors.New("未到尾款支付时间或已截止")
+	ErrPresellFinalPaid     = errors.New("尾款已支付")
+	ErrPresellFinalInvalid  = errors.New("尾款单无效")
+	ErrPresellFinalTimeout  = errors.New("尾款支付已超时")
+)

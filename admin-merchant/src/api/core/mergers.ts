@@ -22,6 +22,7 @@ export interface ShippingTemplate {
   template_id: number;
   name: string;
   type: number;
+  is_default: number;
   sort: number;
   regions?: Array<{
     first?: number;
@@ -51,6 +52,10 @@ export function createShippingTemplate(data: Record<string, unknown>) {
 
 export function updateShippingTemplate(id: number, data: Record<string, unknown>) {
   return requestClient.put<ShippingTemplate>(`/shipping/templates/${id}`, data);
+}
+
+export function setDefaultShippingTemplate(id: number) {
+  return requestClient.post<ShippingTemplate>(`/shipping/templates/${id}/default`, {});
 }
 
 export function deleteShippingTemplate(id: number) {

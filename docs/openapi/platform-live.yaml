@@ -1,17 +1,56 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform live
-  version: 0.6.5
-  description: 平台直播监管（审核/上下架）
+  version: 0.7.0
+  description: 平台直播监管（房间详情、审核、C 端显示控制）
 servers:
   - url: /api/platform/v1
 paths:
   /broadcast/rooms:
     get:
       summary: 直播间列表
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
   /broadcast/rooms/{id}:
     get:
-      summary: 详情
+      summary: 直播间详情（含挂货商品）
+      parameters:
+        - $ref: '#/components/parameters/BroadcastRoomID'
   /broadcast/rooms/{id}/status:
     put:
-      summary: 审核/显示（status=2通过/-1驳回）
+      summary: 审核或控制 C 端显示
+      description: 仅具备直播审房按钮权限的平台账号可调用。审核仅允许待审房间；驳回必须提供 refusal；已审核通过的房间可仅提交 status=0 与 is_show 调整 C 端显示。
+      parameters:
+        - $ref: '#/components/parameters/BroadcastRoomID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: integer
+                  enum: [-1, 0, 2]
+                  description: 2=通过，-1=驳回，0=仅调整显示状态
+                refusal:
+                  type: string
+                  maxLength: 200
+                  description: 驳回原因；status=-1 时必填
+                is_show:
+                  type: integer
+                  enum: [0, 1]
+                  description: 0=隐藏，1=显示
+components:
+  parameters:
+    BroadcastRoomID:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }

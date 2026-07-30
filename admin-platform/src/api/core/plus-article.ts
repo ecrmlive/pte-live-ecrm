@@ -1,3 +1,11 @@
+import { requestClient } from '#/api/request';
+
+export interface ArticleCategoryOption {
+  cid: number;
+  status: number;
+  title: string;
+}
+
 export async function getArticleCategoryListApi() {
-  return { list: [] as Array<{ category_id: number; name: string }> };
+  return requestClient.get<{ list: ArticleCategoryOption[] }>('/article/categories');
 }

@@ -1,0 +1,55 @@
+<script setup lang="uts">
+import { setAccessToken } from '../../common/session'
+import { appApiURL } from '../../common/api'
+
+const account = ref('')
+const password = ref('')
+const nickname = ref('')
+const registerMode = ref(false)
+const loading = ref(false)
+
+function clientChannel(): string {
+  // #ifdef MP-WEIXIN
+  return 'mini_program'
+  // #endif
+  // #ifdef H5
+  return 'h5'
+  // #endif
+  return 'h5'
+}
+
+function submit(): void {
+  if (account.value.length == 0 || password.value.length == 0) {
+    uni.showToast({ title: '请输入账号和密码', icon: 'none' })
+    return
+  }
+  loading.value = true
+  uni.request({
+    url: appApiURL(registerMode.value ? '/auth/register' : '/auth/login'),
+    method: 'POST',
+    data: registerMode.value
+      ? { account: account.value, password: password.value, nickname: nickname.value, channel: clientChannel() }
+      : { account: account.value, password: password.value, channel: clientChannel() },
+    success: (res) => {
+      const body = res.data as UTSJSONObject
+      if (res.statusCode == 200 && body['status'] == 200) {
+        const data = body['data'] as UTSJSONObject
+        const token = data['token'] as UTSJSONObject
+        setAccessToken(token['access_token'] as string)
+        uni.showToast({ title: registerMode.value ? '注册成功' : '登录成功', icon: 'success' })
+        uni.navigateBack()
+      } else {
+        uni.showToast({ title: (body['message'] as string) || '登录失败', icon: 'none' })
+      }
+    },
+    fail: () => uni.showToast({ title: '网络连接失败', icon: 'none' }),
+    complete: () => { loading.value = false }
+  })
+}
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav :title="registerMode ? '注册七禧商城' : '登录七禧商城'" /><view class="qx-card form"><text class="form-title">{{ registerMode ? '创建新账户' : '欢迎回来' }}</text><input v-model="account" class="input" placeholder="手机号或账号" /><input v-if="registerMode" v-model="nickname" class="input" placeholder="昵称（可选）" /><input v-model="password" class="input" password placeholder="密码" /><button :loading="loading" class="qx-primary" @click="submit">{{ registerMode ? '注册并登录' : '登录' }}</button><text class="switch" @click="registerMode=!registerMode">{{ registerMode ? '已有账号，去登录' : '没有账号，去注册' }}</text></view></view>
+</template>
+
+<style>.form { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }.form-title { margin-bottom: 8px; font-size: 22px; font-weight: 700; }.input { height: 48px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.qx-primary { border-radius: 22px; font-size: 15px; }.switch { color: #d72828; text-align: center; font-size: 14px; }</style>

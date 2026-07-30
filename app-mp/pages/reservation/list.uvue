@@ -1,0 +1,11 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+type Product = { product_id: number; store_name: string; mer_name: string; price: number; show_reservation_days: number }
+type ProductPage = { list: Product[] }
+const items = ref<Product[]>([])
+function load(): void { appRequest('/reservation/products?page=1&limit=30', 'GET', null, false).then((data) => { items.value = (data as ProductPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '预约服务加载失败', icon: 'none' })) }
+function detail(id: number): void { uni.navigateTo({ url: `/pages/reservation/detail?id=${id}` }) }
+onShow(() => load())
+</script>
+<template><view class="qx-page"><qx-nav title="预约服务" /><view class="tip">选择服务日期和时段，支付后凭订单核销码到店使用。</view><view v-if="items.length == 0" class="qx-card empty">暂无可预约服务</view><view v-for="item in items" :key="item.product_id" class="qx-card item" @click="detail(item.product_id)"><text class="name">{{ item.store_name }}</text><text class="sub">{{ item.mer_name }} · 可预约 {{ item.show_reservation_days }} 天</text><text class="price">¥{{ item.price }}</text></view></view></template>
+<style>.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.name,.sub,.price { display:block; }.name { font-size:16px;font-weight:600; }.sub { margin-top:7px;color:#86909c;font-size:12px; }.price { margin-top:10px;color:#d72828;font-size:19px;font-weight:700; }</style>

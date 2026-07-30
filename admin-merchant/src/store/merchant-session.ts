@@ -8,7 +8,8 @@ import {
 } from '#/utils/qixi-live-token';
 
 export interface MerchantSessionUserInfo {
-  AppID?: number | string;
+	store_app_id?: string;
+	AppID?: number | string;
   app_id?: number | string;
   logoUrl?: string;
   shopName?: string;

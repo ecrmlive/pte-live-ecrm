@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers app customer service
+  version: 0.7.9
+  description: C 端客服会话；除创建会话外均需要 app JWT。文字消息由 IM SDK E2EE 发送，本接口仅管理会话与订单卡片等元数据。
+servers:
+  - url: /api/app/v1
+paths:
+  /cs/threads:
+    get:
+      summary: 我的客服会话列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 创建或打开客服会话
+      security: [{ bearerAuth: [] }]
+  /cs/threads/{id}/messages:
+    get:
+      summary: 会话消息元数据列表
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 写入订单卡片或系统消息（不接收文本正文）
+      security: [{ bearerAuth: [] }]
+  /cs/im/credential:
+    get:
+      summary: 获取短期 IM UserSig 与客户端公网连接凭据
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: thread_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: UserSig 只供内存中的 pte-live-im-sdk 使用；api_url 与 ws_url 必须可由 H5/小程序访问。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    required: [mode, sdk_app_id, im_user_id, user_sig, expire_at, api_url, ws_url, im_conversation_id]
+                    properties:
+                      mode: { type: string, enum: [remote] }
+                      sdk_app_id: { type: string, example: '30001' }
+                      im_user_id: { type: string, example: '1000000001' }
+                      user_sig: { type: string, writeOnly: true, description: 短期凭据，禁止持久化、日志和接口缓存 }
+                      expire_at: { type: integer, format: int64, description: Unix 秒 }
+                      api_url: { type: string, format: uri, description: IM API 客户端公网地址，不得为 Docker 服务名 }
+                      ws_url: { type: string, description: IM WebSocket 客户端公网地址 }
+                      im_conversation_id: { type: integer, format: int64 }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

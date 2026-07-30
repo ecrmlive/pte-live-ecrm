@@ -1,0 +1,197 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Product = { id: number; store_name: string; price: string }
+type LiveRoom = { broadcast_room_id: number; name: string; mer_name: string; live_status: number }
+
+const props = defineProps<{ items: any[]; page: any }>()
+const products = ref<Product[]>([])
+const liveRooms = ref<LiveRoom[]>([])
+
+function typeOf(item: any): string { return String(item['type'] || '') }
+function itemData(item: any): any[] {
+  const value = item['data'] as any[]
+  return value == null ? [] : value
+}
+function visualData(item: any): any[] {
+  const data = itemData(item)
+  if (data.length > 0) return data
+  const images = item['images'] as any[]
+  return images == null ? [] : images
+}
+function itemStyle(item: any): any { return item['style'] || {} }
+function valueOf(data: any, key: string, fallback: string = ''): string {
+  const value = data == null ? null : data[key]
+  return value == null ? fallback : String(value)
+}
+function titleOf(item: any): string {
+  const params = item['params'] || {}
+  return valueOf(params, 'title', valueOf(params, 'name', valueOf(item, 'name')))
+}
+function imageOf(data: any): string { return valueOf(data, 'imgUrl', valueOf(data, 'image')) }
+function linkOf(data: any): string { return valueOf(data, 'linkUrl', valueOf(data, 'url')) }
+function videoOf(item: any): string { return valueOf(item['params'] || {}, 'videoUrl', valueOf(item['params'] || {}, 'url')) }
+function videoPosterOf(item: any): string { return valueOf(item['params'] || {}, 'poster') }
+function moreLinkOf(item: any): string { return valueOf(item['params'] || {}, 'morelinkUrl', valueOf(item['params'] || {}, 'linkUrl')) }
+function surfaceLinkOf(item: any): string {
+  const params = item['params'] || {}
+  return valueOf(params['link'] || {}, 'linkUrl')
+}
+function hotspotStyle(entry: any): any {
+  return {
+    height: `${valueOf(entry, 'height', '0')}%`,
+    left: `${valueOf(entry, 'left', '0')}%`,
+    top: `${valueOf(entry, 'top', '0')}%`,
+    width: `${valueOf(entry, 'width', '0')}%`,
+  }
+}
+
+function go(link: string): void {
+  const path = String(link || '').trim()
+  if (path.length == 0) return
+  if (path == '/pages/index/index' || path == '/pages/category/index' || path == '/pages/cart/index' || path == '/pages/user/index') {
+    uni.switchTab({ url: path })
+    return
+  }
+  if (path.startsWith('/pages/')) {
+    uni.navigateTo({ url: path })
+    return
+  }
+  const hashIndex = path.indexOf('#/pages/')
+  if (hashIndex >= 0) {
+    uni.navigateTo({ url: path.slice(hashIndex + 1) })
+    return
+  }
+  if (path.startsWith('https://') || path.startsWith('http://')) {
+    uni.navigateTo({ url: `/pages/webview/index?url=${encodeURIComponent(path)}` })
+    return
+  }
+  uni.showToast({ title: '该页面链接尚未接入客户端路由', icon: 'none' })
+}
+
+function productDetail(id: number): void { uni.navigateTo({ url: `/pages/goods/detail?id=${id}` }) }
+function liveDetail(id: number): void { uni.navigateTo({ url: `/pages/live/detail?id=${id}` }) }
+
+function openService(item: any): void {
+  const params = item['params'] || {}
+  if (valueOf(params, 'type') == 'phone') {
+    const phone = valueOf(params, 'phone_num').trim()
+    if (phone.length == 0) {
+      uni.showToast({ title: '尚未配置客服电话', icon: 'none' })
+      return
+    }
+    uni.makePhoneCall({ phoneNumber: phone })
+    return
+  }
+  go('/pages/cs/chat')
+}
+
+function openSurface(item: any): void {
+  const params = item['params'] || {}
+  if (valueOf(params, 'type', '1') == '1') {
+    uni.pageScrollTo({ duration: 300, scrollTop: 0 })
+    return
+  }
+  go(surfaceLinkOf(item))
+}
+
+function loadProducts(): void {
+  appRequest('/catalog/products?limit=12', 'GET', null, false)
+    .then((data) => { products.value = (data['list'] as Product[]) || [] })
+    .catch(() => { products.value = [] })
+}
+
+function loadLiveRooms(): void {
+  appRequest('/live/rooms?limit=6', 'GET', null, false)
+    .then((data) => { liveRooms.value = (data['list'] as LiveRoom[]) || [] })
+    .catch(() => { liveRooms.value = [] })
+}
+
+onMounted(() => { loadProducts(); loadLiveRooms() })
+</script>
+
+<template>
+  <view class="diy-page" :style="{ backgroundColor: valueOf(itemStyle({ style: props.page ? props.page['style'] : {} }), 'background', '#f6f7f9') }">
+    <view v-for="(item, index) in props.items" :key="`${typeOf(item)}-${index}`" class="diy-block">
+      <swiper v-if="typeOf(item) == 'banner' || typeOf(item) == 'topMerge'" class="diy-banner" circular autoplay indicator-dots>
+        <swiper-item v-for="(entry, entryIndex) in visualData(item)" :key="entryIndex" @click="go(linkOf(entry))">
+          <image v-if="imageOf(entry).length > 0" class="diy-banner__image" :src="imageOf(entry)" mode="aspectFill" />
+          <view v-else class="diy-banner__placeholder"><text>{{ valueOf(entry, 'imgName', '轮播推荐') }}</text></view>
+        </swiper-item>
+        <swiper-item v-if="visualData(item).length == 0"><view class="diy-banner__placeholder"><text>轮播推荐</text></view></swiper-item>
+      </swiper>
+
+      <view v-else-if="typeOf(item) == 'navBar' || typeOf(item) == 'option'" class="diy-card diy-nav-grid">
+        <view v-for="(entry, entryIndex) in itemData(item)" :key="entryIndex" class="diy-nav-grid__item" @click="go(linkOf(entry))">
+          <image v-if="imageOf(entry).length > 0" class="diy-nav-grid__icon" :src="imageOf(entry)" mode="aspectFill" />
+          <view v-else class="diy-nav-grid__icon diy-nav-grid__icon--empty" />
+          <text>{{ valueOf(entry, 'text', valueOf(entry, 'title', '快捷入口')) }}</text>
+        </view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'title'" class="diy-title" :style="itemStyle(item)">
+        <text>{{ titleOf(item) }}</text>
+        <text v-if="valueOf(item['params'] || {}, 'moretitle', valueOf(item['params'] || {}, 'moreText')).length > 0" class="diy-title__more" @click="go(moreLinkOf(item))">{{ valueOf(item['params'] || {}, 'moretitle', valueOf(item['params'] || {}, 'moreText')) }}</text>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'notice'" class="diy-notice">
+        <text class="diy-notice__label">公告</text><text>{{ valueOf(item['params'] || {}, 'content', valueOf(item['params'] || {}, 'title', '欢迎来到七禧商城')) }}</text>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'imageSingle' || typeOf(item) == 'window'" class="diy-image-list">
+        <view v-for="(entry, entryIndex) in itemData(item)" :key="entryIndex" @click="go(linkOf(entry))">
+          <image v-if="imageOf(entry).length > 0" class="diy-image-list__image" :src="imageOf(entry)" mode="widthFix" />
+        </view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'video'" class="diy-card diy-video">
+        <video v-if="videoOf(item).length > 0" class="diy-video__player" :src="videoOf(item)" :poster="videoPosterOf(item)" :autoplay="valueOf(item['params'] || {}, 'autoplay') == '1'" controls show-center-play-btn enable-progress-gesture />
+        <view v-else class="diy-video__empty"><text>暂无视频素材</text></view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'product' || typeOf(item) == 'seckill' || typeOf(item) == 'seckillProduct' || typeOf(item) == 'assembleProduct' || typeOf(item) == 'bargainProduct' || typeOf(item) == 'previewProduct' || typeOf(item) == 'newActivity'" class="diy-card">
+        <view class="diy-section-head"><text>{{ titleOf(item) || '精选商品' }}</text><text @click="go(moreLinkOf(item))">更多 ›</text></view>
+        <view class="diy-product-grid">
+          <view v-for="product in products" :key="product.id" class="diy-product" @click="productDetail(product.id)"><text class="diy-product__cover">商品</text><text class="diy-product__name">{{ product.store_name }}</text><text class="diy-product__price">¥{{ product.price }}</text></view>
+        </view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'coupon'" class="diy-card diy-coupon" @click="go('/pages/coupon/center')">
+        <view class="diy-section-head"><text>{{ titleOf(item) || '优惠券' }}</text><text>领券中心 ›</text></view>
+        <view class="diy-coupon__list"><view v-for="(_, couponIndex) in itemData(item).slice(0, 3)" :key="couponIndex" class="diy-coupon__item"><text>优惠券</text><text>{{ valueOf(itemData(item)[couponIndex], 'reduce_price', '立减') }}</text></view><text v-if="itemData(item).length == 0" class="diy-coupon__empty">进入领券中心查看可用优惠券</text></view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'article' || typeOf(item) == 'special'" class="diy-card diy-article" @click="go('/pages/notice/list')">
+        <view class="diy-section-head"><text>{{ titleOf(item) || (typeOf(item) == 'special' ? '头条快报' : '文章资讯') }}</text><text>更多 ›</text></view>
+        <view v-for="(entry, entryIndex) in (itemData(item).length > 0 ? itemData(item) : item['defaultData'] || [])" :key="entryIndex" class="diy-article__row"><text>{{ valueOf(entry, 'article_title', '资讯内容') }}</text><text>›</text></view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'store'" class="diy-card diy-store" @click="go('/pages/goods/list')">
+        <view class="diy-section-head"><text>{{ titleOf(item) || '线下门店' }}</text><text>查看商品 ›</text></view>
+        <view v-for="(entry, entryIndex) in (itemData(item).length > 0 ? itemData(item) : item['defaultData'] || [])" :key="entryIndex" class="diy-store__row"><text>{{ valueOf(entry, 'shop_name', '门店') }}</text><text>{{ valueOf(entry, 'address', '') }}</text></view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'qixiLive'" class="diy-card">
+        <view class="diy-section-head"><text>{{ titleOf(item) || '热门直播' }}</text><text @click="go('/pages/live/list')">更多 ›</text></view>
+        <view v-if="liveRooms.length == 0" class="diy-empty">暂无直播间</view>
+        <view v-for="room in liveRooms.slice(0, Number(valueOf(item['params'] || {}, 'showNum', '2')))" :key="room.broadcast_room_id" class="diy-live__row" @click="liveDetail(room.broadcast_room_id)"><text>{{ room.name }}</text><text>{{ room.mer_name || '店铺' }} · {{ room.live_status == 101 ? '直播中' : '预告' }}</text></view>
+      </view>
+
+      <view v-else-if="typeOf(item) == 'search'" class="diy-search" @click="go('/pages/goods/list')"><text>搜索商品</text><text>⌕</text></view>
+      <view v-else-if="typeOf(item) == 'blank'" class="diy-blank" :style="{ height: `${valueOf(itemStyle(item), 'height', '20')}px` }" />
+      <view v-else-if="typeOf(item) == 'guide'" class="diy-guide" :style="{ borderTopColor: valueOf(itemStyle(item), 'lineColor', '#eeeeee'), borderTopWidth: `${valueOf(itemStyle(item), 'lineHeight', '1')}px` }" />
+      <view v-else-if="typeOf(item) == 'hotspot'" class="diy-hotspot">
+        <image v-if="valueOf(item['params'] || {}, 'image').length > 0" :src="valueOf(item['params'] || {}, 'image')" mode="widthFix" />
+        <view v-for="(entry, entryIndex) in itemData(item)" :key="entryIndex" class="diy-hotspot__zone" :style="hotspotStyle(entry)" @click="go(linkOf(entry))" />
+      </view>
+      <view v-else-if="typeOf(item) == 'service'" class="diy-service" @click="openService(item)"><image v-if="valueOf(item['params'] || {}, 'image').length > 0" class="diy-service__image" :src="valueOf(item['params'] || {}, 'image')" mode="aspectFill" /><text v-else>联系客服</text></view>
+      <view v-else-if="typeOf(item) == 'surface'" class="diy-service" @click="openSurface(item)"><image v-if="valueOf(item['params'] || {}, 'image').length > 0" class="diy-service__image" :src="valueOf(item['params'] || {}, 'image')" mode="aspectFill" /><text v-else>{{ valueOf(item['params'] || {}, 'type', '1') == '1' ? '回到顶部' : '快捷入口' }}</text></view>
+      <view v-else-if="typeOf(item) == 'videoLive'" class="diy-service" @click="uni.showToast({ title: '请在微信小程序中打开视频号直播', icon: 'none' })"><image v-if="valueOf(item['params'] || {}, 'image').length > 0" class="diy-service__image" :src="valueOf(item['params'] || {}, 'image')" mode="aspectFill" /><text v-else>视频号直播</text></view>
+      <view v-else-if="typeOf(item) == 'richText'" class="diy-card"><text>{{ valueOf(item['params'] || {}, 'content', '').replace(/<[^>]+>/g, '') }}</text></view>
+    </view>
+  </view>
+</template>
+
+<style>
+.diy-page { min-height: 100vh; padding-bottom: 18px; }.diy-block { margin-top: 10px; }.diy-card { margin: 0 12px; padding: 14px; border-radius: 12px; background-color: #ffffff; }.diy-banner { height: 180px; overflow: hidden; background-color: #f2f3f5; }.diy-banner__image, .diy-banner__placeholder { width: 100%; height: 180px; }.diy-banner__placeholder { display: flex; align-items: center; justify-content: center; color: #ffffff; background-color: #d72828; font-size: 18px; font-weight: 600; }.diy-nav-grid { display: flex; flex-wrap: wrap; gap: 14px 0; }.diy-nav-grid__item { width: 25%; display: flex; flex-direction: column; align-items: center; color: #4e5969; font-size: 12px; }.diy-nav-grid__icon { width: 42px; height: 42px; margin-bottom: 6px; border-radius: 21px; }.diy-nav-grid__icon--empty { background-color: #fff0f0; }.diy-title, .diy-section-head { display: flex; align-items: center; justify-content: space-between; margin: 0 12px; color: #1f2329; font-size: 17px; font-weight: 600; }.diy-title__more, .diy-section-head text:last-child { color: #86909c; font-size: 12px; font-weight: 400; }.diy-notice { display: flex; gap: 8px; margin: 0 12px; padding: 11px 14px; overflow: hidden; border-radius: 8px; color: #4e5969; background-color: #fff7e8; font-size: 13px; }.diy-notice__label { color: #d72828; font-weight: 600; }.diy-image-list { margin: 0 12px; overflow: hidden; border-radius: 12px; }.diy-image-list__image { display: block; width: 100%; }.diy-video { overflow: hidden; padding: 0; }.diy-video__player, .diy-video__empty { display: block; width: 100%; height: 220px; }.diy-video__empty { display: flex; align-items: center; justify-content: center; color: #86909c; background-color: #f2f3f5; }.diy-section-head { margin: 0 0 12px; }.diy-product-grid { display: flex; flex-wrap: wrap; gap: 10px; }.diy-product { width: calc(50% - 5px); overflow: hidden; border-radius: 8px; background-color: #f7f8fa; }.diy-product__cover { display: flex; height: 112px; align-items: center; justify-content: center; color: #d72828; background-color: #fff0f0; }.diy-product__name, .diy-product__price { display: block; padding: 0 9px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.diy-product__name { margin-top: 8px; color: #1f2329; font-size: 13px; }.diy-product__price { margin: 6px 0 9px; color: #d72828; font-size: 15px; font-weight: 600; }.diy-search { display: flex; justify-content: space-between; margin: 0 12px; padding: 11px 14px; border-radius: 20px; color: #86909c; background-color: #ffffff; }.diy-coupon__list { display:flex; gap:8px; }.diy-coupon__item { flex:1; padding:10px; border-radius:8px; color:#d72828; background:#fff0f0; }.diy-coupon__item text { display:block; }.diy-coupon__item text:last-child { margin-top:4px; font-size:18px; font-weight:700; }.diy-coupon__empty,.diy-empty { color:#86909c; font-size:13px; }.diy-article__row,.diy-store__row,.diy-live__row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #f2f3f5; color:#4e5969; font-size:13px; }.diy-article__row text:first-child,.diy-store__row text:first-child,.diy-live__row text:first-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }.diy-store__row text:last-child,.diy-live__row text:last-child { color:#86909c; font-size:12px; }.diy-blank { margin:0 12px; }.diy-guide { margin:0 12px; border-top-style:solid; }.diy-hotspot { position:relative; margin:0 12px; }.diy-hotspot image { display:block; width:100%; }.diy-hotspot__zone { position:absolute; }.diy-service { position: fixed; right: 18px; bottom: 86px; z-index: 8; display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding: 0; overflow:hidden; border-radius: 22px; color: #ffffff; background-color: #d72828; box-shadow: 0 4px 12px rgba(215,40,40,.28); font-size: 13px; }.diy-service__image { width:44px; height:44px; }
+</style>

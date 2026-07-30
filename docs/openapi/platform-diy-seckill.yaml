@@ -1,26 +1,58 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform diy & seckill
-  version: 0.7.6
-  description: 阶段 6a DIY 装修 + 秒杀监管；DIY 写需 diy/create|update|delete|active（选图 FE diy/pick）
+  version: 0.8.0
+  description: DIY 装修 + 秒杀监管；DIY 文档为 `{page,items[]}`。页面分类与链接按 scope=platform|merchant 隔离，商户商城链接由平台统一维护；写入需 diy/create|update|delete|active，设为首页即发布当前范围页面。
 servers:
   - url: /api/platform/v1
 paths:
   /diy/pages:
     get:
-      summary: 装修页列表
+      summary: 装修页列表（is_diy=1 首页，is_diy=0 微页面）
     post:
       summary: 新建装修页（按钮权 diy/create）
   /diy/pages/{id}:
     get:
       summary: 装修页详情
     put:
-      summary: 更新装修页（value.banners / value.menus；按钮权 diy/update）
+      summary: 更新装修页（保存 page / items[]；按钮权 diy/update）
     delete:
       summary: 软删除装修页（按钮权 diy/delete）
   /diy/pages/{id}/active:
     post:
-      summary: 设为当前启用首页（按钮权 diy/active）
+      summary: 设为当前启用首页（仅 is_diy=1；按钮权 diy/active）
+  /diy/editor/bootstrap:
+    get:
+      summary: 装修编辑器初始化数据
+  /diy/editor/bootstrap/{id}:
+    get:
+      summary: 指定装修页编辑器初始化数据
+  /diy/pages/{id}/copy:
+    post:
+      summary: 复制装修页（按钮权 diy/create）
+  /diy/pages/{id}/recovery:
+    post:
+      summary: 恢复装修页（按钮权 diy/update）
+  /diy/page-categories:
+    get:
+      summary: 查询链接分类树（scope=platform|merchant）
+    post:
+      summary: 新增链接分类（最多三级；按钮权 diy/create）
+  /diy/page-categories/{id}:
+    put:
+      summary: 编辑链接分类（按钮权 diy/update）
+    delete:
+      summary: 删除空分类（有子分类或链接时拒绝；按钮权 diy/delete）
+  /diy/page-links:
+    get:
+      summary: 查询页面链接（scope=platform|merchant）
+    post:
+      summary: 新增页面链接（按钮权 diy/create）
+  /diy/page-links/{id}:
+    put:
+      summary: 编辑页面链接（按钮权 diy/update）
+    delete:
+      summary: 删除页面链接（按钮权 diy/delete）
   /seckill/times:
     get:
       summary: 秒杀场次列表

@@ -45,7 +45,6 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema);
       <div class="form-label mb-2">分享logo：</div>
       <ImageField
         v-model="shareImg"
-        default-library="system"
         hint="公众号分享logo，建议尺寸80×80"
         :preview-size="80"
       />

@@ -1,0 +1,14 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Coupon = { coupon_id: number; title: string; coupon_price: number; use_min_price: number; received: boolean }
+type CouponData = { list: Coupon[] }
+const items = ref<Coupon[]>([])
+function load(): void { appRequest('/coupons/center').then((data) => { items.value = (data as CouponData).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })) }
+function receive(item: Coupon): void { if (item.received) return; appRequest(`/coupons/${item.coupon_id}/receive`, 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: '领取成功', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '领取失败', icon: 'none' })) }
+onShow(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="领券中心" /><view v-if="items.length == 0" class="qx-card empty">暂无可领优惠券</view><view v-for="item in items" :key="item.coupon_id" class="qx-card card"><view><text class="title">{{ item.title }}</text><text class="sub">¥{{ item.coupon_price }} · 满 {{ item.use_min_price }} 可用</text></view><button :disabled="item.received" class="receive" @click="receive(item)">{{ item.received ? '已领' : '领取' }}</button></view></view></template>
+
+<style>.empty { color: #86909c; text-align: center; }.card { display: flex; align-items: center; justify-content: space-between; }.title { display: block; font-size: 16px; font-weight: 600; }.sub { display: block; margin-top: 8px; color: #86909c; font-size: 13px; }.receive { width: 72px; margin: 0; color: #ffffff; background-color: #d72828; border-radius: 17px; font-size: 13px; }</style>

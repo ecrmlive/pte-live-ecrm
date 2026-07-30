@@ -1,0 +1,23 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type ProductGroup = { product_group_id: number; store_name: string; mer_name: string; price: number; ot_price: number; buying_count_num: number; image: string }
+type ProductGroupPage = { list: ProductGroup[] }
+const items = ref<ProductGroup[]>([])
+const loading = ref(false)
+
+function load(): void {
+  loading.value = true
+  appRequest('/combination/groups?page=1&limit=30', 'GET', null, false).then((data) => { items.value = (data as ProductGroupPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '拼团活动加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+function detail(id: number): void { uni.navigateTo({ url: `/pages/combination/detail?id=${id}` }) }
+onShow(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="拼团专区" /><view class="tip">支付成功后计入团人数，成团后自动进入待发货状态。</view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无拼团活动</view><view v-for="item in items" :key="item.product_group_id" class="qx-card product" @click="detail(item.product_group_id)"><view class="cover"><text>{{ item.store_name.slice(0, 1) }}</text></view><view class="meta"><text class="name">{{ item.store_name }}</text><text class="merchant">{{ item.mer_name }} · {{ item.buying_count_num }} 人团</text><text class="price">拼团价 ¥{{ item.price }}</text><text v-if="item.ot_price > 0" class="original">¥{{ item.ot_price }}</text></view><text class="arrow">›</text></view></view>
+</template>
+
+<style>
+.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.product { position: relative; display: flex; align-items: center; gap: 10px; padding-right: 34px; }.cover { width: 72px; height: 72px; color: #7b4ec7; background-color: #f2edff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }.meta { flex: 1; min-width: 0; }.name, .merchant, .price, .original { display: block; }.name { font-size: 16px; font-weight: 600; }.merchant, .original { margin-top: 6px; color: #86909c; font-size: 12px; }.price { margin-top: 8px; color: #d72828; font-size: 17px; font-weight: 700; }.original { text-decoration: line-through; }.arrow { position: absolute; top: 42px; right: 16px; color: #86909c; font-size: 22px; }
+</style>

@@ -139,7 +139,7 @@
 		<!-- <div v-show="diyData.items.length && form.curItfem"> </div> -->
 
 		<!--上传图片-->
-		<ImagePickerDialog v-model:open="imagePickerOpen" default-library="system" @select="returnImgsFunc" />
+		<ImagePickerDialog v-model:open="imagePickerOpen" default-library="merchant" @select="returnImgsFunc" />
 
 		<!--选择商品-->
 		<DiyProductPickerDialog

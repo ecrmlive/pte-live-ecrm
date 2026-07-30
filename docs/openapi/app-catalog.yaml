@@ -1,26 +1,103 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app catalog
-  version: 0.2.0
-  description: 阶段 2 C 端只读商品（已审+上架）
+  title: 七禧 C 端商品消费视图 API
+  version: 1.0.0
+  description: >-
+    PC、小程序、H5、iOS、Android、鸿蒙共用的只读商品接口；只读取
+    qixi_crm_b_product_view，商品经营数据由店铺域经事件同步，C 端不跨库读取店铺库。
 servers:
   - url: /api/app/v1
 paths:
   /catalog/home:
     get:
       summary: 首页热卖
+      responses:
+        '200': { description: 首页消费视图 }
   /catalog/categories:
     get:
       summary: 分类列表
+      responses:
+        '200': { description: 分类消费视图 }
   /catalog/products:
     get:
       summary: 可售商品列表
+      parameters:
+        - in: query
+          name: mer_id
+          schema: { type: integer, format: int64 }
+          description: 商户 ID
+        - in: query
+          name: keyword
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [sales, price] }
+          description: 销量或价格排序；省略时按综合排序。
+        - in: query
+          name: order
+          schema: { type: string, enum: [asc, desc], default: desc }
+          description: 仅用于 sort=sales 或 sort=price；无效值按 desc 处理。
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200': { description: 商品分页 }
   /catalog/products/{id}:
     get:
-      summary: 商详
+      summary: 商详（入驻商户商品会返回 merchant_app_id，用于换发店铺上下文 JWT）
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: 可售商品详情 }
+        '404': { description: 商品不存在或未上架 }
   /catalog/stores/{id}:
     get:
-      summary: 店铺首页商品
+      summary: 店铺首页商品（返回店铺 merchant_app_id）
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+          description: 商户 ID
+      responses:
+        '200': { description: 商户商品消费视图 }
   /catalog/points/products:
     get:
       summary: 积分商城商品（type=1）
+components:
+  schemas:
+    ProductView:
+      type: object
+      required: [id, title, mer_id, mer_name, store_id, store_name, shop_name, price, sales, stock]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string, description: 商品标题；新页面应优先使用 }
+        mer_id: { type: integer, format: int64 }
+        mer_name: { type: string }
+        store_id: { type: integer, format: int64 }
+        store_name: { type: string, description: 兼容旧 C 端，值等同 title }
+        shop_name: { type: string, description: 真实店铺名称 }
+        image: { type: string }
+        price: { type: string, example: '99.00' }
+        ot_price: { type: string }
+        sales: { type: integer }
+        stock: { type: integer }
+        merchant_app_id:
+          type: string
+          description: 仅入驻商户商品详情返回。客户端携带该值作为 X-AppId 调用 /auth/store-context；不可自行构造 merchant_id、store_id 或 im_sdk_app_id。
+    StoreHome:
+      type: object
+      required: [mer_id, mer_name, store_id, merchant_app_id, products, total]
+      properties:
+        mer_id: { type: integer, format: int64 }
+        mer_name: { type: string }
+        store_id: { type: integer, format: int64 }
+        merchant_app_id: { type: string, description: 店铺 X-AppId，不是 IM SDK AppId }
+        products: { type: array, items: { $ref: '#/components/schemas/ProductView' } }
+        total: { type: integer }

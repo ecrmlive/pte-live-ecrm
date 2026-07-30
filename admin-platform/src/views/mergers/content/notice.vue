@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
-const route = useRoute();
-const title = computed(() => (route.meta.title as string) || '功能建设中');
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { createPlatformNoticeApi, deletePlatformNoticeApi, listPlatformNoticesApi, updatePlatformNoticeApi, type PlatformNotice } from '#/api/core/platform-content';
+const loading = ref(false); const rows = ref<PlatformNotice[]>([]); const total = ref(0); const open = ref(false); const editing = ref<PlatformNotice>(); const query = reactive({ limit: 20, page: 1 }); const form = reactive({ content: '', is_show: 1, sort: 0, title: '' });
+async function load() { loading.value = true; try { const data = await listPlatformNoticesApi(query); rows.value = data.list || []; total.value = data.total || 0; } finally { loading.value = false; } }
+function add() { editing.value = undefined; Object.assign(form, { content: '', is_show: 1, sort: 0, title: '' }); open.value = true; }
+function edit(row: PlatformNotice) { editing.value = row; Object.assign(form, { content: row.content, is_show: row.is_show, sort: row.sort, title: row.title }); open.value = true; }
+async function save() { if (!form.title.trim() || !form.content.trim()) { ElMessage.warning('请填写公告标题和正文'); return; } if (editing.value) await updatePlatformNoticeApi(editing.value.notice_id, { ...form, content: form.content.trim(), title: form.title.trim() }); else await createPlatformNoticeApi({ ...form, content: form.content.trim(), title: form.title.trim() }); open.value = false; ElMessage.success('公告已保存'); await load(); }
+async function remove(row: PlatformNotice) { try { await ElMessageBox.confirm(`删除公告“${row.title}”后不可恢复，是否继续？`, '删除公告', { type: 'warning' }); await deletePlatformNoticeApi(row.notice_id); ElMessage.success('公告已删除'); await load(); } catch { /* 取消或请求错误统一提示 */ } }
+onMounted(() => void load());
 </script>
 <template>
-  <Page :title="title" description="Vben 壳已就绪，业务页待迁移。">
-    <div class="text-muted-foreground p-4 text-sm">path: {{ route.path }}</div>
-  </Page>
+  <Page title="平台公告" description="维护 C 端可见公告；新增、编辑、删除均受 content/notice/manage 按钮权限控制。"><template #extra><el-button type="primary" @click="add">发布公告</el-button></template><el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="notice_id"><el-table-column label="ID" prop="notice_id" width="80" /><el-table-column label="标题" min-width="220" prop="title" show-overflow-tooltip /><el-table-column label="正文" min-width="260" prop="content" show-overflow-tooltip /><el-table-column label="排序" prop="sort" width="90" /><el-table-column label="展示" width="90"><template #default="{ row }"><el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '展示' : '隐藏' }}</el-tag></template></el-table-column><el-table-column label="发布时间" min-width="170" prop="create_time" /><el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10,20,50,100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div></el-card><el-dialog v-model="open" :title="editing ? '编辑公告' : '发布公告'" width="720px" destroy-on-close><el-form label-width="72px"><el-form-item label="标题" required><el-input v-model="form.title" maxlength="100" show-word-limit /></el-form-item><el-form-item label="正文" required><el-input v-model="form.content" :rows="10" type="textarea" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item><el-form-item label="展示"><el-switch v-model="form.is_show" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template></el-dialog></Page>
 </template>

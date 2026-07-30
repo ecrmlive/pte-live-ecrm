@@ -1,0 +1,26 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; total_num: number; create_time: string }
+type OrderPage = { list: GroupOrder[] }
+
+const items = ref<GroupOrder[]>([])
+const loading = ref(false)
+
+function load(): void {
+  loading.value = true
+  appRequest('/orders?page=1&limit=30').then((data) => {
+    items.value = (data as OrderPage).list || []
+  }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+
+function goDetail(id: number): void { uni.navigateTo({ url: `/pages/order/detail?id=${id}` }) }
+
+onShow(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="我的订单" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无订单</view><view v-for="item in items" :key="item.group_order_id" class="qx-card card" @click="goDetail(item.group_order_id)"><text class="sn">{{ item.group_order_sn }}</text><view class="line"><text>¥{{ item.pay_price }}</text><text :class="item.paid == 1 ? 'paid' : 'unpaid'">{{ item.paid == 1 ? '已支付' : '待付款' }}</text></view><text class="meta">{{ item.total_num }} 件商品 · {{ item.create_time }}</text></view></view>
+</template>
+
+<style>.empty { color: #86909c; text-align: center; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-size: 15px; font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 18px; }.paid { color: #00b42a; font-size: 14px; }.unpaid { color: #d72828; font-size: 14px; }.meta { color: #86909c; font-size: 12px; }</style>

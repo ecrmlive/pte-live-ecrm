@@ -9,6 +9,9 @@ info:
 servers:
   - url: /api/callback/v1
 paths:
+  /ping:
+    get:
+      summary: 支付回调接口健康探测
   /pay/mock:
     post:
       summary: Mock 支付回调

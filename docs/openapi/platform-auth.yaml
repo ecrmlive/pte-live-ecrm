@@ -1,14 +1,16 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform auth
-  version: 0.1.0
-  description: 阶段 1 平台后台身份接口（api-admin）
+  title: 七禧统一后台认证 API
+  version: 1.0.0
+  description: >-
+    api-platform 统一后台认证。平台、商户、区域、客服、运营共用 admin_console JWT，
+    JWT 载荷包含后台账号、角色代码与数据范围版本。
 servers:
   - url: /api/platform/v1
 paths:
   /auth/login:
     post:
-      summary: 平台管理员登录
+      summary: 统一后台账号登录
       requestBody:
         required: true
         content:
@@ -17,51 +19,52 @@ paths:
               type: object
               required: [account, password]
               properties:
-                account: { type: string }
+                account: { type: string, description: 兼容字段；等同 username }
+                username: { type: string }
                 password: { type: string, format: password }
       responses:
         '200':
-          description: OK
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
   /auth/refresh:
     post:
-      summary: 刷新 access token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [refresh_token]
-              properties:
-                refresh_token: { type: string }
+      summary: 通过 Authori-zation 头的 refresh token 刷新 access token
+      security: [{ qixiJWT: [] }]
       responses:
         '200':
-          description: OK
+          description: 刷新成功
   /auth/me:
     get:
-      summary: 当前管理员
-      security: [{ bearerAuth: [] }]
+      summary: 当前统一后台账号与角色
+      security: [{ qixiJWT: [] }]
       responses:
         '200':
-          description: OK
+          description: 当前账号
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfileResponse'
   /auth/menus:
     get:
-      summary: 当前管理员菜单树
-      security: [{ bearerAuth: [] }]
+      summary: 按角色返回菜单
+      security: [{ qixiJWT: [] }]
       responses:
         '200':
           description: OK
   /auth/permissions:
     get:
-      summary: 按钮权限 path 列表
-      security: [{ bearerAuth: [] }]
+      summary: 按钮权限代码列表
+      security: [{ qixiJWT: [] }]
       responses:
         '200':
           description: OK
   /auth/password:
     put:
       summary: 修改密码
-      security: [{ bearerAuth: [] }]
+      security: [{ qixiJWT: [] }]
       requestBody:
         required: true
         content:
@@ -77,7 +80,52 @@ paths:
           description: OK
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    qixiJWT:
+      type: apiKey
+      in: header
+      name: Authori-zation
+      description: "Bearer <JWT>；平台、商户、区域、客服、运营共用统一后台令牌。"
+  schemas:
+    TokenPair:
+      type: object
+      required: [access_token, refresh_token, expires_in]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer, format: int64 }
+    AdminProfile:
+      type: object
+      required: [id, admin_id, username, account, display_name, real_name, roles, data_scope_version, is_agent]
+      properties:
+        id: { type: integer, format: int64 }
+        admin_id: { type: integer, format: int64 }
+        username: { type: string }
+        account: { type: string }
+        display_name: { type: string }
+        real_name: { type: string }
+        roles:
+          type: array
+          items: { type: string, enum: [platform, merchant, region, customer_service, operations] }
+        data_scope_version: { type: integer, format: int64 }
+        is_agent: { type: integer, enum: [0, 1], description: 兼容字段；区域角色为 1 }
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { $ref: '#/components/schemas/TokenPair' }
+        user: { $ref: '#/components/schemas/AdminProfile' }
+    AdminProfileResponse:
+      type: object
+      required: [id, admin_id, username, account, display_name, real_name, roles, data_scope_version, is_agent]
+      properties:
+        id: { type: integer, format: int64 }
+        admin_id: { type: integer, format: int64 }
+        username: { type: string }
+        account: { type: string }
+        display_name: { type: string }
+        real_name: { type: string }
+        roles:
+          type: array
+          items: { type: string }
+        data_scope_version: { type: integer, format: int64 }
+        is_agent: { type: integer, enum: [0, 1] }

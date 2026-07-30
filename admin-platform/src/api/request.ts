@@ -1,5 +1,5 @@
 /**
- * 栖息多商户平台 API 请求适配。
+ * 七禧多商户平台 API 请求适配。
  */
 import type { RequestClientOptions } from '@vben/request';
 
@@ -14,10 +14,7 @@ import { useAccessStore } from '@vben/stores';
 
 import { ElMessage } from 'element-plus';
 
-import {
-  QIXI_PLATFORM_APP_ID,
-  resolveApiBaseUrl,
-} from '#/utils/qixi-live-api';
+import { resolveApiBaseUrl } from '#/utils/qixi-live-api';
 import { formatUserFacingApiError } from '#/utils/api-error';
 import {
   clearEncryptedToken,
@@ -79,11 +76,9 @@ function createRequestClient(
         accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers.Authorization = bearer;
+        config.headers['Authori-zation'] = bearer;
       }
-      config.headers.AppID = String(QIXI_PLATFORM_APP_ID);
-      config.headers['Accept-Language'] = preferences.app.locale;
-
+		config.headers['Accept-Language'] = preferences.app.locale;
 		return attachAPIEncryption(config, baseURL);
     },
   });
@@ -173,11 +168,9 @@ function createAdminApiClient() {
       const token = accessStore.accessToken || getDecryptedToken() || null;
       const bearer = formatAuthHeader(token);
       if (bearer) {
-        config.headers.Authorization = bearer;
+        config.headers['Authori-zation'] = bearer;
       }
-      config.headers.AppID = String(QIXI_PLATFORM_APP_ID);
-      config.headers['Accept-Language'] = preferences.app.locale;
-
+		config.headers['Accept-Language'] = preferences.app.locale;
 		return attachAPIEncryption(config, baseURL);
     },
   });

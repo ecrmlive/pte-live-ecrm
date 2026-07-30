@@ -2,13 +2,16 @@ openapi: 3.0.3
 info:
   title: qixi-mergers manager trade
   version: 0.1.0
-  description: 阶段 6d 店员端登录 / 核销 / 代退（api-admin `/api/manager/v1`）；JWT PortalManager，claims.admin_id=service_id
+  description: 店铺员工登录 / 核销 / 代退（api-merchant `/api/manager/v1`）；JWT PortalManager，claims.admin_id=service_id
 servers:
   - url: /api/manager/v1
 paths:
+  /ping:
+    get:
+      summary: 店员端接口健康探测
   /auth/login:
     post:
-      summary: 店员登录（qixi_store_service）
+      summary: 店员登录（旧契约迁移参考；店员数据归属 qixi_crm_m_）
       requestBody:
         required: true
         content:
@@ -155,6 +158,24 @@ paths:
           description: OK
         '403':
           description: 无核销权限
+  /refunds/{id}/reject:
+    post:
+      summary: 拒绝仅退款（需 is_verify=1 和 fail_message）
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fail_message]
+              properties:
+                fail_message: { type: string }
+      responses:
+        '200':
+          description: OK
 components:
   securitySchemes:
     bearerAuth:

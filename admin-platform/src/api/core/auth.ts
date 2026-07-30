@@ -13,12 +13,16 @@ export namespace AuthApi {
   }
 
   export interface PlatformUser {
+    id: number;
     admin_id: number;
+    username: string;
     account: string;
+    display_name: string;
     real_name: string;
-    phone: string;
-    roles: string;
-    level: number;
+    roles: string[];
+    data_scope_version: number;
+    /** 兼容旧页面：1 表示区域角色。新权限判断以 roles 为准。 */
+    is_agent: number;
   }
 
   export interface LoginResult {

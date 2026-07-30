@@ -1,4 +1,4 @@
-# admin-platform — 栖息多商户平台后台（Vben 5.7）
+# admin-platform — 七禧多商户平台后台（Vben 5.7）
 
 基于 **Vben Admin 5**（Element Plus + `Page` / `useVbenModal` / `useVbenVxeGrid`）。
 
@@ -12,7 +12,7 @@ pnpm dev:platform
 # http://localhost:5173/#/auth/login
 ```
 
-API：`http://127.0.0.1:18080/api/platform/v1`（`api-admin`）。
+API：`http://127.0.0.1:18081/api/platform/v1`（`api-platform`）。
 
 演示账号：`admin` / `admin123`。
 

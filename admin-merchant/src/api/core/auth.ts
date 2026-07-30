@@ -20,7 +20,9 @@ export namespace AuthApi {
     user: {
       merchant_admin_id: number;
       mer_id: number;
+      store_id: number;
       mer_name: string;
+      store_name: string;
       account: string;
       real_name: string;
       phone: string;
@@ -47,7 +49,7 @@ export async function logoutApi() {
 
 /** 平台跳转商户后台时校验已有 merchant JWT（需 Header 带 token） */
 export async function saasLoginApi() {
-  return requestClient.get<{ account: string }>('/auth/me');
+  return requestClient.get<{ account: string; store_id: number }>('/auth/me');
 }
 
 export async function getAccessCodesApi() {

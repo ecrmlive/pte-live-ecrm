@@ -72,7 +72,7 @@ export default {
       return '/setting/diy/list';
     },
     headerBackRoute() {
-      if (this.mode.startsWith('custom')) return this.listPath;
+      if (this.mode.startsWith('custom')) return { path: this.listPath, query: { kind: 'micro' } };
       if (this.mode.startsWith('home')) return this.listPath;
       return null;
     },

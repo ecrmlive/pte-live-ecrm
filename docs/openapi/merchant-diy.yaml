@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant diy
+  version: 0.8.0
+  description: 商户店铺装修页与默认页配置；所有接口均按 JWT 中的 mer_id 隔离。商户装修链接只读自平台配置的商户商城链接，不能修改平台链接库。
+servers:
+  - url: /api/merchant/v1
+paths:
+  /diy/pages:
+    get: { summary: 本店装修页列表（is_diy=1 首页，is_diy=0 微页面）, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建装修页, security: [{ bearerAuth: [] }] }
+  /diy/pages/{id}:
+    get: { summary: 装修页详情, security: [{ bearerAuth: [] }] }
+    put: { summary: 更新装修页, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除装修页, security: [{ bearerAuth: [] }] }
+  /diy/defaults:
+    get: { summary: 默认装修页列表, security: [{ bearerAuth: [] }] }
+  /diy/editor/bootstrap:
+    get: { summary: 装修编辑器初始化数据, security: [{ bearerAuth: [] }] }
+  /diy/editor/bootstrap/{id}:
+    get: { summary: 指定装修页编辑器初始化数据, security: [{ bearerAuth: [] }] }
+  /diy/pages/{id}/active:
+    post: { summary: 设为本店启用页, security: [{ bearerAuth: [] }] }
+  /diy/pages/{id}/copy:
+    post: { summary: 复制装修页, security: [{ bearerAuth: [] }] }
+  /diy/pages/{id}/recovery:
+    post: { summary: 恢复装修页, security: [{ bearerAuth: [] }] }
+  /diy/defaults/{id}/apply:
+    post: { summary: 应用默认装修页, security: [{ bearerAuth: [] }] }
+  /diy/page-categories:
+    get: { summary: 可选商户页面链接分类树（只读）, security: [{ bearerAuth: [] }] }
+  /diy/page-links:
+    get: { summary: 可选商户页面链接（仅启用项，只读）, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

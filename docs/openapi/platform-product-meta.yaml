@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform product metadata
+  version: 0.7.9
+  description: 平台商品标签与保障服务只读监管接口。
+servers:
+  - url: /api/platform/v1
+paths:
+  /product/labels:
+    get: { summary: 商品标签列表, security: [{ bearerAuth: [] }] }
+  /product/guarantees:
+    get: { summary: 商品保障服务列表, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
 import { Page, useVbenModal } from '@vben/common-ui';
 import {
@@ -12,6 +12,8 @@ import {
   ElInputNumber,
   ElMessage,
   ElMessageBox,
+  ElSelect,
+  ElOption,
   ElSwitch,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
@@ -24,6 +26,7 @@ import {
   updateArticle,
   type ArticleRow,
 } from '#/api/core/mergers';
+import { getArticleCategoryListApi, type ArticleCategoryOption } from '#/api/core/plus-article';
 
 const form = reactive({
   title: '',
@@ -35,6 +38,12 @@ const form = reactive({
   show: true,
 });
 const editingId = ref(0);
+const categories = ref<ArticleCategoryOption[]>([]);
+
+async function loadCategories() {
+  categories.value = (await getArticleCategoryListApi()).list.filter((item) => item.status === 1);
+  if (!categories.value.some((item) => item.cid === form.cid)) form.cid = categories.value[0]?.cid || 0;
+}
 
 const [FormModal, formModalApi] = useVbenModal({
   onConfirm: async () => {
@@ -99,13 +108,15 @@ function openCreate() {
     author: '',
     synopsis: '',
     content: '',
-    cid: 1,
+    cid: categories.value[0]?.cid || 0,
     sort: 0,
     show: true,
   });
   formModalApi.setState({ title: '新建文章' });
   formModalApi.open();
 }
+
+onMounted(() => void loadCategories());
 
 function openEdit(row: ArticleRow) {
   editingId.value = row.article_id;
@@ -161,8 +172,10 @@ async function onDelete(row: ArticleRow) {
         <ElFormItem label="内容" required>
           <ElInput v-model="form.content" :rows="8" type="textarea" />
         </ElFormItem>
-        <ElFormItem label="分类ID">
-          <ElInputNumber v-model="form.cid" :min="0" class="w-full" />
+        <ElFormItem label="文章分类">
+          <ElSelect v-model="form.cid" class="w-full" placeholder="请选择分类">
+            <ElOption v-for="category in categories" :key="category.cid" :label="category.title" :value="category.cid" />
+          </ElSelect>
         </ElFormItem>
         <ElFormItem label="排序">
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />

@@ -1,0 +1,39 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
+
+const loggedIn = ref(getAccessToken().length > 0)
+type CartItem = { cart_id: number; store_name: string; cart_num: number; price: number }
+type CartBucket = { mer_id: number; mer_name: string; items: CartItem[] }
+type CartData = { list: CartBucket[]; total_num: number; total_price: number }
+const buckets = ref<CartBucket[]>([])
+const totalPrice = ref(0)
+const loading = ref(false)
+
+function goLogin(): void {
+  uni.navigateTo({ url: '/pages/login/index' })
+}
+
+function load(): void {
+  const token = getAccessToken()
+  loggedIn.value = token.length > 0
+  if (!loggedIn.value) { buckets.value = []; totalPrice.value = 0; return }
+  loading.value = true
+  appRequest('/cart').then((data) => { const cart = data as CartData; buckets.value = cart.list || []; totalPrice.value = cart.total_price || 0 }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+
+function checkout(): void {
+  const ids: number[] = []
+  buckets.value.forEach((bucket) => bucket.items.forEach((item) => ids.push(item.cart_id)))
+  if (ids.length == 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
+  uni.navigateTo({ url: `/pages/order/checkout?cart_ids=${ids.join(',')}` })
+}
+
+onShow(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="购物车" /><view v-if="buckets.length == 0" class="qx-card empty"><text>{{ loggedIn ? '购物车暂无商品' : '登录后可同步购物车' }}</text><button class="qx-primary" @click="goLogin">{{ loggedIn ? '去逛逛' : '去登录' }}</button></view><view v-for="bucket in buckets" :key="bucket.mer_id" class="qx-card"><text class="merchant">{{ bucket.mer_name }}</text><view v-for="item in bucket.items" :key="item.cart_id" class="item"><view class="cover">七</view><view class="item-meta"><text>{{ item.store_name }}</text><view class="item-price"><text class="price">¥{{ item.price }}</text><text>×{{ item.cart_num }}</text></view></view></view></view><view v-if="buckets.length > 0" class="total"><text>合计：<text class="price">¥{{ totalPrice }}</text></text><button class="qx-primary" :loading="loading" @click="checkout">去结算</button></view></view>
+</template>
+
+<style>.empty { min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: #86909c; }.qx-primary { width: 160px; border-radius: 22px; font-size: 15px; }.merchant { display: block; margin-bottom: 12px; font-size: 15px; font-weight: 600; }.item { padding: 12px 0; border-top: 1px solid #f0f0f0; display: flex; gap: 12px; }.cover { width: 52px; height: 52px; color: #d72828; background-color: #fff0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }.item-meta { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }.item-price { display: flex; justify-content: space-between; color: #86909c; font-size: 13px; }.price { color: #d72828; font-weight: 700; }.total { padding: 12px; background-color: #ffffff; display: flex; align-items: center; justify-content: space-between; }.total .qx-primary { width: 108px; margin: 0; }</style>

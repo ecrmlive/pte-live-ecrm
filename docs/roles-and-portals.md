@@ -1,58 +1,35 @@
-# 角色与端入口
+# 角色、系统与入口
 
-服务容器 / 端口 / IP 权威表：[`docs/release/SERVICE-MATRIX.md`](./release/SERVICE-MATRIX.md)。
+本文件落实 [SYSTEM-ARCHITECTURE.md](./SYSTEM-ARCHITECTURE.md)，不得再把角色误拆成独立系统。
 
-## 角色矩阵
+## 统一后台管理系统 `/admin/`
 
-| 角色 | 入口 | 数据范围 | 对应 release（local 端口） |
-| --- | --- | --- | --- |
-| 平台超管/运营 | 平台后台（Vben） | 全平台 | `qixi-mergers-admin` dist → 宿主机 Nginx `:18081` |
-| 商户主账号/店员 | 商户后台（Vben）+ 手机端 | 本 `merchant_id` | `qixi-mergers-merchant-admin` → `:18082` |
-| C 端用户 | uni-app x / H5 / 小程序 | 本人订单与资产 | `qixi-mergers-h5` → `:18083` |
-| C 端用户（PC） | Vue3 PC 商城 | 本人订单与资产 | `qixi-mergers-pc` → `:18086` |
-| 分销员 | C 端分销中心 | 本人团队与佣金 | 同 H5 / PC |
-| 客服坐席 | 客服工作台 (P1) | 授权店铺会话 | `qixi-mergers-service-web` → `:18084` |
-| 配送员 / 服务人员 | 配送/服务端 (P2) | 分配单据 | 后挂 `/api/manager` 等 |
+一个 Vben 5.7+ 应用，所有账号使用同一套后台 JWT。登录后服务端返回角色可见菜单、按钮权限和数据范围。
 
-后台 API：`qixi_mergers_api_admin` → `:18080`（`.20`）。  
-C 端 API：`qixi_mergers_api_app` → `:18085`（`.22`）。  
-前端：同属 compose project **`qixi_mergers`**（admin `.30` / merchant `.31` / h5 `.32` / service `.33` / pc `.34`）。
+| 角色 | 数据范围 | 菜单重点 |
+| --- | --- | --- |
+| 平台 `platform` | 全平台 | 商户、商品、订单、财务、系统配置、全局营销 |
+| 商户 `merchant` | 授权商户范围 | 商户经营监管、商户数据和运营操作 |
+| 区域 `region` | `region_ids` 及其商户 | 区域商户、区域订单、区域结算与审核 |
+| 客服 `customer_service` | 授权会话与店铺 | pte-live-im 会话、用户/订单/售后辅助 |
+| 运营 `operations` | 授权运营范围 | 内容、DIY、活动、素材、报表与运营配置 |
 
-## 端与 API 前缀
+前端隐藏菜单不构成鉴权；API 必须校验后台 JWT、角色、按钮权限和数据范围。
 
-| 端 | 进程 | API 前缀 | 鉴权 |
-| --- | --- | --- | --- |
-| 平台后台 | api-admin | `/api/platform/v1` | 平台 JWT + RBAC |
-| 商户后台 | api-admin | `/api/merchant/v1` | 商户 JWT + `mer_id` |
-| 店员 manager (P1) | api-admin | `/api/manager/v1` | 商户员工 JWT |
-| 客服 (P1) | api-admin | `/api/service/v1` | 客服 JWT |
-| 开放接口 | api-admin | `/api/open/v1` | AppKey / 签名 |
-| C 端 | api-app | `/api/app/v1` | 用户 JWT |
-| 回调 | api-app | `/api/callback/v1` | 支付平台验签 |
+## 店铺管理系统 `/merchant/`
 
-## 页面信息架构（用户端）
+一个独立 Vben 5.7+ 应用，使用独立店铺 JWT 与 `qixi_crm_merchant` 数据边界。
 
-1. 首页 / 分类 / 购物车 / 用户  
-2. 商品详情 → 规格 → 下单  
-3. 订单列表/详情/售后  
-4. 店铺街 → 店铺首页  
-5. 营销活动页（秒杀/拼团/砍价/积分）  
-6. 分销中心 / 余额 / 优惠券  
-7. 客服会话  
-8. 商户入驻申请  
+| 角色 | 数据范围 | 功能 |
+| --- | --- | --- |
+| 店铺主账号 | 本店铺 | 商品、订单、营销、财务、装修、设置 |
+| 店员 | 授权订单与门店 | 核销、接单、售后、工作台 |
+| 配送员 / 服务人员 | 分配单据 | 配送、预约履约、状态回传 |
 
-## 管理端信息架构
+## C 端用户系统
 
-### 平台
+PC、小程序、H5、iOS、Android、鸿蒙共用 C 端 JWT 与用户主体；登录来源必须记录为 `wechat`、`mini_program`、`h5`、`pc`、`ios`、`android`、`harmony`。同一主体跨端使用同一订单、资产、会员和售后数据，不得按前端重复创建账号。
 
-数据概览 → 商户 → 商品 → 订单 → 用户 → 营销 → 财务 → 配送 → 内容/DIY → 设置/权限
+## IM
 
-### 商户
-
-店铺概览 → 商品 → 订单 → 营销 → 员工/客服 → 财务 → 店铺设置
-
-## 权限原则
-
-- 平台菜单与商户菜单两套 RBAC，不共用角色表主键空间（可同库不同表或 `scope` 字段）。
-- 商户接口中间件强制注入并校验 `merchant_id`。
-- 资金、退款、结算类操作写操作日志，关键操作可二次确认。
+客服角色在统一后台中通过 pte-live-im-sdk 接入 pte-live-im。qixi 不管理 IM 消息表，不接入 pte-live 网络；仅以受控 API 和业务关联 ID 对接。

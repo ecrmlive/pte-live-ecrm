@@ -1,0 +1,21 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+const realName = ref('')
+const phone = ref('')
+const province = ref('')
+const city = ref('')
+const district = ref('')
+const detail = ref('')
+const submitting = ref(false)
+
+function submit(): void {
+  if (realName.value.trim().length == 0 || phone.value.trim().length == 0 || province.value.trim().length == 0 || city.value.trim().length == 0 || district.value.trim().length == 0 || detail.value.trim().length == 0) { uni.showToast({ title: '请完整填写地址信息', icon: 'none' }); return }
+  submitting.value = true
+  appRequest('/address', 'POST', { real_name: realName.value.trim(), phone: phone.value.trim(), province: province.value.trim(), city: city.value.trim(), district: district.value.trim(), detail: detail.value.trim(), post_code: 0, is_default: 1 } as UTSJSONObject).then(() => { uni.showToast({ title: '保存成功', icon: 'success' }); uni.navigateBack() }).catch((error) => uni.showToast({ title: error.message || '保存失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+</script>
+
+<template><view class="qx-page"><qx-nav title="新增收货地址" /><view class="qx-card form"><input v-model="realName" class="input" placeholder="收货人姓名" /><input v-model="phone" class="input" type="number" placeholder="手机号码" /><input v-model="province" class="input" placeholder="省份" /><input v-model="city" class="input" placeholder="城市" /><input v-model="district" class="input" placeholder="区县" /><textarea v-model="detail" class="textarea" placeholder="详细地址" /></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">保存地址</button></view></view></template>
+
+<style>.form { display: flex; flex-direction: column; gap: 12px; }.input { height: 46px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.textarea { height: 100px; padding: 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

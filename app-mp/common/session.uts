@@ -1,0 +1,27 @@
+const TOKEN_KEY = 'qixi_app_access_token'
+const MERCHANT_APP_ID_KEY = 'qixi_app_merchant_app_id'
+
+export function getAccessToken(): string {
+  return uni.getStorageSync(TOKEN_KEY) as string
+}
+
+export function setAccessToken(token: string): void {
+  uni.setStorageSync(TOKEN_KEY, token)
+}
+
+export function getMerchantAppID(): string {
+  return uni.getStorageSync(MERCHANT_APP_ID_KEY) as string
+}
+
+export function setMerchantAppID(appID: string): void {
+  uni.setStorageSync(MERCHANT_APP_ID_KEY, appID)
+}
+
+export function clearMerchantAppID(): void {
+  uni.removeStorageSync(MERCHANT_APP_ID_KEY)
+}
+
+export function clearSession(): void {
+  uni.removeStorageSync(TOKEN_KEY)
+  clearMerchantAppID()
+}

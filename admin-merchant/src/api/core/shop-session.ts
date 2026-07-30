@@ -13,6 +13,7 @@ export interface ShopSessionResponse {
   codes: string[];
   menus: ShopAccessMenuItem[];
   user: {
+    store_app_id?: string;
     app_id?: number | string;
     homePath?: string;
     is_super?: number;
@@ -27,7 +28,10 @@ export interface ShopSessionResponse {
 interface MerchantProfileResponse {
   merchant_admin_id: number;
   mer_id: number;
+  store_id: number;
+  store_app_id: string;
   mer_name: string;
+  store_name: string;
   account: string;
   real_name: string;
   phone: string;
@@ -47,9 +51,10 @@ export function mapShopSessionUser(
     homePath: user?.homePath || '/home',
     realName: userName,
     roles,
-    userId: String(user?.app_id || ''),
+    userId: String(user?.store_app_id || ''),
     username: userName,
     token: '',
+    store_app_id: user?.store_app_id,
     app_id: user?.app_id,
     logoUrl: user?.logoUrl,
     shopName,
@@ -93,7 +98,7 @@ async function fetchShopSessionApiInner() {
     codes: permissionRes?.permissions ?? [],
     menus: menuRes?.menus ?? [],
     user: {
-      app_id: profile.merchant_admin_id,
+      store_app_id: profile.store_app_id,
       homePath: '/dashboard',
       roles: profile.roles.split(',').filter(Boolean),
       shop_name: profile.mer_name,

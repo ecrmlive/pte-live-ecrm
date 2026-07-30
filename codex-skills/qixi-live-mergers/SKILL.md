@@ -19,7 +19,7 @@ disable-model-invocation: false
 1. 仓库根目录 `AGENTS.md`
 2. `docs/product-understanding.md`（我们要做什么：主链路/对象）
 3. `docs/analysis-completeness.md`（完整度与是否允许写代码）
-4. `docs/features/README.md`（各端→按钮→CRUD）与 `docs/schema/README.md`（表前缀 `qixi_`）
+4. `docs/features/README.md`（各端→按钮→CRUD）与 `docs/schema/README.md`（表前缀 `qixi_m_admin_`（平台/商户）与 `qixi_m_app_`（C 端））
 5. `docs/README.md` 与其它文档：
    - `docs/overview.md`
    - `docs/feature-matrix.md`
@@ -63,8 +63,8 @@ disable-model-invocation: false
 
 - 配置文件使用 `.yaml`。
 - API：Gin、GORM、Swagger、MySQL、etcd、NATS。
-- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x；PC 商城用 Vue 3（`app-pc/`）。
-- **数据库表前缀固定 `qixi_`**（CRMEB `eb_` → `qixi_`）。见 `docs/schema/`。禁止新代码使用 `eb_`。
+- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x（`app-mp/`）；PC 商城用 Vue 3（`app-web/`）。
+- **数据库表前缀固定为 `qixi_m_admin_`（平台/商户）与 `qixi_m_app_`（C 端）**（CRMEB `eb_` 映射）。见 `docs/schema/`。禁止新代码使用裸 `qixi_` 或 `eb_`。
 - 商户接口强制 `mer_id` 隔离。
 - 测试数据注意中文乱码（utf8mb4）。
 - 本机构建产物 + Docker Compose 挂载运行；禁止服务器源码构建；Dockerfile 只复制本机产物。

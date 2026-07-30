@@ -1,4 +1,42 @@
 import { liveAdminPost } from '#/api/live-request';
+import { requestClient } from '#/api/request';
+
+export interface DashboardMetric {
+  month: number;
+  today: number;
+  yesterday: number;
+}
+
+export interface StoreSalesRankRow {
+  follower_count: number;
+  sale_amount: number;
+  sale_count: number;
+  store_id: number;
+  store_name: string;
+}
+
+export interface PlatformDashboardSummary {
+  new_users: DashboardMetric;
+  on_sale_product: number;
+  page_views: DashboardMetric;
+  paid_order: number;
+  pending_delivery: number;
+  pending_product_audit: number;
+  pending_refund: number;
+  pending_service: number;
+  pending_store_audit: number;
+  store_count: number;
+  store_sales_rank: StoreSalesRankRow[];
+  store_total: number;
+  today_order_count: number;
+  today_paid_amount: number;
+  today_payer_count: number;
+  visitors: DashboardMetric;
+}
+
+export function getPlatformDashboardSummaryApi() {
+  return requestClient.get<PlatformDashboardSummary>('/dashboard/summary');
+}
 
 export interface PlatformDashboardOverview {
   merchant_count: number;

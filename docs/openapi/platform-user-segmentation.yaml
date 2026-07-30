@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers platform user segmentation
+  version: 0.7.9
+  description: 平台用户标签、用户分组与用户打标。
+servers:
+  - url: /api/platform/v1
+paths:
+  /user/labels:
+    get: { summary: 用户标签列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建用户标签, security: [{ bearerAuth: [] }] }
+  /user/labels/{id}:
+    put: { summary: 更新用户标签, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除用户标签, security: [{ bearerAuth: [] }] }
+  /user/groups:
+    get: { summary: 用户分组列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建用户分组, security: [{ bearerAuth: [] }] }
+  /user/groups/{id}:
+    put: { summary: 更新用户分组, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除用户分组, security: [{ bearerAuth: [] }] }
+  /user/{uid}/labels:
+    get: { summary: 用户标签列表, security: [{ bearerAuth: [] }] }
+    put: { summary: 覆盖设置用户标签, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

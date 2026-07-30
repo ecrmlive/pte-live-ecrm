@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers platform content
-  version: 0.7.8
-  description: 平台公告 CRUD + 协议规则（qixi_cache）；协议写需 agreement/update（sql/041）
+  version: 0.8.0
+  description: 平台公告 CRUD + 协议规则（旧契约迁移参考；新表归属 qixi_crm_a_）
 servers:
   - url: /api/platform/v1
 paths:
@@ -10,12 +10,12 @@ paths:
     get:
       summary: 公告列表（含未展示）
     post:
-      summary: 新建公告
+      summary: 新建公告（需 content/notice/manage）
   /notices/{id}:
     put:
-      summary: 更新公告
+      summary: 更新公告（需 content/notice/manage）
     delete:
-      summary: 软删除公告
+      summary: 软删除公告（需 content/notice/manage）
   /agreements:
     get:
       summary: 协议键列表（含正文）
@@ -24,3 +24,16 @@ paths:
       summary: 协议详情
     put:
       summary: 保存协议正文（按钮权 agreement/update）
+  /article/categories:
+    get: { summary: 文章分类列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建文章分类, security: [{ bearerAuth: [] }] }
+  /article/categories/{id}:
+    put: { summary: 更新文章分类, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除文章分类, security: [{ bearerAuth: [] }] }
+  /articles:
+    get: { summary: 文章列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建文章, security: [{ bearerAuth: [] }] }
+  /articles/{id}:
+    get: { summary: 文章详情, security: [{ bearerAuth: [] }] }
+    put: { summary: 更新文章, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除文章, security: [{ bearerAuth: [] }] }

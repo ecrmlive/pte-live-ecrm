@@ -1,0 +1,11 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+type Assist = { product_assist_id: number; store_name: string; mer_name: string; assist_count: number; assist_price: number; ot_price: number; stock: number }
+type AssistPage = { list: Assist[] }
+const items = ref<Assist[]>([])
+function load(): void { appRequest('/assist/actives?page=1&limit=30', 'GET', null, false).then((data) => { items.value = (data as AssistPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '助力活动加载失败', icon: 'none' })) }
+function detail(id: number): void { uni.navigateTo({ url: `/pages/assist/detail?id=${id}` }) }
+onShow(() => load())
+</script>
+<template><view class="qx-page"><qx-nav title="好友助力" /><view class="tip">邀请好友完成助力后，发起人可按助力价下单。</view><view v-if="items.length == 0" class="qx-card empty">暂无助力活动</view><view v-for="item in items" :key="item.product_assist_id" class="qx-card item" @click="detail(item.product_assist_id)"><text class="name">{{ item.store_name }}</text><text class="sub">{{ item.mer_name }} · 需 {{ item.assist_count }} 人助力 · 库存 {{ item.stock }}</text><text class="price">助力价 ¥{{ item.assist_price }}</text></view></view></template>
+<style>.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.name, .sub, .price { display: block; }.name { font-size: 16px; font-weight: 600; }.sub { margin-top: 7px; color: #86909c; font-size: 12px; }.price { margin-top: 10px; color: #d72828; font-size: 19px; font-weight: 700; }</style>

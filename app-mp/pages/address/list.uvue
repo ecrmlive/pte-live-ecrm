@@ -1,0 +1,17 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Address = { address_id: number; real_name: string; phone: string; province: string; city: string; district: string; detail: string; is_default: number }
+type AddressData = { list: Address[] }
+const items = ref<Address[]>([])
+const loading = ref(false)
+
+function load(): void { loading.value = true; appRequest('/address').then((data) => { items.value = (data as AddressData).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false }) }
+function add(): void { uni.navigateTo({ url: '/pages/address/edit' }) }
+function remove(id: number): void { uni.showModal({ title: '删除地址', content: '确认删除此地址吗？', success: (result) => { if (!result.confirm) return; appRequest(`/address/${id}`, 'DELETE', null).then(() => { uni.showToast({ title: '已删除', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '删除失败', icon: 'none' })) } }) }
+onShow(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="收货地址" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无收货地址</view><view v-for="item in items" :key="item.address_id" class="qx-card"><text class="name">{{ item.real_name }} {{ item.phone }}<text v-if="item.is_default == 1" class="default">默认</text></text><text class="address">{{ item.province }}{{ item.city }}{{ item.district }}{{ item.detail }}</text><button class="remove" @click="remove(item.address_id)">删除</button></view><view class="footer"><button class="qx-primary" @click="add">新增收货地址</button></view></view></template>
+
+<style>.empty { color: #86909c; text-align: center; }.name { display: block; font-size: 16px; font-weight: 600; }.default { margin-left: 8px; color: #d72828; font-size: 12px; font-weight: 400; }.address { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; line-height: 20px; }.remove { width: 64px; margin: 14px 0 0; color: #86909c; background-color: #ffffff; border: 1px solid #c9cdd4; border-radius: 16px; font-size: 12px; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

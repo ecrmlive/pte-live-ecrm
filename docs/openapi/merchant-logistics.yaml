@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: qixi-mergers merchant logistics
+  version: 0.8.0
+  description: 商户快递/城市查询与运费模板 CRUD；模板数据按 mer_id 隔离，同一商户只有一个默认模板。
+servers:
+  - url: /api/merchant/v1
+paths:
+  /express:
+    get: { summary: 快递公司列表, security: [{ bearerAuth: [] }] }
+  /city:
+    get: { summary: 城市列表, security: [{ bearerAuth: [] }] }
+  /shipping/templates:
+    get: { summary: 运费模板列表, security: [{ bearerAuth: [] }] }
+    post: { summary: 创建运费模板, security: [{ bearerAuth: [] }] }
+  /shipping/templates/{id}:
+    get: { summary: 运费模板详情, security: [{ bearerAuth: [] }] }
+    put: { summary: 更新运费模板, security: [{ bearerAuth: [] }] }
+    delete: { summary: 删除非默认运费模板（默认模板需先切换）, security: [{ bearerAuth: [] }] }
+  /shipping/templates/{id}/default:
+    post: { summary: 设为本商户默认运费模板, security: [{ bearerAuth: [] }] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
