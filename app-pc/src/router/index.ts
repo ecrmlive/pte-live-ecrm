@@ -54,6 +54,11 @@ const router = createRouter({
           component: () => import("@/pages/order/OrdersPage.vue"),
         },
         {
+          path: "refunds",
+          name: "refunds",
+          component: () => import("@/pages/order/RefundsPage.vue"),
+        },
+        {
           path: "pay/:id",
           name: "pay-result",
           component: () => import("@/pages/order/PayResultPage.vue"),
@@ -77,6 +82,16 @@ const router = createRouter({
           path: "user/balance",
           name: "user-balance",
           component: () => import("@/pages/user/BalancePage.vue"),
+        },
+        {
+          path: "user/points",
+          name: "user-points",
+          component: () => import("@/pages/user/PointsPage.vue"),
+        },
+        {
+          path: "user/favorites",
+          name: "user-favorites",
+          component: () => import("@/pages/user/FavoritesPage.vue"),
         },
         {
           path: "coupons",

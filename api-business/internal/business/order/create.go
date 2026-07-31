@@ -20,6 +20,7 @@ var (
 type CreateInput struct {
 	CartIDs        []uint64
 	AddressID      uint64
+	CouponUserIDs  []uint64
 	IdempotencyKey string
 	Remark         string
 }
@@ -60,14 +61,21 @@ func Create(ctx context.Context, db *gorm.DB, userID uint64, input CreateInput) 
 	}
 	created := CreatedOrder{}
 	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		pricing, err := ResolveCoupons(ctx, tx, userID, checkout, input.CouponUserIDs, true)
+		if err != nil {
+			return err
+		}
 		// 显式写入状态而不依赖数据库默认值。GORM 会把 Go 的零值字符串
 		// 一并写入，MySQL 严格模式下 enum('pending', ...) 不能接受空字符串。
-		group := groupRow{OrderNo: orderNo("G"), UserID: userID, TotalAmount: money(checkout.TotalCents), PayAmount: money(checkout.TotalCents), PayStatus: "pending", TotalQuantity: checkout.TotalQty, RecipientSnapshot: string(addressJSON), IdempotencyKey: input.IdempotencyKey, Remark: strings.TrimSpace(input.Remark)}
+		group := groupRow{OrderNo: orderNo("G"), UserID: userID, TotalAmount: money(checkout.TotalCents), DiscountAmount: money(pricing.DiscountCents), PayAmount: money(checkout.TotalCents - pricing.DiscountCents), PayStatus: "pending", TotalQuantity: checkout.TotalQty, RecipientSnapshot: string(addressJSON), IdempotencyKey: input.IdempotencyKey, Remark: strings.TrimSpace(input.Remark)}
 		if err := tx.Create(&group).Error; err != nil {
 			return err
 		}
+		if err := lockCouponsToOrder(tx, userID, group.ID, pricing); err != nil {
+			return err
+		}
 		for _, store := range checkout.Stores {
-			order := orderRow{GroupOrderID: group.ID, OrderNo: orderNo("S"), MerchantID: store.MerchantID, MerchantNameSnapshot: store.MerchantName, StoreID: store.StoreID, StoreNameSnapshot: store.StoreName, UserID: userID, TotalAmount: money(store.TotalCents), PayAmount: money(store.TotalCents), TotalQuantity: store.TotalQty, RecipientSnapshot: string(addressJSON), Remark: group.Remark, Status: "pending_pay"}
+			order := orderRow{GroupOrderID: group.ID, OrderNo: orderNo("S"), MerchantID: store.MerchantID, MerchantNameSnapshot: store.MerchantName, StoreID: store.StoreID, StoreNameSnapshot: store.StoreName, UserID: userID, TotalAmount: money(store.TotalCents), DiscountAmount: money(pricing.DiscountCents), PayAmount: money(store.TotalCents - pricing.DiscountCents), TotalQuantity: store.TotalQty, RecipientSnapshot: string(addressJSON), Remark: group.Remark, Status: "pending_pay"}
 			if err := tx.Create(&order).Error; err != nil {
 				return err
 			}
@@ -78,7 +86,7 @@ func Create(ctx context.Context, db *gorm.DB, userID uint64, input CreateInput) 
 				}
 			}
 		}
-		created = CreatedOrder{GroupOrderID: group.ID, GroupOrderNo: group.OrderNo, PayCents: checkout.TotalCents, TotalQuantity: checkout.TotalQty}
+		created = CreatedOrder{GroupOrderID: group.ID, GroupOrderNo: group.OrderNo, PayCents: checkout.TotalCents - pricing.DiscountCents, TotalQuantity: checkout.TotalQty}
 		return nil
 	})
 	return created, err
@@ -109,6 +117,7 @@ type groupRow struct {
 	OrderNo           string  `gorm:"column:order_no"`
 	UserID            uint64  `gorm:"column:user_id"`
 	TotalAmount       float64 `gorm:"column:total_amount"`
+	DiscountAmount    float64 `gorm:"column:discount_amount"`
 	PayAmount         float64 `gorm:"column:pay_amount"`
 	PayStatus         string  `gorm:"column:pay_status"`
 	TotalQuantity     int     `gorm:"column:total_quantity"`
@@ -129,6 +138,7 @@ type orderRow struct {
 	StoreNameSnapshot    string  `gorm:"column:store_name_snapshot"`
 	UserID               uint64  `gorm:"column:user_id"`
 	TotalAmount          float64 `gorm:"column:total_amount"`
+	DiscountAmount       float64 `gorm:"column:discount_amount"`
 	PayAmount            float64 `gorm:"column:pay_amount"`
 	TotalQuantity        int     `gorm:"column:total_quantity"`
 	RecipientSnapshot    string  `gorm:"column:recipient_snapshot"`

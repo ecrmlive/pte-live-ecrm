@@ -10,9 +10,11 @@ const user = useUserStore();
 const keyword = ref(typeof route.query.keyword === "string" ? route.query.keyword : "");
 const popularKeywords = ["海鲜", "预制菜", "国潮", "箱包", "家居", "口红", "iPhone"];
 
-const navs = [
+type NavItem = { to: string; label: string; activePath?: string };
+
+const navs: NavItem[] = [
   { to: "/goods", label: "全部商品" },
-  { to: "/coupons", label: "领券中心" },
+  { to: "/coupons?view=center", activePath: "/coupons", label: "领券中心" },
   { to: "/notices", label: "新闻中心" },
   { to: "/seckill", label: "秒杀列表" },
   { to: "/merchant/apply", label: "商户入驻" },
@@ -96,7 +98,7 @@ watch(
             :key="item.to"
             :to="item.to"
             class="nav-link"
-            :class="{ active: item.to === '/' ? activePath === '/' : activePath.startsWith(item.to) }"
+            :class="{ active: item.to === '/' ? activePath === '/' : activePath.startsWith(item.activePath || item.to) }"
           >
             {{ item.label }}
           </RouterLink>
@@ -136,7 +138,9 @@ watch(
 }
 
 .site-header {
-  position: sticky;
+  position: fixed;
+  right: 0;
+  left: 0;
   top: 0;
   z-index: 30;
   background: #fff;
@@ -213,7 +217,7 @@ watch(
 }
 
 .main {
-  padding: 0 0 2.5rem;
+  padding: 256px 0 2.5rem;
 }
 
 .footer {
@@ -250,6 +254,8 @@ watch(
     padding: 1.5rem 0;
     gap: 1rem;
   }
+
+  .main { padding-top: 358px; }
 
   .search {
     max-width: none;

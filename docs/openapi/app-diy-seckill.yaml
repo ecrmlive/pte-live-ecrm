@@ -6,9 +6,9 @@ info:
     C 端 DIY 首页 + 秒杀列表。DIY 页面统一返回 `{page, items[]}` 组件文档；
     `/diy/home` 与 `/diy/pages/{id}` 只读取 qixi_crm_business 的发布投影，草稿不暴露给公共 C 端。
     请求带 `X-AppId` 时按该店铺读取；未知或关闭店铺返回 404。未带时仅读取平台发布页。
-    结算：v2 check/create 在场次内自动覆盖行价为 seckill_price；
-    订单行 product_type=1、activity_id=seckill_active_id；单次限购 once_pay_count；
-    秒杀清空店铺券（平台券仍可）。
+    秒杀公共展示只读取 qixi_crm_b_marketing_activity_view 与商品消费投影；
+    配置规则内携带 product_id、seckill_price、time_slots。结算侧的秒杀计价、
+    限购和券互斥必须由订单域在创建订单时再次校验，不能以本只读接口为准。
 servers:
   - url: /api/app/v1
 paths:
@@ -32,10 +32,7 @@ paths:
           description: 店铺 AppId；省略为平台页面
   /seckill/times:
     get:
-      summary: 秒杀场次
+      summary: 当前已发布秒杀活动归集的场次（label / active）
   /seckill/actives:
     get:
-      summary: 开启中的秒杀列表（含 in_window）
-  /seckill/actives/{id}:
-    get:
-      summary: 秒杀详情
+      summary: 已发布且在活动有效期内的秒杀展示列表（含 in_window、time_slots、商品信息）

@@ -85,6 +85,10 @@ function channelEnabled(channel: "wechat" | "alipay") {
 }
 
 async function pay(type: PayType) {
+  if (order.value?.pay_status !== "pending") {
+    hint.value = "当前订单不可支付";
+    return;
+  }
   paying.value = true;
   try {
     const res = await payOrder(id(), type);
@@ -106,15 +110,20 @@ async function pay(type: PayType) {
       <div v-if="order">
         <p>主单号 {{ order.group_order_sn }}</p>
         <p>应付 <strong>¥{{ Number(order.pay_price).toFixed(2) }}</strong> · {{ order.total_num }} 件</p>
-        <p>状态：{{ order.paid === 1 ? "已支付" : "待支付" }}</p>
-        <div v-if="order.paid !== 1" class="actions">
+        <p>状态：{{ order.pay_status === "closed" ? "已取消" : order.pay_status === "refunded" ? "已退款" : order.paid === 1 ? "已支付" : "待支付" }}</p>
+        <div v-if="order.pay_status === 'pending'" class="actions">
           <button v-if="channelEnabled('wechat')" class="pc-btn ghost" type="button" :disabled="paying" @click="pay('wechat')">微信支付</button>
           <button v-if="channelEnabled('alipay')" class="pc-btn ghost" type="button" :disabled="paying" @click="pay('alipay')">支付宝支付</button>
           <p v-if="!channelEnabled('wechat') && !channelEnabled('alipay')" class="hint">当前订单暂无可用的第三方支付方式，请联系店铺或稍后重试。</p>
         </div>
-        <div v-else class="actions">
+        <div v-else-if="order.paid === 1" class="actions">
           <RouterLink class="pc-btn" to="/orders">查看订单</RouterLink>
           <button class="pc-btn ghost" type="button" @click="router.push('/goods')">继续购物</button>
+        </div>
+        <div v-else class="actions"><RouterLink class="pc-btn" to="/orders">返回订单列表</RouterLink><button class="pc-btn ghost" type="button" @click="router.push('/goods')">继续购物</button></div>
+        <div v-if="order.paid === 1 && order.orders?.length" class="after-sales">
+          <b>订单售后</b>
+          <div v-for="item in order.orders" :key="item.order_id"><span>{{ item.mer_name || `店铺订单 #${item.order_id}` }}</span><RouterLink v-if="['paid', 'fulfilling', 'shipped'].includes(item.status)" :to="`/refunds?order_id=${item.order_id}`">申请售后</RouterLink><span v-else class="muted">当前订单状态：{{ item.status }}</span></div>
         </div>
         <div v-if="order.paid === 1 && invoiceDraft && !invoiceApplied" class="invoice-apply">
           <div><b>发票信息</b><p>{{ invoiceName }}，将发送至 {{ invoiceDraft.email }}</p></div>
@@ -138,4 +147,5 @@ async function pay(type: PayType) {
 .actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.2rem; }
 .ghost { background: transparent; color: inherit; border: 1px solid var(--pc-line); }
 .invoice-apply { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 24px; padding: 18px 20px; border: 1px solid #f0d2cf; background: #fff9f8; }.invoice-apply b { color: #333; }.invoice-apply p { margin: 7px 0 0; color: #777; font-size: 14px; }.invoice-link { display: inline-block; margin-top: 22px; color: #f13728; }
+.after-sales { display: grid; gap: 10px; margin-top: 24px; padding: 18px 20px; border: 1px solid #eee; }.after-sales > div { display: flex; justify-content: space-between; gap: 16px; color: #666; font-size: 14px; }.after-sales a { color: #f13728; }.muted { color: #999; }
 </style>

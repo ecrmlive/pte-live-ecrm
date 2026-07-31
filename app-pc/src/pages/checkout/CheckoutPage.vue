@@ -79,11 +79,21 @@ async function load() {
 onMounted(() => void load());
 
 function toggleCoupon(id: number) {
+  const current = usable.value.find((coupon) => coupon.coupon_user_id === id);
+  if (!current) return;
   const i = selectedCouponIds.value.indexOf(id);
   if (i >= 0) {
     selectedCouponIds.value = selectedCouponIds.value.filter((x) => x !== id);
   } else {
-    selectedCouponIds.value = [...selectedCouponIds.value, id];
+    // 规则与服务端一致：当前普通订单可叠加一张店铺券和一张平台券，
+    // 选择同类型新券时直接替换，避免用户看到无意义的服务端冲突提示。
+    selectedCouponIds.value = [
+      ...selectedCouponIds.value.filter((selectedID) => {
+        const selected = usable.value.find((coupon) => coupon.coupon_user_id === selectedID);
+        return selected?.coupon_kind !== current.coupon_kind;
+      }),
+      id,
+    ];
   }
   void load();
 }
@@ -155,6 +165,10 @@ function confirmInvoice() {
   showInvoice.value = false;
   hint.value = "";
 }
+
+function couponLabel(c: CouponUser) {
+  return c.discount_type === "rate" ? `${Number(c.discount_value / 10).toFixed(1)}折` : `¥${Number(c.discount_value).toFixed(2)}`;
+}
 </script>
 
 <template>
@@ -189,7 +203,7 @@ function confirmInvoice() {
             :checked="selectedCouponIds.includes(c.coupon_user_id)"
             @change="toggleCoupon(c.coupon_user_id)"
           />
-          <span>{{ c.coupon_title }} · ¥{{ Number(c.coupon_price).toFixed(2) }}（满{{ c.use_min_price }}）</span>
+          <span>{{ c.coupon_title }} · {{ couponLabel(c) }}（满{{ c.use_min_price }}）</span>
         </label>
         <p v-if="!usable.length" class="muted">暂无可用券（可先去领券中心）</p>
       </div>

@@ -30,16 +30,19 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/order/pay/:id/channels", h.PaymentChannels)
 	r.GET("/orders", h.List)
 	r.GET("/orders/:id", h.GetGroup)
+	r.POST("/orders/:id/cancel", h.Cancel)
 	r.GET("/order/:id", h.GetOrder)
 }
 
 type checkRequest struct {
-	CartIDs []uint64 `json:"cart_ids"`
+	CartIDs       []uint64 `json:"cart_ids"`
+	CouponUserIDs []uint64 `json:"coupon_user_ids"`
 }
 type createRequest struct {
 	CartIDs        []uint64 `json:"cart_ids"`
 	AddressID      uint64   `json:"address_id"`
 	Mark           string   `json:"mark"`
+	CouponUserIDs  []uint64 `json:"coupon_user_ids"`
 	IdempotencyKey string   `json:"idempotency_key"`
 }
 
@@ -54,7 +57,12 @@ func (h *Handler) Check(c *gin.Context) {
 		writeOrderError(c, err)
 		return
 	}
-	response.OK(c, checkResponse(checkout))
+	pricing, err := ResolveCoupons(c.Request.Context(), h.db, uint64(middleware.UID(c)), checkout, req.CouponUserIDs, false)
+	if err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	response.OK(c, checkResponse(checkout, pricing))
 }
 func (h *Handler) Create(c *gin.Context) {
 	var req createRequest
@@ -66,7 +74,7 @@ func (h *Handler) Create(c *gin.Context) {
 	if strings.TrimSpace(req.IdempotencyKey) == "" {
 		req.IdempotencyKey = derivedKey(uid, req)
 	}
-	created, err := Create(c.Request.Context(), h.db, uid, CreateInput{CartIDs: req.CartIDs, AddressID: req.AddressID, IdempotencyKey: req.IdempotencyKey, Remark: req.Mark})
+	created, err := Create(c.Request.Context(), h.db, uid, CreateInput{CartIDs: req.CartIDs, AddressID: req.AddressID, CouponUserIDs: req.CouponUserIDs, IdempotencyKey: req.IdempotencyKey, Remark: req.Mark})
 	if err != nil {
 		writeOrderError(c, err)
 		return
@@ -164,6 +172,18 @@ func (h *Handler) GetGroup(c *gin.Context) {
 	out["orders"] = orders
 	response.OK(c, out)
 }
+func (h *Handler) Cancel(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		bad(c, "订单 ID 错误")
+		return
+	}
+	if err := CancelPending(c.Request.Context(), h.db, uint64(middleware.UID(c)), id); err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
+}
 func (h *Handler) GetOrder(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || id == 0 {
@@ -182,33 +202,33 @@ func (h *Handler) GetOrder(c *gin.Context) {
 	response.OK(c, orderResponse(order, out))
 }
 
-func checkResponse(checkout Checkout) gin.H {
+func checkResponse(checkout Checkout, pricing CouponPricing) gin.H {
 	merchants := make([]gin.H, 0, len(checkout.Stores))
 	for _, store := range checkout.Stores {
 		items := make([]gin.H, 0, len(store.Lines))
 		for _, line := range store.Lines {
 			items = append(items, gin.H{"cart_id": line.CartID, "product_id": line.ProductID, "product_attr_unique": line.SKUKey, "store_name": line.Title, "image": line.CoverURL, "price": money(line.UnitCents), "cart_num": line.Quantity, "subtotal": money(line.UnitCents * int64(line.Quantity))})
 		}
-		merchants = append(merchants, gin.H{"mer_id": store.MerchantID, "mer_name": store.MerchantName, "total_price": money(store.TotalCents), "pay_price": money(store.TotalCents), "total_num": store.TotalQty, "items": items})
+		merchants = append(merchants, gin.H{"mer_id": store.MerchantID, "mer_name": store.MerchantName, "total_price": money(store.TotalCents), "pay_price": money(store.TotalCents - pricing.DiscountCents), "coupon_price": money(pricing.DiscountCents), "total_num": store.TotalQty, "items": items})
 	}
-	return gin.H{"merchants": merchants, "total_price": money(checkout.TotalCents), "pay_price": money(checkout.TotalCents), "total_num": checkout.TotalQty, "total_postage": 0, "coupon_price": 0}
+	return gin.H{"merchants": merchants, "total_price": money(checkout.TotalCents), "pay_price": money(checkout.TotalCents - pricing.DiscountCents), "total_num": checkout.TotalQty, "total_postage": 0, "coupon_price": money(pricing.DiscountCents)}
 }
 func createdResponse(created CreatedOrder, paid bool) gin.H {
-	return gin.H{"group_order_id": created.GroupOrderID, "group_order_sn": created.GroupOrderNo, "pay_price": money(created.PayCents), "total_num": created.TotalQuantity, "paid": map[bool]int{false: 0, true: 1}[paid], "pay_type": 7}
+	return gin.H{"group_order_id": created.GroupOrderID, "group_order_sn": created.GroupOrderNo, "pay_price": money(created.PayCents), "total_num": created.TotalQuantity, "pay_status": map[bool]string{false: "pending", true: "paid"}[paid], "paid": map[bool]int{false: 0, true: 1}[paid], "pay_type": 7}
 }
 func groupResponse(group groupRow) gin.H {
-	return gin.H{"group_order_id": group.ID, "group_order_sn": group.OrderNo, "pay_price": group.PayAmount, "total_num": group.TotalQuantity, "paid": map[bool]int{false: 0, true: 1}[group.PayStatus == "paid"]}
+	return gin.H{"group_order_id": group.ID, "group_order_sn": group.OrderNo, "pay_price": group.PayAmount, "total_num": group.TotalQuantity, "pay_status": group.PayStatus, "paid": map[bool]int{false: 0, true: 1}[group.PayStatus == "paid"]}
 }
 func orderResponse(order orderRow, items []gin.H) gin.H {
 	return gin.H{"order_id": order.ID, "order_sn": order.OrderNo, "mer_id": order.MerchantID, "mer_name": order.MerchantNameSnapshot, "pay_price": order.PayAmount, "total_num": order.TotalQuantity, "status": order.Status, "products": items}
 }
 func derivedKey(uid uint64, req createRequest) string {
-	return fmt.Sprintf("auto:%x", sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%v:%s", uid, req.AddressID, req.CartIDs, req.Mark))))
+	return fmt.Sprintf("auto:%x", sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%v:%v:%s", uid, req.AddressID, req.CartIDs, req.CouponUserIDs, req.Mark))))
 }
 func bad(c *gin.Context, message string) { response.Fail(c, http.StatusBadRequest, message) }
 func writeOrderError(c *gin.Context, err error) {
 	switch err {
-	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled:
+	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled, ErrCouponOwnership, ErrCouponConflict, ErrCouponMinNotMet, ErrOrderNotCancellable, ErrOrderNotPayable:
 		bad(c, err.Error())
 	case ErrOrderOwnership:
 		response.Fail(c, http.StatusNotFound, err.Error())

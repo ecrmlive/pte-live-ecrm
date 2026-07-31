@@ -41,6 +41,24 @@ INSERT INTO `qixi_crm_b_product_view` (`product_id`,`merchant_id`,`store_id`,`me
   (1208,3,3,'七禧数码商户','七禧数码生活店',10301,'轻巧旅行随行杯','/demo/product-tumbler-v1.png',109.00,149.00,0,90,85,1,1,NOW())
 ON DUPLICATE KEY UPDATE `merchant_id`=VALUES(`merchant_id`),`store_id`=VALUES(`store_id`),`merchant_name`=VALUES(`merchant_name`),`store_name`=VALUES(`store_name`),`category_id`=VALUES(`category_id`),`title`=VALUES(`title`),`cover_url`=VALUES(`cover_url`),`price`=VALUES(`price`),`original_price`=VALUES(`original_price`),`sales`=VALUES(`sales`),`stock`=VALUES(`stock`),`sale_status`=VALUES(`sale_status`),`updated_at`=NOW();
 
+-- 领券中心夹具：store_id=0 为平台券，其余为对应店铺券。领取记录只在用户实际点击领取后生成。
+INSERT INTO `qixi_crm_b_coupon_template_view` (`coupon_id`,`store_id`,`name`,`discount_type`,`discount_value`,`min_amount`,`starts_at`,`ends_at`,`status`,`version`) VALUES
+  (3001,0,'平台新客满99减10','amount',10.00,99.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1),
+  (3002,0,'平台夏日满299减40','amount',40.00,299.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1),
+  (3003,1,'服饰店满199减30','amount',30.00,199.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1),
+  (3004,1,'服饰店9折券','rate',90.00,399.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1),
+  (3005,2,'居家优选满159减20','amount',20.00,159.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1),
+  (3006,3,'数码生活满299减35','amount',35.00,299.00,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_ADD(NOW(), INTERVAL 180 DAY),1,1)
+ON DUPLICATE KEY UPDATE `store_id`=VALUES(`store_id`),`name`=VALUES(`name`),`discount_type`=VALUES(`discount_type`),`discount_value`=VALUES(`discount_value`),`min_amount`=VALUES(`min_amount`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`),`status`=VALUES(`status`),`version`=VALUES(`version`);
+
+-- 秒杀展示夹具。规则由后台营销活动投影而来；C 端只读 qixi_crm_b_marketing_activity_view。
+INSERT INTO `qixi_crm_b_marketing_activity_view` (`activity_id`,`store_id`,`activity_type`,`name`,`rules`,`status`,`version`,`starts_at`,`ends_at`) VALUES
+  (5001,1,'seckill','轻奢羊绒针织衫限时抢购',JSON_OBJECT('product_id',1001,'seckill_price',199.00,'time_slots',JSON_ARRAY('00:00','14:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
+  (5002,1,'seckill','头层牛皮托特包限时抢购',JSON_OBJECT('product_id',1002,'seckill_price',329.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
+  (5003,2,'seckill','无火藤条香氛礼盒限时抢购',JSON_OBJECT('product_id',1101,'seckill_price',169.00,'time_slots',JSON_ARRAY('00:00','14:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
+  (5004,3,'seckill','智能数显保温杯限时抢购',JSON_OBJECT('product_id',1201,'seckill_price',149.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
+ON DUPLICATE KEY UPDATE `store_id`=VALUES(`store_id`),`name`=VALUES(`name`),`rules`=VALUES(`rules`),`status`=VALUES(`status`),`version`=VALUES(`version`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`);
+
 INSERT INTO `qixi_crm_b_content_view` (`content_id`,`content_type`,`title`,`cover_url`,`body`,`status`,`version`,`published_at`,`updated_at`) VALUES
   (2001,'notice','七禧商城服务公告','/demo/home-hero-v1.png','七禧商城已上线商品、订单、售后和客服服务。消费者可通过商品详情、购物车和订单中心完成全流程购物。',1,1,NOW(),NOW()),
   (2002,'notice','消费者权益说明','/demo/home-service-wide-v1.png','请在下单前确认商品信息、配送方式和售后规则。如有商品与履约问题，可在订单中心提交售后申请。',1,1,NOW(),NOW()),

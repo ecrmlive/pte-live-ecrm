@@ -18,15 +18,17 @@ import (
 	apppoints "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/points"
 	apppresell "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/presell"
 	appreservation "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/reservation"
-	appseckill "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/seckill"
 	businessaccount "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/account"
 	businessaddress "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/address"
 	businessauth "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/auth"
 	businesscart "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/cart"
 	businesscatalog "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/catalog"
 	businesscontent "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/contentview"
+	businesscoupon "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/coupon"
 	businessdiyview "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/diyview"
+	businessfavorite "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/favorite"
 	businesslive "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/live"
+	businessmarketing "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/marketing"
 	businessmerchantapply "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/merchantapply"
 	businessorder "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/order"
 	businessrefund "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/refund"
@@ -163,9 +165,11 @@ func main() {
 	appPointsH := apppoints.NewHandler(tradeSvc, catSvc)
 	appRefundH := businessrefund.NewHandler(gdb)
 	appCouponH := appcoupon.NewHandler(promoSvc, cartSvc)
+	appBusinessCouponH := businesscoupon.NewHandler(gdb)
 	appContentH := businesscontent.NewHandler(gdb)
 	appDiyH := businessdiyview.NewHandler(gdb)
-	appSeckillH := appseckill.NewHandler(seckillSvc)
+	appFavoriteH := businessfavorite.NewHandler(gdb)
+	appSeckillH := businessmarketing.NewSeckillHandler(gdb)
 	appComboH := appcombination.NewHandler(comboSvc, tradeSvc)
 	appPresellH := apppresell.NewHandler(presellSvc, tradeSvc)
 	appReserveH := appreservation.NewHandler(reserveSvc, tradeSvc)
@@ -211,12 +215,14 @@ func main() {
 	appAssistH.RegisterAuthed(appAuthed)
 	appPointsH.RegisterAuthed(appAuthed)
 	appRefundH.Register(appAuthed)
-	appCouponH.Register(appAuthed)
+	appCouponH.RegisterSpread(appAuthed)
+	appBusinessCouponH.Register(appAuthed)
 	appCommunityH.RegisterAuthed(appAuthed)
 	appChatH.Register(appAuthed)
 	appInvoiceH.Register(appAuthed)
 	appLiveH.RegisterAuthed(appAuthed)
 	appMerchantApplyH.Register(appAuthed)
+	appFavoriteH.Register(appAuthed)
 
 	cb := r.Group("/api/callback/v1")
 	cb.GET("/ping", func(c *gin.Context) {

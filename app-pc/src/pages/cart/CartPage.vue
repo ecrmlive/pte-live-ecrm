@@ -86,9 +86,9 @@ function checkout() {
 </script>
 
 <template>
-  <div class="pc-container">
-    <section class="panel">
-      <h1>我的购物车</h1>
+  <div class="cart-page">
+    <section class="pc-container panel">
+      <nav class="crumb"><RouterLink to="/">首页</RouterLink><span>›</span><span>购物车</span></nav>
       <p v-if="hint" class="hint">{{ hint }}</p>
       <p v-if="!user.isLogin">
         <RouterLink class="pc-btn" to="/login?redirect=/cart">去登录</RouterLink>
@@ -101,7 +101,7 @@ function checkout() {
       <template v-else>
         <div class="table-head" role="row">
           <label class="select-all"><input type="checkbox" :checked="allSelected" @change="toggleAll" />全选</label>
-          <span>商品信息</span><span>单价</span><span>数量</span><span>小计</span><span>操作</span>
+          <span class="head-product">商品信息</span><span>单价</span><span>数量</span><span>金额</span><span>操作</span>
         </div>
         <div v-for="b in buckets" :key="b.mer_id" class="bucket">
           <h2><span class="store-dot" />{{ b.mer_name || `商户 #${b.mer_id}` }}</h2>
@@ -131,6 +131,7 @@ function checkout() {
           </div>
         </div>
         <footer class="bar">
+          <label class="bar-select"><input type="checkbox" :checked="allSelected" @change="toggleAll" />全选</label>
           <span>已选 <b>{{ selectedCount }}</b> 件商品</span>
           <span class="bar-total">合计 <strong>¥{{ selectedPrice }}</strong></span>
           <button class="pc-btn" type="button" @click="checkout">去结算</button>
@@ -141,15 +142,9 @@ function checkout() {
 </template>
 
 <style scoped>
-.panel {
-  margin-top: 22px;
-  background: var(--pc-surface);
-  border: 0;
-  border-radius: 0;
-  padding: 1.5rem;
-  box-shadow: var(--pc-shadow);
-}
-h1 { margin: 0 0 1.15rem; color: #252525; font-size: 1.4rem; }
+.cart-page { min-height: 580px; padding: 22px 0 54px; background: #fff; }
+.panel { background: var(--pc-surface); }
+.crumb { display: flex; gap: 8px; align-items: center; height: 40px; color: #777; font-size: 14px; }.crumb a:hover { color: #f13728; }
 .hint, .muted { color: var(--pc-muted); }
 .empty {
   border: 1px dashed var(--pc-line);
@@ -161,52 +156,49 @@ h1 { margin: 0 0 1.15rem; color: #252525; font-size: 1.4rem; }
 }
 .table-head {
   display: grid;
-  grid-template-columns: 138px minmax(310px, 1fr) 110px 132px 120px 72px;
+  grid-template-columns: 34px 84px minmax(220px, 1fr) 110px 132px 120px 72px;
   align-items: center;
   min-height: 46px;
-  padding: 0 20px;
+  padding: 0 18px;
   color: #666;
   background: #f5f5f5;
   font-size: .9rem;
 }
-.select-all { display: flex; align-items: center; gap: 8px; }
-.bucket { margin-top: 16px; border: 1px solid #ececec; }
-.bucket h2 { display: flex; align-items: center; gap: 8px; min-height: 42px; margin: 0; padding: 0 18px; border-bottom: 1px solid #eee; color: #444; font-size: .95rem; font-weight: 600; }
-.store-dot { width: 14px; height: 14px; border: 1px solid #aaa; border-radius: 2px; }
+.select-all { grid-column: span 2; display: flex; align-items: center; gap: 8px; }.head-product { grid-column: span 1; }
+.bucket { margin-top: 24px; }.bucket h2 { display: flex; align-items: center; gap: 10px; min-height: 40px; margin: 0; padding: 0 24px; color: #444; font-size: .95rem; font-weight: 500; }.store-dot { width: 14px; height: 14px; border: 1px solid #aaa; border-radius: 2px; }
 .row {
   display: grid;
   grid-template-columns: 34px 84px minmax(220px, 1fr) 110px 132px 120px 72px;
   gap: 0.8rem;
   align-items: center;
-  min-height: 118px;
+  min-height: 150px;
   padding: 14px 18px;
-  border-top: 1px solid #f0f0f0;
+  border: 1px solid #efefef;
 }
 .row:first-of-type { border-top: 0; }
-.thumb { width: 72px; height: 72px; background: #f6f6f6; display: grid; place-items: center; color: #999; font-size: .72rem; }
+.thumb { width: 84px; height: 84px; background: #f6f6f6; display: grid; place-items: center; color: #999; font-size: .72rem; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .info { display: grid; gap: 0.2rem; }
 .info strong { line-height: 1.45; }
 .fail { color: #c0392b; font-size: 0.85rem; }
 .unit-price { color: #555; font-size: .92rem; }
-.qty { display: flex; align-items: center; gap: 0.5rem; }
-.qty button {
-  width: 28px; height: 28px; border: 1px solid var(--pc-line); background: #fff; cursor: pointer;
-}
+.qty { display: flex; align-items: center; gap: 0; }.qty button, .qty span { width: 34px; height: 32px; border: 1px solid #ddd; background: #fff; text-align: center; line-height: 30px; }.qty button + span, .qty span + button { border-left: 0; }.qty button { cursor: pointer; }
 .subtotal { color: #e64335; font-size: .96rem; }
 .remove { border: 0; padding: 0; color: #666; background: transparent; font-size: .88rem; }
 .remove:hover { color: #e64335; }
 .bar {
-  margin-top: 1.2rem;
+  margin-top: 38px;
   display: flex;
   justify-content: flex-end;
   gap: 26px;
   align-items: center;
-  border-top: 1px solid var(--pc-line);
-  padding-top: 1rem;
+  min-height: 72px;
+  padding: 0 0 0 24px;
+  background: #f3f3f3;
 }
+.bar-select { display: flex; align-items: center; gap: 8px; margin-right: 34px; }.bar > span:nth-child(2) { margin-right: auto; }
 .bar-total { color: #555; }
 .bar-total strong { margin-left: 6px; color: #e64335; font-size: 1.35rem; }
-.bar .pc-btn { border-radius: 0; min-width: 130px; }
+.bar .pc-btn { align-self: stretch; border-radius: 0; min-width: 150px; font-size: 18px; }
 @media (max-width: 900px) { .table-head { display: none; }.row { grid-template-columns: 26px 72px 1fr auto; }.unit-price,.subtotal,.remove { display: none; } }
 </style>

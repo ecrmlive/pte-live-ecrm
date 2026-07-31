@@ -68,50 +68,50 @@ img {
   cursor: not-allowed;
   transform: none;
 }
-/* PC 登录验证码：pte-tools-captcha 深色拼图规格。组件挂载至 body，必须为全局样式。 */
-.pte-captcha--dark {
-  --pte-captcha-overlay: rgb(3 13 30 / 78%);
-  --pte-captcha-surface: #182640;
-  --pte-captcha-text: #f1f5ff;
-  --pte-captcha-muted: #adc0e0;
+/* PC 短信登录的拼图验证码：紧凑白色桌面规格，组件挂载至 body，必须为全局样式。 */
+.pte-captcha--pc-puzzle {
+  --pte-captcha-overlay: rgb(15 23 42 / 54%);
+  --pte-captcha-surface: #fff;
+  --pte-captcha-text: #1f2937;
+  --pte-captcha-muted: #71809a;
 }
 
-.pte-captcha--dark .pte-captcha__dialog {
-  width: min(840px, calc(100vw - 48px));
-  padding: 46px;
-  border: 1px solid #3d4c68;
-  border-radius: 38px;
-  background: #182640;
-  box-shadow: 0 34px 100px rgb(0 0 0 / 44%);
+.pte-captcha--pc-puzzle .pte-captcha__dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 66px rgb(15 23 42 / 24%);
 }
 
-.pte-captcha--dark .pte-captcha__header { gap: 22px; }
-.pte-captcha--dark .pte-captcha__shield { width: 68px; height: 68px; border-radius: 20px; font-size: 35px; }
-.pte-captcha--dark .pte-captcha__title { font-size: 31px; }
-.pte-captcha--dark .pte-captcha__subtitle { margin-top: 5px; font-size: 20px; }
-.pte-captcha--dark .pte-captcha__close { top: 38px; right: 40px; width: 44px; height: 44px; color: #b8c8e4; font-size: 50px; }
-.pte-captcha--dark .pte-captcha__message { display: none; }
-.pte-captcha--dark .pte-captcha__content { margin-top: 34px; }
-.pte-captcha--dark .pte-captcha__puzzle { border-color: #5c6d90; border-radius: 26px; }
-.pte-captcha--dark .pte-captcha__slider-label { margin: 30px 0 18px; color: #b8c8e4; font-size: 25px; }
-.pte-captcha--dark .pte-captcha__slider { height: 92px; border-color: #79a8f6; border-radius: 3px; background: #f4f7fc; }
-.pte-captcha--dark .pte-captcha__slider-fill { background: #dceaff; }
-.pte-captcha--dark .pte-captcha__slider-handle { width: 96px; height: 92px; border: 0; border-radius: 0; background: #2878f0; color: #fff; font-size: 55px; }
-.pte-captcha--dark .pte-captcha__slider.is-dragging { border-color: #8bb6ff; }
-.pte-captcha--dark .pte-captcha__slider.is-dragging .pte-captcha__slider-fill { background: #dceaff; }
-.pte-captcha--dark .pte-captcha__slider.is-dragging .pte-captcha__slider-handle { border: 0; background: #2878f0; color: #fff; }
-.pte-captcha--dark .pte-captcha__feedback { min-height: 48px; margin-top: 22px; }
-.pte-captcha--dark .pte-captcha__refresh { color: #b8c8e4; }
-.pte-captcha--dark .pte-captcha__refresh span { font-size: 52px; }
+.pte-captcha--pc-puzzle .pte-captcha__header { gap: 12px; }
+.pte-captcha--pc-puzzle .pte-captcha__shield { width: 44px; height: 44px; border-radius: 14px; font-size: 22px; }
+.pte-captcha--pc-puzzle .pte-captcha__title { font-size: 20px; }
+.pte-captcha--pc-puzzle .pte-captcha__subtitle { margin-top: 2px; font-size: 13px; }
+.pte-captcha--pc-puzzle .pte-captcha__close { top: 16px; right: 16px; color: #71809a; font-size: 32px; }
+.pte-captcha--pc-puzzle .pte-captcha__message { display: none; }
+.pte-captcha--pc-puzzle .pte-captcha__content { margin-top: 20px; }
+.pte-captcha--pc-puzzle .pte-captcha__puzzle { border-color: #cad8ed; border-radius: 14px; }
+.pte-captcha--pc-puzzle .pte-captcha__slider-label { margin: 18px 0 10px; color: #334155; font-size: 16px; }
+.pte-captcha--pc-puzzle .pte-captcha__slider { height: 52px; border-color: #79a8f6; background: #f4f7fc; }
+.pte-captcha--pc-puzzle .pte-captcha__slider-fill { background: #dceaff; }
+.pte-captcha--pc-puzzle .pte-captcha__slider-handle { width: 56px; height: 52px; border: 0; border-radius: 0; background: #2878f0; color: #fff; font-size: 32px; }
+.pte-captcha--pc-puzzle .pte-captcha__slider.is-dragging { border-color: #8bb6ff; }
+.pte-captcha--pc-puzzle .pte-captcha__slider.is-dragging .pte-captcha__slider-fill { background: #dceaff; }
+.pte-captcha--pc-puzzle .pte-captcha__slider.is-dragging .pte-captcha__slider-handle { border: 0; background: #2878f0; color: #fff; }
+.pte-captcha--pc-puzzle .pte-captcha__feedback { min-height: 32px; margin-top: 12px; }
+.pte-captcha--pc-puzzle .pte-captcha__refresh { color: #71809a; }
+.pte-captcha--pc-puzzle .pte-captcha__refresh span { font-size: 28px; }
 
 @media (max-width: 760px) {
-  .pte-captcha--dark .pte-captcha__dialog { width: min(100%, calc(100vw - 28px)); padding: 26px; border-radius: 24px; }
-  .pte-captcha--dark .pte-captcha__shield { width: 52px; height: 52px; font-size: 27px; }
-  .pte-captcha--dark .pte-captcha__title { font-size: 23px; }
-  .pte-captcha--dark .pte-captcha__subtitle { font-size: 15px; }
-  .pte-captcha--dark .pte-captcha__close { top: 20px; right: 20px; font-size: 36px; }
-  .pte-captcha--dark .pte-captcha__content { margin-top: 24px; }
-  .pte-captcha--dark .pte-captcha__slider-label { margin: 22px 0 12px; font-size: 19px; }
-  .pte-captcha--dark .pte-captcha__slider { height: 58px; }
-  .pte-captcha--dark .pte-captcha__slider-handle { width: 62px; height: 58px; font-size: 36px; }
+  .pte-captcha--pc-puzzle .pte-captcha__dialog { width: min(100%, calc(100vw - 28px)); padding: 20px; border-radius: 18px; }
+  .pte-captcha--pc-puzzle .pte-captcha__shield { width: 40px; height: 40px; font-size: 20px; }
+  .pte-captcha--pc-puzzle .pte-captcha__title { font-size: 18px; }
+  .pte-captcha--pc-puzzle .pte-captcha__subtitle { font-size: 12px; }
+  .pte-captcha--pc-puzzle .pte-captcha__close { top: 14px; right: 14px; font-size: 30px; }
+  .pte-captcha--pc-puzzle .pte-captcha__content { margin-top: 18px; }
+  .pte-captcha--pc-puzzle .pte-captcha__slider-label { margin: 16px 0 9px; font-size: 15px; }
+  .pte-captcha--pc-puzzle .pte-captcha__slider { height: 50px; }
+  .pte-captcha--pc-puzzle .pte-captcha__slider-handle { width: 54px; height: 50px; font-size: 30px; }
 }

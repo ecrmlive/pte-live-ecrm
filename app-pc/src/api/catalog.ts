@@ -32,6 +32,15 @@ export interface ProductPage {
   limit: number;
 }
 
+export interface StoreDirectoryItem {
+  store_id: number;
+  mer_id: number;
+  name: string;
+  product_count: number;
+  sales_count: number;
+  cover_url?: string;
+}
+
 export interface ProductDetail extends ProductItem {
   unit_name: string;
   store_info: string;
@@ -67,6 +76,10 @@ export function fetchProducts(params?: {
     `/catalog/products${qs ? `?${qs}` : ""}`,
     false,
   );
+}
+
+export function fetchStores() {
+  return http.get<{ list: StoreDirectoryItem[]; total: number }>("/catalog/stores", false);
 }
 
 export function fetchProductDetail(id: number) {

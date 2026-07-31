@@ -6,11 +6,24 @@ export interface SeckillActive {
   product_id: number;
   seckill_price: number;
   price?: number;
+  image?: string;
+  shop_name?: string;
+  sales?: number;
+  time_slots?: string[];
   store_name?: string;
   mer_name?: string;
   in_window: boolean;
   start_day: string;
   end_day: string;
+}
+
+export interface SeckillTimeSlot {
+  label: string;
+  active: boolean;
+}
+
+export function fetchSeckillTimes() {
+  return http.get<{ list: SeckillTimeSlot[] }>("/seckill/times", false);
 }
 
 export function fetchSeckillList(page = 1, limit = 20) {

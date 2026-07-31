@@ -20,6 +20,13 @@ paths:
       summary: 分类列表
       responses:
         '200': { description: 分类消费视图 }
+  /catalog/stores:
+    get:
+      summary: 平台店铺目录（仅已启用店铺及其在售商品汇总）
+      parameters:
+        - $ref: '#/components/parameters/StoreAppID'
+      responses:
+        '200': { description: 店铺目录；X-AppId 存在时仅返回对应店铺 }
   /catalog/products:
     get:
       summary: 可售商品列表
@@ -120,3 +127,13 @@ components:
         merchant_app_id: { type: string, description: 店铺 X-AppId，不是 IM SDK AppId }
         products: { type: array, items: { $ref: '#/components/schemas/ProductView' } }
         total: { type: integer }
+    StoreDirectoryItem:
+      type: object
+      required: [store_id, mer_id, name, product_count, sales_count]
+      properties:
+        store_id: { type: integer, format: int64 }
+        mer_id: { type: integer, format: int64 }
+        name: { type: string }
+        product_count: { type: integer, description: 已上架商品数 }
+        sales_count: { type: integer, description: 已上架商品累计销量 }
+        cover_url: { type: string, description: 在售商品封面，仅作店铺目录缩略图 }

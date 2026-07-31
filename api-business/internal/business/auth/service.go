@@ -79,13 +79,16 @@ type CaptchaToken struct {
 func (CaptchaToken) TableName() string { return "qixi_crm_b_auth_captcha_token" }
 
 type Profile struct {
-	ID          uint64       `json:"id"`
-	UID         uint64       `json:"uid"` // 兼容既有 C 端视图；值始终等于 id。
-	Nickname    string       `json:"nickname"`
-	Mobile      string       `json:"mobile"`
-	Channel     LoginChannel `json:"channel"`
-	Subject     string       `json:"subject"`
-	AuthVersion uint64       `json:"-"`
+	ID       uint64       `json:"id"`
+	UID      uint64       `json:"uid"` // 兼容既有 C 端视图；值始终等于 id。
+	Nickname string       `json:"nickname"`
+	Mobile   string       `json:"mobile"`
+	Channel  LoginChannel `json:"channel"`
+	// Account is exposed under the stable C-end field name. The internal
+	// identity subject remains the source for JWT issuance and may be a mobile
+	// number, WeChat openid, or another channel-specific identifier.
+	Subject     string `json:"account"`
+	AuthVersion uint64 `json:"-"`
 }
 
 // StoreContext 来自业务库只读投影；api-business 不得跨库直接查询商户库。

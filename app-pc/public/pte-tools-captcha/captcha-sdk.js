@@ -36,7 +36,7 @@
         root.innerHTML = `<div class="pte-captcha__dialog" role="dialog" aria-modal="true"><button class="pte-captcha__close" aria-label="${t.close}">×</button><div class="pte-captcha__header"><span class="pte-captcha__shield">✓</span><div><div class="pte-captcha__title">${t.secure}</div><div class="pte-captcha__subtitle">${t.secureHint}</div></div></div><div class="pte-captcha__message"></div><div class="pte-captcha__content"></div><div class="pte-captcha__feedback"><div class="pte-captcha__error" role="alert"></div><button class="pte-captcha__refresh" type="button" aria-label="${t.refresh}" title="${t.refresh}"><span aria-hidden="true">↻</span></button></div></div>`;
         document.body.appendChild(root);
         const close = (error) => { root.remove(); if (error) reject(error); };
-        root.querySelector(".pte-captcha__close").onclick = () => close(new Error("Captcha cancelled"));
+        root.querySelector(".pte-captcha__close").onclick = () => close(new Error("已取消安全验证"));
         const content = root.querySelector(".pte-captcha__content"), message = root.querySelector(".pte-captcha__message"), error = root.querySelector(".pte-captcha__error"), refresh = root.querySelector(".pte-captcha__refresh");
         let refreshing = false, renderChallenge;
         const refreshChallenge = async (notice = "") => {

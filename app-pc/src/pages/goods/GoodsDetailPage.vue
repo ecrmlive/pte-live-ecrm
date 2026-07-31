@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { activateMerchantContext } from "@/api/auth";
 import { fetchProductDetail, type ProductDetail } from "@/api/catalog";
 import { addCart } from "@/api/trade";
+import { fetchProductFavoriteState, removeProductFavorite, saveProductFavorite } from "@/api/favorite";
 import { useUserStore } from "@/stores/user";
 import { ApiError } from "@/utils/request";
 
@@ -13,6 +14,8 @@ const user = useUserStore();
 const detail = ref<ProductDetail | null>(null);
 const hint = ref("");
 const adding = ref(false);
+const followed = ref(false);
+const following = ref(false);
 
 const id = computed(() => Number(route.params.id));
 
@@ -20,6 +23,7 @@ async function load() {
   if (!id.value) return;
   try {
     detail.value = await fetchProductDetail(id.value);
+    followed.value = false;
     hint.value = "";
     if (user.isLogin && detail.value.merchant_app_id) {
       try {
@@ -29,9 +33,31 @@ async function load() {
         hint.value = "商品已加载；登录上下文初始化失败，请重新登录后再购买";
       }
     }
+    if (user.isLogin) {
+      const state = await fetchProductFavoriteState(detail.value.id);
+      followed.value = state.followed;
+    }
   } catch (e) {
     detail.value = null;
     hint.value = (e as Error).message || "商品详情加载失败";
+  }
+}
+
+async function toggleFavorite() {
+  if (!detail.value || following.value) return;
+  if (!user.isLogin) {
+    await router.push({ name: "login", query: { redirect: route.fullPath } });
+    return;
+  }
+  following.value = true;
+  try {
+    const state = followed.value ? await removeProductFavorite(detail.value.id) : await saveProductFavorite(detail.value.id);
+    followed.value = state.followed;
+    hint.value = state.followed ? "商品已收藏" : "已取消商品收藏";
+  } catch (error) {
+    hint.value = error instanceof ApiError ? error.message : "收藏操作失败";
+  } finally {
+    following.value = false;
   }
 }
 
@@ -83,6 +109,7 @@ async function onAddCart() {
           </ul>
           <div class="actions">
             <button class="pc-btn" type="button" :disabled="adding" @click="onAddCart">加入购物车</button>
+            <button class="pc-btn ghost" type="button" :disabled="following" @click="toggleFavorite">{{ following ? "处理中…" : followed ? "已收藏" : "收藏商品" }}</button>
             <RouterLink class="pc-btn ghost" to="/cart">去购物车</RouterLink>
           </div>
         </div>

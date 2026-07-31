@@ -27,6 +27,12 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/coupons/:id/receive", h.Receive)
 	r.GET("/coupons/mine", h.Mine)
 	r.GET("/coupons/usable", h.Usable)
+	h.RegisterSpread(r)
+}
+
+// RegisterSpread is retained while the distribution module is migrated. Coupon
+// routes themselves are now owned by business/coupon on qixi_crm_b_*.
+func (h *Handler) RegisterSpread(r gin.IRoutes) {
 	r.POST("/spread/bind", h.BindSpread)
 	r.GET("/spread/me", h.SpreadMe)
 	r.GET("/spread/bills", h.Bills)

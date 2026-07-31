@@ -21,6 +21,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/catalog/home", h.Home)
 	r.GET("/catalog/categories", h.Categories)
+	r.GET("/catalog/stores", h.Stores)
 	r.GET("/catalog/products", h.Products)
 	r.GET("/catalog/products/:id", h.ProductDetail)
 	r.GET("/catalog/stores/:id", h.StoreHome)
@@ -52,6 +53,15 @@ type storeView struct {
 }
 
 func (storeView) TableName() string { return "qixi_crm_b_store_view" }
+
+type storeDirectoryItem struct {
+	StoreID      uint64 `gorm:"column:store_id"`
+	MerchantID   uint64 `gorm:"column:merchant_id"`
+	StoreName    string `gorm:"column:store_name"`
+	ProductCount int64  `gorm:"column:product_count"`
+	SalesCount   int64  `gorm:"column:sales_count"`
+	CoverURL     string `gorm:"column:cover_url"`
+}
 
 type categoryView struct {
 	CategoryID uint64 `gorm:"column:category_id"`
@@ -180,6 +190,49 @@ func (h *Handler) Categories(c *gin.Context) {
 		items = append(items, gin.H{"id": row.CategoryID, "pid": row.ParentID, "name": row.Name})
 	}
 	response.OK(c, items)
+}
+
+// Stores supplies the public store directory used by the PC marketplace.  It
+// reads only business projections, so a public user never traverses into the
+// merchant database to render the directory.
+func (h *Handler) Stores(c *gin.Context) {
+	scope, err := h.resolveStoreScope(c)
+	if err != nil {
+		writeScopeError(c, err)
+		return
+	}
+
+	query := h.db.WithContext(c.Request.Context()).
+		Table("qixi_crm_b_store_view AS s").
+		Select(`s.store_id,s.merchant_id,s.store_name,
+			COUNT(p.product_id) AS product_count,
+			COALESCE(SUM(p.sales), 0) AS sales_count,
+			COALESCE(MAX(p.cover_url), '') AS cover_url`).
+		Joins("LEFT JOIN qixi_crm_b_product_view AS p ON p.store_id = s.store_id AND p.sale_status = 1").
+		Where("s.status = 1")
+	if scope.MerchantID != 0 {
+		query = query.Where("s.merchant_id = ?", scope.MerchantID)
+	}
+
+	rows := make([]storeDirectoryItem, 0)
+	if err := query.Group("s.store_id,s.merchant_id,s.store_name").
+		Order("sales_count DESC,s.store_id DESC").
+		Find(&rows).Error; err != nil {
+		fail(c, err)
+		return
+	}
+	items := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, gin.H{
+			"store_id":      row.StoreID,
+			"mer_id":        row.MerchantID,
+			"name":          row.StoreName,
+			"product_count": row.ProductCount,
+			"sales_count":   row.SalesCount,
+			"cover_url":     row.CoverURL,
+		})
+	}
+	response.OK(c, gin.H{"list": items, "total": len(items)})
 }
 
 func (h *Handler) Products(c *gin.Context) {

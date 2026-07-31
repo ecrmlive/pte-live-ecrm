@@ -124,8 +124,13 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_coupon_user` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_id` bigint unsigned NOT NULL, `coupon_id` bigint unsigned NOT NULL,
   `source` varchar(32) NOT NULL, `status` enum('unused','locked','used','expired') NOT NULL DEFAULT 'unused',
   `obtained_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `used_order_id` bigint unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`), KEY `idx_user_status` (`user_id`,`status`), KEY `idx_coupon` (`coupon_id`)
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_user_coupon` (`user_id`,`coupon_id`), KEY `idx_user_status` (`user_id`,`status`), KEY `idx_coupon` (`coupon_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_coupon_user_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_business' AND TABLE_NAME = 'qixi_crm_b_coupon_user' AND INDEX_NAME = 'uk_user_coupon');
+SET @qixi_coupon_user_index_ddl := IF(@qixi_coupon_user_index_exists = 0, 'ALTER TABLE `qixi_crm_b_coupon_user` ADD UNIQUE INDEX `uk_user_coupon` (`user_id`,`coupon_id`)', 'SELECT 1');
+PREPARE qixi_coupon_user_index_stmt FROM @qixi_coupon_user_index_ddl;
+EXECUTE qixi_coupon_user_index_stmt;
+DEALLOCATE PREPARE qixi_coupon_user_index_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_member_account` (
   `user_id` bigint unsigned NOT NULL, `level_id` bigint unsigned DEFAULT NULL, `points` bigint NOT NULL DEFAULT 0,
   `balance` decimal(12,2) NOT NULL DEFAULT 0, `commission` decimal(12,2) NOT NULL DEFAULT 0,

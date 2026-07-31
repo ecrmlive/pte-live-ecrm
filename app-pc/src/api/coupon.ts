@@ -5,6 +5,8 @@ export interface Coupon {
   mer_id: number;
   title: string;
   coupon_price: number;
+  discount_type: "amount" | "rate";
+  discount_value: number;
   use_min_price: number;
   coupon_time: number;
   remain_count: number;
@@ -19,9 +21,13 @@ export interface CouponUser {
   mer_id: number;
   coupon_title: string;
   coupon_price: number;
+  discount_type: "amount" | "rate";
+  discount_value: number;
   use_min_price: number;
   status: number;
   coupon_kind?: number;
+  starts_at?: string | null;
+  ends_at?: string | null;
 }
 
 export function fetchCouponCenter(mer_id?: number) {
@@ -33,7 +39,7 @@ export function receiveCoupon(id: number) {
   return http.post<CouponUser>(`/coupons/${id}/receive`, {});
 }
 
-export function fetchMyCoupons(status?: number, page = 1) {
+export function fetchMyCoupons(status?: "unused" | "history", page = 1) {
   const params = new URLSearchParams({ page: String(page), limit: "20" });
   if (status !== undefined) params.set("status", String(status));
   return http.get<{ list: CouponUser[]; total: number }>(`/coupons/mine?${params}`);

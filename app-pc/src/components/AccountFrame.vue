@@ -17,11 +17,14 @@ const menus = [
   { label: "账户管理", to: "/user", match: (path: string) => path === "/user" },
   { label: "我的订单", to: "/orders", match: (path: string) => path.startsWith("/orders") },
   { label: "预售订单", to: "/presell", match: (path: string) => path.startsWith("/presell") },
-  { label: "我的积分", to: "/points", match: (path: string) => path.startsWith("/points") },
+  { label: "售后/退款", to: "/refunds", match: (path: string) => path.startsWith("/refunds") },
   { label: "我的余额", to: "/user/balance", match: (path: string) => path.startsWith("/user/balance") },
+  { label: "我的积分", to: "/user/points", match: (path: string) => path.startsWith("/user/points") },
+  { label: "我的收藏", to: "/user/favorites", match: (path: string) => path.startsWith("/user/favorites") },
+  { label: "地址管理", to: "/user/addresses", match: (path: string) => path.startsWith("/user/addresses") },
   { label: "我的优惠券", to: "/coupons", match: (path: string) => path.startsWith("/coupons") },
   { label: "我的发票", to: "/user/invoices", match: (path: string) => path.startsWith("/user/invoices") },
-  { label: "地址管理", to: "/user/addresses", match: (path: string) => path.startsWith("/user/addresses") },
+  { label: "入驻记录", to: "/merchant/apply", match: (path: string) => path.startsWith("/merchant/apply") },
 ];
 
 onMounted(() => {

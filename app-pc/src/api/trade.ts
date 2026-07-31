@@ -42,6 +42,7 @@ export interface GroupOrder {
   pay_price: number;
   total_num: number;
   paid: number;
+  pay_status: "pending" | "paid" | "closed" | "refunded";
   pay_type: number;
   orders?: StoreOrder[];
 }
@@ -70,9 +71,20 @@ export interface StoreOrder {
   mer_name?: string;
   pay_price: number;
   paid: number;
-  status: number;
+  total_num?: number;
+  status: string;
+  products?: OrderProduct[];
   delivery_name?: string;
   delivery_id?: string;
+}
+
+export interface OrderProduct {
+  product_id: number;
+  product_attr_unique: string;
+  store_name: string;
+  image?: string;
+  product_num: number;
+  product_price: number;
 }
 
 export interface Invoice {
@@ -175,6 +187,10 @@ export function notifyChannelPay(
 
 export function fetchOrders(page = 1) {
   return http.get<{ list: GroupOrder[]; total: number }>(`/orders?page=${page}`);
+}
+
+export function cancelOrder(groupOrderId: number) {
+  return http.post<{ ok: boolean }>(`/orders/${groupOrderId}/cancel`, {});
 }
 
 export function fetchOrderDetail(id: number) {

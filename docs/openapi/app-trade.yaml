@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers app trade
-  version: 0.5.0
+  version: 0.7.0
   description: |
     阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。
     真实路径对齐 FUNCTIONAL-TRUTH：/v2/order/check|create、/order/pay/:id。
@@ -45,9 +45,19 @@ paths:
     put: { summary: 改数量, security: [{ bearerAuth: [] }] }
     delete: { summary: 删除, security: [{ bearerAuth: [] }] }
   /v2/order/check:
-    post: { summary: 结算预览, security: [{ bearerAuth: [] }] }
+    post:
+      summary: 结算预览
+      description: >-
+        coupon_user_ids 可选择一张店铺券和一张平台券；服务端按店铺券、平台券顺序用整数分计算折扣，
+        不信任客户端金额。
+      security: [{ bearerAuth: [] }]
   /v2/order/create:
-    post: { summary: 创建主单+商户子单, security: [{ bearerAuth: [] }] }
+    post:
+      summary: 创建主单+商户子单
+      description: >-
+        与结算预览使用相同 coupon_user_ids。建单事务会锁定券并保存实付金额；支付成功后券变为 used。
+        已锁定但未支付订单的取消/超时解锁不由本接口处理，必须通过订单状态机完成。
+      security: [{ bearerAuth: [] }]
   /order/pay/{id}:
     post:
       summary: mock 本地闭环支付；微信/支付宝必须先通过支付方式资格校验
@@ -61,6 +71,11 @@ paths:
     get: { summary: 用户主单列表, security: [{ bearerAuth: [] }] }
   /orders/{id}:
     get: { summary: 主单详情, security: [{ bearerAuth: [] }] }
+  /orders/{id}/cancel:
+    post:
+      summary: 取消未支付主单
+      description: 仅 pending 主单可取消；在同一事务内关闭子单并恢复该主单锁定的优惠券。
+      security: [{ bearerAuth: [] }]
   /order/{id}:
     get: { summary: 商户子订单详情, security: [{ bearerAuth: [] }] }
   /invoices:
@@ -82,6 +97,64 @@ paths:
       summary: 我的余额与余额流水
       description: 仅读取 qixi_crm_b_member_account 与 qixi_crm_b_asset_ledger 的 balance 资产域。
       security: [{ bearerAuth: [] }]
+  /account/points:
+    get:
+      summary: 我的积分与积分流水
+      description: 仅读取 qixi_crm_b_member_account 与 qixi_crm_b_asset_ledger 的 points 资产域，积分始终按整数返回。
+      security: [{ bearerAuth: [] }]
+  /coupons/center:
+    get:
+      summary: 领券中心
+      description: >-
+        仅读取 qixi_crm_b_coupon_template_view；可用 mer_id 过滤某商户店铺券。
+        平台券 store_id=0，店铺券按商户消费视图隔离。
+      security: [{ bearerAuth: [] }]
+  /coupons/{id}/receive:
+    post:
+      summary: 领取优惠券
+      description: >-
+        对同一用户和券模板幂等，写入 qixi_crm_b_coupon_user；已领时返回当前用户券。
+      security: [{ bearerAuth: [] }]
+  /coupons/mine:
+    get:
+      summary: 我的优惠券
+      description: >-
+        status=unused 或 0 时仅返回有效未使用券；status=history 或 used 时返回已使用、已过期券。
+        未传 status 或 status=all 返回全部用户券。券模板过期时读取态按已过期返回，不在查询时修改用户券记录。
+      security: [{ bearerAuth: [] }]
+  /coupons/usable:
+    get:
+      summary: 当前购物车可用优惠券
+      description: cart_ids 为逗号分隔购物车 ID；仅返回当前用户、有效期内且满足门槛的未使用平台券/当前店铺券。
+      security: [{ bearerAuth: [] }]
+  /favorites:
+    get:
+      summary: 我的商品或店铺收藏
+      description: >-
+        type=product 返回已收藏且仍在售的商品消费视图；type=store 返回已收藏且启用的店铺视图，
+        并包含店铺当前 follower_count，供 PC 收藏页展示关注人数。
+      security: [{ bearerAuth: [] }]
+  /favorites/products/{id}:
+    get: { summary: 查询商品收藏状态, security: [{ bearerAuth: [] }] }
+    put: { summary: 收藏商品, security: [{ bearerAuth: [] }] }
+    delete: { summary: 取消收藏商品, security: [{ bearerAuth: [] }] }
+  /favorites/stores/{id}:
+    get: { summary: 查询店铺收藏状态, security: [{ bearerAuth: [] }] }
+    put: { summary: 收藏店铺, security: [{ bearerAuth: [] }] }
+    delete: { summary: 取消收藏店铺, security: [{ bearerAuth: [] }] }
+  /refund/apply:
+    post:
+      summary: 用户提交整单售后申请
+      description: 仅允许本人已支付、履约中或已发货的订单；请求使用 idempotency_key 防重，创建后订单状态进入 aftersale。
+      security: [{ bearerAuth: [] }]
+  /refunds:
+    get: { summary: 我的售后单列表, security: [{ bearerAuth: [] }] }
+  /refunds/{id}:
+    get: { summary: 售后单详情, security: [{ bearerAuth: [] }] }
+  /refunds/{id}/cancel:
+    post: { summary: 用户取消待处理售后申请, security: [{ bearerAuth: [] }] }
+  /refunds/{id}/platform:
+    post: { summary: 用户申请平台介入, security: [{ bearerAuth: [] }] }
 components:
   securitySchemes:
     bearerAuth:

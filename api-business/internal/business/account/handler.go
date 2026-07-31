@@ -14,8 +14,12 @@ import (
 
 type Handler struct{ db *gorm.DB }
 
-func NewHandler(db *gorm.DB) *Handler     { return &Handler{db: db} }
-func (h *Handler) Register(r gin.IRoutes) { r.GET("/account/balance", h.Balance) }
+func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
+
+func (h *Handler) Register(r gin.IRoutes) {
+	r.GET("/account/balance", h.Balance)
+	r.GET("/account/points", h.Points)
+}
 
 type balanceSummary struct {
 	Balance      float64 `json:"balance"`
@@ -28,6 +32,21 @@ type ledgerRow struct {
 	ReferenceType string  `json:"reference_type"`
 	ReferenceID   string  `json:"reference_id"`
 	CreatedAt     string  `json:"created_at"`
+}
+
+type pointsSummary struct {
+	Points       int64 `json:"points"`
+	TotalIncome  int64 `json:"total_income"`
+	TotalExpense int64 `json:"total_expense"`
+	FrozenPoints int64 `json:"frozen_points"`
+}
+
+type pointsLedgerRow struct {
+	ID            uint64 `json:"id"`
+	Amount        int64  `json:"amount"`
+	ReferenceType string `json:"reference_type"`
+	ReferenceID   string `json:"reference_id"`
+	CreatedAt     string `json:"created_at"`
 }
 
 func (h *Handler) Balance(c *gin.Context) {
@@ -49,6 +68,38 @@ func (h *Handler) Balance(c *gin.Context) {
 	var rows []ledgerRow
 	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_asset_ledger").Select("id, amount, reference_type, reference_id, created_at").Where("user_id = ? AND asset_type = ?", uid, "balance").Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询余额流水失败")
+		return
+	}
+	response.OK(c, gin.H{"summary": summary, "list": rows, "page": page, "limit": limit})
+}
+
+// Points exposes the same immutable-ledger contract as balance, but keeps
+// point quantities integer-valued and never rounds decimal asset records.
+func (h *Handler) Points(c *gin.Context) {
+	uid := middleware.UID(c)
+	summary := pointsSummary{}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_member_account").
+		Select("COALESCE(points, 0) AS points").Where("user_id = ?", uid).Scan(&summary).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询积分失败")
+		return
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_asset_ledger").
+		Select("COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END),0) AS total_income, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END),0) AS total_expense").
+		Where("user_id = ? AND asset_type = ?", uid, "points").Scan(&summary).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询积分流水失败")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	const limit = 20
+	var rows []pointsLedgerRow
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_asset_ledger").
+		Select("id, amount, reference_type, reference_id, created_at").
+		Where("user_id = ? AND asset_type = ?", uid, "points").
+		Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询积分流水失败")
 		return
 	}
 	response.OK(c, gin.H{"summary": summary, "list": rows, "page": page, "limit": limit})

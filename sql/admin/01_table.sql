@@ -118,12 +118,33 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_application` (
   `review_note` varchar(500) NOT NULL DEFAULT '', `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `reviewed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_application` (`source_application_id`), KEY `idx_region_status` (`region_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 兼容已初始化的本地/测试库：申请事件需要来源幂等键与资质快照。
-ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `source_application_id` bigint unsigned DEFAULT NULL;
-ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `category_name` varchar(128) NOT NULL DEFAULT '';
-ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `merchant_type` varchar(64) NOT NULL DEFAULT '';
-ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `license_url` varchar(1024) NOT NULL DEFAULT '';
-ALTER TABLE `qixi_crm_a_merchant_application` ADD UNIQUE INDEX IF NOT EXISTS `uk_source_application` (`source_application_id`);
+-- 兼容已初始化的本地/测试库。MySQL 8.4 不支持 ALTER TABLE ... IF NOT EXISTS，
+-- 因此与上方菜单迁移一样使用 information_schema + 动态 SQL 保持可重复执行。
+SET @qixi_application_source_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'source_application_id');
+SET @qixi_application_source_ddl := IF(@qixi_application_source_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `source_application_id` bigint unsigned DEFAULT NULL', 'SELECT 1');
+PREPARE qixi_application_source_stmt FROM @qixi_application_source_ddl;
+EXECUTE qixi_application_source_stmt;
+DEALLOCATE PREPARE qixi_application_source_stmt;
+SET @qixi_application_category_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'category_name');
+SET @qixi_application_category_ddl := IF(@qixi_application_category_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `category_name` varchar(128) NOT NULL DEFAULT ''''', 'SELECT 1');
+PREPARE qixi_application_category_stmt FROM @qixi_application_category_ddl;
+EXECUTE qixi_application_category_stmt;
+DEALLOCATE PREPARE qixi_application_category_stmt;
+SET @qixi_application_type_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'merchant_type');
+SET @qixi_application_type_ddl := IF(@qixi_application_type_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `merchant_type` varchar(64) NOT NULL DEFAULT ''''', 'SELECT 1');
+PREPARE qixi_application_type_stmt FROM @qixi_application_type_ddl;
+EXECUTE qixi_application_type_stmt;
+DEALLOCATE PREPARE qixi_application_type_stmt;
+SET @qixi_application_license_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'license_url');
+SET @qixi_application_license_ddl := IF(@qixi_application_license_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `license_url` varchar(1024) NOT NULL DEFAULT ''''', 'SELECT 1');
+PREPARE qixi_application_license_stmt FROM @qixi_application_license_ddl;
+EXECUTE qixi_application_license_stmt;
+DEALLOCATE PREPARE qixi_application_license_stmt;
+SET @qixi_application_source_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND INDEX_NAME = 'uk_source_application');
+SET @qixi_application_source_index_ddl := IF(@qixi_application_source_index_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD UNIQUE INDEX `uk_source_application` (`source_application_id`)', 'SELECT 1');
+PREPARE qixi_application_source_index_stmt FROM @qixi_application_source_index_ddl;
+EXECUTE qixi_application_source_index_stmt;
+DEALLOCATE PREPARE qixi_application_source_index_stmt;
 -- 平台监管只读取该投影，不直连 qixi_crm_merchant。由 api-merchant 的受控
 -- 命令和 NATS 事件同步，保证服务与数据库边界独立。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_view` (

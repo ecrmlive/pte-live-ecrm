@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { activateMerchantContext } from "@/api/auth";
 import { fetchCategories, fetchStoreHome, type CategoryItem, type ProductItem } from "@/api/catalog";
 import ProductCard from "@/components/ProductCard.vue";
 import { useUserStore } from "@/stores/user";
+import { fetchStoreFavoriteState, removeStoreFavorite, saveStoreFavorite } from "@/api/favorite";
 
 const route = useRoute();
+const router = useRouter();
 const user = useUserStore();
 const merId = computed(() => Number(route.params.id));
 const merName = ref("");
@@ -15,7 +17,12 @@ const categories = ref<CategoryItem[]>([]);
 const hint = ref("");
 const selectedCategory = ref<number>();
 const followed = ref(false);
+const followBusy = ref(false);
+const storeID = ref(0);
 const sort = ref<"default" | "sales" | "price">("default");
+const keyword = ref("");
+const minPrice = ref("");
+const maxPrice = ref("");
 
 const rootCategories = computed(() => categories.value.filter((item) => item.pid === 0));
 const storeProducts = computed(() => {
@@ -23,7 +30,17 @@ const storeProducts = computed(() => {
   const categoryIds = selected
     ? new Set([selected, ...categories.value.filter((item) => item.pid === selected).map((item) => item.id)])
     : undefined;
-  const filtered = categoryIds ? products.value.filter((item) => categoryIds.has(item.category_id || 0)) : products.value;
+  const min = Number(minPrice.value);
+  const max = Number(maxPrice.value);
+  const name = keyword.value.trim().toLowerCase();
+  const filtered = products.value.filter((item) => {
+    if (categoryIds && !categoryIds.has(item.category_id || 0)) return false;
+    if (name && !(item.title || item.store_name).toLowerCase().includes(name)) return false;
+    const price = Number(item.price);
+    if (Number.isFinite(min) && minPrice.value && price < min) return false;
+    if (Number.isFinite(max) && maxPrice.value && price > max) return false;
+    return true;
+  });
   return [...filtered].sort((a, b) => {
     if (sort.value === "sales") return b.sales - a.sales;
     if (sort.value === "price") return Number(a.price) - Number(b.price);
@@ -37,8 +54,15 @@ async function load() {
   try {
     const [data, categoryList] = await Promise.all([fetchStoreHome(merId.value), fetchCategories()]);
     merName.value = data.mer_name || `店铺 #${merId.value}`;
+    storeID.value = data.store_id || 0;
     products.value = data.products || [];
     categories.value = categoryList || [];
+    if (user.isLogin && storeID.value) {
+      const state = await fetchStoreFavoriteState(storeID.value);
+      followed.value = state.followed;
+    } else {
+      followed.value = false;
+    }
     if (user.isLogin && data.merchant_app_id) {
       try {
         const context = await activateMerchantContext(data.merchant_app_id);
@@ -56,6 +80,24 @@ async function load() {
   }
 }
 
+async function toggleFollow() {
+  if (!user.isLogin) {
+    await router.push({ name: "login", query: { redirect: route.fullPath } });
+    return;
+  }
+  if (!storeID.value || followBusy.value) return;
+  followBusy.value = true;
+  try {
+    const state = followed.value ? await removeStoreFavorite(storeID.value) : await saveStoreFavorite(storeID.value);
+    followed.value = state.followed;
+    hint.value = state.followed ? "已收藏店铺" : "已取消收藏店铺";
+  } catch (error) {
+    hint.value = error instanceof Error ? error.message : "收藏操作失败";
+  } finally {
+    followBusy.value = false;
+  }
+}
+
 watch(merId, () => void load(), { immediate: true });
 </script>
 
@@ -66,7 +108,7 @@ watch(merId, () => void load(), { immediate: true });
         <RouterLink :to="`/store/${merId}`">店铺首页</RouterLink>
         <button type="button" :class="{ active: !selectedCategory }" @click="selectedCategory = undefined">全部分类</button>
         <RouterLink :to="`/store/${merId}/coupons`">领优惠券</RouterLink>
-        <div class="store-search"><input placeholder="店内商品搜索" /><button type="button">搜索</button></div>
+        <form class="store-search" @submit.prevent><input v-model.trim="keyword" placeholder="店内商品搜索" /><button type="submit">搜索</button></form>
       </div>
     </nav>
 
@@ -79,8 +121,8 @@ watch(merId, () => void load(), { immediate: true });
           <p>店铺评分 <strong>★★★★★</strong></p>
           <p>关注人数 <b>{{ products.reduce((sum, item) => sum + item.sales, 0) || 0 }}</b></p>
           <p>店铺资质 <span class="quality">已认证</span></p>
-          <button type="button" class="follow-btn" :class="{ followed }" @click="followed = !followed">
-            {{ followed ? '已收藏' : '收藏店铺' }}
+          <button type="button" class="follow-btn" :class="{ followed }" :disabled="followBusy" @click="toggleFollow">
+            {{ followBusy ? '处理中…' : followed ? '已收藏' : '收藏店铺' }}
           </button>
         </section>
         <section class="store-categories">
@@ -102,6 +144,7 @@ watch(merId, () => void load(), { immediate: true });
           <button type="button" :class="{ active: sort === 'default' }" @click="sort = 'default'">默认</button>
           <button type="button" :class="{ active: sort === 'sales' }" @click="sort = 'sales'">销量</button>
           <button type="button" :class="{ active: sort === 'price' }" @click="sort = 'price'">价格</button>
+          <label class="price-range"><input v-model="minPrice" inputmode="decimal" placeholder="最低价" /><i>—</i><input v-model="maxPrice" inputmode="decimal" placeholder="最高价" /></label>
           <span class="store-total">{{ hint }}</span>
         </div>
         <p v-if="!storeProducts.length && hint !== '加载中…'" class="empty">该分类暂无在售商品</p>
@@ -118,6 +161,6 @@ watch(merId, () => void load(), { immediate: true });
 .store-nav { background: #e5e5e5; }.store-nav__inner { display: flex; align-items: center; gap: 2.35rem; height: 52px; }.store-nav a, .store-nav button { border: 0; color: #333; background: transparent; font-size: .94rem; cursor: pointer; }.store-nav button.active, .store-nav a.router-link-active { padding: .38rem .82rem; border-radius: 18px; color: #fff; background: #333; }.store-search { display: flex; width: 232px; margin-left: auto; }.store-search input { min-width: 0; height: 28px; padding: 0 .7rem; border: 0; background: #fff; font-size: .76rem; }.store-search button { width: 39px; color: #fff; background: #333; font-size: .74rem; }
 .store-content { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; padding-top: 22px; }.store-side { display: grid; align-content: start; gap: 12px; }.store-profile, .store-categories, .store-main { background: #fff; }.store-profile { padding: 1.55rem 1.35rem 1.45rem; text-align: center; }.store-avatar { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; }.store-badge { display: inline-block; margin: .85rem 0 .15rem; padding: .18rem .35rem; color: #fff; background: #ef3727; font-size: .72rem; }.store-profile h1 { margin: 0 0 1rem; color: #444; font-size: 1rem; font-weight: 500; }.store-profile p { display: flex; justify-content: space-between; margin: .72rem 0; padding-bottom: .65rem; border-bottom: 1px solid #eee; color: #888; font-size: .8rem; text-align: left; }.store-profile strong { color: #ef3727; letter-spacing: .12rem; }.quality { color: #d18a18; }.follow-btn { width: 100%; margin-top: .2rem; padding: .6rem; border: 0; color: #fff; background: #ef3727; cursor: pointer; }.follow-btn.followed { background: #999; }
 .store-categories h2 { margin: 0; padding: .9rem 1.15rem; border-bottom: 1px solid #eee; color: #555; font-size: .9rem; }.store-categories button { display: block; width: 100%; padding: .82rem 1.15rem; border: 0; border-bottom: 1px solid #f1f1f1; color: #777; background: #fff; text-align: left; cursor: pointer; }.store-categories button:hover, .store-categories button.active { color: #ef3727; background: #fff8f7; }
-.store-main { padding: 16px; }.sort-bar { display: flex; align-items: center; gap: 1.4rem; min-height: 48px; padding: 0 12px; border-bottom: 1px solid #eee; color: #777; font-size: .86rem; }.sort-bar button { border: 0; padding: .45rem 0; color: #444; background: transparent; cursor: pointer; }.sort-bar button.active { color: #ef3727; }.store-total { margin-left: auto; color: #999; font-size: .78rem; }.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding-top: 16px; }.grid :deep(.meta) { padding: .75rem .8rem .9rem; }.grid :deep(h3) { font-size: .9rem; }.grid :deep(.store) { display: none; }.grid :deep(.sales) { font-size: .72rem; }.empty { padding: 5rem 0; color: #999; text-align: center; }
+.store-main { padding: 16px; }.sort-bar { display: flex; align-items: center; gap: 1.4rem; min-height: 48px; padding: 0 12px; border-bottom: 1px solid #eee; color: #777; font-size: .86rem; }.sort-bar button { border: 0; padding: .45rem 0; color: #444; background: transparent; cursor: pointer; }.sort-bar button.active { color: #ef3727; }.price-range { display: flex; align-items: center; gap: 5px; margin-left: auto; }.price-range input { width: 68px; height: 27px; border: 1px solid #ddd; padding: 0 7px; color: #555; font-size: .72rem; outline: none; }.price-range input:focus { border-color: #ef3727; }.price-range i { color: #bbb; font-style: normal; }.store-total { margin-left: 0; color: #999; font-size: .78rem; }.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding-top: 16px; }.grid :deep(.meta) { padding: .75rem .8rem .9rem; }.grid :deep(h3) { font-size: .9rem; }.grid :deep(.store) { display: none; }.grid :deep(.sales) { font-size: .72rem; }.empty { padding: 5rem 0; color: #999; text-align: center; }
 @media (max-width: 980px) { .store-content { grid-template-columns: 1fr; }.store-side { grid-template-columns: 1fr 1fr; }.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.store-nav__inner { overflow-x: auto; } }
 </style>
