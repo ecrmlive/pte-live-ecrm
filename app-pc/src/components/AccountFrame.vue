@@ -18,7 +18,9 @@ const menus = [
   { label: "我的订单", to: "/orders", match: (path: string) => path.startsWith("/orders") },
   { label: "预售订单", to: "/presell", match: (path: string) => path.startsWith("/presell") },
   { label: "我的积分", to: "/points", match: (path: string) => path.startsWith("/points") },
+  { label: "我的余额", to: "/user/balance", match: (path: string) => path.startsWith("/user/balance") },
   { label: "我的优惠券", to: "/coupons", match: (path: string) => path.startsWith("/coupons") },
+  { label: "我的发票", to: "/user/invoices", match: (path: string) => path.startsWith("/user/invoices") },
   { label: "地址管理", to: "/user/addresses", match: (path: string) => path.startsWith("/user/addresses") },
 ];
 

@@ -34,6 +34,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/trade"
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/usertag"
+	merchantapplicationevent "github.com/qixi-live/qixi-live-mergers/api-platform/internal/event/merchantapplication"
 	platformdiyevent "github.com/qixi-live/qixi-live-mergers/api-platform/internal/event/platformdiy"
 	articlepersist "github.com/qixi-live/qixi-live-mergers/api-platform/internal/infra/persist/article"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api-platform/internal/infra/persist/assist"
@@ -109,6 +110,13 @@ func main() {
 		log.Fatalf("mysql: %v", err)
 	}
 	platformdiyevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	merchantApplicationProjection, err := merchantapplicationevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant application projection subscriber unavailable: %v", err)
+	}
+	if merchantApplicationProjection != nil {
+		defer merchantApplicationProjection.Close()
+	}
 	businessDSN, err := cfg.DSNFor(config.DatabaseBusiness)
 	if err != nil {
 		log.Fatalf("business payment projection database config: %v", err)

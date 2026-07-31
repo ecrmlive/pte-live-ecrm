@@ -61,6 +61,7 @@ watch(
             </template>
             <button v-else type="button" @click="goLogin">登录 / 注册</button>
             <RouterLink to="/orders">我的订单</RouterLink>
+            <RouterLink to="/user/balance">我的余额</RouterLink>
             <RouterLink to="/merchant/apply">店铺入驻</RouterLink>
             <RouterLink to="/notices">资讯信息</RouterLink>
           </div>
@@ -134,7 +135,13 @@ watch(
   grid-template-rows: auto 1fr auto;
 }
 
-.site-header { background: #fff; }
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
+}
 
 .utility-bar { background: #2e2e2e; color: #c9c9c9; font-size: .78rem; }
 

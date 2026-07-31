@@ -19,6 +19,7 @@ import (
 	apppresell "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/presell"
 	appreservation "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/reservation"
 	appseckill "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/seckill"
+	businessaccount "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/account"
 	businessaddress "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/address"
 	businessauth "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/auth"
 	businesscart "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/cart"
@@ -26,6 +27,7 @@ import (
 	businesscontent "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/contentview"
 	businessdiyview "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/diyview"
 	businesslive "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/live"
+	businessmerchantapply "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/merchantapply"
 	businessorder "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/order"
 	businessrefund "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/refund"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/article"
@@ -42,6 +44,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/reservation"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/trade"
+	merchantapplicationevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/merchantapplication"
 	merchantdiyevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/merchantdiy"
 	merchantimevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/merchantim"
 	platformdiyevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/platformdiy"
@@ -106,6 +109,7 @@ func main() {
 	if platformDIYProjection != nil {
 		defer platformDIYProjection.Close()
 	}
+	merchantapplicationevent.StartOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
 
 	jwtMgr := authjwt.NewManager(cfg.JWT.Secret, cfg.JWT.AccessTTL(), cfg.JWT.RefreshTTL())
 	paymentConfigStore, err := paymentconfig.NewStore(gdb, cfg.JWT.Secret)
@@ -150,7 +154,9 @@ func main() {
 	}
 	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr, captchaClient)
 	appCatH := businesscatalog.NewHandler(gdb)
+	appMerchantApplyH := businessmerchantapply.NewHandler(gdb)
 	appAddrH := businessaddress.NewHandler(gdb)
+	appAccountH := businessaccount.NewHandler(gdb)
 	appCartH := businesscart.NewHandler(gdb)
 	appOrderH := businessorder.NewHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox)
 	appOrderCallbackH := businessorder.NewCallbackHandler(gdb, cfg.Payment.Sandbox)
@@ -196,6 +202,7 @@ func main() {
 	appAssistH.RegisterPublic(appPublic)
 	appPointsH.RegisterPublic(appPublic)
 	appAddrH.Register(appAuthed)
+	appAccountH.Register(appAuthed)
 	appCartH.Register(appAuthed)
 	appOrderH.Register(appAuthed)
 	appComboH.RegisterAuthed(appAuthed)
@@ -209,6 +216,7 @@ func main() {
 	appChatH.Register(appAuthed)
 	appInvoiceH.Register(appAuthed)
 	appLiveH.RegisterAuthed(appAuthed)
+	appMerchantApplyH.Register(appAuthed)
 
 	cb := r.Group("/api/callback/v1")
 	cb.GET("/ping", func(c *gin.Context) {

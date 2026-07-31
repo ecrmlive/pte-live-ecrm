@@ -34,6 +34,11 @@ const router = createRouter({
           component: () => import("@/pages/store/StorePage.vue"),
         },
         {
+          path: "store/:id/coupons",
+          name: "store-coupons",
+          component: () => import("@/pages/store/StoreCouponsPage.vue"),
+        },
+        {
           path: "cart",
           name: "cart",
           component: () => import("@/pages/cart/CartPage.vue"),
@@ -62,6 +67,16 @@ const router = createRouter({
           path: "user/addresses",
           name: "user-addresses",
           component: () => import("@/pages/user/AddressPage.vue"),
+        },
+        {
+          path: "user/invoices",
+          name: "user-invoices",
+          component: () => import("@/pages/user/InvoicesPage.vue"),
+        },
+        {
+          path: "user/balance",
+          name: "user-balance",
+          component: () => import("@/pages/user/BalancePage.vue"),
         },
         {
           path: "coupons",
@@ -152,6 +167,11 @@ const router = createRouter({
           path: "login",
           name: "login",
           component: () => import("@/pages/auth/LoginPage.vue"),
+        },
+        {
+          path: "merchant/apply",
+          name: "merchant-apply",
+          component: () => import("@/pages/merchant/MerchantApplyPage.vue"),
         },
       ],
     },

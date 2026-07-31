@@ -66,6 +66,22 @@ paths:
   /invoices:
     get: { summary: 我的发票申请列表, security: [{ bearerAuth: [] }] }
     post: { summary: 提交发票申请, security: [{ bearerAuth: [] }] }
+  /merchant-applications:
+    post:
+      summary: 提交商户入驻申请
+      description: >-
+        C 端仅写入 qixi_crm_business 的申请事实和业务 outbox；api-platform 通过 NATS
+        投影到 qixi_crm_admin 的审核队列。客户端不得直写后台库。
+      security: [{ bearerAuth: [] }]
+  /merchant-applications/mine:
+    get:
+      summary: 我的商户入驻申请
+      security: [{ bearerAuth: [] }]
+  /account/balance:
+    get:
+      summary: 我的余额与余额流水
+      description: 仅读取 qixi_crm_b_member_account 与 qixi_crm_b_asset_ledger 的 balance 资产域。
+      security: [{ bearerAuth: [] }]
 components:
   securitySchemes:
     bearerAuth:

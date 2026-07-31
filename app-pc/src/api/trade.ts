@@ -75,6 +75,20 @@ export interface StoreOrder {
   delivery_id?: string;
 }
 
+export interface Invoice {
+  invoice_id: number;
+  order_id: number;
+  mer_id: number;
+  invoice_type: number;
+  header_type: number;
+  header: string;
+  tax_no: string;
+  email: string;
+  status: number;
+  mark?: string;
+  create_time: string;
+}
+
 export function fetchCart() {
   return http.get<{ list: CartBucket[]; total_num?: number; total_price?: number }>("/cart");
 }
@@ -165,4 +179,24 @@ export function fetchOrders(page = 1) {
 
 export function fetchOrderDetail(id: number) {
   return http.get<GroupOrder>(`/orders/${id}`);
+}
+
+export function fetchInvoices(page = 1, limit = 20) {
+  return http.get<{ list: Invoice[]; total: number; page: number; limit: number }>(`/invoices?page=${page}&limit=${limit}`);
+}
+
+export function applyInvoice(data: {
+  order_id: number;
+  invoice_type: number;
+  header_type: number;
+  header: string;
+  tax_no?: string;
+  email: string;
+}) {
+  return http.post<Invoice>("/invoices", data);
+}
+
+export interface BalanceLedger { id: number; amount: number; reference_type: string; reference_id: string; created_at: string; }
+export function fetchBalance(page = 1) {
+  return http.get<{ summary: { balance: number; total_income: number; total_expense: number }; list: BalanceLedger[] }>(`/account/balance?page=${page}`);
 }

@@ -194,6 +194,21 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_profile` (
   `birthday` date DEFAULT NULL, `bio` varchar(500) NOT NULL DEFAULT '', `source_channel` enum('wechat','mini_program','h5','pc','ios','android','harmony') NOT NULL,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- C 端商户入驻申请。后台库只保存该记录的监管投影，C 端不得直写 qixi_crm_admin。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_merchant_application` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `applicant_user_id` bigint unsigned NOT NULL,
+  `merchant_name` varchar(128) NOT NULL,
+  `contact_name` varchar(64) NOT NULL,
+  `contact_mobile` varchar(32) NOT NULL,
+  `category_name` varchar(128) NOT NULL DEFAULT '',
+  `merchant_type` varchar(64) NOT NULL DEFAULT '',
+  `license_url` varchar(1024) NOT NULL DEFAULT '',
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_user_created` (`applicant_user_id`,`created_at`), KEY `idx_status_created` (`status`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_browse_history` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_id` bigint unsigned NOT NULL, `product_id` bigint unsigned NOT NULL,
   `store_id` bigint unsigned NOT NULL, `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

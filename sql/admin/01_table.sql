@@ -113,10 +113,17 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_region` (
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_application` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `applicant_user_id` bigint unsigned DEFAULT NULL, `merchant_name` varchar(128) NOT NULL,
   `contact_name` varchar(64) NOT NULL, `contact_mobile` varchar(32) NOT NULL, `region_id` bigint unsigned DEFAULT NULL,
+  `source_application_id` bigint unsigned DEFAULT NULL, `category_name` varchar(128) NOT NULL DEFAULT '', `merchant_type` varchar(64) NOT NULL DEFAULT '', `license_url` varchar(1024) NOT NULL DEFAULT '',
   `status` enum('draft','pending','approved','rejected') NOT NULL DEFAULT 'draft', `reviewed_by` bigint unsigned DEFAULT NULL,
   `review_note` varchar(500) NOT NULL DEFAULT '', `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `reviewed_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`), KEY `idx_region_status` (`region_id`,`status`)
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_source_application` (`source_application_id`), KEY `idx_region_status` (`region_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 兼容已初始化的本地/测试库：申请事件需要来源幂等键与资质快照。
+ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `source_application_id` bigint unsigned DEFAULT NULL;
+ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `category_name` varchar(128) NOT NULL DEFAULT '';
+ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `merchant_type` varchar(64) NOT NULL DEFAULT '';
+ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN IF NOT EXISTS `license_url` varchar(1024) NOT NULL DEFAULT '';
+ALTER TABLE `qixi_crm_a_merchant_application` ADD UNIQUE INDEX IF NOT EXISTS `uk_source_application` (`source_application_id`);
 -- 平台监管只读取该投影，不直连 qixi_crm_merchant。由 api-merchant 的受控
 -- 命令和 NATS 事件同步，保证服务与数据库边界独立。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_view` (

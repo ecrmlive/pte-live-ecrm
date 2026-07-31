@@ -65,7 +65,7 @@ watch(merId, () => void load(), { immediate: true });
       <div class="pc-container store-nav__inner">
         <RouterLink :to="`/store/${merId}`">店铺首页</RouterLink>
         <button type="button" :class="{ active: !selectedCategory }" @click="selectedCategory = undefined">全部分类</button>
-        <RouterLink to="/coupons">领优惠券</RouterLink>
+        <RouterLink :to="`/store/${merId}/coupons`">领优惠券</RouterLink>
         <div class="store-search"><input placeholder="店内商品搜索" /><button type="button">搜索</button></div>
       </div>
     </nav>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   fetchOrderDetail,
 	fetchOrderPaymentChannels,
+  applyInvoice,
   payOrder,
   type GroupOrder,
 	type PaymentChannel,
@@ -17,6 +18,15 @@ const order = ref<GroupOrder | null>(null);
 const hint = ref("");
 const paying = ref(false);
 const paymentChannels = ref<PaymentChannel[]>([]);
+const invoiceDraft = ref<{
+  invoiceType: "ordinary" | "special";
+  headerType: "personal" | "company";
+  header: string;
+  taxNo: string;
+  email: string;
+} | null>(null);
+const invoiceApplying = ref(false);
+const invoiceApplied = ref(false);
 
 const id = () => Number(route.params.id);
 
@@ -27,10 +37,44 @@ async function load() {
       fetchOrderPaymentChannels(id()),
     ]);
     order.value = detail;
+    const cached = sessionStorage.getItem(`qixi:invoice:${id()}`);
+    if (cached) {
+      try { invoiceDraft.value = JSON.parse(cached); } catch { sessionStorage.removeItem(`qixi:invoice:${id()}`); }
+    }
     paymentChannels.value = channels.list ?? [];
     hint.value = "";
   } catch (e) {
     hint.value = e instanceof ApiError ? e.message : "加载失败";
+  }
+}
+
+const invoiceName = computed(() => {
+  if (!invoiceDraft.value) return "";
+  return `${invoiceDraft.value.invoiceType === "special" ? "增值税专用发票" : "增值税电子普通发票"} · ${invoiceDraft.value.header}`;
+});
+
+async function requestInvoice() {
+  if (!order.value || !invoiceDraft.value || !order.value.orders?.length) {
+    hint.value = "订单明细尚未加载，无法申请发票";
+    return;
+  }
+  invoiceApplying.value = true;
+  try {
+    await Promise.all(order.value.orders.map((item) => applyInvoice({
+      order_id: item.order_id,
+      invoice_type: invoiceDraft.value?.invoiceType === "special" ? 2 : 1,
+      header_type: invoiceDraft.value?.headerType === "company" ? 2 : 1,
+      header: invoiceDraft.value?.header || "",
+      tax_no: invoiceDraft.value?.taxNo || "",
+      email: invoiceDraft.value?.email || "",
+    })));
+    invoiceApplied.value = true;
+    sessionStorage.removeItem(`qixi:invoice:${id()}`);
+    hint.value = "发票申请已提交，请在我的发票中查看处理进度";
+  } catch (e) {
+    hint.value = e instanceof ApiError ? e.message : "发票申请失败";
+  } finally {
+    invoiceApplying.value = false;
   }
 }
 
@@ -72,6 +116,11 @@ async function pay(type: PayType) {
           <RouterLink class="pc-btn" to="/orders">查看订单</RouterLink>
           <button class="pc-btn ghost" type="button" @click="router.push('/goods')">继续购物</button>
         </div>
+        <div v-if="order.paid === 1 && invoiceDraft && !invoiceApplied" class="invoice-apply">
+          <div><b>发票信息</b><p>{{ invoiceName }}，将发送至 {{ invoiceDraft.email }}</p></div>
+          <button class="pc-btn" type="button" :disabled="invoiceApplying" @click="requestInvoice">{{ invoiceApplying ? "提交中…" : "申请开票" }}</button>
+        </div>
+        <RouterLink v-else-if="invoiceApplied" class="invoice-link" to="/user/invoices">查看我的发票</RouterLink>
       </div>
     </section>
   </div>
@@ -88,4 +137,5 @@ async function pay(type: PayType) {
 .hint { color: var(--pc-muted); }
 .actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.2rem; }
 .ghost { background: transparent; color: inherit; border: 1px solid var(--pc-line); }
+.invoice-apply { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 24px; padding: 18px 20px; border: 1px solid #f0d2cf; background: #fff9f8; }.invoice-apply b { color: #333; }.invoice-apply p { margin: 7px 0 0; color: #777; font-size: 14px; }.invoice-link { display: inline-block; margin-top: 22px; color: #f13728; }
 </style>
