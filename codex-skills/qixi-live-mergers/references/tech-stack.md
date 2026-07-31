@@ -14,7 +14,7 @@
 
 - 平台 / 商户管理后台：Vben 5+
 - 用户端 H5/小程序：uni-app x（UTS / HBuilderX 5.0+）
-- 用户端 PC：Vue 3 + Vite + TypeScript（`app-web/`）
+- 用户端 PC：Vue 3 + Vite + TypeScript（`app-pc/`）
 - 可选原生端规范见 `AGENTS.md`
 
 ## 部署
@@ -29,5 +29,5 @@
 ## 建议目录（落地后）
 
 ```text
-api-platform/  api-business/  api-merchant/  job/  admin-platform/  admin-merchant/  app-web/  app-mp/  app-ios/  app-adnroid/  app-harmony/  sql/  release/  docs/
+api-platform/  api-business/  api-merchant/  job/  admin-platform/  admin-merchant/  app-pc/  app-uni/  app-ios/  app-adnroid/  app-harmony/  sql/  release/  docs/
 ```

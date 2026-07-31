@@ -14,14 +14,15 @@ usage() {
 命令:
   init-env [local|test]            生成同构的本机运行 YAML（不写入密钥）
   pack [api-platform|api-business|api-merchant|job|backend-all]
-  check-config                     校验运行 YAML 和三套 API YAML
+  check-config                     校验三套 API YAML
   compose-config                   校验唯一 docker-compose.yaml
-  up [infra|db-init|backend|all]   启动同构容器
+  up [infra|db-init|backend|all]   校验共享基础设施、初始化数据库或启动 API
   down                             停止 qixi_mergers 容器
   ps                               查看 qixi_mergers 容器
 
 说明:
-  - local/test 使用相同的 qixi_mergers 项目、容器、网络、IP、数据库名和 YAML；仅宿主机不同。
+  - local/test 使用相同的 qixi_mergers 项目、容器、固定 IP、数据库名和 YAML；仅宿主机不同。
+  - MySQL、Redis、etcd、NATS 统一复用 pte_live_net 中的 pte_live_* 容器，七禧不启动重复基础设施。
   - 所有密钥只填写 release/config.yaml 与 release/config/*/app.yaml，均不提交 Git。
   - PC/H5/小程序的本地开发使用各自 Vite/HBuilderX 服务，不安装 Nginx。
 EOF
@@ -53,19 +54,6 @@ database_dsn() {
 			print; exit
 		}
 	' "${file}"
-}
-
-load_runtime_config() {
-	[[ -f "${RUNTIME_CONFIG}" ]] || {
-		echo "错误: 缺少 ${RUNTIME_CONFIG}；先执行 make init-env-local" >&2
-		exit 1
-	}
-	QIXI_MYSQL_ROOT_PASSWORD="$(yaml_scalar docker mysql_root_password "${RUNTIME_CONFIG}")"
-	[[ -n "${QIXI_MYSQL_ROOT_PASSWORD}" ]] || {
-		echo "错误: ${RUNTIME_CONFIG} 的 docker.mysql_root_password 不能为空" >&2
-		exit 1
-	}
-	export QIXI_MYSQL_ROOT_PASSWORD
 }
 
 service_config_source() {
@@ -123,7 +111,6 @@ check_app_yaml() {
 }
 
 check_config() {
-	load_runtime_config
 	check_app_yaml api-platform
 	check_app_yaml api-business
 	check_app_yaml api-merchant
@@ -166,8 +153,104 @@ pack() {
 }
 
 compose() {
-	load_runtime_config
 	docker compose --project-name qixi_mergers --file "${COMPOSE_FILE}" "$@"
+}
+
+require_shared_infra() {
+	local container_name
+	for container_name in pte_live_mysql pte_live_redis pte_live_etcd1 pte_live_etcd2 pte_live_etcd3 pte_live_nats1 pte_live_nats2 pte_live_nats3; do
+		docker inspect --format '{{.State.Running}}' "${container_name}" 2>/dev/null | grep -qx true || {
+			echo "错误: 共享基础设施 ${container_name} 未运行；请先在 pte-live-im 项目启动 pte_live_db 与 pte_live_mq。" >&2
+			exit 1
+		}
+	done
+	docker network inspect pte_live_net >/dev/null 2>&1 || {
+		echo "错误: 共享网络 pte_live_net 不存在；请先在 pte-live-im 项目启动基础设施。" >&2
+		exit 1
+	}
+}
+
+shared_mysql() {
+	docker exec -i pte_live_mysql sh -ec 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --protocol=socket -uroot --default-character-set=utf8mb4 "$@"' sh "$@"
+}
+
+shared_database_password() {
+	yaml_scalar shared_infrastructure database_password "${RUNTIME_CONFIG}"
+}
+
+ensure_shared_database_config() {
+	local database_password config_tmp
+	[[ -f "${RUNTIME_CONFIG}" ]] || {
+		echo "错误: 缺少 ${RUNTIME_CONFIG}；先执行 make init-env-local" >&2
+		exit 1
+	}
+	database_password="$(shared_database_password)"
+	if [[ -z "${database_password}" ]]; then
+		database_password="$(openssl rand -hex 24)"
+		config_tmp="$(mktemp)"
+		awk -v value="${database_password}" '
+			/^shared_infrastructure:[[:space:]]*$/ { in_shared=1 }
+			in_shared && /^[^[:space:]]/ && $0 !~ /^shared_infrastructure:/ { in_shared=0 }
+			in_shared && /^[[:space:]]+mysql_container:[[:space:]]*/ {
+				print
+				print "  database_user: qixi_crm"
+				print "  database_password: \"" value "\""
+				next
+			}
+			{ print }
+		' "${RUNTIME_CONFIG}" >"${config_tmp}"
+		mv "${config_tmp}" "${RUNTIME_CONFIG}"
+		echo "已在被 Git 忽略的 release/config.yaml 生成七禧共享数据库账号；test 宿主机必须复制同一份 YAML。"
+	fi
+}
+
+sync_service_dsn() {
+	local service="$1" scope="$2" database_name="$3" file database_password dsn config_tmp
+	file="${RELEASE_DIR}/config/${service}/app.yaml"
+	[[ -f "${file}" ]] || { echo "错误: 缺少 ${file}" >&2; exit 1; }
+	database_password="$(shared_database_password)"
+	dsn="qixi_crm:${database_password}@tcp(pte_live_mysql:3306)/${database_name}?charset=utf8mb4&parseTime=True&loc=Local"
+	config_tmp="$(mktemp)"
+	awk -v target_scope="${scope}" -v target_dsn="${dsn}" '
+		/^databases:[[:space:]]*$/ { in_databases=1 }
+		in_databases && /^[^[:space:]]/ && $0 !~ /^databases:/ { in_databases=0; in_scope=0 }
+		in_databases && $0 ~ "^[[:space:]]{2}" target_scope ":[[:space:]]*$" { in_scope=1 }
+		in_scope && /^[[:space:]]{2}[[:alnum:]_-]+:[[:space:]]*$/ && $0 !~ "^[[:space:]]{2}" target_scope ":[[:space:]]*$" { in_scope=0 }
+		in_scope && /^[[:space:]]{4}dsn:[[:space:]]*/ { print "    dsn: \"" target_dsn "\""; next }
+		{ print }
+	' "${file}" >"${config_tmp}"
+	mv "${config_tmp}" "${file}"
+}
+
+provision_shared_database_user() {
+	local database_password
+	ensure_shared_database_config
+	database_password="$(shared_database_password)"
+	[[ "${database_password}" =~ ^[A-Za-z0-9]+$ ]] || {
+		echo "错误: shared_infrastructure.database_password 仅允许字母和数字。" >&2
+		exit 1
+	}
+	shared_mysql -e "CREATE USER IF NOT EXISTS 'qixi_crm'@'%' IDENTIFIED BY '${database_password}'; ALTER USER 'qixi_crm'@'%' IDENTIFIED BY '${database_password}'; GRANT ALL PRIVILEGES ON qixi_crm_admin.* TO 'qixi_crm'@'%'; GRANT ALL PRIVILEGES ON qixi_crm_business.* TO 'qixi_crm'@'%'; GRANT ALL PRIVILEGES ON qixi_crm_merchant.* TO 'qixi_crm'@'%'; FLUSH PRIVILEGES;"
+	sync_service_dsn api-platform admin qixi_crm_admin
+	sync_service_dsn api-platform business qixi_crm_business
+	sync_service_dsn api-business business qixi_crm_business
+	sync_service_dsn api-merchant merchant qixi_crm_merchant
+	sync_service_dsn api-merchant business qixi_crm_business
+}
+
+initialize_databases() {
+	local domain phase sql_file
+	require_shared_infra
+	for domain in admin business merchant; do
+		for phase in 01_table 02_data 03_config 04_key 05_test_data; do
+			sql_file="${ROOT_DIR}/sql/${domain}/${phase}.sql"
+			[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}" >&2; exit 1; }
+			echo ">> 导入 sql/${domain}/${phase}.sql 到 pte_live_mysql"
+			shared_mysql <"${sql_file}"
+			done
+		done
+	provision_shared_database_user
+	echo "七禧三库已导入共享 MySQL：qixi_crm_admin、qixi_crm_business、qixi_crm_merchant。"
 }
 
 main() {
@@ -180,10 +263,10 @@ main() {
 	compose-config) compose config >/dev/null; echo "docker-compose.yaml 结构校验通过" ;;
 	up)
 		case "${target:-all}" in
-		infra) compose up -d mysql redis etcd nats ;;
-		db-init) compose up db-init ;;
-		backend) compose up -d mysql redis etcd nats api-platform api-business api-merchant ;;
-		all) compose up -d mysql redis etcd nats api-platform api-business api-merchant ;;
+		infra) require_shared_infra; echo "已复用 pte_live_net 共享基础设施；七禧不会创建数据库或中间件容器。" ;;
+		db-init) initialize_databases ;;
+		backend) require_shared_infra; compose up -d api-platform api-business api-merchant ;;
+		all) require_shared_infra; compose up -d api-platform api-business api-merchant ;;
 		*) echo "错误: up 仅支持 infra、db-init、backend、all" >&2; exit 1;;
 		esac
 		;;

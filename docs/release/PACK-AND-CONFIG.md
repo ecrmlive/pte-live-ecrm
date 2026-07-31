@@ -19,7 +19,7 @@ job/           -> release/qixi-mergers-job/bin/job
 
 | 文件 | 用途 |
 | --- | --- |
-| `release/config.yaml` | Compose 的 MySQL 初始化密码 |
+| `release/config.yaml` | 共享基础设施标识；不保存 MySQL 根密码 |
 | `release/config/api-platform/app.yaml` | 统一后台 API |
 | `release/config/api-business/app.yaml` | PC、小程序&H5、iOS、Android、鸿蒙 C 端 API |
 | `release/config/api-merchant/app.yaml` | 店铺系统 API |
@@ -36,4 +36,4 @@ JWT 规则：
 - 店铺系统使用独立 JWT。
 - local 与 test 在不同宿主机使用完全相同的上述配置值。
 
-IM 只填写 pte-live-im 的受控 API/SDK 地址和凭证；不直连其数据库、不引用其 Docker 网络、容器名或 Redis/NATS/etcd。
+七禧 API 复用 `pte_live_net` 的 MySQL、Redis、etcd、NATS 容器；但三套 API 只读写自己的 `qixi_crm_*` 数据库，绝不访问 pte-live-im 的数据库或表。MySQL 初始化通过 `pte_live_mysql` 容器内已有根凭证执行，七禧不复制该密码。

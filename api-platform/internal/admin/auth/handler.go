@@ -82,7 +82,7 @@ func (h *Handler) LoginBase(c *gin.Context) {
 	response.OK(c, gin.H{
 		"codeData": gin.H{},
 		"settings": gin.H{
-			"admin_name":   "七禧多商户·平台",
+			"admin_name":   "七禧多商户·管理中心",
 			"admin_bg_img": "",
 		},
 	})

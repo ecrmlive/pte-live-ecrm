@@ -257,12 +257,22 @@ func (s *Service) Copy(ctx context.Context, id, merID uint) (*Page, error) {
 }
 
 func (s *Service) ApplyDefault(ctx context.Context, templateID, merID uint) (*Page, error) {
-	src, err := s.Get(ctx, templateID)
-	if err != nil {
-		return nil, err
-	}
-	if src.MerID != 0 {
-		return nil, ErrBadParam
+	var src *Page
+	if templateID == 0 {
+		var err error
+		src, err = builtinDefaultPage()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var err error
+		src, err = s.Get(ctx, templateID)
+		if err != nil {
+			return nil, err
+		}
+		if src.MerID != 0 {
+			return nil, ErrBadParam
+		}
 	}
 	return s.cloneToMer(ctx, src, merID, src.Name)
 }
@@ -564,8 +574,23 @@ func buildCategoryTree(rows []PageCategory) []PageCategory {
 }
 
 func (s *Service) ListDefaults(ctx context.Context, page, limit int) (*PageResult, error) {
-	one := int8(1)
-	return s.List(ctx, ListFilter{MerID: 0, IsDiy: &one, Page: page, Limit: limit, Status: nil})
+	// 内置模板与店铺库隔离；避免把平台/其他店铺的装修数据跨库读入店铺后台。
+	// ID=0 是保留模板标识，可通过 /diy/defaults/0/apply 应用。
+	p, err := builtinDefaultPage()
+	if err != nil {
+		return nil, err
+	}
+	return &PageResult{List: []Page{*p}, Total: 1, Page: 1, Limit: 1}, nil
+}
+
+func builtinDefaultPage() (*Page, error) {
+	defs := loadDefaults()
+	doc := PageDoc{Page: cloneMap(defs.DefaultPage), Items: []map[string]any{}}
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	return &Page{ID: 0, Version: "2.0", Name: "基础首页模板", Title: "基础首页模板", TemplateName: "home", Type: 0, IsShow: 1, IsDiy: 1, Value: raw, Status: 1}, nil
 }
 
 func applyChrome(p *Page, in SaveInput) {

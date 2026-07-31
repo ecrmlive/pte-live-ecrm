@@ -1,4 +1,10 @@
 # local 与 test 使用同一份运行配置模板；只部署在不同宿主机。
 # 复制为 release/config.yaml 后填写真实值。该文件已被 Git 忽略。
-docker:
-  mysql_root_password: ""
+#
+# 七禧复用 pte-live-im 的 pte_live_mysql 容器。SQL 初始化使用该容器内部的
+# MYSQL_ROOT_PASSWORD，不在七禧仓库复制或保存数据库根密码。
+shared_infrastructure:
+  network: pte_live_net
+  mysql_container: pte_live_mysql
+  database_user: qixi_crm
+  database_password: "" # 首次 local-db-init 自动生成；local/test 必须复制同一份 YAML

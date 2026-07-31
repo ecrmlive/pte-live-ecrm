@@ -13,9 +13,7 @@ import (
 	appchat "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/chat"
 	appcombination "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/combination"
 	appcommunity "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/community"
-	appcontent "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/content"
 	appcoupon "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/coupon"
-	appdiy "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/diy"
 	appinvoice "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/invoice"
 	apppoints "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/points"
 	apppresell "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/presell"
@@ -25,6 +23,8 @@ import (
 	businessauth "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/auth"
 	businesscart "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/cart"
 	businesscatalog "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/catalog"
+	businesscontent "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/contentview"
+	businessdiyview "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/diyview"
 	businesslive "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/live"
 	businessorder "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/order"
 	businessrefund "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/refund"
@@ -36,15 +36,15 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/cloudconfig"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/combination"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/community"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/content"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/diy"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/invoice"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/presell"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/promotion"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/reservation"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/trade"
+	merchantdiyevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/merchantdiy"
 	merchantimevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/merchantim"
+	platformdiyevent "github.com/qixi-live/qixi-live-mergers/api-business/internal/event/platformdiy"
 	articlepersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/article"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/assist"
 	cartpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/cart"
@@ -53,8 +53,6 @@ import (
 	cloudconfigpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/cloudconfig"
 	combinationpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/combination"
 	communitypersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/community"
-	contentpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/content"
-	diypersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/diy"
 	invoicepersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/invoice"
 	presellpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/presell"
 	promotionpersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/promotion"
@@ -63,6 +61,7 @@ import (
 	tradepersist "github.com/qixi-live/qixi-live-mergers/api-business/internal/infra/persist/trade"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/paymentconfig"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/authjwt"
+	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/captchaclient"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/config"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/db"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/middleware"
@@ -93,6 +92,20 @@ func main() {
 	if imProjection != nil {
 		defer imProjection.Close()
 	}
+	diyProjection, err := merchantdiyevent.StartBusinessProjection(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant DIY projection subscriber unavailable: %v", err)
+	}
+	if diyProjection != nil {
+		defer diyProjection.Close()
+	}
+	platformDIYProjection, err := platformdiyevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("platform DIY projection subscriber unavailable: %v", err)
+	}
+	if platformDIYProjection != nil {
+		defer platformDIYProjection.Close()
+	}
 
 	jwtMgr := authjwt.NewManager(cfg.JWT.Secret, cfg.JWT.AccessTTL(), cfg.JWT.RefreshTTL())
 	paymentConfigStore, err := paymentconfig.NewStore(gdb, cfg.JWT.Secret)
@@ -113,8 +126,6 @@ func main() {
 		Wechat:       cfg.Payment.Wechat,
 		Alipay:       cfg.Payment.Alipay,
 	})
-	contentSvc := content.NewService(contentpersist.NewRepo(gdb))
-	diySvc := diy.NewService(diypersist.NewRepo(gdb))
 	seckillSvc := seckill.NewService(seckillpersist.NewRepo(gdb))
 	comboSvc := combination.NewService(combinationpersist.NewRepo(gdb))
 	presellSvc := presell.NewService(presellpersist.NewRepo(gdb))
@@ -133,7 +144,11 @@ func main() {
 	tradeSvc.SetReservation(reservation.NewTradeBridge(reserveSvc))
 	tradeSvc.SetAssist(assist.NewTradeBridge(assistSvc))
 
-	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr)
+	captchaClient, captchaErr := captchaclient.New(cfg.Captcha)
+	if captchaErr != nil {
+		log.Printf("pte-tools-captcha is unavailable: %v", captchaErr)
+	}
+	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr, captchaClient)
 	appCatH := businesscatalog.NewHandler(gdb)
 	appAddrH := businessaddress.NewHandler(gdb)
 	appCartH := businesscart.NewHandler(gdb)
@@ -142,8 +157,8 @@ func main() {
 	appPointsH := apppoints.NewHandler(tradeSvc, catSvc)
 	appRefundH := businessrefund.NewHandler(gdb)
 	appCouponH := appcoupon.NewHandler(promoSvc, cartSvc)
-	appContentH := appcontent.NewHandler(contentSvc)
-	appDiyH := appdiy.NewHandler(diySvc)
+	appContentH := businesscontent.NewHandler(gdb)
+	appDiyH := businessdiyview.NewHandler(gdb)
 	appSeckillH := appseckill.NewHandler(seckillSvc)
 	appComboH := appcombination.NewHandler(comboSvc, tradeSvc)
 	appPresellH := apppresell.NewHandler(presellSvc, tradeSvc)
@@ -167,6 +182,7 @@ func main() {
 	appAuthed := r.Group("/api/app/v1")
 	appAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalApp))
 	appH.Register(appPublic, appAuthed)
+	appH.RegisterCaptchaGateway(r)
 	appCatH.Register(appPublic)
 	appContentH.Register(appPublic)
 	appArticleH.Register(appPublic)

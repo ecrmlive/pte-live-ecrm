@@ -2,6 +2,9 @@ package diypersist
 
 import (
 	"context"
+	"encoding/json"
+	"strconv"
+	"time"
 
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/diy"
 	"gorm.io/gorm"
@@ -15,6 +18,32 @@ func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
 func NewStoreAdapter(repo *Repo) *Repo { return repo }
 
+type pageRow struct {
+	ID        uint            `gorm:"column:id;primaryKey"`
+	PageType  string          `gorm:"column:page_type"`
+	Name      string          `gorm:"column:name"`
+	Document  json.RawMessage `gorm:"column:document"`
+	Status    string          `gorm:"column:status"`
+	UpdatedBy uint            `gorm:"column:updated_by"`
+	UpdatedAt time.Time       `gorm:"column:updated_at"`
+}
+
+func (pageRow) TableName() string { return "qixi_crm_a_diy_page" }
+
+type outboxRow struct {
+	EventType     string          `gorm:"column:event_type"`
+	AggregateType string          `gorm:"column:aggregate_type"`
+	AggregateID   string          `gorm:"column:aggregate_id"`
+	Payload       json.RawMessage `gorm:"column:payload"`
+}
+
+func (outboxRow) TableName() string { return "qixi_crm_a_outbox" }
+
+const (
+	eventUpsert = "platform.diy_page.upsert"
+	eventDelete = "platform.diy_page.deleted"
+)
+
 func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, error) {
 	page, limit := f.Page, f.Limit
 	if page <= 0 {
@@ -23,12 +52,20 @@ func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, e
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
-	q := r.db.WithContext(ctx).Model(&diy.Page{}).Where("is_del = 0 AND mer_id = ?", f.MerID)
+	q := r.db.WithContext(ctx).Model(&pageRow{})
 	if f.IsDiy != nil {
-		q = q.Where("is_diy = ?", *f.IsDiy)
+		if *f.IsDiy == 1 {
+			q = q.Where("page_type = ?", "home")
+		} else {
+			q = q.Where("page_type = ?", "custom")
+		}
 	}
 	if f.Status != nil {
-		q = q.Where("status = ?", *f.Status)
+		if *f.Status == 1 {
+			q = q.Where("status = ?", "published")
+		} else {
+			q = q.Where("status = ?", "draft")
+		}
 	}
 	if name := f.Name; name != "" {
 		q = q.Where("name LIKE ?", "%"+name+"%")
@@ -37,66 +74,157 @@ func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, e
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	var rows []diy.Page
-	err := q.Order("status DESC, id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
-	return rows, total, err
+	var rows []pageRow
+	err := q.Order("updated_at DESC, id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	pages := make([]diy.Page, 0, len(rows))
+	for _, row := range rows {
+		pages = append(pages, toPage(row))
+	}
+	return pages, total, err
 }
 
 func (r *Repo) Get(ctx context.Context, id uint) (*diy.Page, error) {
-	var row diy.Page
-	err := r.db.WithContext(ctx).Where("id = ? AND is_del = 0", id).First(&row).Error
+	var row pageRow
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&row).Error
 	if err != nil {
 		return nil, err
 	}
-	return &row, nil
+	p := toPage(row)
+	return &p, nil
 }
 
 func (r *Repo) GetActiveHome(ctx context.Context, merID uint) (*diy.Page, error) {
-	var row diy.Page
+	var row pageRow
 	err := r.db.WithContext(ctx).
-		Where("mer_id = ? AND status = 1 AND type = 0 AND is_del = 0 AND is_diy = 1", merID).
+		Where("page_type = ? AND status = ?", "home", "published").
 		Order("id DESC").
 		First(&row).Error
 	if err != nil {
 		return nil, err
 	}
-	return &row, nil
+	p := toPage(row)
+	return &p, nil
 }
 
 func (r *Repo) Create(ctx context.Context, p *diy.Page) error {
-	return r.db.WithContext(ctx).Create(p).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		row, err := fromPage(p)
+		if err != nil {
+			return err
+		}
+		if err = tx.Create(&row).Error; err != nil {
+			return err
+		}
+		p.ID = row.ID
+		return enqueue(tx, eventUpsert, row)
+	})
 }
 
 func (r *Repo) Update(ctx context.Context, p *diy.Page) error {
-	return r.db.WithContext(ctx).Model(&diy.Page{}).Where("id = ?", p.ID).Updates(map[string]interface{}{
-		"name":          p.Name,
-		"title":         p.Title,
-		"cover_image":   p.CoverImage,
-		"template_name": p.TemplateName,
-		"value":         p.Value,
-		"version":       p.Version,
-		"status":        p.Status,
-		"type":          p.Type,
-		"is_show":       p.IsShow,
-		"is_diy":        p.IsDiy,
-		"is_bg_color":   p.IsBgColor,
-		"is_bg_pic":     p.IsBgPic,
-		"color_picker":  p.ColorPicker,
-		"bg_pic":        p.BgPic,
-		"bg_tab_val":    p.BgTabVal,
-		"is_default":    p.IsDefault,
-	}).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		row, err := fromPage(p)
+		if err != nil {
+			return err
+		}
+		if err = tx.Model(&pageRow{}).Where("id = ?", p.ID).Updates(map[string]interface{}{"name": row.Name, "document": row.Document, "page_type": row.PageType, "status": row.Status}).Error; err != nil {
+			return err
+		}
+		return enqueue(tx, eventUpsert, row)
+	})
 }
 
 func (r *Repo) ClearActive(ctx context.Context, merID uint, isDiy int8) error {
-	return r.db.WithContext(ctx).Model(&diy.Page{}).
-		Where("mer_id = ? AND status = 1 AND is_del = 0 AND is_diy = ?", merID, isDiy).
-		Updates(map[string]interface{}{"status": 0, "is_default": 0}).Error
+	if isDiy != 1 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var rows []pageRow
+		if err := tx.Where("page_type = ? AND status = ?", "home", "published").Find(&rows).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&pageRow{}).Where("page_type = ? AND status = ?", "home", "published").Update("status", "draft").Error; err != nil {
+			return err
+		}
+		for _, row := range rows {
+			row.Status = "draft"
+			if err := enqueue(tx, eventUpsert, row); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (r *Repo) SoftDelete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Model(&diy.Page{}).
-		Where("id = ?", id).Update("is_del", 1).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var row pageRow
+		if err := tx.Where("id = ?", id).First(&row).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&pageRow{}, id).Error; err != nil {
+			return err
+		}
+		return enqueue(tx, eventDelete, row)
+	})
+}
+
+func fromPage(p *diy.Page) (pageRow, error) {
+	var doc map[string]any
+	if err := json.Unmarshal([]byte(p.Value), &doc); err != nil {
+		return pageRow{}, err
+	}
+	doc["_qixi"] = map[string]any{"title": p.Title, "cover_image": p.CoverImage, "template_name": p.TemplateName, "is_show": p.IsShow, "is_diy": p.IsDiy, "is_default": p.IsDefault}
+	raw, err := json.Marshal(doc)
+	if err != nil {
+		return pageRow{}, err
+	}
+	pageType := "custom"
+	if p.IsDiy == 1 {
+		pageType = "home"
+	}
+	status := "draft"
+	if p.Status == 1 {
+		status = "published"
+	}
+	return pageRow{ID: p.ID, PageType: pageType, Name: p.Name, Document: raw, Status: status}, nil
+}
+func toPage(row pageRow) diy.Page {
+	p := diy.Page{ID: row.ID, Name: row.Name, Value: string(row.Document), Status: 0, IsShow: 1, Type: 0, IsDiy: 0, UpdateTime: row.UpdatedAt, AddTime: row.UpdatedAt}
+	if row.Status == "published" {
+		p.Status = 1
+	}
+	if row.PageType == "home" {
+		p.IsDiy = 1
+	}
+	var doc map[string]any
+	if json.Unmarshal(row.Document, &doc) == nil {
+		if m, ok := doc["_qixi"].(map[string]any); ok {
+			if s, ok := m["title"].(string); ok {
+				p.Title = s
+			}
+			if s, ok := m["cover_image"].(string); ok {
+				p.CoverImage = s
+			}
+			if s, ok := m["template_name"].(string); ok {
+				p.TemplateName = s
+			}
+			if v, ok := m["is_show"].(float64); ok {
+				p.IsShow = int8(v)
+			}
+			if v, ok := m["is_default"].(float64); ok {
+				p.IsDefault = int8(v)
+			}
+		}
+	}
+	return p
+}
+
+func enqueue(tx *gorm.DB, eventType string, row pageRow) error {
+	payload, err := json.Marshal(map[string]any{"page_id": row.ID, "page_type": row.PageType, "name": row.Name, "document": json.RawMessage(row.Document), "status": row.Status, "is_active": row.PageType == "home" && row.Status == "published"})
+	if err != nil {
+		return err
+	}
+	return tx.Create(&outboxRow{EventType: eventType, AggregateType: "diy_page", AggregateID: strconv.FormatUint(uint64(row.ID), 10), Payload: payload}).Error
 }
 
 func (r *Repo) ListCategories(ctx context.Context, isMer int8) ([]diy.PageCategory, error) {

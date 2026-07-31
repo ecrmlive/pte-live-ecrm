@@ -47,6 +47,15 @@ type StoreSalesRank struct {
 	SaleAmount    float64 `json:"sale_amount"`
 }
 
+// todayOrderStats is intentionally kept separate from Summary. GORM interprets
+// Summary's nested Metric fields as model relations when scanning a partial
+// SELECT, which turns a successful aggregation query into a 500 response.
+type todayOrderStats struct {
+	TodayOrderCount int64   `gorm:"column:today_order_count"`
+	TodayPayerCount int64   `gorm:"column:today_payer_count"`
+	TodayPaidAmount float64 `gorm:"column:today_paid_amount"`
+}
+
 type Handler struct {
 	adminDB    *gorm.DB
 	businessDB *gorm.DB
@@ -99,16 +108,20 @@ func (h *Handler) GetSummary(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "加载店铺经营指标失败")
 		return
 	}
+	var today todayOrderStats
 	if err := h.businessDB.WithContext(c.Request.Context()).
 		Table("qixi_crm_b_order").
 		Select(`
 			COALESCE(SUM(CASE WHEN status IN ('paid','fulfilling','shipped','completed') AND DATE(paid_at) = CURDATE() THEN 1 ELSE 0 END), 0) AS today_order_count,
 			COALESCE(COUNT(DISTINCT CASE WHEN status IN ('paid','fulfilling','shipped','completed') AND DATE(paid_at) = CURDATE() THEN user_id END), 0) AS today_payer_count,
 			COALESCE(SUM(CASE WHEN status IN ('paid','fulfilling','shipped','completed') AND DATE(paid_at) = CURDATE() THEN pay_amount ELSE 0 END), 0) AS today_paid_amount`).
-		Scan(&out).Error; err != nil {
+		Scan(&today).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "加载当日订单统计失败")
 		return
 	}
+	out.TodayOrderCount = today.TodayOrderCount
+	out.TodayPayerCount = today.TodayPayerCount
+	out.TodayPaidAmount = today.TodayPaidAmount
 	if err := h.storeSalesRank(c, &out.StoreSalesRank); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "加载店铺销售排行失败")
 		return

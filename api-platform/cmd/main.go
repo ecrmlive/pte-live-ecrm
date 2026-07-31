@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
@@ -33,6 +34,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/trade"
 	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/usertag"
+	platformdiyevent "github.com/qixi-live/qixi-live-mergers/api-platform/internal/event/platformdiy"
 	articlepersist "github.com/qixi-live/qixi-live-mergers/api-platform/internal/infra/persist/article"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api-platform/internal/infra/persist/assist"
 	attachmentpersist "github.com/qixi-live/qixi-live-mergers/api-platform/internal/infra/persist/attachment"
@@ -106,6 +108,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("mysql: %v", err)
 	}
+	platformdiyevent.Start(context.Background(), gdb, cfg.NATS.URL)
 	businessDSN, err := cfg.DSNFor(config.DatabaseBusiness)
 	if err != nil {
 		log.Fatalf("business payment projection database config: %v", err)

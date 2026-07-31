@@ -12,8 +12,14 @@ export default defineConfig(async () => {
         }),
       ],
       server: {
-        port: 11524,
+        port: 15124,
         host: true,
+        proxy: {
+          '/api/platform': {
+            changeOrigin: true,
+            target: 'http://127.0.0.1:18081',
+          },
+        },
       },
     },
   };

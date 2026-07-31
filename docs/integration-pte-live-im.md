@@ -2,7 +2,7 @@
 
 状态：**remote + Web SDK E2EE 发消息**。本仓 `/cs` 不再传文本正文，仅保留会话元数据（订单卡片、`mer_id` 等）。
 
-对端：`pte-live-im`（mall S2S，默认 `app_id=30001`）· Web SDK：`pte-live-im-sdk/packages/im-web-sdk`（由 `app-mp`、`app-web` 与 Vben 系统按需集成）。
+对端：`pte-live-im`（mall S2S，默认 `app_id=30001`）· Web SDK：`pte-live-im-sdk/packages/im-web-sdk`（由 `app-uni`、`app-pc` 与 Vben 系统按需集成）。
 
 ---
 

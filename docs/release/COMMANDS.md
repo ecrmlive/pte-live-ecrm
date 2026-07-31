@@ -26,8 +26,8 @@ release/config/job/app.yaml
 
 ```bash
 make pack-backend       # 本机构建 Linux 二进制到 release/；不在 Docker/服务器编译
-make local-infra        # MySQL、Redis、etcd、NATS
-make local-db-init      # 导入 admin/business/merchant 三库 SQL（可重复执行）
+make local-infra        # 校验 pte-live-im 共享 MySQL、Redis、etcd、NATS 已运行
+make local-db-init      # 直接在 pte_live_mysql 导入 admin/business/merchant 三库 SQL（可重复执行）
 make local-db-reset     # 删除并重建三库后按固定顺序导入 SQL（仅 local，破坏性操作）
 make local-backend      # 启动三个 API
 make local-ps
@@ -51,16 +51,16 @@ make test-backend
 | 项 | 固定值 |
 | --- | --- |
 | Compose project | `qixi_mergers` |
-| 网络 | `qixi_mergers_net` / `172.31.24.0/24` |
-| MySQL | `qixi_mergers_mysql` / `172.31.24.10` |
-| Redis | `qixi_mergers_redis` / `172.31.24.11` |
-| etcd | `qixi_mergers_etcd` / `172.31.24.12` |
-| NATS | `qixi_mergers_nats` / `172.31.24.13` |
-| SQL 初始化 | `qixi_mergers_db_init` / `172.31.24.14` |
-| API | `qixi_mergers_api_platform`、`qixi_mergers_api_business`、`qixi_mergers_api_merchant` / `.21`–`.23` |
+| 共享网络 | `pte_live_net` / `172.30.0.0/24` |
+| 共享 MySQL | `pte_live_mysql` / `172.30.0.10` |
+| 共享 Redis | `pte_live_redis` / `172.30.0.11` |
+| 共享 etcd | `pte_live_etcd1`、`pte_live_etcd2`、`pte_live_etcd3` / `.12`、`.14`、`.15` |
+| 共享 NATS | `pte_live_nats1`、`pte_live_nats2`、`pte_live_nats3` / `.13`、`.16`、`.17` |
+| SQL 初始化 | 不创建容器；`make local-db-init` 直接执行到 `pte_live_mysql` |
+| API | `qixi_mergers_api_platform`、`qixi_mergers_api_business`、`qixi_mergers_api_merchant` / `.61`–`.63` |
 
-宿主机端口为七禧独立映射：MySQL `127.0.0.1:23306`、Redis `127.0.0.1:26379`、etcd `127.0.0.1:22379`、NATS `127.0.0.1:24222`、三个 API 分别为 `18081`、`18082`、`18083`。这些端口不与 `pte-live` 共用；容器内服务仍只使用 `qixi_mergers_net` 中的固定容器名和 IP。
+七禧只映射三个 API 到宿主机 `18081`、`18082`、`18083`；不映射也不启动任何重复基础设施。容器内使用共享 `pte_live_*` 名称。七禧业务仍只使用独立的 `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` 三个库，绝不读写 pte-live-im 的数据库或表。
 
-严禁加入 `pte_live_net`、复用 pte 容器名、数据库、Redis、NATS 或 etcd。pte-live-im 仅经 YAML 中配置的受控 API/SDK 集成。
+七禧 API 加入 `pte_live_net`，但绝不复用 pte 容器名、IM 数据库或 IM 表；pte-live-im 的 IM 规则仍由其自身仓库维护。
 
-`make local-compose-check` / `make test-compose-check` 只做 Compose 结构校验；必须先在 `release/config.yaml` 填写 MySQL 密码。
+`make local-compose-check` / `make test-compose-check` 只做 Compose 结构校验；无需在七禧 YAML 中复制 MySQL 根密码。

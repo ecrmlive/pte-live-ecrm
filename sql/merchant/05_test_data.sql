@@ -1,4 +1,5 @@
 USE `qixi_crm_merchant`;
+SET NAMES utf8mb4;
 -- 不初始化店铺账号、密码或任何真实手机号。仅提供无个人信息的店铺读写模型夹具。
 
 INSERT INTO `qixi_crm_m_product` (`id`,`store_id`,`title`,`category_id`,`status`,`version`) VALUES
@@ -22,3 +23,15 @@ WHERE p.id BETWEEN 1001 AND 1006
 INSERT INTO `qixi_crm_m_finance_ledger` (`store_id`,`entry_type`,`amount`,`reference_type`,`reference_id`,`idempotency_key`) VALUES
   (1,'test_seed',1000.00,'fixture','opening-balance','fixture-store-1-opening-balance')
 ON DUPLICATE KEY UPDATE `amount`=VALUES(`amount`);
+
+-- 仅用于本地联调：店铺发布页的真实消费来源仍是 qixi_crm_m_outbox 事件。
+INSERT INTO `qixi_crm_m_diy_page` (`id`,`store_id`,`name`,`document`,`page_type`,`is_active`,`status`) VALUES
+  (3001,1,'七禧演示店铺首页',JSON_OBJECT(
+    'page',JSON_OBJECT('type','page','name','页面设置','params',JSON_OBJECT('name','七禧演示店铺','title','七禧演示店铺')),
+    'items',JSON_ARRAY(
+      JSON_OBJECT('type','banner','name','轮播图','data',JSON_ARRAY(JSON_OBJECT('imgName','七禧演示店铺','imgUrl','','linkUrl','/pages/store/index'))),
+      JSON_OBJECT('type','navBar','name','导航组','data',JSON_ARRAY(JSON_OBJECT('text','全部商品','imgUrl','','linkUrl','/pages/goods/list'),JSON_OBJECT('text','购物车','imgUrl','','linkUrl','/pages/order_addcart/order_addcart')))
+    ),
+    '_qixi',JSON_OBJECT('title','七禧演示店铺','template_name','home','is_diy',1,'is_show',1,'is_default',1)
+  ),'home',1,'published')
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`document`=VALUES(`document`),`page_type`=VALUES(`page_type`),`is_active`=VALUES(`is_active`),`status`=VALUES(`status`);

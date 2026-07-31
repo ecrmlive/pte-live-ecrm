@@ -13,6 +13,17 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_identity` (
   `credential_hash` varchar(255) DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_channel_subject` (`channel`,`subject`), KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- pte-tools-captcha 校验令牌仅保存 SHA-256 摘要；令牌只可按用途消费一次。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_auth_captcha_token` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `token_hash` char(64) NOT NULL,
+  `action` enum('login_password','login_sms','register') NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `consumed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_token_hash` (`token_hash`),
+  KEY `idx_action_available` (`action`,`consumed_at`,`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_address` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_id` bigint unsigned NOT NULL, `recipient` varchar(64) NOT NULL,
   `mobile` varchar(32) NOT NULL, `province` varchar(64) NOT NULL DEFAULT '', `city` varchar(64) NOT NULL DEFAULT '',
@@ -155,6 +166,20 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_merchant_im_sdk_app_view` (
   `api_public_url` varchar(1024) NOT NULL DEFAULT '', `ws_public_url` varchar(1024) NOT NULL DEFAULT '',
   `pte_profile_id` varchar(128) NOT NULL DEFAULT '', `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`merchant_id`), UNIQUE KEY `uk_sdk_app_id` (`sdk_app_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 用户端只读取本库装修投影。装修原文归属平台/店铺库，严禁 C 端跨库直连。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_diy_page_view` (
+  `source` enum('platform','merchant') NOT NULL,
+  `page_id` bigint unsigned NOT NULL,
+  `store_id` bigint unsigned NOT NULL DEFAULT 0,
+  `page_type` enum('home','store_street','member','custom') NOT NULL DEFAULT 'home',
+  `name` varchar(128) NOT NULL,
+  `document` json NOT NULL,
+  `status` enum('draft','published') NOT NULL DEFAULT 'draft',
+  `is_active` tinyint NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`source`,`page_id`),
+  KEY `idx_store_home_active` (`source`,`store_id`,`page_type`,`status`,`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_outbox` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `event_type` varchar(128) NOT NULL, `aggregate_type` varchar(64) NOT NULL,

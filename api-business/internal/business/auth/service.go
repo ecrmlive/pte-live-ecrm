@@ -2,8 +2,11 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -15,6 +18,7 @@ var (
 	ErrAccountExists      = errors.New("账号已存在")
 	ErrNotFound           = errors.New("用户不存在")
 	ErrBadParam           = errors.New("参数错误")
+	ErrCaptchaUnavailable = errors.New("安全验证已失效")
 )
 
 // LoginChannel 与 qixi_crm_b_user_identity.channel 的枚举保持一一对应。
@@ -61,6 +65,18 @@ type Identity struct {
 }
 
 func (Identity) TableName() string { return "qixi_crm_b_user_identity" }
+
+// CaptchaToken stores only a digest of the pte-tools-captcha token. It adds
+// business-side one-time consumption; PTE itself validates signature/action.
+type CaptchaToken struct {
+	ID         uint64     `gorm:"column:id;primaryKey"`
+	TokenHash  string     `gorm:"column:token_hash"`
+	Action     string     `gorm:"column:action"`
+	ExpiresAt  time.Time  `gorm:"column:expires_at"`
+	ConsumedAt *time.Time `gorm:"column:consumed_at"`
+}
+
+func (CaptchaToken) TableName() string { return "qixi_crm_b_auth_captcha_token" }
 
 type Profile struct {
 	ID          uint64       `json:"id"`
@@ -154,6 +170,38 @@ func (s *Service) Login(ctx context.Context, subject, password string, channel L
 		return nil, ErrInvalidCredentials
 	}
 	return &Profile{ID: user.ID, UID: user.ID, Nickname: user.Nickname, Mobile: mobileText(user.Mobile), Channel: channel, Subject: subject, AuthVersion: user.AuthVersion}, nil
+}
+
+func captchaTokenHash(token string) string {
+	digest := sha256.Sum256([]byte(strings.TrimSpace(token)))
+	return hex.EncodeToString(digest[:])
+}
+
+// RecordCaptchaToken records a pte-issued proof before it is returned to the
+// client. The source token never enters MySQL; a later action can consume it once.
+func (s *Service) RecordCaptchaToken(ctx context.Context, token, action string) error {
+	if strings.TrimSpace(token) == "" || strings.TrimSpace(action) == "" {
+		return ErrBadParam
+	}
+	row := CaptchaToken{TokenHash: captchaTokenHash(token), Action: action, ExpiresAt: time.Now().Add(10 * time.Minute)}
+	return s.db.WithContext(ctx).Create(&row).Error
+}
+
+func (s *Service) ConsumeCaptchaToken(ctx context.Context, token, action string) error {
+	if strings.TrimSpace(token) == "" || strings.TrimSpace(action) == "" {
+		return ErrCaptchaUnavailable
+	}
+	now := time.Now()
+	result := s.db.WithContext(ctx).Model(&CaptchaToken{}).
+		Where("token_hash = ? AND action = ? AND consumed_at IS NULL AND expires_at > ?", captchaTokenHash(token), action, now).
+		Update("consumed_at", now)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return ErrCaptchaUnavailable
+	}
+	return nil
 }
 
 func (s *Service) Profile(ctx context.Context, userID uint64, channel LoginChannel) (*Profile, error) {

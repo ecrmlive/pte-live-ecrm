@@ -68,7 +68,7 @@ func main() {
 		fail("读取 admin 数据库失败: %v", err)
 	}
 	// 本命令运行在宿主机，Docker 内服务名需映射到 compose 固定的本机端口。
-	dsn = strings.Replace(dsn, "qixi_mergers_mysql:3306", "127.0.0.1:23306", 1)
+	dsn = strings.Replace(dsn, "pte_live_mysql:3306", "127.0.0.1:13306", 1)
 
 	raw, err := os.ReadFile(*seedConfigPath)
 	if err != nil {

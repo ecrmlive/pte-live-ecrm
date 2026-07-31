@@ -1,0 +1,40 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; total_num: number }
+type PaymentChannel = { channel: string; enabled: boolean }
+
+const orderID = ref(0)
+const order = ref<GroupOrder | null>(null)
+const channels = ref<PaymentChannel[]>([])
+const submitting = ref(false)
+
+function channelName(channel: string): string {
+  if (channel == 'wechat') return '微信支付'
+  if (channel == 'alipay') return '支付宝支付'
+  return channel
+}
+function load(): void {
+  if (orderID.value == 0) return
+  appRequest(`/orders/${orderID.value}`).then((data) => { order.value = data as GroupOrder }).catch((error) => uni.showToast({ title: error.message || '订单加载失败', icon: 'none' }))
+  appRequest(`/order/pay/${orderID.value}/channels`).then((data) => { channels.value = (data['list'] as PaymentChannel[]) || [] }).catch((error) => uni.showToast({ title: error.message || '支付方式加载失败', icon: 'none' }))
+}
+function pay(channel: string): void {
+  if (submitting.value || order.value == null || order.value.paid == 1) return
+  submitting.value = true
+  appRequest(`/order/pay/${orderID.value}`, 'POST', { pay_type: channel } as UTSJSONObject).then((data) => {
+    const result = data as UTSJSONObject
+    uni.redirectTo({ url: `/pages/order/result?id=${orderID.value}&paid=${result['paid'] as number || 0}` })
+  }).catch((error) => uni.showToast({ title: error.message || '支付发起失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+
+onLoad((query) => { orderID.value = Number(query['id'] || 0); load() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="收银台" /><view v-if="order != null" class="pay-card"><text class="label">订单金额</text><text class="price">¥{{ order.pay_price }}</text><text class="meta">订单号：{{ order.group_order_sn }}</text><text class="meta">共 {{ order.total_num }} 件商品</text></view><view class="qx-card"><text class="section-title">选择支付方式</text><view v-for="item in channels" :key="item.channel" class="channel" :class="item.enabled ? '' : 'channel--disabled'" @click="item.enabled ? pay(item.channel) : null"><view><text class="channel-name">{{ channelName(item.channel) }}</text><text class="channel-hint">{{ item.enabled ? '安全支付' : '当前店铺暂未启用' }}</text></view><text class="channel-arrow">›</text></view><text v-if="channels.length == 0" class="empty">暂无可用支付方式，请联系店铺客服。</text></view></view>
+</template>
+
+<style>
+.pay-card { margin: 12px; padding: 24px 18px; color: #ffffff; border-radius: 12px; background: linear-gradient(135deg, #d72828, #ff6a47); }.label, .meta { display: block; }.label { font-size: 14px; opacity: .9; }.price { display: block; margin: 10px 0 18px; font-size: 32px; font-weight: 700; }.meta { margin-top: 5px; font-size: 12px; opacity: .82; }.section-title { display: block; margin-bottom: 8px; font-size: 16px; font-weight: 600; }.channel { min-height: 58px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f2f3f5; }.channel-name, .channel-hint { display: block; }.channel-name { color: #1f2329; font-size: 15px; font-weight: 500; }.channel-hint { margin-top: 5px; color: #86909c; font-size: 12px; }.channel-arrow { color: #c9cdd4; font-size: 25px; }.channel--disabled { opacity: .55; }.empty { display: block; padding: 14px 0 4px; color: #86909c; font-size: 14px; text-align: center; }
+</style>

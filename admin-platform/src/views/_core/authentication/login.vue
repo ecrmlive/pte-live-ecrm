@@ -10,7 +10,7 @@ import {
 } from 'element-plus';
 
 import { getAdminLoginBaseApi } from '#/api/core/passport';
-import { QIXI_PLATFORM_APP_NAME } from '#/preferences';
+import { QIXI_PLATFORM_LOGIN_NAME } from '#/preferences';
 import { useAuthStore } from '#/store';
 
 defineOptions({ name: 'Login' });
@@ -80,8 +80,8 @@ onMounted(() => {
 
 <template>
   <div class="qixi-live-login-form">
-    <h2 class="qixi-live-login-form__title">{{ QIXI_PLATFORM_APP_NAME }}</h2>
-    <p class="qixi-live-login-form__subtitle">请输入平台管理员账号登录</p>
+    <h2 class="qixi-live-login-form__title">{{ QIXI_PLATFORM_LOGIN_NAME }}</h2>
+    <p class="qixi-live-login-form__subtitle">平台、商户、区域、客服、运营账号统一登录</p>
 
     <ElAlert
       v-if="baseLoadFailed"

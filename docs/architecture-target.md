@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | 统一后台管理系统 | `admin-platform/` + `api-platform` | `qixi_crm_admin` |
 | 店铺管理系统 | `admin-merchant/` + `api-merchant` | `qixi_crm_merchant` |
-| PC / H5 / 小程序 / iOS / Android / 鸿蒙用户端 | `app-web/`、`app-mp/`、`app-ios/`、`app-adnroid/`、`app-harmony/` + `api-business` | `qixi_crm_business` |
+| PC / H5 / 小程序 / iOS / Android / 鸿蒙用户端 | `app-pc/`、`app-uni/`、`app-ios/`、`app-adnroid/`、`app-harmony/` + `api-business` | `qixi_crm_business` |
 | 异步任务 | `job` | 事件消费、对账、通知；不越过各库所有权 |
 
 统一后台按平台、商户、区域、客服、运营角色动态返回菜单；店铺后台独立部署、独立 JWT 与独立数据库边界。PC、小程序、H5、iOS、Android、鸿蒙六端共享用户 JWT 配置和用户主体，功能闭环必须对齐 H5。
@@ -29,4 +29,4 @@
 
 ## 网络与发布目标
 
-qixi 使用独立 Compose project `qixi_mergers`、独立 `qixi_mergers_net` 与固定 IP；不得接入 `pte_live_net`，不得复用 pte-live 的 MySQL、Redis、NATS、etcd 或容器名。前端本地开发直连 `127.0.0.1`，不安装本机 Nginx。构建、Make 和 Compose 具体命令在第 3 步目录迁移完成后重写。
+qixi 使用独立 Compose project `qixi_mergers`，其 API 加入 pte-live-im 已维护的 `pte_live_net` 并复用 MySQL、Redis、NATS、etcd。七禧不启动重复基础设施，且仅使用自己的 `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` 数据库，不得读写 pte-live-im 的数据库或表。前端本地开发直连 `127.0.0.1`，不安装本机 Nginx。构建、Make 和 Compose 具体命令在第 3 步目录迁移完成后重写。

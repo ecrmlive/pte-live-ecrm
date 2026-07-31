@@ -63,7 +63,7 @@ func (h *Handler) ListPageLinks(c *gin.Context) {
 func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	f := diy.ListFilter{MerID: middleware.MerID(c), Page: page, Limit: limit, Name: c.Query("name")}
+	f := diy.ListFilter{MerID: middleware.StoreID(c), Page: page, Limit: limit, Name: c.Query("name")}
 	if v := c.Query("is_diy"); v != "" {
 		n, _ := strconv.ParseInt(v, 10, 8)
 		iv := int8(n)
@@ -100,7 +100,7 @@ func (h *Handler) Get(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	if p.MerID != middleware.MerID(c) {
+	if p.StoreID != middleware.StoreID(c) {
 		response.Fail(c, http.StatusNotFound, diy.ErrNotFound.Error())
 		return
 	}
@@ -114,7 +114,7 @@ func (h *Handler) Bootstrap(c *gin.Context) {
 			id, _ = strconv.ParseUint(q, 10, 64)
 		}
 	}
-	boot, err := h.svc.EditorBootstrap(c.Request.Context(), uint(id), middleware.MerID(c))
+	boot, err := h.svc.EditorBootstrap(c.Request.Context(), uint(id), middleware.StoreID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -128,7 +128,7 @@ func (h *Handler) Create(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	p, err := h.svc.Create(c.Request.Context(), middleware.MerID(c), in)
+	p, err := h.svc.Create(c.Request.Context(), middleware.StoreID(c), in)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -143,7 +143,7 @@ func (h *Handler) Update(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	p, err := h.svc.Update(c.Request.Context(), uint(id), middleware.MerID(c), in)
+	p, err := h.svc.Update(c.Request.Context(), uint(id), middleware.StoreID(c), in)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -153,7 +153,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 func (h *Handler) SetActive(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	p, err := h.svc.SetActive(c.Request.Context(), uint(id), middleware.MerID(c))
+	p, err := h.svc.SetActive(c.Request.Context(), uint(id), middleware.StoreID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -163,7 +163,7 @@ func (h *Handler) SetActive(c *gin.Context) {
 
 func (h *Handler) Copy(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	p, err := h.svc.Copy(c.Request.Context(), uint(id), middleware.MerID(c))
+	p, err := h.svc.Copy(c.Request.Context(), uint(id), middleware.StoreID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -173,7 +173,7 @@ func (h *Handler) Copy(c *gin.Context) {
 
 func (h *Handler) ApplyDefault(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	p, err := h.svc.ApplyDefault(c.Request.Context(), uint(id), middleware.MerID(c))
+	p, err := h.svc.ApplyDefault(c.Request.Context(), uint(id), middleware.StoreID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -183,7 +183,7 @@ func (h *Handler) ApplyDefault(c *gin.Context) {
 
 func (h *Handler) Recovery(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	p, err := h.svc.Recovery(c.Request.Context(), uint(id), middleware.MerID(c))
+	p, err := h.svc.Recovery(c.Request.Context(), uint(id), middleware.StoreID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -193,7 +193,7 @@ func (h *Handler) Recovery(c *gin.Context) {
 
 func (h *Handler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err := h.svc.Delete(c.Request.Context(), uint(id), middleware.MerID(c)); err != nil {
+	if err := h.svc.Delete(c.Request.Context(), uint(id), middleware.StoreID(c)); err != nil {
 		writeErr(c, err)
 		return
 	}

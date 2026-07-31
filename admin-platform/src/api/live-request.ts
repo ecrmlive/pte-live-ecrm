@@ -33,7 +33,7 @@ function createLiveClient(baseURL: string) {
     ) {
       config.data = qs.stringify(config.data || {});
     }
-    return attachAPIEncryption(config, baseURL);
+    return attachAPIEncryption(config);
   });
 
   client.interceptors.response.use(

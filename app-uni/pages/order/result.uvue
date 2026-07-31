@@ -1,0 +1,16 @@
+<script setup lang="uts">
+const orderID = ref(0)
+const paid = ref(false)
+
+function goDetail(): void { uni.redirectTo({ url: `/pages/order/detail?id=${orderID.value}` }) }
+function goHome(): void { uni.switchTab({ url: '/pages/index/index' }) }
+onLoad((query) => { orderID.value = Number(query['id'] || 0); paid.value = Number(query['paid'] || 0) == 1 })
+</script>
+
+<template>
+  <view class="result-page"><view class="result-icon" :class="paid ? 'result-icon--success' : 'result-icon--pending'">{{ paid ? '✓' : '!' }}</view><text class="result-title">{{ paid ? '支付成功' : '支付处理中' }}</text><text class="result-desc">{{ paid ? '订单已支付，可在订单详情查看进度' : '请在支付渠道完成付款后刷新订单状态' }}</text><button class="result-primary" @click="goDetail">查看订单</button><button class="result-secondary" @click="goHome">返回首页</button></view>
+</template>
+
+<style>
+.result-page { min-height: 100vh; padding: 92px 28px 0; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; background-color: #ffffff; }.result-icon { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; border-radius: 40px; font-size: 45px; font-weight: 600; }.result-icon--success { color: #00b42a; background-color: #e8ffea; }.result-icon--pending { color: #ff7d00; background-color: #fff7e8; }.result-title { margin-top: 22px; color: #1f2329; font-size: 22px; font-weight: 700; }.result-desc { margin: 12px 0 36px; color: #86909c; font-size: 14px; text-align: center; line-height: 21px; }.result-primary, .result-secondary { width: 100%; height: 44px; border-radius: 22px; font-size: 16px; line-height: 44px; }.result-primary { color: #ffffff; background-color: #d72828; }.result-secondary { margin-top: 12px; color: #d72828; background-color: #ffffff; border: 1px solid #d72828; }
+</style>

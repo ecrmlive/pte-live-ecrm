@@ -16,7 +16,7 @@
 
 平台、商户、区域、客服、运营是**统一后台管理系统内的五种角色菜单和数据范围**，不是五个前端项目。店铺管理系统是唯一独立后台前端。店员、配送员、服务人员属于店铺管理系统角色；客服属于统一后台管理系统角色。
 
-PC、小程序&H5、iOS、Android、鸿蒙是独立用户端交付物：`app-web` 负责 PC Web 页面和交互，`app-mp` 是小程序与 H5 的唯一共享程序，原生端分别使用 `app-ios`、`app-adnroid`、`app-harmony`。六端只通过 `api-business` 访问同一份 `qixi_crm_business` 业务数据，不能以后台页面或接口替代用户端页面。
+PC、小程序&H5、iOS、Android、鸿蒙是独立用户端交付物：`app-pc` 负责 PC Web 页面和交互，`app-uni` 是小程序与 H5 的唯一共享程序，原生端分别使用 `app-ios`、`app-adnroid`、`app-harmony`。六端只通过 `api-business` 访问同一份 `qixi_crm_business` 业务数据，不能以后台页面或接口替代用户端页面。
 
 ## 2. 账号与 JWT
 
@@ -72,8 +72,8 @@ IM 必须使用 `pte-live-im` 与 `pte-live-im-sdk`。消息正文、会话、Us
 ```text
 admin-platform/      # 一个 Vben 5.7+：平台/商户/区域/客服/运营
 admin-merchant/      # 一个 Vben 5.7+：店铺管理
-app-web/             # PC Web 商城
-app-mp/              # 一个 uni-app x：小程序与 H5
+app-pc/              # PC Web 商城
+app-uni/             # 一个 uni-app x：小程序与 H5
 app-ios/             # iOS 16+，Swift 6 / UIKit
 app-adnroid/         # Android 12+，Kotlin / Jetpack Compose（目录名按项目约定）
 app-harmony/         # OpenHarmony API 23，ArkTS / ArkUI
@@ -95,7 +95,7 @@ sql/                 # 三个库的集中初始化 SQL
 
 1. 文档：删除旧双前缀、多个独立后台、共享 pte 网络/数据库等描述，锁定本总则。
 2. SQL：删除旧运行初始化文件，按三个 qixi CRM 库和 pte IM 边界重新设计 DDL、基础数据、配置、密钥占位和测试数据。
-3. Make / Compose / 目录：统一 `qixi_mergers` Compose 身份与独立 `qixi_mergers_net`，建立三个 API、两个 Vben 与两个用户端的构建入口。
+3. Make / Compose / 目录：统一 `qixi_mergers` Compose 身份，API 接入共享 `pte_live_net`，建立三个 API、两个 Vben 与两个用户端的构建入口。
 4. 代码合并：先合并统一后台五角色菜单，再独立店铺系统；随后迁移 API、鉴权、数据访问与 OpenAPI。
 5. 功能开发：按 CRMEB 功能总表逐项实现、截图和闭环验收。
 

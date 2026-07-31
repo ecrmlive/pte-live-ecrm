@@ -2,7 +2,9 @@ openapi: 3.0.3
 info:
   title: qixi-mergers app content
   version: 0.7.8
-  description: C 端公告（仅 is_show=1）+ 协议只读（sql/041）
+  description: >-
+    PC、小程序、H5、iOS、Android、鸿蒙共用的内容消费视图；公告和协议只读取
+    qixi_crm_b_content_view 的已发布记录，C 端不读取后台内容表。
 servers:
   - url: /api/app/v1
 paths:

@@ -18,7 +18,7 @@ const { destroyWatermark, updateWatermark } = useWatermark();
 const { isDark } = usePreferences();
 
 const displayName = computed(
-  () => userStore.userInfo?.realName || userStore.userInfo?.username || '平台管理员',
+  () => userStore.userInfo?.realName || userStore.userInfo?.username || '管理账号',
 );
 
 const avatar = computed(

@@ -22,6 +22,7 @@ type Config struct {
 	Upload  UploadConfig  `yaml:"upload"`
 	Payment PaymentConfig `yaml:"payment"`
 	IM      IMConfig      `yaml:"im"`
+	Captcha CaptchaConfig `yaml:"captcha"`
 }
 
 // DatabaseScope 显式约束目标 API 的数据库所有权，禁止以一个 DSN 跨三个 CRM 库直接查询。
@@ -55,6 +56,28 @@ type PaymentConfig struct {
 	NotifySecret string `yaml:"notify_secret"`
 	Wechat       bool   `yaml:"wechat"`
 	Alipay       bool   `yaml:"alipay"`
+}
+
+// CaptchaConfig 是 pte-tools-captcha 的服务端接入配置。
+// secret 仅保存于被 Git 忽略的运行 YAML，绝不能下发到前端或提交到仓库。
+type CaptchaConfig struct {
+	Enabled       bool   `yaml:"enabled"`
+	BaseURL       string `yaml:"base_url"`
+	ApplicationID string `yaml:"application_id"`
+	SecretValue   string `yaml:"secret"`
+	TimeoutSecond int    `yaml:"timeout_seconds"`
+}
+
+func (c CaptchaConfig) Secret() string {
+	return c.SecretValue
+}
+
+func (c CaptchaConfig) Timeout() time.Duration {
+	seconds := c.TimeoutSecond
+	if seconds <= 0 {
+		seconds = 10
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 type UploadConfig struct {

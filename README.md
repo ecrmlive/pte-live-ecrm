@@ -26,8 +26,8 @@
 ```text
 admin-platform/      # 平台/商户/区域/客服/运营统一后台（Vben 5.7+）
 admin-merchant/      # 独立店铺管理系统（Vben 5.7+）
-app-web/             # 用户端 PC Web 商城
-app-mp/              # 用户端 uni-app x：H5 与小程序
+app-pc/              # 用户端 PC Web 商城
+app-uni/             # 用户端 uni-app x：H5 与小程序
 app-ios/             # 用户端 iOS
 app-adnroid/         # 用户端 Android（目录名按项目约定）
 app-harmony/         # 用户端鸿蒙
@@ -44,11 +44,11 @@ release/qixi-mergers-*/
 ```bash
 make init-env-local
 make pack-backend
-make local-infra
-make local-db-init
+make local-infra        # 校验 pte-live-im 共享基础设施已运行
+make local-db-init      # 在 pte_live_mysql 中初始化七禧三库
 make local-backend      # api-platform :18081、api-business :18082、api-merchant :18083
 
-# 测试宿主机执行同一组目标；容器名、网络、数据库和 YAML 与 local 完全一致
+# 测试宿主机执行同一组目标；容器名、共享网络、数据库和 YAML 与 local 完全一致
 make init-env-test
 make test-infra
 make test-db-init

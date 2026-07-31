@@ -143,6 +143,25 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_page` (
   `updated_by` bigint unsigned NOT NULL, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_status` (`page_type`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_link_category` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `pid` bigint unsigned NOT NULL DEFAULT 0,
+  `type` varchar(32) NOT NULL DEFAULT 'link', `name` varchar(128) NOT NULL, `sort` int NOT NULL DEFAULT 0,
+  `status` tinyint NOT NULL DEFAULT 1, `level` tinyint NOT NULL DEFAULT 1, `is_mer` tinyint NOT NULL DEFAULT 0,
+  `add_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), KEY `idx_scope_parent` (`is_mer`,`pid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_link` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `cate_id` bigint unsigned NOT NULL, `type` tinyint NOT NULL DEFAULT 1,
+  `name` varchar(128) NOT NULL, `url` varchar(1024) NOT NULL, `param` varchar(1000) NOT NULL DEFAULT '',
+  `example` varchar(1000) NOT NULL DEFAULT '', `status` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0,
+  `is_mer` tinyint NOT NULL DEFAULT 0, `add_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_scope_category` (`is_mer`,`cate_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_outbox` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `event_type` varchar(128) NOT NULL, `aggregate_type` varchar(64) NOT NULL,
+  `aggregate_id` varchar(64) NOT NULL, `payload` json NOT NULL, `status` enum('pending','published','failed') NOT NULL DEFAULT 'pending',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `published_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`), KEY `idx_status_time` (`status`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_export_record` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `admin_user_id` bigint unsigned NOT NULL, `resource_type` varchar(64) NOT NULL,
   `filters` json NOT NULL, `file_url` varchar(1024) DEFAULT NULL, `status` enum('pending','completed','failed') NOT NULL DEFAULT 'pending',

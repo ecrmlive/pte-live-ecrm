@@ -46,10 +46,11 @@ export async function refreshLiveJwtToken(
 
   try {
     const baseURL = resolveLiveApiBaseUrl();
-    const config = await attachAPIEncryption(
-      { headers, timeout: 5_000, validateStatus: () => true },
-      baseURL,
-    );
+    const config = await attachAPIEncryption({
+      headers,
+      timeout: 5_000,
+      validateStatus: () => true,
+    });
     const res = await axios.post(
       `${baseURL}/api/v1/auth/refresh`,
       qs.stringify({ login_platform: options.loginPlatform }),

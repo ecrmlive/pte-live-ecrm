@@ -1,97 +1,12 @@
 name: qixi_mergers
 
-# local 与 test 运行此同一文件、同一容器名、同一网络和同一固定 IP。
-# 两者只能位于不同宿主机，不能在同一台机器并行启动。
+# 七禧只运行自己的 API；基础设施统一复用 pte-live-im 已创建的 pte_live_net。
+# local/test 仅为不同宿主机，容器名、固定 IP 与 YAML 均保持一致。
 services:
-  mysql:
-    image: mysql:8.4.10
-    container_name: qixi_mergers_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${QIXI_MYSQL_ROOT_PASSWORD:?请在 release/config.yaml 中填写 docker.mysql_root_password}
-    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
-    ports:
-      - "127.0.0.1:23306:3306"
-    volumes:
-      - qixi_mergers_mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin --protocol=tcp ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-    networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.10
-
-  redis:
-    image: redis:8.8.0
-    container_name: qixi_mergers_redis
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "127.0.0.1:26379:6379"
-    networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.11
-
-  etcd:
-    image: gcr.io/etcd-development/etcd:v3.7.0
-    container_name: qixi_mergers_etcd
-    restart: unless-stopped
-    command:
-      - /usr/local/bin/etcd
-      - --name=qixi-mergers-etcd
-      - --data-dir=/etcd-data
-      - --listen-client-urls=http://0.0.0.0:2379
-      - --advertise-client-urls=http://qixi_mergers_etcd:2379
-    ports:
-      - "127.0.0.1:22379:2379"
-    networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.12
-
-  nats:
-    image: nats:2.12.0-alpine
-    container_name: qixi_mergers_nats
-    restart: unless-stopped
-    command: ["-js", "-sd", "/data"]
-    ports:
-      - "127.0.0.1:24222:4222"
-    networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.13
-
-  db-init:
-    image: mysql:8.4.10
-    container_name: qixi_mergers_db_init
-    restart: "no"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    environment:
-      MYSQL_PWD: ${QIXI_MYSQL_ROOT_PASSWORD:?请在 release/config.yaml 中填写 docker.mysql_root_password}
-    volumes:
-      - ./sql:/sql:ro
-    command:
-      - /bin/sh
-      - -ec
-      - |
-        for domain in admin business merchant; do
-          for phase in 01_table 02_data 03_config 04_key 05_test_data; do
-            mysql --protocol=TCP -h qixi_mergers_mysql -uroot --default-character-set=utf8mb4 < "/sql/$${domain}/$${phase}.sql";
-          done;
-        done
-    networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.14
-
   api-platform:
     image: alpine:3.24.1
     container_name: qixi_mergers_api_platform
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     command: ["/app/api-platform", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18081:8080"
@@ -99,16 +14,13 @@ services:
       - ./release/qixi-mergers-api-platform/bin/api-platform:/app/api-platform:ro
       - ./release/config/api-platform/app.yaml:/app/config/app.yaml:ro
     networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.21
+      pte_live_net:
+        ipv4_address: 172.30.0.61
 
   api-business:
     image: alpine:3.24.1
     container_name: qixi_mergers_api_business
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     command: ["/app/api-business", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18082:8080"
@@ -116,16 +28,13 @@ services:
       - ./release/qixi-mergers-api-business/bin/api-business:/app/api-business:ro
       - ./release/config/api-business/app.yaml:/app/config/app.yaml:ro
     networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.22
+      pte_live_net:
+        ipv4_address: 172.30.0.62
 
   api-merchant:
     image: alpine:3.24.1
     container_name: qixi_mergers_api_merchant
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     command: ["/app/api-merchant", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18083:8080"
@@ -133,33 +42,23 @@ services:
       - ./release/qixi-mergers-api-merchant/bin/api-merchant:/app/api-merchant:ro
       - ./release/config/api-merchant/app.yaml:/app/config/app.yaml:ro
     networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.23
+      pte_live_net:
+        ipv4_address: 172.30.0.63
 
   job:
     image: alpine:3.24.1
     container_name: qixi_mergers_job
     restart: unless-stopped
     profiles: ["job"]
-    depends_on:
-      mysql:
-        condition: service_healthy
     command: ["/app/job", "-config", "/app/config/app.yaml"]
     volumes:
       - ./release/qixi-mergers-job/bin/job:/app/job:ro
       - ./release/config/job/app.yaml:/app/config/app.yaml:ro
     networks:
-      qixi_mergers_net:
-        ipv4_address: 172.31.24.24
+      pte_live_net:
+        ipv4_address: 172.30.0.64
 
 networks:
-  qixi_mergers_net:
-    name: qixi_mergers_net
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.31.24.0/24
-
-volumes:
-  qixi_mergers_mysql_data:
-    name: qixi_mergers_mysql_data
+  pte_live_net:
+    external: true
+    name: pte_live_net

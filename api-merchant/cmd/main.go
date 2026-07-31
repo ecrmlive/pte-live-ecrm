@@ -29,6 +29,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/reservation"
 	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/seckill"
 	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/trade"
+	merchantdiyevent "github.com/qixi-live/qixi-live-mergers/api-merchant/internal/event/merchantdiy"
 	merchantimevent "github.com/qixi-live/qixi-live-mergers/api-merchant/internal/event/merchantim"
 	aftersalepersist "github.com/qixi-live/qixi-live-mergers/api-merchant/internal/infra/persist/aftersale"
 	assistpersist "github.com/qixi-live/qixi-live-mergers/api-merchant/internal/infra/persist/assist"
@@ -107,6 +108,7 @@ func main() {
 		log.Fatalf("mysql: %v", err)
 	}
 	merchantimevent.StartMerchantOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantdiyevent.StartMerchantOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
 	businessDSN, err := cfg.DSNFor(config.DatabaseBusiness)
 	if err != nil {
 		log.Fatalf("business payment projection database config: %v", err)

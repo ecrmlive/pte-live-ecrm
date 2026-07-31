@@ -63,10 +63,34 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_fulfillment_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_diy_page` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `store_id` bigint unsigned NOT NULL, `name` varchar(128) NOT NULL,
-  `document` json NOT NULL, `status` enum('draft','published') NOT NULL DEFAULT 'draft',
+  `document` json NOT NULL, `page_type` enum('home','custom') NOT NULL DEFAULT 'home',
+  `is_active` tinyint NOT NULL DEFAULT 0, `status` enum('draft','published') NOT NULL DEFAULT 'draft',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`)
+  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_store_home_active` (`store_id`,`page_type`,`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 兼容早期三库初始化：装修页曾缺少首页/微页面和启用状态，不能再回退到旧 qixi_m_admin_diy。
+SET @qixi_m_diy_page_type_exists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'qixi_crm_merchant' AND TABLE_NAME = 'qixi_crm_m_diy_page' AND COLUMN_NAME = 'page_type'
+);
+SET @qixi_m_diy_page_type_ddl := IF(@qixi_m_diy_page_type_exists = 0,
+  'ALTER TABLE `qixi_crm_m_diy_page` ADD COLUMN `page_type` enum(''home'',''custom'') NOT NULL DEFAULT ''home'' AFTER `document`',
+  'SELECT 1');
+PREPARE qixi_m_diy_page_type_stmt FROM @qixi_m_diy_page_type_ddl;
+EXECUTE qixi_m_diy_page_type_stmt;
+DEALLOCATE PREPARE qixi_m_diy_page_type_stmt;
+
+SET @qixi_m_diy_active_exists := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'qixi_crm_merchant' AND TABLE_NAME = 'qixi_crm_m_diy_page' AND COLUMN_NAME = 'is_active'
+);
+SET @qixi_m_diy_active_ddl := IF(@qixi_m_diy_active_exists = 0,
+  'ALTER TABLE `qixi_crm_m_diy_page` ADD COLUMN `is_active` tinyint NOT NULL DEFAULT 0 AFTER `page_type`',
+  'SELECT 1');
+PREPARE qixi_m_diy_active_stmt FROM @qixi_m_diy_active_ddl;
+EXECUTE qixi_m_diy_active_stmt;
+DEALLOCATE PREPARE qixi_m_diy_active_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_config` (
   `store_id` bigint unsigned NOT NULL, `config_key` varchar(128) NOT NULL, `config_value` json NOT NULL,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -1,0 +1,9 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "lib": ["esnext", "dom"],
+    "types": ["@dcloudio/types"]
+  },
+  "include": ["**/*.uts", "**/*.uvue", "**/*.ts", "**/*.d.ts"]
+}

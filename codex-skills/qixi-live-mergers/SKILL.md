@@ -63,7 +63,7 @@ disable-model-invocation: false
 
 - 配置文件使用 `.yaml`。
 - API：Gin、GORM、Swagger、MySQL、etcd、NATS。
-- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x（`app-mp/`）；PC 商城用 Vue 3（`app-web/`）。
+- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x（`app-uni/`）；PC 商城用 Vue 3（`app-pc/`）。
 - **数据库表前缀固定为 `qixi_m_admin_`（平台/商户）与 `qixi_m_app_`（C 端）**（CRMEB `eb_` 映射）。见 `docs/schema/`。禁止新代码使用裸 `qixi_` 或 `eb_`。
 - 商户接口强制 `mer_id` 隔离。
 - 测试数据注意中文乱码（utf8mb4）。

@@ -33,32 +33,35 @@ type MenuItem struct {
 }
 
 type Page struct {
-	ID           uint      `gorm:"column:id;primaryKey" json:"id"`
-	Version      string    `gorm:"column:version" json:"version"`
-	Name         string    `gorm:"column:name" json:"name"`
-	Title        string    `gorm:"column:title" json:"title"`
-	CoverImage   string    `gorm:"column:cover_image" json:"cover_image"`
-	TemplateName string    `gorm:"column:template_name" json:"template_name"`
-	Status       int8      `gorm:"column:status" json:"status"`
-	Type         int8      `gorm:"column:type" json:"type"`
-	IsShow       int8      `gorm:"column:is_show" json:"is_show"`
-	IsDiy        int8      `gorm:"column:is_diy" json:"is_diy"`
-	IsBgColor    int8      `gorm:"column:is_bg_color" json:"is_bg_color"`
-	IsBgPic      int8      `gorm:"column:is_bg_pic" json:"is_bg_pic"`
-	ColorPicker  string    `gorm:"column:color_picker" json:"color_picker"`
-	BgPic        string    `gorm:"column:bg_pic" json:"bg_pic"`
-	BgTabVal     int8      `gorm:"column:bg_tab_val" json:"bg_tab_val"`
-	MerID        uint      `gorm:"column:mer_id" json:"mer_id"`
-	IsDefault    int8      `gorm:"column:is_default" json:"is_default"`
-	Value        string    `gorm:"column:value" json:"value"`
-	IsDel        int8      `gorm:"column:is_del" json:"-"`
-	AddTime      time.Time `gorm:"column:add_time" json:"add_time"`
-	UpdateTime   time.Time `gorm:"column:update_time" json:"update_time"`
+	ID           uint   `gorm:"column:id;primaryKey" json:"id"`
+	Version      string `gorm:"column:version" json:"version"`
+	Name         string `gorm:"column:name" json:"name"`
+	Title        string `gorm:"column:title" json:"title"`
+	CoverImage   string `gorm:"column:cover_image" json:"cover_image"`
+	TemplateName string `gorm:"column:template_name" json:"template_name"`
+	Status       int8   `gorm:"column:status" json:"status"`
+	Type         int8   `gorm:"column:type" json:"type"`
+	IsShow       int8   `gorm:"column:is_show" json:"is_show"`
+	IsDiy        int8   `gorm:"column:is_diy" json:"is_diy"`
+	IsBgColor    int8   `gorm:"column:is_bg_color" json:"is_bg_color"`
+	IsBgPic      int8   `gorm:"column:is_bg_pic" json:"is_bg_pic"`
+	ColorPicker  string `gorm:"column:color_picker" json:"color_picker"`
+	BgPic        string `gorm:"column:bg_pic" json:"bg_pic"`
+	BgTabVal     int8   `gorm:"column:bg_tab_val" json:"bg_tab_val"`
+	// StoreID 是店铺装修的唯一数据边界。MerID 仅保留给旧领域服务的内部
+	// 兼容判断，不能再作为数据库列或对外字段使用。
+	StoreID    uint      `gorm:"column:store_id" json:"store_id"`
+	MerID      uint      `gorm:"-" json:"-"`
+	IsDefault  int8      `gorm:"column:is_default" json:"is_default"`
+	Value      string    `gorm:"column:value" json:"value"`
+	IsDel      int8      `gorm:"column:is_del" json:"-"`
+	AddTime    time.Time `gorm:"column:add_time" json:"add_time"`
+	UpdateTime time.Time `gorm:"column:update_time" json:"update_time"`
 
 	Doc *PageDoc `gorm:"-" json:"doc,omitempty"`
 }
 
-func (Page) TableName() string { return "qixi_m_admin_diy" }
+func (Page) TableName() string { return "qixi_crm_m_diy_page" }
 
 // PageCategory 是装修链接选择器的分组。is_mer=0 表示平台商城链接，1 表示商户商城链接。
 // 它不是商户私有数据：商户端只能读取平台配置的商户链接分组。
@@ -75,7 +78,7 @@ type PageCategory struct {
 	Children []PageCategory `gorm:"-" json:"children,omitempty"`
 }
 
-func (PageCategory) TableName() string { return "qixi_m_admin_page_category" }
+func (PageCategory) TableName() string { return "qixi_crm_m_diy_link_category" }
 
 // PageLink 是可由装修组件选择的固定页面路径或小程序路径。
 type PageLink struct {
@@ -93,7 +96,7 @@ type PageLink struct {
 	Category *PageCategory `gorm:"-" json:"category,omitempty"`
 }
 
-func (PageLink) TableName() string { return "qixi_m_admin_page_link" }
+func (PageLink) TableName() string { return "qixi_crm_m_diy_link" }
 
 func (p *Page) ParseDoc() PageDoc {
 	if p == nil || p.Value == "" {

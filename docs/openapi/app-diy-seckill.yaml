@@ -4,7 +4,8 @@ info:
   version: 0.6.1
   description: |
     C 端 DIY 首页 + 秒杀列表。DIY 页面统一返回 `{page, items[]}` 组件文档；
-    `/diy/home` 仅返回当前范围已启用首页，`/diy/pages/{id}` 仅允许读取已启用且展示中的页面，草稿不暴露给公共 C 端。
+    `/diy/home` 与 `/diy/pages/{id}` 只读取 qixi_crm_business 的发布投影，草稿不暴露给公共 C 端。
+    请求带 `X-AppId` 时按该店铺读取；未知或关闭店铺返回 404。未带时仅读取平台发布页。
     结算：v2 check/create 在场次内自动覆盖行价为 seckill_price；
     订单行 product_type=1、activity_id=seckill_active_id；单次限购 once_pay_count；
     秒杀清空店铺券（平台券仍可）。
@@ -13,16 +14,22 @@ servers:
 paths:
   /diy/home:
     get:
-      summary: 平台或指定商户的启用装修首页（page / items[]）
+      summary: 平台或 X-AppId 店铺的启用装修首页（page / items[]）
       parameters:
-        - name: mer_id
-          in: query
+        - name: X-AppId
+          in: header
           required: false
-          schema: { type: integer, minimum: 0 }
-          description: 商户店铺首页；省略或 0 为平台首页
+          schema: { type: string }
+          description: 店铺 AppId；省略为平台首页
   /diy/pages/{id}:
     get:
       summary: 已发布装修页详情（page / items[]）
+      parameters:
+        - name: X-AppId
+          in: header
+          required: false
+          schema: { type: string }
+          description: 店铺 AppId；省略为平台页面
   /seckill/times:
     get:
       summary: 秒杀场次

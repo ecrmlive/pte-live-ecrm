@@ -10,7 +10,9 @@ servers:
 paths:
   /catalog/home:
     get:
-      summary: 首页热卖
+      summary: 首页热卖（携带 X-AppId 时仅返回该店铺商品）
+      parameters:
+        - $ref: '#/components/parameters/StoreAppID'
       responses:
         '200': { description: 首页消费视图 }
   /catalog/categories:
@@ -22,10 +24,15 @@ paths:
     get:
       summary: 可售商品列表
       parameters:
+        - $ref: '#/components/parameters/StoreAppID'
         - in: query
           name: mer_id
           schema: { type: integer, format: int64 }
           description: 商户 ID
+        - in: query
+          name: cate_id
+          schema: { type: integer, format: int64 }
+          description: 分类 ID；选择父分类时同时包含全部已启用子分类商品。
         - in: query
           name: keyword
           schema: { type: string }
@@ -49,6 +56,7 @@ paths:
     get:
       summary: 商详（入驻商户商品会返回 merchant_app_id，用于换发店铺上下文 JWT）
       parameters:
+        - $ref: '#/components/parameters/StoreAppID'
         - in: path
           name: id
           required: true
@@ -60,6 +68,7 @@ paths:
     get:
       summary: 店铺首页商品（返回店铺 merchant_app_id）
       parameters:
+        - $ref: '#/components/parameters/StoreAppID'
         - in: path
           name: id
           required: true
@@ -71,6 +80,16 @@ paths:
     get:
       summary: 积分商城商品（type=1）
 components:
+  parameters:
+    StoreAppID:
+      name: X-AppId
+      in: header
+      required: false
+      schema: { type: string, maxLength: 64 }
+      description: >-
+        当前店铺的 X-AppId。省略时为全平台消费视图；携带后服务端依据
+        qixi_crm_b_store_view 校验店铺状态，并把商品读取范围收窄到该商户。
+        该值不是 IM SDK AppId，也不能替代店铺上下文 JWT。
   schemas:
     ProductView:
       type: object

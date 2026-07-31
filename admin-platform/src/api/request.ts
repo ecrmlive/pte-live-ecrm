@@ -79,7 +79,7 @@ function createRequestClient(
         config.headers['Authori-zation'] = bearer;
       }
 		config.headers['Accept-Language'] = preferences.app.locale;
-		return attachAPIEncryption(config, baseURL);
+		return attachAPIEncryption(config);
     },
   });
 
@@ -171,7 +171,7 @@ function createAdminApiClient() {
         config.headers['Authori-zation'] = bearer;
       }
 		config.headers['Accept-Language'] = preferences.app.locale;
-		return attachAPIEncryption(config, baseURL);
+		return attachAPIEncryption(config);
     },
   });
 

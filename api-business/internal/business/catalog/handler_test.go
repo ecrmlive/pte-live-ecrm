@@ -23,3 +23,28 @@ func TestProductSortWhitelist(t *testing.T) {
 		})
 	}
 }
+
+func TestDescendantCategoryIDs(t *testing.T) {
+	rows := []categoryView{
+		{CategoryID: 1, ParentID: 0},
+		{CategoryID: 2, ParentID: 1},
+		{CategoryID: 3, ParentID: 2},
+		{CategoryID: 4, ParentID: 0},
+	}
+
+	got := descendantCategoryIDs(rows, 1)
+	want := []uint64{1, 2, 3}
+	if len(got) != len(want) {
+		t.Fatalf("descendantCategoryIDs length = %d, want %d; got %#v", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("descendantCategoryIDs[%d] = %d, want %d", i, got[i], want[i])
+		}
+	}
+
+	unknown := descendantCategoryIDs(rows, 999)
+	if len(unknown) != 1 || unknown[0] != 999 {
+		t.Fatalf("unknown category fallback = %#v, want []uint64{999}", unknown)
+	}
+}
