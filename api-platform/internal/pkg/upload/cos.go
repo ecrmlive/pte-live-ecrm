@@ -21,7 +21,7 @@ type COS struct {
 	Region    string
 	SecretID  string
 	SecretKey string
-	BaseURL   string // 对外访问前缀，如 https://cos.example.com/qixi-mergers
+	BaseURL   string // 对外访问前缀，如 https://cos.example.com/qixi-live-ecrm
 	KeyPrefix string // 对象键前缀，默认从 BaseURL path 推导
 }
 
@@ -41,7 +41,7 @@ func (c COS) keyPrefix() string {
 			return p
 		}
 	}
-	return "qixi-mergers"
+	return "qixi-live-ecrm"
 }
 
 func (c COS) client() (*cos.Client, error) {

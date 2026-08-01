@@ -95,7 +95,7 @@ sql/                 # 三个库的集中初始化 SQL
 
 1. 文档：删除旧双前缀、多个独立后台、共享 pte 网络/数据库等描述，锁定本总则。
 2. SQL：删除旧运行初始化文件，按三个 qixi CRM 库和 pte IM 边界重新设计 DDL、基础数据、配置、密钥占位和测试数据。
-3. Make / Compose / 目录：统一 `qixi_mergers` Compose 身份，API 接入共享 `pte_live_net`，建立三个 API、两个 Vben 与两个用户端的构建入口。
+3. Make / Compose / 目录：统一 `qixi_live_ecrm` Compose 身份，API 接入共享 `pte_live_net`，建立三个 API、两个 Vben 与两个用户端的构建入口。
 4. 代码合并：先合并统一后台五角色菜单，再独立店铺系统；随后迁移 API、鉴权、数据访问与 OpenAPI。
 5. 功能开发：按 CRMEB 功能总表逐项实现、截图和闭环验收。
 

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app combination
+  title: qixi-live-ecrm app combination
   version: 0.6.2
   description: |
     C 端拼团：列表/团次 + `/order/group/check|create`（独立于 v2）。

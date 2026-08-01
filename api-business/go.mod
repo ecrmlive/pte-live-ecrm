@@ -1,4 +1,4 @@
-module github.com/qixi-live/qixi-live-mergers/api-business
+module github.com/crmlive/qixi-live-ecrm/api-business
 
 go 1.26.5
 

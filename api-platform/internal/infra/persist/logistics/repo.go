@@ -3,7 +3,7 @@ package logistics
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/logistics"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/logistics"
 	"gorm.io/gorm"
 )
 

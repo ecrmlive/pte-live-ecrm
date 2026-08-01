@@ -34,7 +34,7 @@ func Start(ctx context.Context, adminDB *gorm.DB, natsURL string) (*nats.Conn, e
 	if natsURL == "" {
 		return nil, nil
 	}
-	nc, err := nats.Connect(natsURL, nats.Name("qixi_mergers_api_platform_merchant_application_projection"))
+	nc, err := nats.Connect(natsURL, nats.Name("qixi_live_ecrm_api_platform_merchant_application_projection"))
 	if err != nil {
 		return nil, err
 	}

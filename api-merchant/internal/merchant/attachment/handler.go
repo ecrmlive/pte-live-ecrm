@@ -9,11 +9,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/attachment"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/identity"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/response"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/upload"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/attachment"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/identity"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/upload"
 )
 
 type Handler struct {

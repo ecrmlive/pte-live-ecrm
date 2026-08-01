@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant live
+  title: qixi-live-ecrm merchant live
   version: 0.8.0
   description: >-
     商户直播间 CRUD + 挂货；create/delete/live/goods 分别需

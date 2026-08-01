@@ -1,4 +1,4 @@
-/** mergers 不启用 shop 响应体加解密 */
+/** ecrm 不启用 shop 响应体加解密 */
 export async function attachAPIEncryption(config: any) {
   return config;
 }

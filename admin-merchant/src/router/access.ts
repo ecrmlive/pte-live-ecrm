@@ -12,7 +12,7 @@ import { BasicLayout, IFrameView } from '#/layouts';
 import {
   convertMergersMenusToVben,
   extractRouterRoutes,
-} from '#/utils/mergers-menu';
+} from '#/utils/ecrm-menu';
 
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 

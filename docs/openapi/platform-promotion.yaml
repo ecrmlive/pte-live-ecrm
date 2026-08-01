@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform promotion
+  title: qixi-live-ecrm platform promotion
   version: 0.7.3
   description: 平台券 CRUD/启停 + 分销只读；create/delete/toggle 分别需对应按钮权；创建强制 mer_id=0 type=10。
 servers:

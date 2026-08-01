@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/cloudconfig"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/paymentconfig"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/wechatpayv3"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/cloudconfig"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/paymentconfig"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/wechatpayv3"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -110,6 +110,7 @@ async function onAddCart() {
           <div class="actions">
             <button class="pc-btn" type="button" :disabled="adding" @click="onAddCart">加入购物车</button>
             <button class="pc-btn ghost" type="button" :disabled="following" @click="toggleFavorite">{{ following ? "处理中…" : followed ? "已收藏" : "收藏商品" }}</button>
+            <RouterLink class="pc-btn ghost" :to="`/customer-service?mer_id=${detail.mer_id}`">咨询客服</RouterLink>
             <RouterLink class="pc-btn ghost" to="/cart">去购物车</RouterLink>
           </div>
         </div>

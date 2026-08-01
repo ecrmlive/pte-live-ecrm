@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant fulfillment
+  title: qixi-live-ecrm merchant fulfillment
   version: 0.7.9
   description: 商户配送人员管理与发票审核；所有资源按 mer_id 隔离。
 servers:

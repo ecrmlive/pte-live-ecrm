@@ -99,7 +99,7 @@ func StartBusinessProjection(ctx context.Context, businessDB *gorm.DB, natsURL s
 	if natsURL == "" {
 		return nil, nil
 	}
-	nc, err := nats.Connect(natsURL, nats.Name("qixi_mergers_api_business_im_projection"))
+	nc, err := nats.Connect(natsURL, nats.Name("qixi_live_ecrm_api_business_im_projection"))
 	if err != nil {
 		return nil, err
 	}

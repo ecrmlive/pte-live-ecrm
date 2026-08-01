@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/logistics"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/logistics"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
 )
 
 // 菜单：快递公司/城市可挂 CRMEB 导入节点（sql/043）；本刀 JWT 即可。

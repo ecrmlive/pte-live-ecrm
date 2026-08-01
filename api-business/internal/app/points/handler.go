@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/cart"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/catalog"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/trade"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/cart"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/catalog"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/trade"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
 )
 
 type Handler struct {

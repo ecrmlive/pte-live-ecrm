@@ -1,4 +1,4 @@
-module github.com/qixi-live/qixi-live-mergers/job
+module github.com/crmlive/qixi-live-ecrm/job
 
 go 1.26.5
 

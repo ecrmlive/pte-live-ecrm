@@ -1,9 +1,9 @@
 {
-  "name": "qixi-mergers-app-pc",
+  "name": "qixi-live-ecrm-app-pc",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "qixi-live-mergers 用户端 PC 商城",
+  "description": "qixi-live-ecrm 用户端 PC 商城",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
@@ -11,6 +11,7 @@
     "type-check": "vue-tsc -b --pretty false"
   },
   "dependencies": {
+    "@pte-live/im-web-sdk": "file:../../pte-live-im-sdk/packages/im-web-sdk",
     "pinia": "^4.0.2",
     "qrcode": "^1.5.4",
     "vue": "^3.5.39",

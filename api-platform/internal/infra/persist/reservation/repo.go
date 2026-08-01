@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/catalog"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/reservation"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/catalog"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/reservation"
 	"gorm.io/gorm"
 )
 

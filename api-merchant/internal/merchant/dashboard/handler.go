@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
 	"gorm.io/gorm"
 )
 

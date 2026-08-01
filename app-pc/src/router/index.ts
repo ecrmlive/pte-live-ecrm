@@ -129,6 +129,11 @@ const router = createRouter({
           component: () => import("@/pages/live/LiveDetailPage.vue"),
         },
         {
+          path: "customer-service",
+          name: "customer-service",
+          component: () => import("@/pages/customer-service/CustomerServicePage.vue"),
+        },
+        {
           path: "community",
           name: "community",
           component: () => import("@/pages/community/CommunityPage.vue"),

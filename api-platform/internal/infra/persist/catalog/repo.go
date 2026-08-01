@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/catalog"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/catalog"
 	"gorm.io/gorm"
 )
 

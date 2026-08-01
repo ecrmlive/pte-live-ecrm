@@ -3,7 +3,7 @@ package cspersist
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/cs"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/cs"
 	"gorm.io/gorm"
 )
 

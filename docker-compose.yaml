@@ -1,17 +1,17 @@
-name: qixi_mergers
+name: qixi_live_ecrm
 
 # 七禧只运行自己的 API；基础设施统一复用 pte-live-im 已创建的 pte_live_net。
 # local/test 仅为不同宿主机，容器名、固定 IP 与 YAML 均保持一致。
 services:
   api-platform:
     image: alpine:3.24.1
-    container_name: qixi_mergers_api_platform
+    container_name: qixi_live_ecrm_api_platform
     restart: unless-stopped
     command: ["/app/api-platform", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18081:8080"
     volumes:
-      - ./release/qixi-mergers-api-platform/bin/api-platform:/app/api-platform:ro
+      - ./release/qixi-live-ecrm-api-platform/bin/api-platform:/app/api-platform:ro
       - ./release/config/api-platform/app.yaml:/app/config/app.yaml:ro
     networks:
       pte_live_net:
@@ -19,13 +19,13 @@ services:
 
   api-business:
     image: alpine:3.24.1
-    container_name: qixi_mergers_api_business
+    container_name: qixi_live_ecrm_api_business
     restart: unless-stopped
     command: ["/app/api-business", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18082:8080"
     volumes:
-      - ./release/qixi-mergers-api-business/bin/api-business:/app/api-business:ro
+      - ./release/qixi-live-ecrm-api-business/bin/api-business:/app/api-business:ro
       - ./release/config/api-business/app.yaml:/app/config/app.yaml:ro
     networks:
       pte_live_net:
@@ -33,13 +33,13 @@ services:
 
   api-merchant:
     image: alpine:3.24.1
-    container_name: qixi_mergers_api_merchant
+    container_name: qixi_live_ecrm_api_merchant
     restart: unless-stopped
     command: ["/app/api-merchant", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18083:8080"
     volumes:
-      - ./release/qixi-mergers-api-merchant/bin/api-merchant:/app/api-merchant:ro
+      - ./release/qixi-live-ecrm-api-merchant/bin/api-merchant:/app/api-merchant:ro
       - ./release/config/api-merchant/app.yaml:/app/config/app.yaml:ro
     networks:
       pte_live_net:
@@ -47,12 +47,12 @@ services:
 
   job:
     image: alpine:3.24.1
-    container_name: qixi_mergers_job
+    container_name: qixi_live_ecrm_job
     restart: unless-stopped
     profiles: ["job"]
     command: ["/app/job", "-config", "/app/config/app.yaml"]
     volumes:
-      - ./release/qixi-mergers-job/bin/job:/app/job:ro
+      - ./release/qixi-live-ecrm-job/bin/job:/app/job:ro
       - ./release/config/job/app.yaml:/app/config/app.yaml:ro
     networks:
       pte_live_net:

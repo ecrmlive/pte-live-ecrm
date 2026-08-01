@@ -2,7 +2,7 @@ import type { UserInfo } from '@vben/types';
 
 import { getUserInfoApi } from '#/api/core/user';
 import { requestClient } from '#/api/request';
-import { convertMergersMenusToVben } from '#/utils/mergers-menu';
+import { convertMergersMenusToVben } from '#/utils/ecrm-menu';
 
 export class ShopBootstrapError extends Error {
   constructor(message: string) {

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform presell
+  title: qixi-live-ecrm platform presell
   version: 0.6.5
   description: 平台预售监管（全款/定金）
 servers:

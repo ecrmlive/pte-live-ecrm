@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app trade
+  title: qixi-live-ecrm app trade
   version: 0.7.0
   description: |
     阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。

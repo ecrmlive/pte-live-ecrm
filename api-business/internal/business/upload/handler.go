@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
-	storage "github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/upload"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	storage "github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/upload"
 	"gorm.io/gorm"
 )
 

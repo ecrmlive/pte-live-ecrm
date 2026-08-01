@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform setting
+  title: qixi-live-ecrm platform setting
   version: 0.7.1
   description: 平台设置最小 CRUD（管理员/区域管理员绑定/角色/菜单）
 servers:

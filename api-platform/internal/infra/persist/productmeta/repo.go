@@ -3,7 +3,7 @@ package productmeta
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/productmeta"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/productmeta"
 	"gorm.io/gorm"
 )
 

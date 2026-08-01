@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant reservation
+  title: qixi-live-ecrm merchant reservation
   version: 0.6.4
   description: 商户预约商品时段配置（mer_id 隔离）；保存需 reservation/config
 servers:

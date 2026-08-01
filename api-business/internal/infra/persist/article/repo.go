@@ -3,7 +3,7 @@ package article
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/article"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/article"
 	"gorm.io/gorm"
 )
 

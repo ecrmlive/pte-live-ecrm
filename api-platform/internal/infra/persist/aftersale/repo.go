@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/aftersale"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/catalog"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/aftersale"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/catalog"
 	"gorm.io/gorm"
 )
 

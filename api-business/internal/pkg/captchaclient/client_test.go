@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/config"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/config"
 )
 
 func TestClientSignsPTEChallengeRequest(t *testing.T) {

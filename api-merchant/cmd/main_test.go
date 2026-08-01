@@ -20,7 +20,7 @@ func TestHealthHandler(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("health status = %d, want %d", res.Code, http.StatusOK)
 	}
-	if got := res.Body.String(); got != `{"status":200,"message":"success","data":{"ok":true,"service":"qixi_mergers_api_merchant"}}` {
+	if got := res.Body.String(); got != `{"status":200,"message":"success","data":{"ok":true,"service":"qixi_live_ecrm_api_merchant"}}` {
 		t.Fatalf("health response = %s", got)
 	}
 }

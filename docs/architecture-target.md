@@ -29,4 +29,4 @@
 
 ## 网络与发布目标
 
-qixi 使用独立 Compose project `qixi_mergers`，其 API 加入 pte-live-im 已维护的 `pte_live_net` 并复用 MySQL、Redis、NATS、etcd。七禧不启动重复基础设施，且仅使用自己的 `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` 数据库，不得读写 pte-live-im 的数据库或表。前端本地开发直连 `127.0.0.1`，不安装本机 Nginx。构建、Make 和 Compose 具体命令在第 3 步目录迁移完成后重写。
+qixi 使用独立 Compose project `qixi_live_ecrm`，其 API 加入 pte-live-im 已维护的 `pte_live_net` 并复用 MySQL、Redis、NATS、etcd。七禧不启动重复基础设施，且仅使用自己的 `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` 数据库，不得读写 pte-live-im 的数据库或表。前端本地开发直连 `127.0.0.1`，不安装本机 Nginx。构建、Make 和 Compose 具体命令在第 3 步目录迁移完成后重写。

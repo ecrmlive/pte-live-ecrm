@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform svip
+  title: qixi-live-ecrm platform svip
   version: 0.6.4
   description: 平台付费会员授予（§8.2 互斥由 trade 计价执行）；设置需按钮权 svip/update
 servers:

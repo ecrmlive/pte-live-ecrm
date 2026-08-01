@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app SVIP pricing
+  title: qixi-live-ecrm app SVIP pricing
   version: 0.6.2
   description: |
     C 端 SVIP 计价行为（无独立购买接口本刀；演示用户 demo 永久 SVIP）。

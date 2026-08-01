@@ -112,7 +112,7 @@ watch(
 
     <aside class="right-rail" aria-label="快捷服务">
       <RouterLink v-for="item in serviceLinks" :key="item.label" :to="item.to">{{ item.label }}</RouterLink>
-      <RouterLink class="right-rail__service" to="/live">在线客服</RouterLink>
+      <RouterLink class="right-rail__service" to="/customer-service">在线客服</RouterLink>
     </aside>
 
     <footer class="footer">

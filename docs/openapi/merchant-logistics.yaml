@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant logistics
+  title: qixi-live-ecrm merchant logistics
   version: 0.8.0
   description: 商户快递/城市查询与运费模板 CRUD；模板数据按 mer_id 隔离，同一商户只有一个默认模板。
 servers:

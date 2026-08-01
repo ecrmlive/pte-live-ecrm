@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant assist
+  title: qixi-live-ecrm merchant assist
   version: 0.7.3
   description: 商户助力 CRUD；create/delete/toggle 分别需对应按钮权
 servers:

@@ -1,4 +1,4 @@
-module github.com/qixi-live/qixi-live-mergers/api-merchant
+module github.com/crmlive/qixi-live-ecrm/api-merchant
 
 go 1.26.5
 

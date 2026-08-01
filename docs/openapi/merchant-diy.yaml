@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant diy
+  title: qixi-live-ecrm merchant diy
   version: 0.8.0
   description: 商户店铺装修页与默认页配置；所有接口均按 JWT 中的 store_id 隔离，并写入 qixi_crm_merchant。发布后由 outbox/NATS 同步到 qixi_crm_business，C 端不跨库读取店铺数据。商户装修链接只读自统一后台的固定商城路由。
 servers:

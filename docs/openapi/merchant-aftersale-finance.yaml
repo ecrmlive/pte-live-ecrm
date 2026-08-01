@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant aftersale & finance
+  title: qixi-live-ecrm merchant aftersale & finance
   version: 0.4.0
   description: |
     阶段 4 商户售后审核 + 提现申请（mer_id 隔离）。

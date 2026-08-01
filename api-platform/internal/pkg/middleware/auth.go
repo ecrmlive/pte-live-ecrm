@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/authjwt"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/authjwt"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
 )
 
 const (

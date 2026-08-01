@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant community
+  title: qixi-live-ecrm merchant community
   version: 0.8.0
   description: 商户本店种草；写需 community/create|update|delete；新建和编辑均待平台审核，接口强制 mer_id 隔离
 servers:

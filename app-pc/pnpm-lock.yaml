@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@pte-live/im-web-sdk':
+        specifier: file:../../pte-live-im-sdk/packages/im-web-sdk
+        version: file:../../pte-live-im-sdk/packages/im-web-sdk
       pinia:
         specifier: ^4.0.2
         version: 4.0.2(@vue/devtools-api@6.6.4)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3))
@@ -80,8 +83,23 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
+  '@noble/ciphers@2.0.1':
+    resolution: {integrity: sha512-xHK3XHPUW8DTAobU+G0XT+/w+JLM7/8k1UFdB5xg/zTFPnFCobhftzw8wl4Lw2aq/Rvir5pxfZV5fEazmeCJ2g==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/curves@2.0.1':
+    resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
+
   '@oxc-project/types@0.139.0':
     resolution: {integrity: sha512-r9gHphtCs+1M7J0pw6Sn/hh/Wpa/iQrOOkrNAlVLF/gHq+/CJmHIWKKUUhdWjcD6CIa8idarspCsASiXCXvFUw==}
+
+  '@pte-live/im-web-sdk@file:../../pte-live-im-sdk/packages/im-web-sdk':
+    resolution: {directory: ../../pte-live-im-sdk/packages/im-web-sdk, type: directory}
 
   '@rolldown/binding-android-arm64@1.1.5':
     resolution: {integrity: sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ==}
@@ -631,7 +649,21 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
+  '@noble/ciphers@2.0.1': {}
+
+  '@noble/curves@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+
+  '@noble/hashes@2.0.1': {}
+
   '@oxc-project/types@0.139.0': {}
+
+  '@pte-live/im-web-sdk@file:../../pte-live-im-sdk/packages/im-web-sdk':
+    dependencies:
+      '@noble/ciphers': 2.0.1
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
 
   '@rolldown/binding-android-arm64@1.1.5':
     optional: true

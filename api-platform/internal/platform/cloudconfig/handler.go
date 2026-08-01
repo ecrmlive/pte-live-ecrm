@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	configdomain "github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/cloudconfig"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/identity"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/response"
+	configdomain "github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/cloudconfig"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
 )
 
 type Handler struct {

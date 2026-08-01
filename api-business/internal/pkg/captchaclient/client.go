@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/config"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/config"
 )
 
 var ErrUnavailable = errors.New("验证码服务未配置")

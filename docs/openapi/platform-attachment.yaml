@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform attachment
+  title: qixi-live-ecrm platform attachment
   version: 0.7.5
   description: 平台素材库；分类创建/编辑与上传需 attachment/upload，删除需 attachment/delete。删除分类时素材保留并归入未分类。
 servers:

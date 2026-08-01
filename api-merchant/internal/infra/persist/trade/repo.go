@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/cart"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/catalog"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/trade"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/cart"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/catalog"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/trade"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

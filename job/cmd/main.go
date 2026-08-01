@@ -9,20 +9,20 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/assist"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/cart"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/combination"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/presell"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/promotion"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/trade"
-	assistpersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/assist"
-	cartpersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/cart"
-	combinationpersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/combination"
-	presellpersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/presell"
-	promotionpersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/promotion"
-	tradepersist "github.com/qixi-live/qixi-live-mergers/job/internal/infra/persist/trade"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/pkg/config"
-	"github.com/qixi-live/qixi-live-mergers/job/internal/pkg/db"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/assist"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/cart"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/combination"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/presell"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/promotion"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/trade"
+	assistpersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/assist"
+	cartpersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/cart"
+	combinationpersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/combination"
+	presellpersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/presell"
+	promotionpersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/promotion"
+	tradepersist "github.com/crmlive/qixi-live-ecrm/job/internal/infra/persist/trade"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/pkg/config"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/pkg/db"
 )
 
 func main() {
@@ -54,7 +54,7 @@ func main() {
 	tick := time.Duration(cfg.Job.TickSeconds) * time.Second
 
 	log.Printf(
-		"qixi_mergers_job started (nats=%s); unpaid_ttl=%s batch=%d tick=%s; rollback=presell+assist+combination",
+		"qixi_live_ecrm_job started (nats=%s); unpaid_ttl=%s batch=%d tick=%s; rollback=presell+assist+combination",
 		cfg.NATS.URL, ttl, batch, tick,
 	)
 
@@ -81,7 +81,7 @@ func main() {
 	for {
 		select {
 		case <-sig:
-			log.Printf("qixi_mergers_job shutting down")
+			log.Printf("qixi_live_ecrm_job shutting down")
 			return
 		case <-ticker.C:
 			runClose()

@@ -1,0 +1,42 @@
+const PATH_COMPONENT: Record<string, string> = {
+  '/dashboard': 'ecrm/dashboard/index',
+  '/config/freight/shippingTemplates': 'ecrm/shipping/templates',
+  '/product/label': 'ecrm/product/label',
+  '/product/specs': 'ecrm/product/specs',
+  '/product/attr': 'ecrm/product/specs',
+  '/config/guarantee': 'ecrm/product/guarantee',
+  '/order/invoice': 'ecrm/order/invoice',
+  '/order/list': 'ecrm/order/list',
+  '/order/refund': 'ecrm/order/refund',
+  '/product/list': 'ecrm/product/list',
+  '/finance/balance': 'ecrm/finance/balance',
+  '/finance/withdraw': 'ecrm/finance/withdraw',
+  '/marketing/coupon': 'ecrm/marketing/coupon',
+  '/marketing/coupon/list': 'ecrm/marketing/coupon',
+  '/marketing/coupon/send': 'ecrm/marketing/coupon-records',
+  '/marketing/coupon/user': 'ecrm/marketing/coupon-records',
+  '/marketing/seckill/list': 'ecrm/marketing/seckill',
+  '/marketing/seckill/product/list': 'ecrm/marketing/seckill',
+  '/marketing/seckill/store_seckill/list': 'ecrm/marketing/seckill',
+  '/marketing/presell/list': 'ecrm/marketing/presell',
+  '/marketing/broadcast': 'ecrm/marketing/broadcast',
+  '/marketing/studio/list': 'ecrm/marketing/broadcast',
+  '/marketing/broadcast/list': 'ecrm/marketing/broadcast',
+  '/marketing/community': 'ecrm/marketing/community',
+  '/community/list': 'ecrm/marketing/community',
+  '/setting/shop': 'ecrm/setting/shop',
+  '/setting/staff': 'ecrm/setting/staff',
+  '/setting/admins': 'ecrm/setting/admins',
+  '/setting/role': 'ecrm/setting/role',
+  '/setting/payment': 'ecrm/setting/payment',
+  '/setting/im-sdk-app': 'ecrm/setting/im-sdk-app',
+  '/setting/attachment': 'ecrm/setting/attachment',
+  '/config/picture': 'ecrm/setting/attachment',
+  '/devise/diy/list': 'ecrm/diy/list',
+  '/devise/diy/index': 'ecrm/diy/editor',
+};
+
+export function resolveMergersComponent(path: string): string | undefined {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return PATH_COMPONENT[normalized];
+}

@@ -1,6 +1,6 @@
 package aftersalepersist
 
-import "github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/aftersale"
+import "github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/aftersale"
 
 type StoreAdapter struct {
 	*Repo

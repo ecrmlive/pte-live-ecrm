@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app promotion
+  title: qixi-live-ecrm app promotion
   version: 0.5.0
   description: 阶段5 C端平台/店铺券领取、我的券、结算可用券、分销绑定与佣金流水；v2 选券计价。
 servers:

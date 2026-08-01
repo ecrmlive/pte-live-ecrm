@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/content"
-	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/content"
+	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
 )
 
 type Handler struct {

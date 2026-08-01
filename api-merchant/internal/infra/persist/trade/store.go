@@ -1,6 +1,6 @@
 package tradepersist
 
-import "github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/trade"
+import "github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/trade"
 
 type StoreAdapter struct {
 	*Repo

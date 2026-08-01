@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant service reply
+  title: qixi-live-ecrm merchant service reply
   version: 0.7.7
   description: 商户客服快捷回复 CRUD；写需 reply/write（sql/039）
 servers:

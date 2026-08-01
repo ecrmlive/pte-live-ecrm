@@ -3,7 +3,7 @@ package combinationpersist
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/job/internal/domain/combination"
+	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/combination"
 	"gorm.io/gorm"
 )
 

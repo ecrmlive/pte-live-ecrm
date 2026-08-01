@@ -32,7 +32,7 @@ func Start(ctx context.Context, db *gorm.DB, url string) (*nats.Conn, error) {
 	if url == "" {
 		return nil, nil
 	}
-	nc, err := nats.Connect(url, nats.Name("qixi_mergers_api_business_platform_diy_projection"))
+	nc, err := nats.Connect(url, nats.Name("qixi_live_ecrm_api_business_platform_diy_projection"))
 	if err != nil {
 		return nil, err
 	}

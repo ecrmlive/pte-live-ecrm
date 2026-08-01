@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers app assist
+  title: qixi-live-ecrm app assist
   version: 0.6.3
   description: |
     C 端助力：活动列表/发起/好友助力 + `/order/assist/check|create`（独立于 v2）。

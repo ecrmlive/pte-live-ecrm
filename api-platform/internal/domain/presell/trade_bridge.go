@@ -3,7 +3,7 @@ package presell
 import (
 	"context"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/trade"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/trade"
 )
 
 // TradeBridge 适配 trade.PresellHook。

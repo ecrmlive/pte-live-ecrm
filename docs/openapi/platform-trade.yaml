@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform trade
+  title: qixi-live-ecrm platform trade
   version: 0.3.0
   description: 阶段 3 平台订单监管（只读）
 servers:

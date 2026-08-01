@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/logistics"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/logistics"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
 )
 
 // 菜单：运费模板可挂 sql/043 导入节点；本刀 JWT + mer_id 隔离。

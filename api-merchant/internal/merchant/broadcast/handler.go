@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/broadcast"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/domain/identity"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-merchant/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/broadcast"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/identity"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
 )
 
 type Handler struct {

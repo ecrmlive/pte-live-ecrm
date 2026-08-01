@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers pay callback
+  title: qixi-live-ecrm pay callback
   version: 0.2.0
   description: |
     支付回调前缀 /api/callback/v1（无 JWT）。

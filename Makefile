@@ -29,7 +29,7 @@ pack-backend:
 
 # 仅从被 Git 忽略的 YAML 读取本机管理员初始化数据；不在 SQL 或仓库中保存密码。
 local-admin-init:
-	@cd api-platform && GOCACHE="$${GOCACHE:-$${TMPDIR:-/tmp}/qixi-mergers-go-cache}" \
+	@cd api-platform && GOCACHE="$${GOCACHE:-$${TMPDIR:-/tmp}/qixi-live-ecrm-go-cache}" \
 		go run ./cmd/admin-init -app-config ../release/config/api-platform/app.yaml -seed-config ../release/admin-users.yaml
 
 local: local-backend

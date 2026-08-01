@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers platform merchant & catalog
+  title: qixi-live-ecrm platform merchant & catalog
   version: 0.2.2
   description: 阶段 2 平台侧商户审核 / 类目品牌 / 商品审核
 servers:

@@ -1,6 +1,6 @@
 package contentpersist
 
-import "github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/content"
+import "github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/content"
 
 type StoreAdapter struct {
 	*Repo

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/identity"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/merchant"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/merchant"
 	"gorm.io/gorm"
 )
 

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/paynotify"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/paynotify"
 	"gorm.io/gorm"
 )
 

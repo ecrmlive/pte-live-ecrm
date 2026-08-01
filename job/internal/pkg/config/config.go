@@ -117,8 +117,8 @@ type COSConfig struct {
 	Region    string `yaml:"region"`
 	SecretID  string `yaml:"secret_id"`
 	SecretKey string `yaml:"secret_key"`
-	BaseURL   string `yaml:"base_url"`   // 对外 CDN/自定义域，如 https://cos.qxkejiwl.top/qixi-mergers
-	KeyPrefix string `yaml:"key_prefix"` // 对象键前缀，默认 qixi-mergers
+	BaseURL   string `yaml:"base_url"`   // 对外 CDN/自定义域，如 https://cos.qxkejiwl.top/qixi-live-ecrm
+	KeyPrefix string `yaml:"key_prefix"` // 对象键前缀，默认 qixi-live-ecrm
 }
 
 type JWTConfig struct {
@@ -191,10 +191,10 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("im.mode=local is not supported; configure pte-live-im endpoint in %s", path)
 	}
 	if cfg.COS.BaseURL == "" {
-		cfg.COS.BaseURL = "https://cos.qxkejiwl.top/qixi-mergers"
+		cfg.COS.BaseURL = "https://cos.qxkejiwl.top/qixi-live-ecrm"
 	}
 	if cfg.COS.KeyPrefix == "" {
-		cfg.COS.KeyPrefix = "qixi-mergers"
+		cfg.COS.KeyPrefix = "qixi-live-ecrm"
 	}
 	if cfg.COS.Region == "" {
 		cfg.COS.Region = "ap-guangzhou"

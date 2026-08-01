@@ -5,4 +5,4 @@ export * from './platform-admin-user';
 export * from './platform-role';
 export * from './platform-session';
 export * from './user';
-export * from './mergers';
+export * from './ecrm';

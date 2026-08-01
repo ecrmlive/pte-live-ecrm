@@ -1,6 +1,6 @@
 package cartpersist
 
-import "github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/cart"
+import "github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/cart"
 
 type StoreAdapter struct {
 	*Repo

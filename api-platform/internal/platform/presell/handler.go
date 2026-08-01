@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/presell"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/presell"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
 )
 
 type Handler struct{ svc *presell.Service }

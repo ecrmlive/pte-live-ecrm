@@ -52,15 +52,15 @@ app.yaml
 !api/conf/admin.yaml
 !api/conf/job.yaml
 !**/config/**/*.example
-release/qixi-mergers-*/config/local/compose.env
-release/qixi-mergers-*/config/local/app.yaml
-release/qixi-mergers-*/config/prod/compose.env
-release/qixi-mergers-*/config/prod/app.yaml
-release/qixi-mergers-*/config/test/compose.env
-release/qixi-mergers-*/config/test/app.yaml
-release/qixi-mergers-*/bin/
-release/qixi-mergers-*/dist/
-release/qixi-mergers-db/sql/
+release/qixi-live-ecrm-*/config/local/compose.env
+release/qixi-live-ecrm-*/config/local/app.yaml
+release/qixi-live-ecrm-*/config/prod/compose.env
+release/qixi-live-ecrm-*/config/prod/app.yaml
+release/qixi-live-ecrm-*/config/test/compose.env
+release/qixi-live-ecrm-*/config/test/app.yaml
+release/qixi-live-ecrm-*/bin/
+release/qixi-live-ecrm-*/dist/
+release/qixi-live-ecrm-db/sql/
 # opts：忽略证书/私钥站点目录，保留 nginx 模板与 README
 release/opts/*/
 !release/opts/README.md

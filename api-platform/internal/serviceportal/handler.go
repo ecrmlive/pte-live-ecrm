@@ -6,13 +6,13 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/chat"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/cs"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/identity"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/trade"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/authjwt"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/middleware"
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/pkg/response"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/chat"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/cs"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/trade"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/authjwt"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
 )
 
 // Handler 客服工作台：正式 JWT + 查单 + 快捷回复 + 会话桥

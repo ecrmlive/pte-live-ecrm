@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers service desk
+  title: qixi-live-ecrm service desk
   version: 0.7.9
   description: 客服工作台：正式 service JWT、商户隔离的查单/快捷回复/会话管理，以及 IM 凭据获取。
 servers:

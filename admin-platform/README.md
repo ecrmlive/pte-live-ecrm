@@ -18,7 +18,7 @@ API：`http://127.0.0.1:18081/api/platform/v1`（`api-platform`）。
 
 ## 业务页
 
-已迁移叶子在 `src/views/mergers/**`，菜单 path 映射见 `src/views/mergers/registry.ts`。
+已迁移叶子在 `src/views/ecrm/**`，菜单 path 映射见 `src/views/ecrm/registry.ts`。
 
 ## 构建
 

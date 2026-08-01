@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-mergers merchant seckill
+  title: qixi-live-ecrm merchant seckill
   version: 0.6.2
   description: 商户秒杀 CRUD（mer_id 隔离）；新建 seckill/create，删除 seckill/delete，启停 seckill/toggle
 servers:

@@ -5,7 +5,7 @@ const standaloneRoutes: RouteRecordRaw[] = [
   {
     name: 'PlatformDiyEditor',
     path: '/setting/diy/index',
-    component: () => import('#/views/mergers/diy/editor.vue'),
+    component: () => import('#/views/ecrm/diy/editor.vue'),
     meta: {
       hideInBreadcrumb: true,
       hideInMenu: true,

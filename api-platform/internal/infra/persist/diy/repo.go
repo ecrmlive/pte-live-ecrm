@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/diy"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/diy"
 	"gorm.io/gorm"
 )
 

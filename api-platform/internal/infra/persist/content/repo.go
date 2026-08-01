@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/qixi-live/qixi-live-mergers/api-platform/internal/domain/content"
+	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/content"
 	"gorm.io/gorm"
 )
 

@@ -3,7 +3,7 @@ import type { UserInfo } from '@vben/types';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import { requestClient } from '#/api/request';
 import type { PlatformAccessMenuItem } from '#/utils/platform-menu';
-import { mapMergersMenusToAccess } from '#/utils/mergers-menu';
+import { mapMergersMenusToAccess } from '#/utils/ecrm-menu';
 
 export interface PlatformSession {
   menus: PlatformAccessMenuItem[];
