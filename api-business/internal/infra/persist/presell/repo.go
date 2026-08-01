@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/presell"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/presell"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

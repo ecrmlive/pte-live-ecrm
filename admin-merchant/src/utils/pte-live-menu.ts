@@ -1,6 +1,6 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
-import { resolveLegacyComponentPath } from './qixi-live-api';
+import { resolveLegacyComponentPath } from './pte-live-api';
 import { NATIVE_PAGE_OVERRIDES } from '#/views/native/registry';
 
 export interface ShopAccessMenuItem {

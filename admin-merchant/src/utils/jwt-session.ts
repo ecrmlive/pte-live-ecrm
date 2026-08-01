@@ -1,5 +1,5 @@
 import { clearShopSessionCache } from '#/api/core/shop-session';
-import { QIXI_SHOP_MENU_KEY } from '#/utils/qixi-live-api';
+import { QIXI_SHOP_MENU_KEY } from '#/utils/pte-live-api';
 import {
   refreshLiveJwtToken,
   type LoginPlatform,

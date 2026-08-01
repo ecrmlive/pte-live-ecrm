@@ -1,5 +1,5 @@
 /**
- * 中控 IM WebSocket（qixi-live-im :11510）
+ * 中控 IM WebSocket（pte-live-im :11510）
  * 握手：/ws?sdkAppID=&identifier=&userSig=（浏览器无法自定义 Header，走 Query）
  * 进房：握手成功后发送 scene.enter，不再使用旧 /ws?roomId=。
  * 断线后自动重连，直至手动 disconnect()。
@@ -7,7 +7,7 @@
 
 import { parseImPayload } from '#/utils/live/liveStreamStatus.js';
 
-/** 电商直播 IM 消息码（与 qixi-live-im live-commerce 一致） */
+/** 电商直播 IM 消息码（与 pte-live-im live-commerce 一致） */
 export const LIVE_IM_CODE = {
 	PRODUCT_EXPLAIN_START: 11001,
 	PRODUCT_EXPLAIN_CANCEL: 11002,

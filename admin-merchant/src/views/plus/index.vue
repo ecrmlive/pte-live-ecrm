@@ -8,7 +8,7 @@ import { openPlusPluginPage } from '#/utils/plus-navigation';
 import {
   MERCHANT_AGENT_HUB_PATH,
   MERCHANT_ARTICLE_HUB_PATH,
-} from '#/utils/qixi-live-menu';
+} from '#/utils/pte-live-menu';
 
 import type { PlusCategory, PlusPluginItem } from './types';
 

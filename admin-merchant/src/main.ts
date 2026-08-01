@@ -2,7 +2,7 @@ import { initPreferences } from '@vben/preferences';
 import { unmountGlobalLoading } from '@vben/utils';
 
 import { overridesPreferences } from './preferences';
-import { syncAuthFromOpener } from './utils/qixi-live-token';
+import { syncAuthFromOpener } from './utils/pte-live-token';
 
 /**
  * 应用初始化完成之后再进行页面加载渲染

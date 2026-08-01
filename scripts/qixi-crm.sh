@@ -17,11 +17,11 @@ usage() {
   check-config                     校验三套 API YAML
   compose-config                   校验唯一 docker-compose.yaml
   up [infra|db-init|backend|all]   校验共享基础设施、初始化数据库或启动 API
-  down                             停止 qixi_live_ecrm 容器
-  ps                               查看 qixi_live_ecrm 容器
+  down                             停止 pte_live_ecrm 容器
+  ps                               查看 pte_live_ecrm 容器
 
 说明:
-  - local/test 使用相同的 qixi_live_ecrm 项目、容器、固定 IP、数据库名和 YAML；仅宿主机不同。
+  - local/test 使用相同的 pte_live_ecrm 项目、容器、固定 IP、数据库名和 YAML；仅宿主机不同。
   - MySQL、Redis、etcd、NATS 统一复用 pte_live_net 中的 pte_live_* 容器，七禧不启动重复基础设施。
   - JWT、数据库等运行密钥只填写 release/config.yaml 与 release/config/*/app.yaml，均不提交 Git；云服务、支付、小程序密钥只写入被 Git 忽略的 sql/*/*_key.sql。
   - local/test 必须使用内容完全相同的 sql/*/*_key.sql；db-init 会按顺序自动导入。
@@ -66,10 +66,10 @@ service_config_source() {
 
 service_release_dir() {
 	case "$1" in
-	api-platform) echo qixi-live-ecrm-api-platform ;;
-	api-business) echo qixi-live-ecrm-api-business ;;
-	api-merchant) echo qixi-live-ecrm-api-merchant ;;
-	job) echo qixi-live-ecrm-job ;;
+	api-platform) echo pte-live-ecrm-api-platform ;;
+	api-business) echo pte-live-ecrm-api-business ;;
+	api-merchant) echo pte-live-ecrm-api-merchant ;;
+	job) echo pte-live-ecrm-job ;;
 	*) return 1 ;;
 	esac
 }
@@ -129,7 +129,7 @@ pack_one() {
 	mkdir -p "$(dirname "${output}")"
 	(
 		cd "${source_dir}"
-		GOCACHE="${GOCACHE:-${TMPDIR:-/tmp}/qixi-live-ecrm-go-cache}" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+		GOCACHE="${GOCACHE:-${TMPDIR:-/tmp}/pte-live-ecrm-go-cache}" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 			go build -o "${output}" ./cmd
 	)
 	chmod +x "${output}"
@@ -154,7 +154,7 @@ pack() {
 }
 
 compose() {
-	docker compose --project-name qixi_live_ecrm --file "${COMPOSE_FILE}" "$@"
+	docker compose --project-name pte_live_ecrm --file "${COMPOSE_FILE}" "$@"
 }
 
 require_shared_infra() {

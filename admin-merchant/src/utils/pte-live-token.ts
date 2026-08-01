@@ -4,7 +4,7 @@ import {
   QIXI_SHOP_MENU_KEY,
   QIXI_SHOP_RENDER_MENU_KEY,
   QIXI_SHOP_TOKEN_KEY,
-} from './qixi-live-api';
+} from './pte-live-api';
 
 const SECRET_KEY = 'jjj_shop_single_admin_2024';
 

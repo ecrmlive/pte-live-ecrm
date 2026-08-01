@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/invoice"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/invoice"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 )
 
 type Handler struct{ svc *invoice.Service }

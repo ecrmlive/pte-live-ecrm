@@ -46,7 +46,7 @@ const TOP_LEVEL_ORDER = [
   '/cash',
 ];
 
-/** 按钮权限路由，非侧栏可访问页（对齐 qixi-live-menu 权限子路由） */
+/** 按钮权限路由，非侧栏可访问页（对齐 pte-live-menu 权限子路由） */
 const PERMISSION_ONLY_RE =
   /\/(add|edit|delete|state|audit|receipt|detail|send|end|partake|pushs|receive|qrcode|export|syn|setSyn|set-top)$/i;
 

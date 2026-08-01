@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform logistics
+  title: pte-live-ecrm platform logistics
   version: 0.7.9
   description: 平台快递公司 CRUD 与城市查询。
 servers:

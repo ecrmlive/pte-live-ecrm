@@ -43,7 +43,7 @@ func NewStore(db *gorm.DB, masterSecret string) (*Store, error) {
 	if db == nil || strings.TrimSpace(masterSecret) == "" {
 		return nil, ErrNotConfigured
 	}
-	key := sha256.Sum256([]byte("qixi-live-ecrm/payment-runtime/v1:" + masterSecret))
+	key := sha256.Sum256([]byte("pte-live-ecrm/payment-runtime/v1:" + masterSecret))
 	block, err := aes.NewCipher(key[:])
 	if err != nil {
 		return nil, err

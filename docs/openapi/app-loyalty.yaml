@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app loyalty
+  title: pte-live-ecrm app loyalty
   version: 0.1.0
   description: |
     阶段 5 余量：普通单积分抵扣 + 积分商城（activity_type=20）。

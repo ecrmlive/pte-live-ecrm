@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant trade
+  title: pte-live-ecrm merchant trade
   version: 0.3.0
   description: 阶段 3 商户订单 / 发货 / 核销（mer_id 隔离）
 servers:

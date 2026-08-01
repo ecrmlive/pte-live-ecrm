@@ -1,4 +1,4 @@
-# qixi-live-ecrm
+# pte-live-ecrm
 
 多商户商城管理系统。
 
@@ -36,7 +36,7 @@ api-business/        # C 端业务 API（独立 Go module）
 api-merchant/        # 店铺 API（独立 Go module）
 job/                 # 异步任务（独立 Go module）
 sql/
-release/qixi-live-ecrm-*/
+release/pte-live-ecrm-*/
 ```
 
 本机：
@@ -58,8 +58,8 @@ make test-backend
 ## Agent
 
 - [AGENTS.md](AGENTS.md) — 协作与工程约定（含个人工作习惯）
-- Cursor Skill：`.cursor/skills/qixi-live-ecrm/`
-- Codex Skill 镜像：`codex-skills/qixi-live-ecrm/`
+- Cursor Skill：`.cursor/skills/pte-live-ecrm/`
+- Codex Skill 镜像：`codex-skills/pte-live-ecrm/`
 
 ## 外部参考（不入库）
 

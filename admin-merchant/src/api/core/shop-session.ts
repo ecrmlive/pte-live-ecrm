@@ -1,8 +1,8 @@
 import type { UserInfo } from '@vben/types';
 
 import { requestClient } from '#/api/request';
-import type { ShopAccessMenuItem } from '#/utils/qixi-live-menu';
-import { QIXI_SHOP_MENU_KEY } from '#/utils/qixi-live-api';
+import type { ShopAccessMenuItem } from '#/utils/pte-live-menu';
+import { QIXI_SHOP_MENU_KEY } from '#/utils/pte-live-api';
 import {
   applyTenantAppBranding,
   resolveShopDisplayName,

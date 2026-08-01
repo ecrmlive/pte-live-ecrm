@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm unified admin customer service
+  title: pte-live-ecrm unified admin customer service
   version: 1.0.0
   description: >-
     统一后台客服队列。仅 platform 角色或具有 customer_service 角色且已配置

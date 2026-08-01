@@ -3,7 +3,7 @@ package invoice
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/invoice"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/invoice"
 	"gorm.io/gorm"
 )
 

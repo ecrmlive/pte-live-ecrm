@@ -286,7 +286,7 @@ func (m *Manager) sign(identity Identity, kind, sessionID string, ttl time.Durat
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
-			Issuer:    "qixi-live-ecrm",
+			Issuer:    "pte-live-ecrm",
 			ID:        jti,
 		},
 	}
@@ -300,7 +300,7 @@ func (m *Manager) sign(identity Identity, kind, sessionID string, ttl time.Durat
 	return t.SignedString(m.secret)
 }
 
-func audienceForPortal(portal string) string { return "qixi-live-ecrm:" + portal }
+func audienceForPortal(portal string) string { return "pte-live-ecrm:" + portal }
 
 func containsAudience(audiences jwt.ClaimStrings, expected string) bool {
 	for _, audience := range audiences {

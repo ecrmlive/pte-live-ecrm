@@ -1,5 +1,5 @@
-import type { ShopAccessMenuItem } from './qixi-live-menu';
-import { QIXI_SHOP_MENU_KEY } from './qixi-live-api';
+import type { ShopAccessMenuItem } from './pte-live-menu';
+import { QIXI_SHOP_MENU_KEY } from './pte-live-api';
 
 function createdAuth(
   list: ShopAccessMenuItem[],

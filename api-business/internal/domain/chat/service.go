@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/infra/imclient"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/infra/imclient"
 	"gorm.io/gorm"
 )
 

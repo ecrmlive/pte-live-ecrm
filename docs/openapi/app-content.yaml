@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app content
+  title: pte-live-ecrm app content
   version: 0.7.8
   description: >-
     PC、小程序、H5、iOS、Android、鸿蒙共用的内容消费视图；公告和协议只读取

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant combination
+  title: pte-live-ecrm merchant combination
   version: 0.6.3
   description: 商户拼团 CRUD（mer_id 隔离）；新建 combination/create，删除 combination/delete，上下架 combination/toggle
 servers:

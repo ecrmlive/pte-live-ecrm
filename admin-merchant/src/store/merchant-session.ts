@@ -5,7 +5,7 @@ import {
   getDecryptedToken,
   getLegacyUserInfo,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 
 export interface MerchantSessionUserInfo {
 	store_app_id?: string;

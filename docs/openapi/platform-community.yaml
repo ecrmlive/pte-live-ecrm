@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform community
+  title: pte-live-ecrm platform community
   version: 0.7.0
   description: 平台社区种草监管（审核、驳回、展示、置顶、评论删除）
 servers:

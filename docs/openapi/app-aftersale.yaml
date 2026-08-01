@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app aftersale
+  title: pte-live-ecrm app aftersale
   version: 0.4.0
   description: 阶段 4 C 端仅退款申请/进度
 servers:

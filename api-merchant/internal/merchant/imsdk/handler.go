@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

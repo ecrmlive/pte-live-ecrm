@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform aftersale & finance
+  title: pte-live-ecrm platform aftersale & finance
   version: 0.7.8
   description: 平台退款监管写操作 + 提现审核（按钮权限 RequirePlatformMenu）；区域账号仅可读取其 region_ids 内商户退款和提现，不能审核、拒绝或打款。
 servers:

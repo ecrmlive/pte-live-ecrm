@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/article"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/article"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
 )
 
 type Handler struct{ svc *article.Service }

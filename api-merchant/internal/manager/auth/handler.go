@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/identity"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/authjwt"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 )
 
 type Handler struct {

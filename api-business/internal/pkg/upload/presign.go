@@ -163,7 +163,7 @@ func (c COS) newKey(scope, filename string) (string, error) {
 	ext := strings.ToLower(filepath.Ext(filename))
 	prefix := strings.Trim(strings.ReplaceAll(c.KeyPrefix, "\\", "/"), "/")
 	if prefix == "" {
-		prefix = "qixi-live-ecrm"
+		prefix = "pte-live-ecrm"
 	}
 	scope = strings.Trim(strings.ReplaceAll(scope, "\\", "/"), "/")
 	return strings.Join([]string{prefix, scope, time.Now().Format("20060102"), hex.EncodeToString(random[:]) + ext}, "/"), nil

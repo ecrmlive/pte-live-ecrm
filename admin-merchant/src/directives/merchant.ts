@@ -4,7 +4,7 @@ import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 import { buildShopPathAuthMap } from '#/utils/shop-path-auth';
 
 const DEFAULT_IMG =
-  'https://cos.qxkejiwl.top/qixi-live/image/picture/picture_01.png';
+  'https://cos.qxkejiwl.top/pte-live/image/picture/picture_01.png';
 
 function resolveImgUrl(binding: DirectiveBinding) {
   if (binding.value instanceof Object) {

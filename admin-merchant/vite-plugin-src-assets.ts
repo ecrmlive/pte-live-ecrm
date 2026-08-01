@@ -12,7 +12,7 @@ export function srcAssetsPlugin(): Plugin {
 
   return {
     enforce: 'pre',
-    name: 'qixi-live-src-assets',
+    name: 'pte-live-src-assets',
     resolveId(source) {
       if (!source.startsWith(ASSET_PREFIX)) {
         return null;

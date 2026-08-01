@@ -1,14 +1,14 @@
 ---
-name: qixi-live-ecrm
+name: pte-live-ecrm
 description: >-
-  Maintain the qixi-live-ecrm multi-merchant mall system. Use when working on
+  Maintain the pte-live-ecrm multi-merchant mall system. Use when working on
   this repository, multi-merchant marketplace features, platform/merchant admin,
   trade/catalog/finance domains, CRMEB MER v4.0 feature alignment, Vben admin,
-  uni-app x / PC storefront, or Go Gin/GORM APIs for qixi-live-ecrm.
+  uni-app x / PC storefront, or Go Gin/GORM APIs for pte-live-ecrm.
 disable-model-invocation: false
 ---
 
-# qixi-live-ecrm
+# pte-live-ecrm
 
 多商户商城管理系统。功能基线对齐 CRMEB Merchant v4.0；实现栈为 Go（Gin/GORM）+ Vben 5+ + uni-app x。
 
@@ -63,7 +63,7 @@ disable-model-invocation: false
 
 - 配置文件使用 `.yaml`。
 - API：Gin、GORM、Swagger、MySQL、etcd、NATS。
-- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x（`app-mp/`）；PC 商城用 Vue 3（`app-web/`）。
+- 管理后台：Vben 5+；C 端 H5/小程序用 uni-app x（`app-uni/`）；PC 商城用 Vue 3（`app-pc/`）。
 - **数据库表前缀固定为 `qixi_m_admin_`（平台/商户）与 `qixi_m_app_`（C 端）**（CRMEB `eb_` 映射）。见 `docs/schema/`。禁止新代码使用裸 `qixi_` 或 `eb_`。
 - 商户接口强制 `mer_id` 隔离。
 - 测试数据注意中文乱码（utf8mb4）。

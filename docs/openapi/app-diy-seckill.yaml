@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app diy & seckill
+  title: pte-live-ecrm app diy & seckill
   version: 0.6.1
   description: |
     C 端 DIY 首页 + 秒杀列表。DIY 页面统一返回 `{page, items[]}` 组件文档；

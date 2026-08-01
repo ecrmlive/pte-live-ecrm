@@ -1,6 +1,6 @@
 import { useAccessStore } from '@vben/stores';
 
-import { getDecryptedToken } from '#/utils/qixi-live-token';
+import { getDecryptedToken } from '#/utils/pte-live-token';
 
 /** 与 request.ts 一致：优先 Vben accessStore，避免 platform-user 残留旧 token */
 export function getAdminToken() {

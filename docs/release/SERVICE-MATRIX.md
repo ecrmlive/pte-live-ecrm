@@ -7,12 +7,12 @@
 | 共享基础设施 | etcd | `pte_live_etcd1`、`pte_live_etcd2`、`pte_live_etcd3` | `.12`、`.14`、`.15` | 共享服务发现集群 |
 | 共享基础设施 | NATS | `pte_live_nats1`、`pte_live_nats2`、`pte_live_nats3` | `.13`、`.16`、`.17` | 共享事件总线集群 |
 | 初始化 | SQL 导入 | 无容器 | — | `make local-db-init` 直接导入共享 MySQL 中的七禧三库 |
-| API | 统一后台 | `qixi_live_ecrm_api_platform` | `172.30.0.61` | admin 身份、权限、后台配置与客服入口 |
-| API | C 端业务 | `qixi_live_ecrm_api_business` | `172.30.0.62` | C 用户、交易、营销、资产与内容消费 |
-| API | 店铺 | `qixi_live_ecrm_api_merchant` | `172.30.0.63` | 店铺、员工、商品经营、库存与履约 |
-| 异步 | job | `qixi_live_ecrm_job` | `172.30.0.64` | profile 保留，待旧单库迁移完成后启用 |
+| API | 统一后台 | `pte_live_ecrm_api_platform` | `172.30.0.61` | admin 身份、权限、后台配置与客服入口 |
+| API | C 端业务 | `pte_live_ecrm_api_business` | `172.30.0.62` | C 用户、交易、营销、资产与内容消费 |
+| API | 店铺 | `pte_live_ecrm_api_merchant` | `172.30.0.63` | 店铺、员工、商品经营、库存与履约 |
+| 异步 | job | `pte_live_ecrm_job` | `172.30.0.64` | profile 保留，待旧单库迁移完成后启用 |
 
-Compose project 与前缀固定为 `qixi_live_ecrm`，七禧 API 固定加入 `pte_live_net (172.30.0.0/24)`。local/test 仅是不同执行宿主机，矩阵不得变更。
+Compose project 与前缀固定为 `pte_live_ecrm`，七禧 API 固定加入 `pte_live_net (172.30.0.0/24)`。local/test 仅是不同执行宿主机，矩阵不得变更。
 
 七禧仅映射 API 宿主机端口 `18081`、`18082`、`18083`。MySQL、Redis、etcd、NATS 端口由 pte-live-im 基础设施统一管理，七禧不新增映射。
 

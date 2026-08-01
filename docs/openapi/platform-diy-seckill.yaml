@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform diy & seckill
+  title: pte-live-ecrm platform diy & seckill
   version: 0.8.0
   description: DIY 装修 + 秒杀监管；DIY 文档为 `{page,items[]}`。页面分类与链接按 scope=platform|merchant 隔离，商户商城链接由平台统一维护；写入需 diy/create|update|delete|active，设为首页即发布当前范围页面。
 servers:

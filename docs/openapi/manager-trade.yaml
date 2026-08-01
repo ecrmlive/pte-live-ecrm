@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm manager trade
+  title: pte-live-ecrm manager trade
   version: 0.1.0
   description: 店铺员工登录 / 核销 / 代退（api-merchant `/api/manager/v1`）；JWT PortalManager，claims.admin_id=service_id
 servers:

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform user segmentation
+  title: pte-live-ecrm platform user segmentation
   version: 0.7.9
   description: 平台用户标签、用户分组与用户打标。
 servers:

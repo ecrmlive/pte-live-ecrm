@@ -1,7 +1,7 @@
 import qs from 'qs';
 
-import { resolveApiBaseUrl } from '#/utils/qixi-live-api';
-import { getDecryptedToken } from '#/utils/qixi-live-token';
+import { resolveApiBaseUrl } from '#/utils/pte-live-api';
+import { getDecryptedToken } from '#/utils/pte-live-token';
 
 /** 商户后台文件下载（PHP 接口需在 query 带 token） */
 export function buildShopDownloadUrl(

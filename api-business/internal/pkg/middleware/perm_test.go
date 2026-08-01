@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
 )
 
 func TestRequireAdminConsole(t *testing.T) {

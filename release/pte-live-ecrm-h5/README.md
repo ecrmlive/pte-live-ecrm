@@ -1,4 +1,4 @@
-# qixi-live-ecrm-h5
+# pte-live-ecrm-h5
 
 用户端 H5 静态产物（源码 `app-uni/`）。宿主机 Nginx 托管，无 Docker 容器。
 

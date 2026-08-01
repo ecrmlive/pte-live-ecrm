@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/cart"
-	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/catalog"
-	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/trade"
+	"github.com/crmlive/pte-live-ecrm/job/internal/domain/cart"
+	"github.com/crmlive/pte-live-ecrm/job/internal/domain/catalog"
+	"github.com/crmlive/pte-live-ecrm/job/internal/domain/trade"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

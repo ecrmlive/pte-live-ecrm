@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform content
+  title: pte-live-ecrm platform content
   version: 0.8.0
   description: 平台公告 CRUD + 协议规则（旧契约迁移参考；新表归属 qixi_crm_a_）
 servers:

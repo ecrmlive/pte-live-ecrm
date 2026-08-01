@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/paymentconfig"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/wechatpayv3"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/paymentconfig"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/wechatpayv3"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

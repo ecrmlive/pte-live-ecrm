@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/cart"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/catalog"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/cart"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/catalog"
 	"gorm.io/gorm"
 )
 

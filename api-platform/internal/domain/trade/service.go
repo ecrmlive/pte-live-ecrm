@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/cart"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/promotion"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/cart"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
 	"gorm.io/gorm"
 )
 

@@ -25,7 +25,7 @@ export function resolveCosBaseUrl() {
 }
 
 /** 平台默认 Logo 对象键（init_file.sql / static_asset_url） */
-export const QIXI_PLATFORM_LOGO_OBJECT_KEY = 'qixi-live/image/default/logo.png';
+export const QIXI_PLATFORM_LOGO_OBJECT_KEY = 'pte-live/image/default/logo.png';
 
 export function resolvePlatformLogoUrl(
   objectKey: string = QIXI_PLATFORM_LOGO_OBJECT_KEY,

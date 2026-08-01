@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/authjwt"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/captchaclient"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/captchaclient"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
 )
 
 type Handler struct {

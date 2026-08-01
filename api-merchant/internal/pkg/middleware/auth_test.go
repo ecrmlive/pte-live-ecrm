@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/authjwt"
 )
 
 func TestJWTRequiredOnlyAcceptsAuthoriZation(t *testing.T) {

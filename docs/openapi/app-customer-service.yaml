@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app customer service
+  title: pte-live-ecrm app customer service
   version: 0.7.9
   description: C 端客服会话；除创建会话外均需要 app JWT。文字消息由 IM SDK E2EE 发送，本接口仅管理会话与订单卡片等元数据。
 servers:

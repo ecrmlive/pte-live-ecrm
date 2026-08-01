@@ -3,7 +3,7 @@ package attachmentpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/attachment"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/attachment"
 	"gorm.io/gorm"
 )
 

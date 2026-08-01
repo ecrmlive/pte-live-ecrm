@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

@@ -1,6 +1,6 @@
 import { requestClient } from '#/api/request';
 import { fetchShopSessionApi } from '#/api/core/shop-session';
-import { getDecryptedToken } from '#/utils/qixi-live-token';
+import { getDecryptedToken } from '#/utils/pte-live-token';
 import { useAccessStore } from '@vben/stores';
 
 export namespace AuthApi {

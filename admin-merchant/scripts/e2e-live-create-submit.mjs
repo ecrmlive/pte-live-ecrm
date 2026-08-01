@@ -150,7 +150,7 @@ async function verifyRecordRadio(page, modal) {
 export async function runLiveCreateSubmit(page, options) {
   const { token, roomName = `E2E循环${Date.now() % 100000}`, baseUrl = BASE_URL } = options;
   const anchor = await fetchFirstAnchor(token);
-  const coverPath = 'https://cos.qxkejiwl.top/qixi-live/image/bg/bg_3.png';
+  const coverPath = 'https://cos.qxkejiwl.top/pte-live/image/bg/bg_3.png';
 
   await page.goto(`${baseUrl}/#/live/index`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(2000);

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app reservation
+  title: pte-live-ecrm app reservation
   version: 0.6.3
   description: |
     C 端预约：列表/时段 → `/order/reservation/check|create` → 支付 → 核销码到店。

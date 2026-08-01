@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/productmeta"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/productmeta"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 )
 
 type Handler struct{ svc *productmeta.Service }

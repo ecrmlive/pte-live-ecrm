@@ -1,6 +1,6 @@
 package financepersist
 
-import "github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/finance"
+import "github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/finance"
 
 type StoreAdapter struct {
 	*Repo

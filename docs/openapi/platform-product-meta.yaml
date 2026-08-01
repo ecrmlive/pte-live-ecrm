@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform product metadata
+  title: pte-live-ecrm platform product metadata
   version: 0.7.9
   description: 平台商品标签与保障服务只读监管接口。
 servers:

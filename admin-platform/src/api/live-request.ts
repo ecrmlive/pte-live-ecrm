@@ -3,7 +3,7 @@ import qs from 'qs';
 
 import { ElMessage } from 'element-plus';
 
-import { resolveLiveApiBaseUrl } from '#/utils/qixi-live-api';
+import { resolveLiveApiBaseUrl } from '#/utils/pte-live-api';
 import { applyAdminAuthorization } from '#/utils/live-api-auth';
 import { attachAPIEncryption, decryptAPIResponse } from '#/utils/api-crypto';
 

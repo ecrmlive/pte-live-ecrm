@@ -79,14 +79,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="qixi-live-login-form">
-    <h2 class="qixi-live-login-form__title">{{ QIXI_PLATFORM_LOGIN_NAME }}</h2>
-    <p class="qixi-live-login-form__subtitle">平台、商户、区域、客服、运营账号统一登录</p>
+  <div class="pte-live-login-form">
+    <h2 class="pte-live-login-form__title">{{ QIXI_PLATFORM_LOGIN_NAME }}</h2>
+    <p class="pte-live-login-form__subtitle">平台、商户、区域、客服、运营账号统一登录</p>
 
     <ElAlert
       v-if="baseLoadFailed"
       :closable="false"
-      class="qixi-live-login-form__alert"
+      class="pte-live-login-form__alert"
       show-icon
       title="内部错误，请稍后重试"
       type="error"
@@ -122,12 +122,12 @@ onMounted(() => {
         />
       </ElFormItem>
       <ElFormItem v-if="codeImage" label="验证码" prop="code">
-        <div class="qixi-live-login-form__captcha">
+        <div class="pte-live-login-form__captcha">
           <ElInput v-model="form.code" placeholder="验证码" />
           <img
             :src="codeImage"
             alt="验证码"
-            class="qixi-live-login-form__captcha-img"
+            class="pte-live-login-form__captcha-img"
             title="点击刷新验证码"
             @click="loadLoginBase"
           />
@@ -135,7 +135,7 @@ onMounted(() => {
       </ElFormItem>
       <ElButton
         :loading="authStore.loginLoading"
-        class="qixi-live-login-form__submit"
+        class="pte-live-login-form__submit"
         type="primary"
         @click="handleSubmit"
       >
@@ -146,42 +146,42 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.qixi-live-login-form {
+.pte-live-login-form {
   width: 100%;
   max-width: 420px;
 }
 
-.qixi-live-login-form__title {
+.pte-live-login-form__title {
   margin: 0 0 8px;
   font-size: 24px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
-.qixi-live-login-form__subtitle {
+.pte-live-login-form__subtitle {
   margin: 0 0 24px;
   font-size: 14px;
   color: var(--el-text-color-secondary);
 }
 
-.qixi-live-login-form__alert {
+.pte-live-login-form__alert {
   margin-bottom: 16px;
 }
 
-.qixi-live-login-form__captcha {
+.pte-live-login-form__captcha {
   display: flex;
   gap: 12px;
   width: 100%;
 }
 
-.qixi-live-login-form__captcha-img {
+.pte-live-login-form__captcha-img {
   height: 40px;
   cursor: pointer;
   border-radius: 4px;
   flex-shrink: 0;
 }
 
-.qixi-live-login-form__submit {
+.pte-live-login-form__submit {
   width: 100%;
   margin-top: 8px;
 }

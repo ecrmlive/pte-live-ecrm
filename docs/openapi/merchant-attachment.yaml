@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant attachment
+  title: pte-live-ecrm merchant attachment
   version: 0.7.5
   description: 商户素材库；分类创建/编辑与上传需 attachment/upload，删除需 attachment/delete。所有数据按 mer_id 隔离，删除分类时素材保留并归入未分类。
 servers:

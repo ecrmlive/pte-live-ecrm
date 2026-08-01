@@ -1,4 +1,4 @@
-module github.com/crmlive/qixi-live-ecrm/job
+module github.com/crmlive/pte-live-ecrm/job
 
 go 1.26.5
 

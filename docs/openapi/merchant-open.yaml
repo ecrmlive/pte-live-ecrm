@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant open API
+  title: pte-live-ecrm merchant open API
   version: 0.6.1
   description: |
     阶段 6c。对照 CRMEB `/openapi/*` 六条；本仓库前缀 `/api/open/v1`。

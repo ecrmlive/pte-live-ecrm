@@ -2,7 +2,7 @@
 
 ## 定位
 
-**qixi-live-ecrm** 是多商户商城管理系统。功能基线对齐 CRMEB Merchant v4.0，技术栈按本仓库目标架构重建，不直接沿用 PHP/ThinkPHP/Swoole 运行时。
+**pte-live-ecrm** 是多商户商城管理系统。功能基线对齐 CRMEB Merchant v4.0，技术栈按本仓库目标架构重建，不直接沿用 PHP/ThinkPHP/Swoole 运行时。
 
 | 维度 | 说明 |
 | --- | --- |

@@ -3,7 +3,7 @@ package merchantpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/merchant"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/merchant"
 )
 
 // StoreAdapter 适配 domain.Store

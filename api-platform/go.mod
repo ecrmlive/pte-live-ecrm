@@ -1,4 +1,4 @@
-module github.com/crmlive/qixi-live-ecrm/api-platform
+module github.com/crmlive/pte-live-ecrm/api-platform
 
 go 1.26.5
 

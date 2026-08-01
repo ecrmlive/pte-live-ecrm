@@ -15,9 +15,9 @@ import { useAccessStore } from '@vben/stores';
 
 import { router } from '#/router';
 import useUserStore from '#/adapters/control-user-store';
-import { attachShopAppId } from '#/utils/qixi-live-shop-app-id';
-import { getDecryptedToken, setEncryptedToken } from '#/utils/qixi-live-token';
-import { resolveLiveApiBaseUrl } from '#/utils/qixi-live-api';
+import { attachShopAppId } from '#/utils/pte-live-shop-app-id';
+import { getDecryptedToken, setEncryptedToken } from '#/utils/pte-live-token';
+import { resolveLiveApiBaseUrl } from '#/utils/pte-live-api';
 import { formatUserFacingApiError } from '#/utils/api-error';
 import {
   attachAPIEncryption,

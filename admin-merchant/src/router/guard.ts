@@ -13,8 +13,8 @@ import {
   hydrateMerchantSession,
 } from '#/adapters/merchant-session-bridge';
 import { useAuthStore } from '#/store';
-import { STANDALONE_ROUTE_NAMES } from '#/utils/qixi-live-api';
-import { MERCHANT_PLUS_HUB_PATH } from '#/utils/qixi-live-menu';
+import { STANDALONE_ROUTE_NAMES } from '#/utils/pte-live-api';
+import { MERCHANT_PLUS_HUB_PATH } from '#/utils/pte-live-menu';
 import { PLUS_PLUGIN_ENTRY_ALIASES, resolvePlusProductHubTabRedirect } from '#/utils/plus-navigation';
 import { resolveNavigationAfterAccess } from '#/utils/post-access-redirect';
 import {
@@ -25,8 +25,8 @@ import {
   clearEncryptedToken,
   getLegacyUserInfo,
   resolveMerchantAccessToken,
-} from '#/utils/qixi-live-token';
-import { resolveShopAppId } from '#/utils/qixi-live-shop-app-id';
+} from '#/utils/pte-live-token';
+import { resolveShopAppId } from '#/utils/pte-live-shop-app-id';
 import {
   markShopSessionBootstrapped,
   refreshStoredJwtSession,

@@ -11,7 +11,7 @@ import { storeToRefs } from 'pinia';
 import { ElNotification } from 'element-plus';
 
 import { useAuthStore } from '#/store';
-import { getLegacyUserInfo } from '#/utils/qixi-live-token';
+import { getLegacyUserInfo } from '#/utils/pte-live-token';
 import {
   applyTenantAppBranding,
   resolveShopDisplayName,

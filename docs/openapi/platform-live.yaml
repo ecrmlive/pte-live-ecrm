@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform live
+  title: pte-live-ecrm platform live
   version: 0.7.0
   description: 平台直播监管（房间详情、审核、C 端显示控制）
 servers:

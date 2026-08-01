@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/business/order"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/business/order"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

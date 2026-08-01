@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/diy"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/diy"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

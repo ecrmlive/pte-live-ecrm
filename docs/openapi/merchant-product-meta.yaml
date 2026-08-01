@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant product metadata
+  title: pte-live-ecrm merchant product metadata
   version: 0.7.9
   description: 商户商品标签、保障服务与参数模板 CRUD；所有资源按 mer_id 隔离。
 servers:

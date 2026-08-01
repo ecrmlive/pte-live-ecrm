@@ -1,6 +1,6 @@
 import type { InternalAxiosRequestConfig } from 'axios';
 
-import { getLegacyUserInfo } from './qixi-live-token';
+import { getLegacyUserInfo } from './pte-live-token';
 
 /** 登录前匿名接口无需店铺应用标识。 */
 const ANONYMOUS_SHOP_PATHS = [

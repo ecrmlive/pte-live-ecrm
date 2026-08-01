@@ -1,4 +1,4 @@
-module github.com/crmlive/qixi-live-ecrm/api-business
+module github.com/crmlive/pte-live-ecrm/api-business
 
 go 1.26.5
 

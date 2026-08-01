@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/community"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/middleware"
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/community"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 )
 
 type Handler struct {

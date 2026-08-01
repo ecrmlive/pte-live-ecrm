@@ -23,7 +23,7 @@ import {
   getDecryptedToken,
   resolveMerchantAccessToken,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 
 /** Vben 壳层兼容样式（列表间距、Drawer/Modal 等） */
 import './styles/vben-legacy-compat.css';

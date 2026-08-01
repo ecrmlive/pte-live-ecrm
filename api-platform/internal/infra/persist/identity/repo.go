@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"gorm.io/gorm"
 )
 

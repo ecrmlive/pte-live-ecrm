@@ -20,7 +20,7 @@
 ## 部署
 
 - 本机 pack 到 `release/<service>/`；后端通过同名 `docker-compose.yaml` 运行
-- `config/local` 与 `config/test` 分离；两环境共用 `qixi_live_ecrm` 容器名和固定 IP，不能并行运行
+- `config/local` 与 `config/test` 分离；两环境共用 `pte_live_ecrm` 容器名和固定 IP，不能并行运行
 - 禁止服务器源码构建；Dockerfile 只复制产物
 - 遵循全局 Skill `unified-docker-release`
 - **MySQL / Redis / NATS / etcd**：由 `pte-live-im` 的 `db/` + `mq/` 启动（`pte_live_net`）

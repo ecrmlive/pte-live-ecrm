@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/job/internal/domain/promotion"
+	"github.com/crmlive/pte-live-ecrm/job/internal/domain/promotion"
 	"gorm.io/gorm"
 )
 

@@ -3,7 +3,7 @@ package catalogpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/catalog"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/catalog"
 )
 
 type StoreAdapter struct {

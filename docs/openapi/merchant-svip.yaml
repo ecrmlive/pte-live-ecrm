@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant svip
+  title: pte-live-ecrm merchant svip
   version: 0.6.4
   description: 商户 SVIP 价与店铺券叠加配置；更新需 svip/update；商品会员价字段见 merchant-catalog
 servers:

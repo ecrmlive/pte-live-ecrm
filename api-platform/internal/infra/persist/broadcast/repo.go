@@ -3,7 +3,7 @@ package broadcastpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/broadcast"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/broadcast"
 	"gorm.io/gorm"
 )
 

@@ -6,7 +6,7 @@ import {
   getDecryptedToken,
   getLegacyUserInfo,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 import { addSessionStorage } from '#/utils/base';
 
 type BusHandler = (data: unknown) => void;

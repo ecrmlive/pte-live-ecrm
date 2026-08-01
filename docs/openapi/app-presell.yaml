@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app presell
+  title: pte-live-ecrm app presell
   version: 0.6.5
   description: C 端预售（activity_type=2）；全款 + 定金尾款（status=10/11，POST /presell/pay/:id）
 servers:

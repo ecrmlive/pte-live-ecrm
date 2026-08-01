@@ -71,7 +71,7 @@ preview: pack ## 本地预览 dist/ 构建产物
 docker-build: require-dist ## 校验本机静态产物（容器只读挂载，不构建镜像）
 
 ensure-network: ## 确保 Docker 网络 pte_live_net 存在（172.30.0.0/24）
-	@bash "$(ROOT_DIR)/scripts/ensure-qixi-live-net.sh"
+	@bash "$(ROOT_DIR)/scripts/ensure-pte-live-net.sh"
 
 ensure-api: ensure-network ## 严格检查 API（失败则 exit 1）
 	@bash "$(ROOT_DIR)/scripts/stack-manage.sh" check-api shop

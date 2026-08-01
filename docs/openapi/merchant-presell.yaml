@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant presell
+  title: pte-live-ecrm merchant presell
   version: 0.7.3
   description: 商户预售 CRUD；create/delete/toggle 分别需对应按钮权
 servers:

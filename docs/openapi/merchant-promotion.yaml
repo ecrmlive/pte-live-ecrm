@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant promotion
+  title: pte-live-ecrm merchant promotion
   version: 0.8.0
   description: 商户店铺券；创建、启停、删除、定向发券均由商户权限与 mer_id 隔离保护。
 servers:

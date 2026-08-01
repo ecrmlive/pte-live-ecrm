@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/identity"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/authjwt"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/response"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
 )
 
 // RequireAdminConsole 拒绝旧平台令牌进入新统一后台。新后台的角色、菜单与数据范围

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform assist
+  title: pte-live-ecrm platform assist
   version: 0.6.3
   description: 平台助力监管（上下架/删除）
 servers:

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm app community
+  title: pte-live-ecrm app community
   version: 0.7.0
   description: C 端社区种草（图文/评论/挂货；发帖待审；我的发布可查看审核结果）
 servers:

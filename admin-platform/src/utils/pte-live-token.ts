@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 
-import { QIXI_ADMIN_TOKEN_KEY } from './qixi-live-api';
+import { QIXI_ADMIN_TOKEN_KEY } from './pte-live-api';
 
 const SECRET_KEY = 'jjj_shop_single_admin_2024';
 

@@ -43,7 +43,7 @@ JWT 只承载**服务端已解析的身份快照**。客户端请求体、query�
 | `im_sdk_app_id` | 该商户当前启用的 pte-live-im SDK AppId 快照；只允许服务端按 `merchant_id` 查询后写入。未配置 IM 时显式为空，不得由客户端指定。 |
 | `identity_version`、`data_scope_version` | 账号身份版本和统一后台数据范围版本。密码修改、禁用、强制退出、角色/商户归属变更必须递增身份版本；权限范围变更必须递增数据范围版本。 |
 | `session_id`、`jti` | 一次登录会话标识和单令牌唯一 ID；access / refresh 共用 `session_id`，但各自 `jti` 必须不同，用于审计、注销和重放检测。 |
-| `iss`、`aud`、`iat`、`nbf`、`exp` | 标准 JWT 约束。`iss=qixi-live-ecrm`，`aud=qixi-live-ecrm:<portal>`；服务端必须校验算法 HS256、受众、有效期和未生效时间。 |
+| `iss`、`aud`、`iat`、`nbf`、`exp` | 标准 JWT 约束。`iss=pte-live-ecrm`，`aud=pte-live-ecrm:<portal>`；服务端必须校验算法 HS256、受众、有效期和未生效时间。 |
 
 兼容期中的 `uid`、`admin_id`、`channel`、`store_app_id` 只供旧 handler 读取：新接口以 `principal_*`、`client_platform`、`merchant_app_id` 为准；店铺令牌中 `store_app_id` 必须与 `merchant_app_id` 完全相等。
 

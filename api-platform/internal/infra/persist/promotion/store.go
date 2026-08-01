@@ -1,6 +1,6 @@
 package promotionpersist
 
-import "github.com/crmlive/qixi-live-ecrm/api-platform/internal/domain/promotion"
+import "github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
 
 type StoreAdapter struct {
 	*Repo

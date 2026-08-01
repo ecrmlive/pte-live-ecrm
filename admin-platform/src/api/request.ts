@@ -14,14 +14,14 @@ import { useAccessStore } from '@vben/stores';
 
 import { ElMessage } from 'element-plus';
 
-import { resolveApiBaseUrl } from '#/utils/qixi-live-api';
+import { resolveApiBaseUrl } from '#/utils/pte-live-api';
 import { formatUserFacingApiError } from '#/utils/api-error';
 import {
   clearEncryptedToken,
   clearLegacyUserSession,
   getDecryptedToken,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 
 import { useAuthStore } from '#/store';
 import { isApiUnauthorized, resetJwtSessionState } from '#/utils/jwt-session';

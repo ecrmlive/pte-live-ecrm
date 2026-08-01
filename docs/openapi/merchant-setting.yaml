@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm merchant setting
+  title: pte-live-ecrm merchant setting
   version: 0.8.0
   description: 商户设置（店铺/店员/子账号/本店角色/快捷回复/IM SDK AppId）；受保护接口使用 Authori-zation 与 X-AppId。
 servers:

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
 
-import { resolveLiveApiBaseUrl } from '#/utils/qixi-live-api';
+import { resolveLiveApiBaseUrl } from '#/utils/pte-live-api';
 import { attachAPIEncryption, decryptAPIResponse } from '#/utils/api-crypto';
 
 export type LoginPlatform =

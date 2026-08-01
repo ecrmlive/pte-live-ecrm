@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm API health
+  title: pte-live-ecrm API health
   version: 0.7.9
   description: api-platform、api-business 与 api-merchant 均提供无鉴权健康检查；实际主机与端口按 local/test 环境决定。
 servers:

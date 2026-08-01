@@ -3,7 +3,7 @@ package assistpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/assist"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/assist"
 	"gorm.io/gorm"
 )
 

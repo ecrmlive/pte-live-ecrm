@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/authjwt"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 )
 
 func TestResolveSKUKeyPreservesCRMEBSKUUnique(t *testing.T) {

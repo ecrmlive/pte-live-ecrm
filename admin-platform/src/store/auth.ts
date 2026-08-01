@@ -17,7 +17,7 @@ import {
   clearLegacyUserSession,
   setEncryptedToken,
   syncLegacyUserSession,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 import {
   hydratePlatformUserStore,
   resetPlatformUserStore,

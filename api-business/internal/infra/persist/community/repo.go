@@ -3,7 +3,7 @@ package communitypersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/community"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/community"
 	"gorm.io/gorm"
 )
 

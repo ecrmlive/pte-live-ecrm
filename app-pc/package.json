@@ -1,9 +1,9 @@
 {
-  "name": "qixi-live-ecrm-app-pc",
+  "name": "pte-live-ecrm-app-pc",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "qixi-live-ecrm 用户端 PC 商城",
+  "description": "pte-live-ecrm 用户端 PC 商城",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",

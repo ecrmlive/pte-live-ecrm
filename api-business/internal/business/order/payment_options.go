@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/domain/cloudconfig"
-	"github.com/crmlive/qixi-live-ecrm/api-business/internal/paymentconfig"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/cloudconfig"
+	"github.com/crmlive/pte-live-ecrm/api-business/internal/paymentconfig"
 	"gorm.io/gorm"
 )
 

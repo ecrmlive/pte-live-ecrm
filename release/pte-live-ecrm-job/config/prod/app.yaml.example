@@ -1,10 +1,10 @@
-# Job 主配置；pack 同步到 release/qixi-live-ecrm-job/config/{local,prod}/app.yaml
+# Job 主配置；pack 同步到 release/pte-live-ecrm-job/config/{local,prod}/app.yaml
 server:
   addr: ":8080"
   mode: debug
 
 mysql:
-  dsn: "qixi:qixi_local@tcp(pte_live_mysql:3306)/qixi_live_ecrm?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "qixi:qixi_local@tcp(pte_live_mysql:3306)/pte_live_ecrm?charset=utf8mb4&parseTime=True&loc=Local"
 
 redis:
   addr: "pte_live_redis:6379"
@@ -26,8 +26,8 @@ cos:
   region: "ap-guangzhou"
   secret_id: ""
   secret_key: ""
-  base_url: "https://cos.qxkejiwl.top/qixi-live-ecrm"
-  key_prefix: "qixi-live-ecrm"
+  base_url: "https://cos.qxkejiwl.top/pte-live-ecrm"
+  key_prefix: "pte-live-ecrm"
 
 job:
   tick_seconds: 30

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import qs from 'qs';
 
-import { resolveApiBaseUrl } from '#/utils/qixi-live-api';
-import { resolveShopAppId } from '#/utils/qixi-live-shop-app-id';
+import { resolveApiBaseUrl } from '#/utils/pte-live-api';
+import { resolveShopAppId } from '#/utils/pte-live-shop-app-id';
 import {
   attachAPIEncryption,
   decryptAPIResponse,

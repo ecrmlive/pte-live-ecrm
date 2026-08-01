@@ -1,8 +1,8 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
-import type { ShopAccessMenuItem } from '#/utils/qixi-live-menu';
-import { convertShopMenusToVben } from '#/utils/qixi-live-menu';
-import { QIXI_SHOP_MENU_KEY } from '#/utils/qixi-live-api';
+import type { ShopAccessMenuItem } from '#/utils/pte-live-menu';
+import { convertShopMenusToVben } from '#/utils/pte-live-menu';
+import { QIXI_SHOP_MENU_KEY } from '#/utils/pte-live-api';
 import { fetchShopSessionApi } from '#/api/core/shop-session';
 
 export async function getAllMenusApi() {

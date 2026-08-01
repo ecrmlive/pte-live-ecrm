@@ -4,7 +4,7 @@ import {
   MERCHANT_AGENT_HUB_PATH,
   MERCHANT_ARTICLE_HUB_PATH,
   MERCHANT_PLUS_LIVE_HUB_PATH,
-} from '#/utils/qixi-live-menu';
+} from '#/utils/pte-live-menu';
 
 /** Tab 容器：插件卡片 path 即 hub，勿跟 redirect 进导出等子路由 */
 export const PLUS_TAB_HUB_ENTRY_PATHS = new Set<string>([

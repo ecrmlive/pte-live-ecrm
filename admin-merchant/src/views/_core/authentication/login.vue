@@ -15,7 +15,7 @@ import {
   getDecryptedToken,
   hydrateAccessTokenFromLegacy,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 import { markShopSessionBootstrapped } from '#/utils/jwt-session';
 
 defineOptions({ name: 'Login' });
@@ -114,9 +114,9 @@ async function trySaasAutoLogin() {
 </script>
 
 <template>
-  <div class="qixi-live-login-form">
-    <h2 class="qixi-live-login-form__title">{{ $t('authentication.pageTitle') }}</h2>
-    <p class="qixi-live-login-form__subtitle">{{ $t('authentication.loginSubtitle') }}</p>
+  <div class="pte-live-login-form">
+    <h2 class="pte-live-login-form__title">{{ $t('authentication.pageTitle') }}</h2>
+    <p class="pte-live-login-form__subtitle">{{ $t('authentication.loginSubtitle') }}</p>
 
     <ElForm
       ref="formRef"
@@ -147,12 +147,12 @@ async function trySaasAutoLogin() {
         />
       </ElFormItem>
       <ElFormItem v-if="codeImage" label="验证码" prop="code">
-        <div class="qixi-live-login-form__captcha">
+        <div class="pte-live-login-form__captcha">
           <ElInput v-model="form.code" placeholder="验证码" />
           <img
             :src="codeImage"
             alt="验证码"
-            class="qixi-live-login-form__captcha-img"
+            class="pte-live-login-form__captcha-img"
             title="点击刷新验证码"
             @click="loadLoginBase"
           />
@@ -160,7 +160,7 @@ async function trySaasAutoLogin() {
       </ElFormItem>
       <ElButton
         :loading="authStore.loginLoading"
-        class="qixi-live-login-form__submit"
+        class="pte-live-login-form__submit"
         type="primary"
         @click="handleSubmit"
       >
@@ -171,43 +171,43 @@ async function trySaasAutoLogin() {
 </template>
 
 <style scoped>
-.qixi-live-login-form {
+.pte-live-login-form {
   width: 100%;
   max-width: 420px;
 }
 
-.qixi-live-login-form__title {
+.pte-live-login-form__title {
   margin: 0 0 8px;
   font-size: 24px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
-.qixi-live-login-form__subtitle {
+.pte-live-login-form__subtitle {
   margin: 0 0 24px;
   font-size: 14px;
   color: var(--el-text-color-secondary);
 }
 
-.qixi-live-login-form__captcha {
+.pte-live-login-form__captcha {
   display: flex;
   gap: 12px;
   width: 100%;
 }
 
-.qixi-live-login-form__captcha :deep(.el-input) {
+.pte-live-login-form__captcha :deep(.el-input) {
   flex: 1;
   min-width: 0;
 }
 
-.qixi-live-login-form__captcha-img {
+.pte-live-login-form__captcha-img {
   height: 40px;
   cursor: pointer;
   border-radius: 4px;
   flex-shrink: 0;
 }
 
-.qixi-live-login-form__submit {
+.pte-live-login-form__submit {
   width: 100%;
   margin-top: 8px;
 }

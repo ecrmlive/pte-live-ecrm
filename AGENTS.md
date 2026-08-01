@@ -1,13 +1,13 @@
 # AGENTS.md
 
-本文件约束在 **qixi-live-ecrm** 内工作的 Agent（Cursor / Codex）。修改代码前必须先读本文档与对应 Skill。
+本文件约束在 **pte-live-ecrm** 内工作的 Agent（Cursor / Codex）。修改代码前必须先读本文档与对应 Skill。
 
 ## 项目是什么
 
 多商户商城管理系统。功能基线对齐 CRMEB Merchant v4.0；技术实现按本仓库目标栈重建（Go + Vben + uni-app x），不把 PHP/Swoole 当作运行时。
 
 文档入口：`docs/README.md`  
-Skill：`.cursor/skills/qixi-live-ecrm/SKILL.md`（Codex 镜像：`codex-skills/qixi-live-ecrm/`）
+Skill：`.cursor/skills/pte-live-ecrm/SKILL.md`（Codex 镜像：`codex-skills/pte-live-ecrm/`）
 
 外部只读参考源码（勿提交进本仓库）：
 

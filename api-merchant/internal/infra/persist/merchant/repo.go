@@ -3,8 +3,8 @@ package merchantpersist
 import (
 	"context"
 
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/identity"
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/merchant"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/merchant"
 	"gorm.io/gorm"
 )
 

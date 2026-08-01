@@ -12,12 +12,12 @@ import { useAuthStore } from '#/store';
 import { usePlatformUserStore } from '#/store/platform-user';
 import {
   QIXI_PLATFORM_APP_ID,
-} from '#/utils/qixi-live-api';
+} from '#/utils/pte-live-api';
 import {
   clearEncryptedToken,
   hydrateAccessTokenFromLegacy,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 import {
   refreshStoredJwtSession,
   shouldRefreshStoredJwt,

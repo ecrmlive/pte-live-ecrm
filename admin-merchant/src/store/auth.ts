@@ -15,7 +15,7 @@ import { $t } from '#/locales';
 import {
   clearEncryptedToken,
   setEncryptedToken,
-} from '#/utils/qixi-live-token';
+} from '#/utils/pte-live-token';
 import {
   loadShopBootstrapData,
   ShopBootstrapError,

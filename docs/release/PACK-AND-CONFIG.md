@@ -3,10 +3,10 @@
 ## 后端产物
 
 ```text
-api-platform/  -> release/qixi-live-ecrm-api-platform/bin/api-platform
-api-business/  -> release/qixi-live-ecrm-api-business/bin/api-business
-api-merchant/  -> release/qixi-live-ecrm-api-merchant/bin/api-merchant
-job/           -> release/qixi-live-ecrm-job/bin/job
+api-platform/  -> release/pte-live-ecrm-api-platform/bin/api-platform
+api-business/  -> release/pte-live-ecrm-api-business/bin/api-business
+api-merchant/  -> release/pte-live-ecrm-api-merchant/bin/api-merchant
+job/           -> release/pte-live-ecrm-job/bin/job
 ```
 
 每个服务都是独立 Go module，在本机构建静态 Linux 二进制；Compose 仅以只读卷挂载产物运行。禁止在 Docker 容器或服务器上传源码后构建。禁止回退为 `api/cmd/*` 单 module 构建。

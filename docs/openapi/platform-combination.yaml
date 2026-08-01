@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: qixi-live-ecrm platform combination
+  title: pte-live-ecrm platform combination
   version: 0.6.2
   description: 平台拼团监管
 servers:

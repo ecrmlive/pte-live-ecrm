@@ -50,14 +50,14 @@ make test-backend
 
 | 项 | 固定值 |
 | --- | --- |
-| Compose project | `qixi_live_ecrm` |
+| Compose project | `pte_live_ecrm` |
 | 共享网络 | `pte_live_net` / `172.30.0.0/24` |
 | 共享 MySQL | `pte_live_mysql` / `172.30.0.10` |
 | 共享 Redis | `pte_live_redis` / `172.30.0.11` |
 | 共享 etcd | `pte_live_etcd1`、`pte_live_etcd2`、`pte_live_etcd3` / `.12`、`.14`、`.15` |
 | 共享 NATS | `pte_live_nats1`、`pte_live_nats2`、`pte_live_nats3` / `.13`、`.16`、`.17` |
 | SQL 初始化 | 不创建容器；`make local-db-init` 直接执行到 `pte_live_mysql` |
-| API | `qixi_live_ecrm_api_platform`、`qixi_live_ecrm_api_business`、`qixi_live_ecrm_api_merchant` / `.61`–`.63` |
+| API | `pte_live_ecrm_api_platform`、`pte_live_ecrm_api_business`、`pte_live_ecrm_api_merchant` / `.61`–`.63` |
 
 七禧只映射三个 API 到宿主机 `18081`、`18082`、`18083`；不映射也不启动任何重复基础设施。容器内使用共享 `pte_live_*` 名称。七禧业务仍只使用独立的 `qixi_crm_admin`、`qixi_crm_business`、`qixi_crm_merchant` 三个库，绝不读写 pte-live-im 的数据库或表。
 

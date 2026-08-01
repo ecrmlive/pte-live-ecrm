@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/crmlive/qixi-live-ecrm/api-platform/internal/pkg/config"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/config"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/mysql"

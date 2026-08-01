@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crmlive/qixi-live-ecrm/api-merchant/internal/domain/cart"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/cart"
 )
 
 func TestUserSvipActiveAt(t *testing.T) {

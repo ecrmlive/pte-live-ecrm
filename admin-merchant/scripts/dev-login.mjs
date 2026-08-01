@@ -3,7 +3,7 @@
  * Dev-only merchant login helper for automation (E2E, browser MCP, Playwright).
  *
  * Flow: POST /shop/index/base → read captcha from Redis → POST /shop/passport/login
- * Token is AES-encrypted with the same key as merchant-admin (qixi-live-token.ts).
+ * Token is AES-encrypted with the same key as merchant-admin (pte-live-token.ts).
  *
  * Usage:
  *   node scripts/dev-login.mjs              # print raw JWT + encrypted storage value
@@ -177,7 +177,7 @@ async function main() {
   console.log('Raw JWT (curl Authorization: Bearer …):');
   console.log(result.token);
   console.log('');
-  console.log('Browser localStorage injection (encrypted, matches qixi-live-token.ts):');
+  console.log('Browser localStorage injection (encrypted, matches pte-live-token.ts):');
   console.log(`  localStorage.setItem('${result.tokenKey}', '${result.encrypted}')`);
   console.log(`  sessionStorage.setItem('${result.tokenKey}', '${result.encrypted}')`);
   console.log('');

@@ -1,4 +1,4 @@
-# qixi-live-ecrm 文档索引
+# pte-live-ecrm 文档索引
 
 本仓库目标：基于 CRMEB 多商户商城（MER v4.0）的功能基线，重建七禧 CRM 多商户商城系统。
 
@@ -40,7 +40,7 @@
 ## Agent 约定
 
 - 仓库根目录 [`AGENTS.md`](../AGENTS.md)
-- Cursor Skill：[`.cursor/skills/qixi-live-ecrm/SKILL.md`](../.cursor/skills/qixi-live-ecrm/SKILL.md)
-- Codex Skill 镜像：[`codex-skills/qixi-live-ecrm/SKILL.md`](../codex-skills/qixi-live-ecrm/SKILL.md)
+- Cursor Skill：[`.cursor/skills/pte-live-ecrm/SKILL.md`](../.cursor/skills/pte-live-ecrm/SKILL.md)
+- Codex Skill 镜像：[`codex-skills/pte-live-ecrm/SKILL.md`](../codex-skills/pte-live-ecrm/SKILL.md)
 
-发布与运行约定见 [服务命名 · Docker 网络/IP](./release/SERVICE-MATRIX.md)、[发布命令](./release/COMMANDS.md) 和 [Pack/Config](./release/PACK-AND-CONFIG.md)：local/test 共用 `qixi_live_ecrm` Docker 身份，只能切换运行。
+发布与运行约定见 [服务命名 · Docker 网络/IP](./release/SERVICE-MATRIX.md)、[发布命令](./release/COMMANDS.md) 和 [Pack/Config](./release/PACK-AND-CONFIG.md)：local/test 共用 `pte_live_ecrm` Docker 身份，只能切换运行。
