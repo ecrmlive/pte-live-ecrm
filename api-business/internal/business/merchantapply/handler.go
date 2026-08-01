@@ -32,7 +32,7 @@ type createRequest struct {
 	ContactMobile string `json:"contact_mobile" binding:"required"`
 	CategoryName  string `json:"category_name"`
 	MerchantType  string `json:"merchant_type"`
-	LicenseURL    string `json:"license_url"`
+	LicenseKey    string `json:"license_key"`
 }
 
 type applicationRow struct {
@@ -43,7 +43,7 @@ type applicationRow struct {
 	ContactMobile   string    `gorm:"column:contact_mobile" json:"contact_mobile"`
 	CategoryName    string    `gorm:"column:category_name" json:"category_name"`
 	MerchantType    string    `gorm:"column:merchant_type" json:"merchant_type"`
-	LicenseURL      string    `gorm:"column:license_url" json:"license_url"`
+	LicenseKey      string    `gorm:"column:license_key" json:"license_key"`
 	Status          string    `gorm:"column:status" json:"status"`
 	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
 }
@@ -57,9 +57,14 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 	uid := uint64(middleware.UID(c))
-	row := applicationRow{ApplicantUserID: uid, MerchantName: strings.TrimSpace(req.MerchantName), ContactName: strings.TrimSpace(req.ContactName), ContactMobile: strings.TrimSpace(req.ContactMobile), CategoryName: strings.TrimSpace(req.CategoryName), MerchantType: strings.TrimSpace(req.MerchantType), LicenseURL: strings.TrimSpace(req.LicenseURL), Status: "pending"}
-	if uid == 0 || len(row.MerchantName) < 2 || row.ContactName == "" || len(row.ContactMobile) < 6 || row.CategoryName == "" || row.MerchantType == "" || row.LicenseURL == "" {
+	row := applicationRow{ApplicantUserID: uid, MerchantName: strings.TrimSpace(req.MerchantName), ContactName: strings.TrimSpace(req.ContactName), ContactMobile: strings.TrimSpace(req.ContactMobile), CategoryName: strings.TrimSpace(req.CategoryName), MerchantType: strings.TrimSpace(req.MerchantType), LicenseKey: strings.TrimSpace(req.LicenseKey), Status: "pending"}
+	if uid == 0 || len(row.MerchantName) < 2 || row.ContactName == "" || len(row.ContactMobile) < 6 || row.CategoryName == "" || row.MerchantType == "" || row.LicenseKey == "" {
 		response.Fail(c, http.StatusBadRequest, "请完整填写入驻资料")
+		return
+	}
+	var uploadCount int64
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_upload_object").Where("owner_user_id = ? AND purpose = ? AND object_key = ? AND status = 'completed'", uid, "merchant_application_license", row.LicenseKey).Count(&uploadCount).Error; err != nil || uploadCount != 1 {
+		response.Fail(c, http.StatusBadRequest, "请先完成营业执照上传")
 		return
 	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {

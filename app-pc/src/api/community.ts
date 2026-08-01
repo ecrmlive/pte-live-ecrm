@@ -15,6 +15,7 @@ export interface CommunityPost {
   product_id?: number;
   product_name?: string;
   product_price?: number;
+  image?: string;
   count_reply?: number;
   pv?: number;
 }

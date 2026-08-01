@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
   title: qixi-mergers pay callback
-  version: 0.1.0
+  version: 0.2.0
   description: |
     支付回调前缀 /api/callback/v1（无 JWT）。
-    mock：直调 paySuccess。
-    wechat/alipay：HMAC(notify_secret) 验签 notify_token 后 paySuccess（沙箱闭环；非真实微信/支付宝 SDK）。
+    微信回调：仅接受微信支付 v3 标准通知。先用 Wechatpay-* 头验签，再 AES-256-GCM 解密 resource，
+    校验商户号、AppID、订单号与服务端金额，最后在 qixi_crm_business 内以 provider_event_id 幂等更新订单。
+    mock 仅在显式启用 sandbox 时注册；支付宝真实回调尚未开放。
 servers:
   - url: /api/callback/v1
 paths:
@@ -27,22 +28,23 @@ paths:
                 uid: { type: integer }
   /pay/wechat:
     post:
-      summary: 微信渠道回调（沙箱验签）
+      summary: 微信支付 v3 回调（无 JWT）
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChannelNotify"
-  /pay/alipay:
-    post:
-      summary: 支付宝渠道回调（沙箱验签）
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChannelNotify"
+              type: object
+              required: [id, event_type, resource]
+              properties:
+                id: { type: string, description: 微信事件 ID，用于幂等 }
+                event_type: { type: string, example: TRANSACTION.SUCCESS }
+                resource: { type: object, description: 微信 AEAD_AES_256_GCM 加密资源 }
+      parameters:
+        - { name: Wechatpay-Timestamp, in: header, required: true, schema: { type: string } }
+        - { name: Wechatpay-Nonce, in: header, required: true, schema: { type: string } }
+        - { name: Wechatpay-Signature, in: header, required: true, schema: { type: string } }
+        - { name: Wechatpay-Serial, in: header, required: true, schema: { type: string } }
 components:
   schemas:
     ChannelNotify:

@@ -1,6 +1,11 @@
 package catalog
 
-import "testing"
+import (
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
 
 func TestProductSortWhitelist(t *testing.T) {
 	cases := []struct {
@@ -46,5 +51,53 @@ func TestDescendantCategoryIDs(t *testing.T) {
 	unknown := descendantCategoryIDs(rows, 999)
 	if len(unknown) != 1 || unknown[0] != 999 {
 		t.Fatalf("unknown category fallback = %#v, want []uint64{999}", unknown)
+	}
+}
+
+func TestPriceRange(t *testing.T) {
+	cases := []struct {
+		name    string
+		query   string
+		wantMin *float64
+		wantMax *float64
+		wantErr bool
+	}{
+		{name: "empty", query: ""},
+		{name: "minimum only", query: "min_price=12.5", wantMin: float64Ptr(12.5)},
+		{name: "inclusive range", query: "min_price=12.5&max_price=25", wantMin: float64Ptr(12.5), wantMax: float64Ptr(25)},
+		{name: "negative rejected", query: "min_price=-1", wantErr: true},
+		{name: "reversed rejected", query: "min_price=30&max_price=20", wantErr: true},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest("GET", "/catalog/products?"+test.query, nil)
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			ctx.Request = request
+			min, max, err := priceRange(ctx)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("priceRange() error = %v, wantErr %v", err, test.wantErr)
+			}
+			if test.wantErr {
+				return
+			}
+			assertFloatPtr(t, "min", min, test.wantMin)
+			assertFloatPtr(t, "max", max, test.wantMax)
+		})
+	}
+}
+
+func float64Ptr(value float64) *float64 { return &value }
+
+func assertFloatPtr(t *testing.T, label string, got, want *float64) {
+	t.Helper()
+	if got == nil || want == nil {
+		if got != want {
+			t.Fatalf("%s = %v, want %v", label, got, want)
+		}
+		return
+	}
+	if *got != *want {
+		t.Fatalf("%s = %v, want %v", label, *got, *want)
 	}
 }

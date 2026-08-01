@@ -5,6 +5,7 @@ export interface PresellActive {
   product_id: number;
   store_name: string;
   mer_name?: string;
+  image?: string;
   price: number;
   down_price?: number;
   final_price?: number;

@@ -23,7 +23,8 @@ usage() {
 说明:
   - local/test 使用相同的 qixi_mergers 项目、容器、固定 IP、数据库名和 YAML；仅宿主机不同。
   - MySQL、Redis、etcd、NATS 统一复用 pte_live_net 中的 pte_live_* 容器，七禧不启动重复基础设施。
-  - 所有密钥只填写 release/config.yaml 与 release/config/*/app.yaml，均不提交 Git。
+  - JWT、数据库等运行密钥只填写 release/config.yaml 与 release/config/*/app.yaml，均不提交 Git；云服务、支付、小程序密钥只写入被 Git 忽略的 sql/*/*_key.sql。
+  - local/test 必须使用内容完全相同的 sql/*/*_key.sql；db-init 会按顺序自动导入。
   - PC/H5/小程序的本地开发使用各自 Vite/HBuilderX 服务，不安装 Nginx。
 EOF
 }
@@ -244,7 +245,7 @@ initialize_databases() {
 	for domain in admin business merchant; do
 		for phase in 01_table 02_data 03_config 04_key 05_test_data; do
 			sql_file="${ROOT_DIR}/sql/${domain}/${phase}.sql"
-			[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}" >&2; exit 1; }
+			[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}；该密钥初始化文件不纳入 Git，需从同一受控密钥副本同步" >&2; exit 1; }
 			echo ">> 导入 sql/${domain}/${phase}.sql 到 pte_live_mysql"
 			shared_mysql <"${sql_file}"
 			done

@@ -9,7 +9,8 @@
 | 普通订单核对 | `POST /api/v2/order/check` | `StoreOrder::v2CheckOrder` | high |
 | 普通订单创建 | `POST /api/v2/order/create` | `StoreOrder::v2CreateOrder` | high |
 | 普通订单支付 | `POST /api/order/pay/:id` | `StoreOrder::groupOrderPay` | high |
-| 支付回调（本仓库） | `POST /api/callback/v1/pay/{mock\|wechat\|alipay}` | 沙箱 HMAC → paySuccess；非真实 SDK | high |
+| 微信支付回调（本仓库） | `POST /api/callback/v1/pay/wechat` | 微信支付 v3 签名验签 + AES-GCM 解密 + 金额/商户/AppID 校验 + 幂等落单 | high |
+| Mock 支付回调（本仓库） | `POST /api/callback/v1/pay/mock` | 仅 sandbox 显式开启时注册 | high |
 | 积分订单核对 | `POST /api/order/v3/check` | `PointsOrder::beforCheck` | high |
 | 积分订单创建 | `POST /api/order/v3/create` | `PointsOrder::createOrder` | high |
 | 积分订单再支付 | `POST /api/order/points/pay/:id` | `groupOrderPay` + `is_points=1` | high |
@@ -54,6 +55,10 @@
 | GET | `/openapi/product/detail/:id` | `openapi/store/StoreProduct::detail` |
 
 ## 5. 支付方式与回调（源码）
+
+### 5.0 本仓库微信支付实现
+
+PC 端 `POST /api/app/v1/order/pay/:id` 传 `pay_type=wechat` 使用微信支付 v3 Native 下单，返回 `code_url` 供 PC 渲染二维码。预下单不改变订单状态；只有 `/api/callback/v1/pay/wechat` 完成签名、解密和服务端金额校验后，才会把主单和子单置为已支付。平台自营使用平台支付配置，店铺订单只使用所属店铺独立支付配置，禁止回退或混用。
 
 `StoreOrderRepository::PAY_TYPE`：
 

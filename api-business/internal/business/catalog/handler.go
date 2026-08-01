@@ -94,11 +94,12 @@ func (h *Handler) Home(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{
-		"diy_id":    decoration.PageID,
-		"diy_title": decoration.Title,
-		"banners":   decoration.Banners,
-		"menus":     decoration.Menus,
-		"hot":       hot,
+		"diy_id":        decoration.PageID,
+		"diy_title":     decoration.Title,
+		"banners":       decoration.Banners,
+		"menus":         decoration.Menus,
+		"display_types": decoration.DisplayTypes,
+		"hot":           hot,
 	})
 }
 
@@ -118,7 +119,7 @@ func (h *Handler) platformHomeDecoration(c *gin.Context) (homeDecoration, error)
 		First(&row).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return homeDecoration{Banners: []gin.H{}, Menus: []gin.H{}}, nil
+			return homeDecoration{Banners: []gin.H{}, Menus: []gin.H{}, DisplayTypes: []homeDisplayType{}}, nil
 		}
 		return homeDecoration{}, err
 	}
@@ -126,16 +127,26 @@ func (h *Handler) platformHomeDecoration(c *gin.Context) (homeDecoration, error)
 }
 
 type homeDecoration struct {
-	PageID  uint64
-	Title   string
-	Banners []gin.H
-	Menus   []gin.H
+	PageID       uint64
+	Title        string
+	Banners      []gin.H
+	Menus        []gin.H
+	DisplayTypes []homeDisplayType
+}
+
+// homeDisplayType is sourced from a platform home DIY "商品组" whose source is
+// "自动获取". The admin-selected category is the single source of truth for the
+// PC, H5 and mini-program home display type; clients only decide when to page.
+type homeDisplayType struct {
+	CategoryID   uint64 `json:"category_id"`
+	InitialLimit int    `json:"initial_limit"`
+	Sort         string `json:"sort"`
 }
 
 // parseHomeDecoration 保持与 /diy/home 的组件文档兼容，同时过滤未配置图片的
 // Banner，避免客户端回退到伪造的渐变占位画面。
 func parseHomeDecoration(pageID uint64, name, document string) homeDecoration {
-	result := homeDecoration{PageID: pageID, Title: name, Banners: []gin.H{}, Menus: []gin.H{}}
+	result := homeDecoration{PageID: pageID, Title: name, Banners: []gin.H{}, Menus: []gin.H{}, DisplayTypes: []homeDisplayType{}}
 	var doc struct {
 		Page struct {
 			Params struct {
@@ -143,7 +154,15 @@ func parseHomeDecoration(pageID uint64, name, document string) homeDecoration {
 			} `json:"params"`
 		} `json:"page"`
 		Items []struct {
-			Type string `json:"type"`
+			Type   string `json:"type"`
+			Params struct {
+				Source string `json:"source"`
+				Auto   struct {
+					Category    uint64 `json:"category"`
+					ProductSort string `json:"productSort"`
+					ShowNum     int    `json:"showNum"`
+				} `json:"auto"`
+			} `json:"params"`
 			Data []struct {
 				Name  string `json:"imgName"`
 				Text  string `json:"text"`
@@ -158,6 +177,7 @@ func parseHomeDecoration(pageID uint64, name, document string) homeDecoration {
 	if title := strings.TrimSpace(doc.Page.Params.Title); title != "" {
 		result.Title = title
 	}
+	seenDisplayTypes := make(map[uint64]struct{})
 	for _, item := range doc.Items {
 		for index, value := range item.Data {
 			label := strings.TrimSpace(value.Name)
@@ -175,6 +195,26 @@ func parseHomeDecoration(pageID uint64, name, document string) homeDecoration {
 				}
 			}
 		}
+		if item.Type != "product" || item.Params.Source != "auto" || item.Params.Auto.Category == 0 {
+			continue
+		}
+		if _, exists := seenDisplayTypes[item.Params.Auto.Category]; exists {
+			continue
+		}
+		seenDisplayTypes[item.Params.Auto.Category] = struct{}{}
+		limit := item.Params.Auto.ShowNum
+		if limit < 4 {
+			limit = 8
+		}
+		if limit > 24 {
+			limit = 24
+		}
+		sort, _ := productSort(item.Params.Auto.ProductSort, "desc")
+		result.DisplayTypes = append(result.DisplayTypes, homeDisplayType{
+			CategoryID:   item.Params.Auto.Category,
+			InitialLimit: limit,
+			Sort:         sort,
+		})
 	}
 	return result
 }
@@ -255,8 +295,13 @@ func (h *Handler) Products(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "分类 ID 错误")
 		return
 	}
+	minPrice, maxPrice, err := priceRange(c)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "价格范围错误")
+		return
+	}
 	sort, order := productSort(c.Query("sort"), c.Query("order"))
-	rows, total, err := h.listPage(c, merchantID, categoryID, strings.TrimSpace(c.Query("keyword")), page, limit, sort, order)
+	rows, total, err := h.listPage(c, merchantID, categoryID, strings.TrimSpace(c.Query("keyword")), minPrice, maxPrice, page, limit, sort, order)
 	if err != nil {
 		fail(c, err)
 		return
@@ -333,7 +378,7 @@ func (h *Handler) StoreHome(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	rows, total, err := h.listPage(c, merchantID, 0, "", page, 20, "default", "desc")
+	rows, total, err := h.listPage(c, merchantID, 0, "", nil, nil, page, 20, "default", "desc")
 	if err != nil {
 		fail(c, err)
 		return
@@ -387,10 +432,10 @@ func (h *Handler) findStoreView(c *gin.Context, merchantID uint64) (*storeView, 
 }
 
 func (h *Handler) list(c *gin.Context, merchantID, categoryID uint64, keyword string, page, limit int, sort, order string) ([]productView, error) {
-	rows, _, err := h.listPage(c, merchantID, categoryID, keyword, page, limit, sort, order)
+	rows, _, err := h.listPage(c, merchantID, categoryID, keyword, nil, nil, page, limit, sort, order)
 	return rows, err
 }
-func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keyword string, page, limit int, sort, order string) ([]productView, int64, error) {
+func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keyword string, minPrice, maxPrice *float64, page, limit int, sort, order string) ([]productView, int64, error) {
 	query := h.db.WithContext(c.Request.Context()).Model(&productView{}).Where("sale_status = 1")
 	if merchantID != 0 {
 		query = query.Where("merchant_id = ?", merchantID)
@@ -405,6 +450,12 @@ func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keywor
 	if keyword != "" {
 		query = query.Where("title LIKE ?", "%"+keyword+"%")
 	}
+	if minPrice != nil {
+		query = query.Where("price >= ?", *minPrice)
+	}
+	if maxPrice != nil {
+		query = query.Where("price <= ?", *maxPrice)
+	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -412,6 +463,32 @@ func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keywor
 	rows := make([]productView, 0)
 	err := query.Order(productOrder(sort, order)).Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+// priceRange accepts optional non-negative decimal values and rejects a
+// reversed range before the database query is composed.
+func priceRange(c *gin.Context) (min, max *float64, err error) {
+	parse := func(name string) (*float64, error) {
+		raw := strings.TrimSpace(c.Query(name))
+		if raw == "" {
+			return nil, nil
+		}
+		value, parseErr := strconv.ParseFloat(raw, 64)
+		if parseErr != nil || value < 0 {
+			return nil, fmt.Errorf("invalid %s", name)
+		}
+		return &value, nil
+	}
+	if min, err = parse("min_price"); err != nil {
+		return nil, nil, err
+	}
+	if max, err = parse("max_price"); err != nil {
+		return nil, nil, err
+	}
+	if min != nil && max != nil && *min > *max {
+		return nil, nil, fmt.Errorf("reversed range")
+	}
+	return min, max, nil
 }
 
 // storeScope is derived exclusively from a verified qixi_crm_b_store_view row.

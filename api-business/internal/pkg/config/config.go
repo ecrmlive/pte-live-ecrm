@@ -16,7 +16,6 @@ type Config struct {
 	Redis   RedisConfig   `yaml:"redis"`
 	NATS    NATSConfig    `yaml:"nats"`
 	Etcd    EtcdConfig    `yaml:"etcd"`
-	COS     COSConfig     `yaml:"cos"`
 	JWT     JWTConfig     `yaml:"jwt"`
 	Job     JobConfig     `yaml:"job"`
 	Upload  UploadConfig  `yaml:"upload"`
@@ -133,17 +132,6 @@ type EtcdConfig struct {
 	Endpoints []string `yaml:"endpoints"`
 }
 
-// COSConfig 腾讯云对象存储（不用 MinIO）。密钥勿提交，可用环境变量覆盖。
-type COSConfig struct {
-	Enabled   bool   `yaml:"enabled"`
-	Bucket    string `yaml:"bucket"`
-	Region    string `yaml:"region"`
-	SecretID  string `yaml:"secret_id"`
-	SecretKey string `yaml:"secret_key"`
-	BaseURL   string `yaml:"base_url"`   // 对外 CDN/自定义域，如 https://cos.qxkejiwl.top/qixi-mergers
-	KeyPrefix string `yaml:"key_prefix"` // 对象键前缀，默认 qixi-mergers
-}
-
 type JWTConfig struct {
 	Secret          string `yaml:"secret"`
 	AccessTTLHours  int    `yaml:"access_ttl_hours"`
@@ -212,15 +200,6 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.IM.Mode == "local" {
 		return nil, fmt.Errorf("im.mode=local is not supported; configure pte-live-im endpoint in %s", path)
-	}
-	if cfg.COS.BaseURL == "" {
-		cfg.COS.BaseURL = "https://cos.qxkejiwl.top/qixi-mergers"
-	}
-	if cfg.COS.KeyPrefix == "" {
-		cfg.COS.KeyPrefix = "qixi-mergers"
-	}
-	if cfg.COS.Region == "" {
-		cfg.COS.Region = "ap-guangzhou"
 	}
 	return &cfg, nil
 }

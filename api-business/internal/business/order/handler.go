@@ -8,20 +8,28 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/cloudconfig"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/paymentconfig"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/middleware"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
+	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/wechatpayv3"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
-	db        *gorm.DB
-	configs   *paymentconfig.Store
-	allowMock bool
+	db              *gorm.DB
+	configs         *paymentconfig.Store
+	platformConfigs *cloudconfig.Service
+	wechatClient    *wechatpayv3.Client
+	allowMock       bool
 }
 
-func NewHandler(db *gorm.DB, configs *paymentconfig.Store, allowMock bool) *Handler {
-	return &Handler{db: db, configs: configs, allowMock: allowMock}
+func NewHandler(db *gorm.DB, configs *paymentconfig.Store, allowMock bool, platformConfigs ...*cloudconfig.Service) *Handler {
+	var platformConfig *cloudconfig.Service
+	if len(platformConfigs) > 0 {
+		platformConfig = platformConfigs[0]
+	}
+	return &Handler{db: db, configs: configs, platformConfigs: platformConfig, wechatClient: &wechatpayv3.Client{}, allowMock: allowMock}
 }
 func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/v2/order/check", h.Check)
@@ -95,15 +103,16 @@ func (h *Handler) Pay(c *gin.Context) {
 		bad(c, "必须选择支付方式")
 		return
 	}
-	if req.PayType != "mock" {
-		if h.configs == nil {
-			writeOrderError(c, ErrStoreChannelDisabled)
-			return
-		}
-		if err := AssertPaymentChannelAvailable(c.Request.Context(), h.db, h.configs, uint64(middleware.UID(c)), id, req.PayType); err != nil {
+	if req.PayType == "wechat" {
+		intent, err := h.createWechatNativePay(c.Request.Context(), uint64(middleware.UID(c)), id)
+		if err != nil {
 			writeOrderError(c, err)
 			return
 		}
+		response.OK(c, intent)
+		return
+	}
+	if req.PayType != "mock" {
 		writeOrderError(c, ErrPayChannel)
 		return
 	}
@@ -128,7 +137,7 @@ func (h *Handler) PaymentChannels(c *gin.Context) {
 		response.OK(c, gin.H{"list": []PaymentChannelView{{Channel: "wechat"}, {Channel: "alipay"}}})
 		return
 	}
-	list, err := AvailablePaymentChannels(c.Request.Context(), h.db, h.configs, uint64(middleware.UID(c)), id)
+	list, err := availablePaymentChannels(c.Request.Context(), h.db, h.configs, h.platformConfigs, uint64(middleware.UID(c)), id)
 	if err != nil {
 		writeOrderError(c, err)
 		return
@@ -228,7 +237,7 @@ func derivedKey(uid uint64, req createRequest) string {
 func bad(c *gin.Context, message string) { response.Fail(c, http.StatusBadRequest, message) }
 func writeOrderError(c *gin.Context, err error) {
 	switch err {
-	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled, ErrCouponOwnership, ErrCouponConflict, ErrCouponMinNotMet, ErrOrderNotCancellable, ErrOrderNotPayable:
+	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled, ErrCouponOwnership, ErrCouponConflict, ErrCouponMinNotMet, ErrOrderNotCancellable, ErrOrderNotPayable, ErrPaymentProcessing:
 		bad(c, err.Error())
 	case ErrOrderOwnership:
 		response.Fail(c, http.StatusNotFound, err.Error())

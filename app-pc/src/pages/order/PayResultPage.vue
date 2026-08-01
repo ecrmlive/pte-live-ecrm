@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import QRCode from "qrcode";
 import { useRoute, useRouter } from "vue-router";
 import {
   fetchOrderDetail,
@@ -27,6 +28,9 @@ const invoiceDraft = ref<{
 } | null>(null);
 const invoiceApplying = ref(false);
 const invoiceApplied = ref(false);
+const wechatQRCode = ref("");
+const wechatExpiresAt = ref("");
+let paymentPollTimer: number | undefined;
 
 const id = () => Number(route.params.id);
 
@@ -79,6 +83,7 @@ async function requestInvoice() {
 }
 
 onMounted(() => void load());
+onBeforeUnmount(() => stopWechatPaymentPolling());
 
 function channelEnabled(channel: "wechat" | "alipay") {
   return paymentChannels.value.some((item) => item.channel === channel && item.enabled);
@@ -92,13 +97,57 @@ async function pay(type: PayType) {
   paying.value = true;
   try {
     const res = await payOrder(id(), type);
-    order.value = res as GroupOrder;
-    hint.value = "支付成功";
+    if (type === "wechat" && "code_url" in res && res.code_url) {
+      wechatQRCode.value = await QRCode.toDataURL(res.code_url, { width: 252, margin: 1, errorCorrectionLevel: "M" });
+      wechatExpiresAt.value = res.expires_at || "";
+      hint.value = "请使用微信扫描二维码完成支付";
+      startWechatPaymentPolling();
+    } else {
+      order.value = res as GroupOrder;
+      hint.value = "支付成功";
+    }
   } catch (e) {
     hint.value = e instanceof ApiError ? e.message : "支付失败";
   } finally {
     paying.value = false;
   }
+}
+
+function closeWechatPay() {
+  stopWechatPaymentPolling();
+  wechatQRCode.value = "";
+  wechatExpiresAt.value = "";
+}
+
+function stopWechatPaymentPolling() {
+  if (paymentPollTimer !== undefined) {
+    window.clearTimeout(paymentPollTimer);
+    paymentPollTimer = undefined;
+  }
+}
+
+function startWechatPaymentPolling() {
+  stopWechatPaymentPolling();
+  const poll = async () => {
+    try {
+      const detail = await fetchOrderDetail(id());
+      order.value = detail;
+      if (detail.paid === 1) {
+        hint.value = "支付成功";
+        closeWechatPay();
+        return;
+      }
+      if (wechatExpiresAt.value && new Date(wechatExpiresAt.value).getTime() <= Date.now()) {
+        hint.value = "支付二维码已过期，请重新发起微信支付";
+        closeWechatPay();
+        return;
+      }
+    } catch {
+      // A temporary polling failure must not interrupt the customer's scan.
+    }
+    paymentPollTimer = window.setTimeout(poll, 3000);
+  };
+  paymentPollTimer = window.setTimeout(poll, 3000);
 }
 </script>
 
@@ -132,6 +181,17 @@ async function pay(type: PayType) {
         <RouterLink v-else-if="invoiceApplied" class="invoice-link" to="/user/invoices">查看我的发票</RouterLink>
       </div>
     </section>
+    <div v-if="wechatQRCode" class="wechat-mask" role="dialog" aria-modal="true" aria-label="微信扫码支付">
+      <section class="wechat-dialog">
+        <button class="wechat-close" type="button" aria-label="关闭" @click="closeWechatPay">×</button>
+        <h2>微信扫码支付</h2>
+        <p>请使用微信扫一扫完成付款</p>
+        <img :src="wechatQRCode" alt="微信支付二维码" class="wechat-qr" />
+        <strong>¥{{ order ? Number(order.pay_price).toFixed(2) : "0.00" }}</strong>
+        <small v-if="wechatExpiresAt">支付二维码有效至 {{ new Date(wechatExpiresAt).toLocaleTimeString() }}</small>
+        <button class="pc-btn" type="button" @click="load(); closeWechatPay()">我已完成支付</button>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -148,4 +208,6 @@ async function pay(type: PayType) {
 .ghost { background: transparent; color: inherit; border: 1px solid var(--pc-line); }
 .invoice-apply { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 24px; padding: 18px 20px; border: 1px solid #f0d2cf; background: #fff9f8; }.invoice-apply b { color: #333; }.invoice-apply p { margin: 7px 0 0; color: #777; font-size: 14px; }.invoice-link { display: inline-block; margin-top: 22px; color: #f13728; }
 .after-sales { display: grid; gap: 10px; margin-top: 24px; padding: 18px 20px; border: 1px solid #eee; }.after-sales > div { display: flex; justify-content: space-between; gap: 16px; color: #666; font-size: 14px; }.after-sales a { color: #f13728; }.muted { color: #999; }
+.wechat-mask { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0, 0, 0, .55); }
+.wechat-dialog { position: relative; width: min(420px, 100%); padding: 34px 42px 38px; text-align: center; color: #2f2f2f; background: #fff; border-radius: 4px; box-shadow: 0 24px 70px rgba(0, 0, 0, .24); }.wechat-dialog h2 { margin: 0; font-size: 24px; }.wechat-dialog p { margin: 12px 0 20px; color: #777; }.wechat-qr { display: block; width: 252px; height: 252px; margin: 0 auto 16px; background: #fff; }.wechat-dialog strong, .wechat-dialog small { display: block; }.wechat-dialog strong { margin-bottom: 8px; font-size: 22px; color: #f13728; }.wechat-dialog small { margin-bottom: 22px; color: #999; }.wechat-close { position: absolute; top: 12px; right: 14px; border: 0; background: transparent; color: #888; font-size: 30px; line-height: 1; cursor: pointer; }
 </style>

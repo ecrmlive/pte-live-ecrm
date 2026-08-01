@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,5 +35,32 @@ func TestJWTRequiredOnlyAcceptsAuthoriZation(t *testing.T) {
 	r.ServeHTTP(validResp, valid)
 	if validResp.Code != http.StatusNoContent {
 		t.Fatalf("Authori-zation status = %d, want %d", validResp.Code, http.StatusNoContent)
+	}
+}
+
+func TestJWTOptionalAddsUserContextOnlyForValidAuthoriZation(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mgr := authjwt.NewManager("test-secret", time.Hour, time.Hour)
+	pair, err := mgr.IssueCUser(42, "13500000001", "pc")
+	if err != nil {
+		t.Fatalf("issue token: %v", err)
+	}
+	r := gin.New()
+	r.GET("/optional", JWTOptional(mgr, authjwt.PortalApp), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"uid": UID(c)})
+	})
+
+	guest := httptest.NewRecorder()
+	r.ServeHTTP(guest, httptest.NewRequest(http.MethodGet, "/optional", nil))
+	if guest.Code != http.StatusOK || !strings.Contains(guest.Body.String(), `"uid":0`) {
+		t.Fatalf("guest response = %d %s", guest.Code, guest.Body.String())
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/optional", nil)
+	request.Header.Set("Authori-zation", "Bearer "+pair.AccessToken)
+	authed := httptest.NewRecorder()
+	r.ServeHTTP(authed, request)
+	if authed.Code != http.StatusOK || !strings.Contains(authed.Body.String(), `"uid":42`) {
+		t.Fatalf("authed response = %d %s", authed.Code, authed.Body.String())
 	}
 }

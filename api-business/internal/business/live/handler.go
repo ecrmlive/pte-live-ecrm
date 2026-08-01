@@ -130,8 +130,9 @@ func (h *Handler) CancelReservation(c *gin.Context) {
 
 func (h *Handler) rooms(c *gin.Context) *gorm.DB {
 	return h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_live_room").
-		Select("qixi_crm_b_live_room.id, qixi_crm_b_live_room.merchant_id, qixi_crm_b_live_room.store_id, qixi_crm_b_live_room.title, qixi_crm_b_live_room.anchor_name, qixi_crm_b_live_room.cover_url, qixi_crm_b_live_room.status, qixi_crm_b_live_room.play_url, qixi_crm_b_live_room.starts_at, qixi_crm_b_live_room.ended_at, qixi_crm_b_store_view.merchant_name, qixi_crm_b_store_view.store_name").
-		Joins("LEFT JOIN qixi_crm_b_store_view ON qixi_crm_b_store_view.store_id = qixi_crm_b_live_room.store_id")
+		Select("qixi_crm_b_live_room.id, qixi_crm_b_live_room.merchant_id, qixi_crm_b_live_room.store_id, qixi_crm_b_live_room.title, qixi_crm_b_live_room.anchor_name, qixi_crm_b_live_room.cover_url, qixi_crm_b_live_room.status, qixi_crm_b_live_room.play_url, qixi_crm_b_live_room.starts_at, qixi_crm_b_live_room.ended_at, COALESCE(qixi_crm_b_live_merchant.merchant_name, '') AS merchant_name, qixi_crm_b_store_view.store_name").
+		Joins("LEFT JOIN qixi_crm_b_store_view ON qixi_crm_b_store_view.store_id = qixi_crm_b_live_room.store_id").
+		Joins("LEFT JOIN (SELECT store_id, MAX(merchant_name) AS merchant_name FROM qixi_crm_b_product_view GROUP BY store_id) AS qixi_crm_b_live_merchant ON qixi_crm_b_live_merchant.store_id = qixi_crm_b_live_room.store_id")
 }
 
 func (h *Handler) findPublicRoom(c *gin.Context, id uint64) (*roomRow, error) {

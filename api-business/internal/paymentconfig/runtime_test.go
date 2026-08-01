@@ -3,7 +3,7 @@ package paymentconfig
 import "testing"
 
 func TestChannelReady(t *testing.T) {
-	wechat := Values{"wechat_enabled": "true", "wechat_app_id": "wxid", "wechat_mch_id": "mch", "wechat_api_v3_key": "key", "wechat_private_key": "private", "wechat_notify_url": "https://example.test/wechat"}
+	wechat := Values{"wechat_enabled": "true", "wechat_app_id": "wxid", "wechat_mch_id": "mch", "wechat_api_v3_key": "key", "wechat_serial_no": "serial", "wechat_private_key": "private", "wechat_notify_url": "https://example.test/wechat"}
 	if !ChannelReady(wechat, "wechat") {
 		t.Fatal("expected complete wechat config to be ready")
 	}

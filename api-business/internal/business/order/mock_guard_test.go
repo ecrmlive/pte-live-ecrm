@@ -27,7 +27,7 @@ func TestProductionHandlerRejectsMockPayment(t *testing.T) {
 
 func TestProductionCallbackDoesNotExposeMockPayment(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewCallbackHandler(nil, false)
+	h := NewCallbackHandler(nil, nil, false)
 	r := gin.New()
 	r.POST("/pay/mock", h.Mock)
 

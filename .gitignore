@@ -84,3 +84,6 @@ node_modules/
 release/config.yaml
 release/config/
 release/admin-users.yaml
+
+# 本机/测试机密钥初始化数据；由 make local-db-init/test-db-init 导入，禁止提交。
+*_key.sql

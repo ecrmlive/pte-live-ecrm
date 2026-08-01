@@ -3,7 +3,7 @@ package upload
 import (
 	"context"
 	"errors"
-	"mime/multipart"
+	"strings"
 	"testing"
 )
 
@@ -17,24 +17,11 @@ func (s resolverStub) Values(_ context.Context, group string) (map[string]string
 	return values, nil
 }
 
-type storeStub struct{ called bool }
-
-func (s *storeStub) Save(_ string, _ *multipart.FileHeader) (string, string, error) {
-	s.called = true
-	return "/uploads/demo.png", "demo.png", nil
-}
-
-func TestDatabaseCOSFallsBackWhenDisabled(t *testing.T) {
-	fallback := &storeStub{}
-	store := DatabaseCOS{Resolver: resolverStub{
-		"cos": {"enabled": "false"},
-	}, Fallback: fallback}
-	url, name, err := store.Save("platform", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !fallback.called || url != "/uploads/demo.png" || name != "demo.png" {
-		t.Fatalf("fallback=%t url=%q name=%q", fallback.called, url, name)
+func TestDatabaseCOSRejectsDisabledConfiguration(t *testing.T) {
+	store := DatabaseCOS{Resolver: resolverStub{"cos": {"enabled": "false"}}}
+	_, _, err := store.Save("platform", nil)
+	if err == nil || !strings.Contains(err.Error(), "未启用") {
+		t.Fatalf("err=%v", err)
 	}
 }
 

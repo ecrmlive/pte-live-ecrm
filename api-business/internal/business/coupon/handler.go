@@ -21,8 +21,14 @@ type Handler struct{ db *gorm.DB }
 
 func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 
-func (h *Handler) Register(r gin.IRoutes) {
+// RegisterPublic exposes the coupon catalogue without granting any stateful
+// coupon action. A guest may inspect the centre; receiving and all user coupon
+// state remain behind the JWT-protected routes below.
+func (h *Handler) RegisterPublic(r gin.IRoutes) {
 	r.GET("/coupons/center", h.center)
+}
+
+func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/coupons/:id/receive", h.receive)
 	r.GET("/coupons/mine", h.mine)
 	r.GET("/coupons/usable", h.usable)

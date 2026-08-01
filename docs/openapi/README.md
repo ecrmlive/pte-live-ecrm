@@ -13,7 +13,7 @@
 | `merchant-catalog.yaml` | 商户商品 CRUD / 库存 / 上下架（阶段 2） |
 | `app-catalog.yaml` | C 端可售商品只读（阶段 2） |
 | `app-trade.yaml` | C 端购物车/地址/`v2/order`下单/支付（阶段 3） |
-| `app-callback-pay.yaml` | C 端微信/支付宝/Mock 支付回调（阶段 3） |
+| `app-callback-pay.yaml` | C 端微信支付 v3 / Mock 支付回调（阶段 3）；支付宝回调待接入 |
 | `merchant-trade.yaml` | 商户订单发货核销（阶段 3；权威） |
 | `platform-trade.yaml` | 平台订单监管只读（阶段 3；权威） |
 | `merchant-order.yaml` | 同 `merchant-trade` 别名，勿再扩写 |

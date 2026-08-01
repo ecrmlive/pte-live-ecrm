@@ -19,6 +19,14 @@ var ErrBadGroup = errors.New("不支持的配置分组")
 var ErrBadField = errors.New("不支持的配置字段")
 var ErrBadValue = errors.New("配置字段值不合法")
 
+const (
+	keyVersionEncrypted = "v1"
+	// 可提交的 key.sql 只能初始化公开配置，密钥不允许使用该格式。
+	keyVersionBootstrapPublic = "bootstrap-public-v1"
+	// 仅限被 Git 忽略、受控分发的 *_key.sql。用于 local/test 的首次配置导入。
+	keyVersionBootstrapLocal = "bootstrap-local-v1"
+)
+
 type Store interface {
 	ListByGroup(ctx context.Context, group string) ([]Config, error)
 	Upsert(ctx context.Context, row *Config) error
@@ -50,15 +58,20 @@ func Catalog() []GroupMeta {
 			{Key: "wechat_app_id", Label: "微信 AppID"}, {Key: "wechat_mch_id", Label: "微信商户号"},
 			{Key: "wechat_api_v3_key", Label: "微信 APIv3 密钥", Secret: true}, {Key: "wechat_serial_no", Label: "微信商户证书序列号"},
 			{Key: "wechat_private_key", Label: "微信商户私钥", Secret: true}, {Key: "wechat_merchant_cert", Label: "微信商户证书", Secret: true},
+			{Key: "wechat_public_key_id", Label: "微信支付公钥 ID"}, {Key: "wechat_public_key", Label: "微信支付公钥", Secret: true},
 			{Key: "wechat_platform_cert_serial", Label: "微信平台证书序列号"}, {Key: "wechat_platform_cert", Label: "微信平台证书", Secret: true},
 			{Key: "wechat_notify_url", Label: "微信支付回调地址"},
 			{Key: "alipay_app_id", Label: "支付宝 AppID"}, {Key: "alipay_private_key", Label: "支付宝应用私钥", Secret: true},
 			{Key: "alipay_public_key", Label: "支付宝公钥"}, {Key: "alipay_seller_id", Label: "支付宝卖家 ID"},
 			{Key: "alipay_notify_url", Label: "支付宝回调地址"}, {Key: "alipay_gateway", Label: "支付宝网关地址"}, {Key: "alipay_sign_type", Label: "支付宝签名算法", Hint: "默认 RSA2"},
 		}},
+		{Key: "wechat_mini_program", Label: "微信小程序", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用微信小程序"}, {Key: "app_id", Label: "小程序 AppID", Required: true},
+			{Key: "app_secret", Label: "小程序 AppSecret", Secret: true, Required: true},
+		}},
 		{Key: "tencent_account", Label: "腾讯云账号", Fields: []FieldMeta{
 			{Key: "secret_id", Label: "SecretId", Secret: true, Required: true}, {Key: "secret_key", Label: "SecretKey", Secret: true, Required: true},
-			{Key: "region", Label: "默认地域", Hint: "例如 ap-guangzhou"},
+			{Key: "region", Label: "默认地域", Hint: "例如 ap-shanghai"},
 		}},
 		{Key: "cos", Label: "腾讯云 COS", Fields: []FieldMeta{
 			{Key: "enabled", Label: "启用 COS"}, {Key: "bucket", Label: "存储桶"}, {Key: "region", Label: "地域"},
@@ -112,7 +125,7 @@ func (s *Service) Values(ctx context.Context, group string) (map[string]string, 
 	values := make(map[string]string, len(meta.Fields))
 	for _, field := range meta.Fields {
 		if row, exists := byKey[field.Key]; exists {
-			plain, err := s.decrypt(row.Ciphertext)
+			plain, err := s.decode(row, field)
 			if err != nil {
 				return nil, err
 			}
@@ -164,7 +177,7 @@ func (s *Service) Get(ctx context.Context, group string) (*GroupView, error) {
 		if field.Secret {
 			values[field.Key] = SecretMasked
 		} else {
-			plain, err := s.decrypt(row.Ciphertext)
+			plain, err := s.decode(row, field)
 			if err != nil {
 				return nil, err
 			}
@@ -193,14 +206,6 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 	if len(in.Values) == 0 {
 		return nil, ErrBadValue
 	}
-	rows, err := s.store.ListByGroup(ctx, meta.Key)
-	if err != nil {
-		return nil, err
-	}
-	existing := make(map[string]Config, len(rows))
-	for _, row := range rows {
-		existing[row.ConfigKey] = row
-	}
 	allowed := make(map[string]FieldMeta, len(meta.Fields))
 	for _, field := range meta.Fields {
 		allowed[field.Key] = field
@@ -226,10 +231,7 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 		if err != nil {
 			return nil, err
 		}
-		row := &Config{GroupKey: meta.Key, ConfigKey: key, Ciphertext: ciphertext, IsSecret: field.Secret, UpdatedBy: adminID}
-		if old, exists := existing[key]; exists {
-			row.ConfigID, row.CreateTime = old.ConfigID, old.CreateTime
-		}
+		row := &Config{GroupKey: meta.Key, ConfigKey: key, Ciphertext: ciphertext, KeyVersion: keyVersionEncrypted, IsSecret: field.Secret, UpdatedBy: adminID}
 		if err := s.store.Upsert(ctx, row); err != nil {
 			return nil, err
 		}
@@ -251,6 +253,19 @@ func (s *Service) encrypt(plain string) (string, error) {
 		return "", err
 	}
 	return base64.RawStdEncoding.EncodeToString(append(nonce, s.aead.Seal(nil, nonce, []byte(plain), nil)...)), nil
+}
+
+func (s *Service) decode(row Config, field FieldMeta) (string, error) {
+	if row.KeyVersion == keyVersionBootstrapLocal {
+		return row.Ciphertext, nil
+	}
+	if row.KeyVersion == keyVersionBootstrapPublic {
+		if field.Secret {
+			return "", errors.New("密钥不得使用 key.sql 明文初始化")
+		}
+		return row.Ciphertext, nil
+	}
+	return s.decrypt(row.Ciphertext)
 }
 func (s *Service) decrypt(raw string) (string, error) {
 	data, err := base64.RawStdEncoding.DecodeString(raw)

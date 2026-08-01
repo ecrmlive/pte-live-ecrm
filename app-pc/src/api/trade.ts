@@ -57,11 +57,12 @@ export interface PaymentChannel {
 export interface PayIntent {
   status: "pending" | "paid";
   channel: string;
+  payment_mode?: "native";
   group_order_id: number;
   out_trade_no: string;
   pay_price: number;
-  sandbox?: boolean;
-  notify_token?: string;
+  code_url?: string;
+  expires_at?: string;
 }
 
 export interface StoreOrder {
@@ -85,6 +86,36 @@ export interface OrderProduct {
   image?: string;
   product_num: number;
   product_price: number;
+}
+
+export interface CheckoutItem {
+  cart_id: number;
+  product_id: number;
+  product_attr_unique: string;
+  store_name: string;
+  image?: string;
+  price: number;
+  cart_num: number;
+  subtotal: number;
+}
+
+export interface CheckoutMerchant {
+  mer_id: number;
+  mer_name: string;
+  total_price: number;
+  pay_price: number;
+  coupon_price: number;
+  total_num: number;
+  items: CheckoutItem[];
+}
+
+export interface CheckoutPreview {
+  pay_price: number;
+  total_price: number;
+  total_num: number;
+  total_postage: number;
+  coupon_price?: number;
+  merchants: CheckoutMerchant[];
 }
 
 export interface Invoice {
@@ -138,12 +169,7 @@ export function removeAddress(addressID: number) {
 }
 
 export function orderCheck(cart_ids: number[], address_id: number, coupon_user_ids: number[] = []) {
-  return http.post<{
-    pay_price: number;
-    total_num: number;
-    coupon_price?: number;
-    merchants: unknown[];
-  }>("/v2/order/check", {
+  return http.post<CheckoutPreview>("/v2/order/check", {
     cart_ids,
     address_id,
     coupon_user_ids,

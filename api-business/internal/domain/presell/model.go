@@ -36,7 +36,7 @@ type ProductPresell struct {
 	InWindow bool    `gorm:"-" json:"in_window"`
 }
 
-func (ProductPresell) TableName() string { return "qixi_m_admin_store_product_presell" }
+func (ProductPresell) TableName() string { return "qixi_crm_b_presell" }
 
 // Presell 与 ProductPresell 同义（service 命名）。
 type Presell = ProductPresell
@@ -82,7 +82,7 @@ type PresellOrder struct {
 	OrderSN   string `gorm:"-" json:"order_sn,omitempty"`
 }
 
-func (PresellOrder) TableName() string { return "qixi_m_app_presell_order" }
+func (PresellOrder) TableName() string { return "qixi_crm_b_presell_order" }
 
 // Input 兼容 handler。
 type Input = SaveInput

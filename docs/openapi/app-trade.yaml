@@ -6,7 +6,9 @@ info:
     阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。
     真实路径对齐 FUNCTIONAL-TRUTH：/v2/order/check|create、/order/pay/:id。
     平台自营商品仅使用平台加密配置；入驻商户商品仅使用所属店铺自己的加密配置，二者不共用。不同支付主体商品必须分别结算；客户端先读取支付方式，再发起支付。
-    当前 mock 为唯一已闭环的本地测试通道；微信/支付宝真实下单与官方回调验签接入中，未完成前不会伪造支付成功。
+    PC 微信支付使用 Native 下单，返回 code_url 由客户端生成二维码；支付成功必须等待微信 v3 签名回调。
+    回调同时校验 Wechatpay 签名、AES-256-GCM 资源、商户号、AppID、订单号和服务端实付金额，并以 provider_event_id 幂等落单。
+    支付宝仍不开放，未完成前不会伪造支付成功。mock 仅允许显式启用的本地/测试环境。
     积分商城见 app-loyalty.yaml（/order/v3/*、/order/points/pay/:id）。
     禁止 stale：/order/create、/order/check、/order/v2/*、/v3/order/*。
 servers:
@@ -60,7 +62,10 @@ paths:
       security: [{ bearerAuth: [] }]
   /order/pay/{id}:
     post:
-      summary: mock 本地闭环支付；微信/支付宝必须先通过支付方式资格校验
+      summary: 发起支付
+      description: >-
+        pay_type=wechat 且当前为 PC 时创建微信 Native 预下单并返回 payment_mode=native、code_url、expires_at；
+        不改变订单已支付状态。只有签名验证通过的微信回调才能将订单置为 paid。
       security: [{ bearerAuth: [] }]
   /order/pay/{id}/channels:
     get:
@@ -86,7 +91,22 @@ paths:
       summary: 提交商户入驻申请
       description: >-
         C 端仅写入 qixi_crm_business 的申请事实和业务 outbox；api-platform 通过 NATS
-        投影到 qixi_crm_admin 的审核队列。客户端不得直写后台库。
+        投影到 qixi_crm_admin 的审核队列。营业执照字段为已完成 COS 直传后的 license_key，
+        不接受 URL，也不允许客户端直写后台库。
+      security: [{ bearerAuth: [] }]
+  /uploads/presign:
+    post:
+      summary: 签发 C 端 COS PUT 直传地址
+      description: >-
+        仅签发 merchant_application_license 用途的 JPG、PNG、WebP 图片，10 分钟有效、最大 10MB。
+        服务端不接收文件字节；响应只包含 object_key、PUT 地址、必需请求头和过期时间。
+      security: [{ bearerAuth: [] }]
+  /uploads/complete:
+    post:
+      summary: 校验 COS 对象并保存对象 Key
+      description: >-
+        客户端 PUT 成功后提交 object_key。服务端 HEAD 校验对象存在、核验当前用户和用途，
+        再写 qixi_crm_b_upload_object；该 Key 才可用于入驻申请。
       security: [{ bearerAuth: [] }]
   /merchant-applications/mine:
     get:

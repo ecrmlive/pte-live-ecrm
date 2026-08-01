@@ -11,7 +11,19 @@ ON DUPLICATE KEY UPDATE `merchant_name`=VALUES(`merchant_name`),`status`=VALUES(
 INSERT INTO `qixi_crm_a_diy_page` (`id`,`page_type`,`name`,`document`,`status`,`updated_by`) VALUES
   (4001,'home','七禧平台首页',JSON_OBJECT(
     'page',JSON_OBJECT('type','page','name','页面设置','params',JSON_OBJECT('name','七禧商城','title','七禧商城')),
-    'items',JSON_ARRAY(JSON_OBJECT('type','banner','name','轮播图','data',JSON_ARRAY(JSON_OBJECT('imgName','七禧商城精选','imgUrl','/demo/home-hero-v1.png','linkUrl','/pages/goods/list')))),
+    'items',JSON_ARRAY(
+      JSON_OBJECT('type','banner','name','轮播图','data',JSON_ARRAY(
+        JSON_OBJECT('imgName','七禧商城精选','imgUrl','/demo/home-hero-v1.png','linkUrl','/goods?cate_id=101'),
+        JSON_OBJECT('imgName','七禧香氛家居','imgUrl','/demo/home-hero-fragrance-v1.png','linkUrl','/goods?cate_id=102'),
+        JSON_OBJECT('imgName','七禧箱包配饰','imgUrl','/demo/home-hero-accessories-v1.png','linkUrl','/goods?cate_id=10102')
+      )),
+      JSON_OBJECT('type','product','name','服饰鞋包展示类型','params',JSON_OBJECT(
+        'source','auto','auto',JSON_OBJECT('category',101,'showNum',4,'productSort','sales')
+      )),
+      JSON_OBJECT('type','product','name','家居生活展示类型','params',JSON_OBJECT(
+        'source','auto','auto',JSON_OBJECT('category',102,'showNum',4,'productSort','sales')
+      ))
+    ),
     '_qixi',JSON_OBJECT('title','七禧商城','template_name','home','is_diy',1,'is_show',1,'is_default',1)
   ),'published',0)
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`document`=VALUES(`document`),`status`=VALUES(`status`);

@@ -28,7 +28,7 @@ done
 for domain in admin business merchant; do
 	for phase in 01_table 02_data 03_config 04_key 05_test_data; do
 		sql_file="${ROOT_DIR}/sql/${domain}/${phase}.sql"
-		[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}" >&2; exit 1; }
+		[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}；该密钥初始化文件不纳入 Git，需从同一受控密钥副本同步" >&2; exit 1; }
 		echo ">> 导入 sql/${domain}/${phase}.sql"
 		mysql_exec <"${sql_file}"
 	done

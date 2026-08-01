@@ -169,19 +169,8 @@ func main() {
 	productMetaSvc := productmeta.NewService(productmetapersist.NewRepo(gdb))
 	articleSvc := article.NewService(articlepersist.NewRepo(gdb))
 	userTagSvc := usertag.NewService(usertagpersist.NewRepo(gdb))
-	cosStore := upload.COS{
-		Bucket: cfg.COS.Bucket, Region: cfg.COS.Region,
-		SecretID: cfg.COS.SecretID, SecretKey: cfg.COS.SecretKey,
-		BaseURL: cfg.COS.BaseURL, KeyPrefix: cfg.COS.KeyPrefix,
-	}
-	var yamlFileUp upload.Store
-	if cfg.COS.Enabled && cosStore.Configured() {
-		yamlFileUp = cosStore
-	} else {
-		yamlFileUp = upload.Local{Dir: cfg.Upload.Dir, PublicBase: cfg.Upload.PublicBase}
-	}
-	// 后台数据库的 COS 开关优先；未启用时保持 app.yaml 的既有上传行为。
-	fileUp := upload.DatabaseCOS{Resolver: cloudConfigSvc, Fallback: yamlFileUp}
+	// 上传只使用后台加密配置；未启用或未补齐密钥时明确拒绝上传。
+	fileUp := upload.DatabaseCOS{Resolver: cloudConfigSvc}
 	tradeSvc.SetSeckill(seckillSvc)
 	tradeSvc.SetCombination(combination.NewTradeBridge(comboSvc))
 	tradeSvc.SetPresell(presell.NewTradeBridge(presellSvc))

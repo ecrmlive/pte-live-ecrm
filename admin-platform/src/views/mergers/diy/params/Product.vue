@@ -170,6 +170,7 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 							:props="{ checkStrictly: true, children: 'child', value: 'category_id', label: 'name' }"
 							@change="(e) => changeCategory(e, $refs.cascader as any)"></el-cascader>
 					</div>
+					<p class="diy-home-display-tip">平台首页中，每个“自动获取”的商品组都会成为 PC、小程序和 H5 的一个分类展示区；客户端下滑后按本分类继续分页加载商品。</p>
 					<!-- 显示数量 -->
 					<div class="form-item">
 						<div class="form-label">显示数量：</div>
@@ -484,5 +485,13 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 			font-size: 12px;
 			line-height: 1;
 		}
+	}
+
+	.diy-home-display-tip {
+		margin: -2px 0 14px 96px;
+		max-width: 310px;
+		color: #86909c;
+		font-size: 12px;
+		line-height: 1.6;
 	}
 </style>

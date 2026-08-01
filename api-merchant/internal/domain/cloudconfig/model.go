@@ -2,19 +2,20 @@ package cloudconfig
 
 import "time"
 
-// Config 加密存储的云服务配置项；value 永不以明文形式落库。
+// Config 是后台云服务配置项。后台修改后的密钥使用密文保存；仅被 Git 忽略的
+// local/test *_key.sql 可在首次初始化时写入受控引导值。
 type Config struct {
-	ConfigID   uint      `gorm:"column:config_id;primaryKey" json:"config_id"`
-	GroupKey   string    `gorm:"column:group_key" json:"group_key"`
-	ConfigKey  string    `gorm:"column:config_key" json:"config_key"`
+	GroupKey   string    `gorm:"column:provider;primaryKey" json:"group_key"`
+	ConfigKey  string    `gorm:"column:config_key;primaryKey" json:"config_key"`
 	Ciphertext string    `gorm:"column:ciphertext" json:"-"`
-	IsSecret   bool      `gorm:"column:is_secret" json:"is_secret"`
+	KeyVersion string    `gorm:"column:key_version" json:"-"`
+	IsSecret   bool      `gorm:"-" json:"is_secret"`
 	UpdatedBy  uint      `gorm:"column:updated_by" json:"updated_by"`
-	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
-	UpdateTime time.Time `gorm:"column:update_time" json:"update_time"`
+	UpdateTime time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
-func (Config) TableName() string { return "qixi_m_admin_cloud_config" }
+// 统一后台是 COS 的唯一配置入口；店铺 API 仅只读同一份加密配置。
+func (Config) TableName() string { return "qixi_crm_admin.qixi_crm_a_cloud_config" }
 
 type FieldMeta struct {
 	Key      string `json:"key"`

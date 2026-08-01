@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_region` (
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_application` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `applicant_user_id` bigint unsigned DEFAULT NULL, `merchant_name` varchar(128) NOT NULL,
   `contact_name` varchar(64) NOT NULL, `contact_mobile` varchar(32) NOT NULL, `region_id` bigint unsigned DEFAULT NULL,
-  `source_application_id` bigint unsigned DEFAULT NULL, `category_name` varchar(128) NOT NULL DEFAULT '', `merchant_type` varchar(64) NOT NULL DEFAULT '', `license_url` varchar(1024) NOT NULL DEFAULT '',
+  `source_application_id` bigint unsigned DEFAULT NULL, `category_name` varchar(128) NOT NULL DEFAULT '', `merchant_type` varchar(64) NOT NULL DEFAULT '', `license_key` varchar(1024) NOT NULL DEFAULT '', `license_url` varchar(1024) NOT NULL DEFAULT '',
   `status` enum('draft','pending','approved','rejected') NOT NULL DEFAULT 'draft', `reviewed_by` bigint unsigned DEFAULT NULL,
   `review_note` varchar(500) NOT NULL DEFAULT '', `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `reviewed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_application` (`source_application_id`), KEY `idx_region_status` (`region_id`,`status`)
@@ -140,6 +140,11 @@ SET @qixi_application_license_ddl := IF(@qixi_application_license_exists = 0, 'A
 PREPARE qixi_application_license_stmt FROM @qixi_application_license_ddl;
 EXECUTE qixi_application_license_stmt;
 DEALLOCATE PREPARE qixi_application_license_stmt;
+SET @qixi_application_license_key_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'license_key');
+SET @qixi_application_license_key_ddl := IF(@qixi_application_license_key_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `license_key` varchar(1024) NOT NULL DEFAULT ''''', 'SELECT 1');
+PREPARE qixi_application_license_key_stmt FROM @qixi_application_license_key_ddl;
+EXECUTE qixi_application_license_key_stmt;
+DEALLOCATE PREPARE qixi_application_license_key_stmt;
 SET @qixi_application_source_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND INDEX_NAME = 'uk_source_application');
 SET @qixi_application_source_index_ddl := IF(@qixi_application_source_index_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD UNIQUE INDEX `uk_source_application` (`source_application_id`)', 'SELECT 1');
 PREPARE qixi_application_source_index_stmt FROM @qixi_application_source_index_ddl;

@@ -7,6 +7,7 @@ export interface ProductAssist {
   assist_count: number;
   store_name?: string;
   mer_name?: string;
+  image?: string;
   ot_price?: number;
 }
 

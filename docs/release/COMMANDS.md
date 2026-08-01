@@ -20,7 +20,7 @@ release/config/api-merchant/app.yaml
 release/config/job/app.yaml
 ```
 
-仅在这些 YAML 中填写密码、JWT、支付、COS 和 pte-live-im 受控 API 凭证。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
+仅在这些 YAML 中填写密码、JWT 和 pte-live-im 受控 API 凭证。COS、平台支付、小程序密钥统一写入被 Git 忽略的 `sql/admin/04_key.sql`；`sql/business/04_key.sql`、`sql/merchant/04_key.sql` 只保留各库边界说明。`make local-db-init` / `make test-db-init` 会按三库固定顺序自动导入；local 与 test 必须同步同一份三文件密钥 SQL。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
 
 ## 构建与启动
 

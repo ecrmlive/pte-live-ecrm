@@ -25,6 +25,6 @@ func (b *TradeBridge) ValidateBook(ctx context.Context, productID, slotID uint, 
 		fmt.Sprintf("%s-%s", slot.StartTime, slot.EndTime), cost * 0.3, nil
 }
 
-func (b *TradeBridge) AfterBooked(ctx context.Context, slotID uint) error {
-	return b.svc.AfterBooked(ctx, slotID)
+func (b *TradeBridge) AfterBooked(ctx context.Context, productID, slotID uint, date string, orderID, uid uint) error {
+	return b.svc.AfterBooked(ctx, productID, slotID, date, orderID, uid)
 }

@@ -21,6 +21,8 @@ const hint = ref("");
 const loading = ref(false);
 const total = ref(0);
 const limit = 20;
+const minPriceInput = ref("");
+const maxPriceInput = ref("");
 
 const keyword = computed(() => typeof route.query.keyword === "string" ? route.query.keyword : "");
 const cateId = computed(() => toPositiveInteger(route.query.cate_id));
@@ -31,6 +33,8 @@ const sort = computed<ProductSort>(() => {
   return value === "sales" || value === "price" ? value : "default";
 });
 const order = computed<"asc" | "desc">(() => route.query.order === "asc" ? "asc" : "desc");
+const minPrice = computed(() => queryPrice(route.query.min_price));
+const maxPrice = computed(() => queryPrice(route.query.max_price));
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)));
 const selectedCategory = computed(() => categories.value.find((item) => item.id === cateId.value));
 const selectedStore = computed(() => stores.value.find((item) => item.mer_id === merId.value));
@@ -45,6 +49,12 @@ function toPositiveInteger(value: unknown) {
   return Number.isSafeInteger(id) && id > 0 ? id : undefined;
 }
 
+function queryPrice(value: unknown) {
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  const price = Number(value);
+  return Number.isFinite(price) && price >= 0 ? price : undefined;
+}
+
 async function load() {
   loading.value = true;
   hint.value = "";
@@ -54,6 +64,8 @@ async function load() {
         keyword: keyword.value || undefined,
         cate_id: cateId.value,
         mer_id: merId.value,
+        min_price: minPrice.value,
+        max_price: maxPrice.value,
         page: page.value,
         limit,
         sort: sort.value,
@@ -104,6 +116,27 @@ function selectSort(nextSort: ProductSort) {
   });
 }
 
+function applyPriceRange() {
+  const min = queryPrice(minPriceInput.value);
+  const max = queryPrice(maxPriceInput.value);
+  if (min !== undefined && max !== undefined && min > max) {
+    hint.value = "最低价不能高于最高价";
+    return;
+  }
+  hint.value = "";
+  updateQuery({
+    min_price: min === undefined ? undefined : String(min),
+    max_price: max === undefined ? undefined : String(max),
+    page: undefined,
+  });
+}
+
+function clearPriceRange() {
+  minPriceInput.value = "";
+  maxPriceInput.value = "";
+  updateQuery({ min_price: undefined, max_price: undefined, page: undefined });
+}
+
 function goPage(nextPage: number) {
   if (nextPage < 1 || nextPage > totalPages.value || nextPage === page.value) return;
   updateQuery({ page: nextPage === 1 ? undefined : String(nextPage) });
@@ -114,8 +147,12 @@ function goStore(item: StoreDirectoryItem) {
 }
 
 watch(
-  () => [route.query.keyword, route.query.cate_id, route.query.mer_id, route.query.page, route.query.sort, route.query.order],
-  () => void load(),
+  () => [route.query.keyword, route.query.cate_id, route.query.mer_id, route.query.page, route.query.sort, route.query.order, route.query.min_price, route.query.max_price],
+  () => {
+    minPriceInput.value = minPrice.value === undefined ? "" : String(minPrice.value);
+    maxPriceInput.value = maxPrice.value === undefined ? "" : String(maxPrice.value);
+    void load();
+  },
   { immediate: true },
 );
 </script>
@@ -131,7 +168,7 @@ watch(
       <section v-if="stores.length" class="store-directory" aria-label="推荐店铺">
         <div class="section-title"><h1>推荐店铺</h1><button type="button" @click="selectStore()">查看全部商品</button></div>
         <div class="store-grid">
-          <article v-for="item in stores.slice(0, 3)" :key="item.store_id" class="store-card" @click="goStore(item)">
+          <article v-for="item in stores.slice(0, 2)" :key="item.store_id" class="store-card" @click="goStore(item)">
             <img v-if="item.cover_url" :src="item.cover_url" :alt="item.name" />
             <div v-else class="store-image-empty">店铺</div>
             <div class="store-card__info">
@@ -165,6 +202,13 @@ watch(
             <button type="button" :class="{ active: sort === 'sales' }" @click="selectSort('sales')">销量优先</button>
             <button type="button" :class="{ active: sort === 'price' }" @click="selectSort('price')">价格 <span v-if="sort === 'price'">{{ order === 'asc' ? '↑' : '↓' }}</span></button>
           </div>
+          <form class="price-filter" @submit.prevent="applyPriceRange">
+            <input v-model.trim="minPriceInput" inputmode="decimal" placeholder="¥ 最低价" aria-label="最低价格" />
+            <span>—</span>
+            <input v-model.trim="maxPriceInput" inputmode="decimal" placeholder="¥ 最高价" aria-label="最高价格" />
+            <button type="submit">确定</button>
+            <button v-if="minPrice !== undefined || maxPrice !== undefined" type="button" class="clear-price" @click="clearPriceRange">清除</button>
+          </form>
         </div>
       </section>
 
@@ -189,11 +233,20 @@ watch(
 <style scoped>
 .goods-page { min-height: 680px; padding: 16px 0 50px; background: #f5f5f5; }
 .crumb { display: flex; gap: 9px; align-items: center; height: 42px; color: #777; font-size: 13px; }.crumb a:hover { color: #f13728; }
-.store-directory { overflow: hidden; margin-bottom: 16px; border: 1px solid #ececec; background: #fff; }.section-title { display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 20px; border-bottom: 1px solid #eee; }.section-title h1 { margin: 0; color: #333; font-size: 17px; }.section-title button { border: 0; color: #888; background: transparent; font-size: 13px; }.section-title button:hover { color: #f13728; }
-.store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 18px 20px; }.store-card { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; align-items: center; min-width: 0; cursor: pointer; }.store-card > img, .store-image-empty { width: 92px; height: 92px; object-fit: cover; background: #f6f6f6; }.store-image-empty { display: grid; place-items: center; color: #aaa; font-size: 13px; }.store-card__info { min-width: 0; }.store-card h2 { overflow: hidden; margin: 0; color: #333; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }.store-card p { overflow: hidden; margin: 8px 0 11px; color: #999; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.store-card button { border: 1px solid #f13728; padding: 5px 10px; color: #f13728; background: #fff; font-size: 12px; }.store-card button:hover { color: #fff; background: #f13728; }
-.filter-panel { border: 1px solid #ededed; background: #fff; }.filter-row { display: grid; grid-template-columns: 116px 1fr; min-height: 52px; border-bottom: 1px solid #f0f0f0; }.filter-row:last-child { border-bottom: 0; }.filter-row > b { display: flex; align-items: center; padding-left: 22px; color: #555; background: #fafafa; font-size: 13px; font-weight: 500; }.filter-options { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 22px; padding: 8px 18px; }.filter-options button { border: 0; padding: 4px 0; color: #555; background: transparent; font-size: 13px; }.filter-options button:hover, .filter-options button.active { color: #f13728; }.sort-options { gap: 0; padding-block: 0; }.sort-options button { min-width: 96px; min-height: 34px; padding: 0 13px; border-right: 1px solid #eee; }.sort-options button:first-child { border-left: 1px solid #eee; }.sort-options button.active { color: #fff; background: #f13728; }
-.result-head { display: flex; align-items: end; justify-content: space-between; margin: 22px 0 13px; }.result-head h1 { margin: 0; color: #333; font-size: 18px; font-weight: 600; }.result-head p { margin: 5px 0 0; color: #888; font-size: 13px; }.result-head em { color: #f13728; font-style: normal; }.head-pages { display: flex; align-items: center; gap: 8px; color: #999; font-size: 12px; }.head-pages button { width: 28px; height: 25px; border: 1px solid #ddd; background: #fff; color: #666; font-size: 18px; line-height: 1; }.head-pages button:disabled { color: #ccc; }
+.store-directory { overflow: hidden; margin-bottom: 12px; border: 1px solid #ececec; background: #fff; }.section-title { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 16px; border-bottom: 1px solid #eee; }.section-title h1 { margin: 0; color: #333; font-size: 16px; }.section-title button { border: 0; color: #888; background: transparent; font-size: 12px; }.section-title button:hover { color: #f13728; }
+.store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 9px 16px; }.store-card { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 11px; align-items: center; min-width: 0; cursor: pointer; }.store-card > img, .store-image-empty { width: 60px; height: 60px; object-fit: cover; background: #f6f6f6; }.store-image-empty { display: grid; place-items: center; color: #aaa; font-size: 12px; }.store-card__info { min-width: 0; }.store-card h2 { overflow: hidden; margin: 0; color: #333; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }.store-card p { overflow: hidden; margin: 5px 0 6px; color: #999; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.store-card button { border: 1px solid #f13728; padding: 3px 8px; color: #f13728; background: #fff; font-size: 11px; }.store-card button:hover { color: #fff; background: #f13728; }
+.filter-panel { border: 1px solid #ededed; background: #fff; }.filter-row { display: grid; grid-template-columns: 104px 1fr; min-height: 42px; border-bottom: 1px solid #f0f0f0; }.filter-row:last-child { border-bottom: 0; }.filter-row > b { display: flex; align-items: center; padding-left: 18px; color: #555; background: #fafafa; font-size: 13px; font-weight: 500; }.filter-options { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 5px 15px; }.filter-options button { border: 0; padding: 3px 0; color: #555; background: transparent; font-size: 12px; }.filter-options button:hover, .filter-options button.active { color: #f13728; }.sort-options { gap: 0; padding-block: 0; }.sort-options button { min-width: 88px; min-height: 32px; padding: 0 11px; border-right: 1px solid #eee; }.sort-options button:first-child { border-left: 1px solid #eee; }.sort-options button.active { color: #fff; background: #f13728; }
+.result-head { display: flex; align-items: end; justify-content: space-between; margin: 14px 0 11px; }.result-head h1 { margin: 0; color: #333; font-size: 18px; font-weight: 600; }.result-head p { margin: 4px 0 0; color: #888; font-size: 12px; }.result-head em { color: #f13728; font-style: normal; }.head-pages { display: flex; align-items: center; gap: 8px; color: #999; font-size: 12px; }.head-pages button { width: 28px; height: 25px; border: 1px solid #ddd; background: #fff; color: #666; font-size: 18px; line-height: 1; }.head-pages button:disabled { color: #ccc; }
 .hint { margin: 40px 0; color: #999; text-align: center; }.hint.empty { padding: 52px 0; border: 1px solid #eee; background: #fff; }.grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 32px; }.pagination button { min-width: 36px; height: 34px; padding: 0 10px; border: 1px solid #ddd; color: #555; background: #fff; }.pagination button:hover:not(:disabled), .pagination button.active { border-color: #f13728; color: #fff; background: #f13728; }.pagination button:disabled { color: #bbb; }
-@media (max-width: 980px) { .store-grid { grid-template-columns: 1fr 1fr; }.grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 680px) { .store-grid { grid-template-columns: 1fr; }.filter-row { grid-template-columns: 84px 1fr; }.filter-row > b { padding-left: 12px; }.filter-options { gap: 5px 12px; padding-inline: 12px; }.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sort-row { grid-template-columns: 104px minmax(0, 1fr) auto; }
+.price-filter { display: flex; align-items: center; gap: 7px; padding: 0 12px; }
+.price-filter input { width: 78px; height: 28px; padding: 0 7px; border: 1px solid #ddd; color: #555; font-size: 12px; outline: none; }
+.price-filter input:focus { border-color: #f13728; }
+.price-filter span { color: #bbb; }
+.price-filter button { height: 28px; border: 1px solid #ddd; padding: 0 9px; color: #555; background: #fff; font-size: 12px; }
+.price-filter button:hover { border-color: #f13728; color: #f13728; }
+.price-filter .clear-price { border-color: transparent; color: #999; }
+@media (max-width: 980px) { .store-grid { grid-template-columns: 1fr 1fr; }.grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.sort-row { grid-template-columns: 116px 1fr; }.price-filter { grid-column: 2; padding-bottom: 12px; } }
+@media (max-width: 680px) { .store-grid { grid-template-columns: 1fr; }.filter-row { grid-template-columns: 84px 1fr; }.sort-row { grid-template-columns: 84px 1fr; }.filter-row > b { padding-left: 12px; }.filter-options { gap: 5px 12px; padding-inline: 12px; }.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

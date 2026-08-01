@@ -105,6 +105,7 @@ async function submit() {
         class="card"
         @click="openBook(p)"
       >
+        <img v-if="p.image" :src="p.image" :alt="p.store_name" />
         <strong>{{ p.store_name }}</strong>
         <p class="mer">{{ p.mer_name }}</p>
         <p class="price"><em>¥{{ p.price }}</em></p>
@@ -168,10 +169,10 @@ async function submit() {
 .card {
   background: #fff;
   border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 20px;
+  padding: 0 16px 16px;
   cursor: pointer;
 }
+.card > img { display: block; width: calc(100% + 32px); aspect-ratio: 1; margin: 0 -16px 14px; object-fit: cover; }
 .price em {
   font-style: normal;
   color: #e23030;

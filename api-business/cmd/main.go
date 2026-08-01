@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	apparticle "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/article"
 	appassist "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/assist"
-	appcallback "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/callback"
 	appchat "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/chat"
 	appcombination "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/combination"
 	appcommunity "github.com/qixi-live/qixi-live-mergers/api-business/internal/app/community"
@@ -32,6 +31,7 @@ import (
 	businessmerchantapply "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/merchantapply"
 	businessorder "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/order"
 	businessrefund "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/refund"
+	businessupload "github.com/qixi-live/qixi-live-mergers/api-business/internal/business/upload"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/article"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/assist"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/domain/cart"
@@ -71,6 +71,7 @@ import (
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/db"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/middleware"
 	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/response"
+	"github.com/qixi-live/qixi-live-mergers/api-business/internal/pkg/upload"
 )
 
 func main() {
@@ -157,11 +158,12 @@ func main() {
 	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr, captchaClient)
 	appCatH := businesscatalog.NewHandler(gdb)
 	appMerchantApplyH := businessmerchantapply.NewHandler(gdb)
+	appUploadH := businessupload.NewHandler(gdb, upload.DatabaseCOS{Resolver: cloudConfigSvc})
 	appAddrH := businessaddress.NewHandler(gdb)
 	appAccountH := businessaccount.NewHandler(gdb)
 	appCartH := businesscart.NewHandler(gdb)
-	appOrderH := businessorder.NewHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox)
-	appOrderCallbackH := businessorder.NewCallbackHandler(gdb, cfg.Payment.Sandbox)
+	appOrderH := businessorder.NewHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox, cloudConfigSvc)
+	appOrderCallbackH := businessorder.NewCallbackHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox, cloudConfigSvc)
 	appPointsH := apppoints.NewHandler(tradeSvc, catSvc)
 	appRefundH := businessrefund.NewHandler(gdb)
 	appCouponH := appcoupon.NewHandler(promoSvc, cartSvc)
@@ -189,6 +191,8 @@ func main() {
 	})
 
 	appPublic := r.Group("/api/app/v1")
+	appOptional := r.Group("/api/app/v1")
+	appOptional.Use(middleware.JWTOptional(jwtMgr, authjwt.PortalApp))
 	appAuthed := r.Group("/api/app/v1")
 	appAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalApp))
 	appH.Register(appPublic, appAuthed)
@@ -205,6 +209,7 @@ func main() {
 	appCommunityH.RegisterPublic(appPublic)
 	appAssistH.RegisterPublic(appPublic)
 	appPointsH.RegisterPublic(appPublic)
+	appBusinessCouponH.RegisterPublic(appOptional)
 	appAddrH.Register(appAuthed)
 	appAccountH.Register(appAuthed)
 	appCartH.Register(appAuthed)
@@ -222,14 +227,14 @@ func main() {
 	appInvoiceH.Register(appAuthed)
 	appLiveH.RegisterAuthed(appAuthed)
 	appMerchantApplyH.Register(appAuthed)
+	appUploadH.Register(appAuthed)
 	appFavoriteH.Register(appAuthed)
 
 	cb := r.Group("/api/callback/v1")
 	cb.GET("/ping", func(c *gin.Context) {
 		response.OK(c, gin.H{"prefix": "/api/callback/v1"})
 	})
-	appOrderCallbackH.RegisterMock(cb)
-	appcallback.NewPayHandler(tradeSvc).Register(cb)
+	appOrderCallbackH.Register(cb)
 
 	r.GET("/swagger/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

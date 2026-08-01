@@ -101,6 +101,33 @@ func (s *Store) LoadStore(ctx context.Context, storeID uint) (Values, error) {
 	return s.load(ctx, storeKey(storeID))
 }
 
+// LoadStores returns the merchant-owned payment projections used only by the
+// server-side callback adapter to find the matching APIv3 key. It never
+// exposes a credential bundle through an HTTP handler.
+func (s *Store) LoadStores(ctx context.Context) (map[uint]Values, error) {
+	var rows []runtimeRow
+	if err := s.db.WithContext(ctx).Where("config_key LIKE ?", "payment.store.%.v1").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[uint]Values, len(rows))
+	for _, row := range rows {
+		parts := strings.Split(row.ConfigKey, ".")
+		if len(parts) != 4 || parts[0] != "payment" || parts[1] != "store" || parts[3] != "v1" {
+			continue
+		}
+		storeID, err := strconv.ParseUint(parts[2], 10, 64)
+		if err != nil || storeID == 0 {
+			continue
+		}
+		values, err := s.load(ctx, row.ConfigKey)
+		if err != nil {
+			return nil, err
+		}
+		out[uint(storeID)] = values
+	}
+	return out, nil
+}
+
 func (s *Store) load(ctx context.Context, key string) (Values, error) {
 	var row runtimeRow
 	if err := s.db.WithContext(ctx).Where("config_key = ?", key).First(&row).Error; err != nil {
@@ -175,7 +202,7 @@ func ChannelReady(values Values, channel string) bool {
 	}
 	switch strings.TrimSuffix(prefix, "_") {
 	case "wechat":
-		return values["wechat_app_id"] != "" && values["wechat_mch_id"] != "" && values["wechat_api_v3_key"] != "" && values["wechat_private_key"] != "" && values["wechat_notify_url"] != ""
+		return values["wechat_app_id"] != "" && values["wechat_mch_id"] != "" && values["wechat_api_v3_key"] != "" && (values["wechat_serial_no"] != "" || values["wechat_merchant_cert"] != "") && values["wechat_private_key"] != "" && values["wechat_notify_url"] != ""
 	case "alipay":
 		return values["alipay_app_id"] != "" && values["alipay_private_key"] != "" && values["alipay_public_key"] != "" && values["alipay_notify_url"] != ""
 	default:

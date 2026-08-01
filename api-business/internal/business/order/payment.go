@@ -62,12 +62,14 @@ func PayMock(ctx context.Context, db *gorm.DB, userID, groupOrderID uint64) (Cre
 func groupPayStatus(group groupRow) string { return group.PayStatus }
 
 type paymentRow struct {
+	ID                    uint64     `gorm:"column:id"`
 	GroupOrderID          uint64     `gorm:"column:group_order_id"`
 	Channel               string     `gorm:"column:channel"`
 	TransactionNo         string     `gorm:"column:transaction_no"`
 	Amount                float64    `gorm:"column:amount"`
 	Status                string     `gorm:"column:status"`
 	ProviderTransactionNo string     `gorm:"column:provider_transaction_no"`
+	ProviderPayload       []byte     `gorm:"column:provider_payload"`
 	PaidAt                *time.Time `gorm:"column:paid_at"`
 }
 

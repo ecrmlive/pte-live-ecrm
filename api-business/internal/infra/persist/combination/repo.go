@@ -57,16 +57,16 @@ func (r *Repo) SoftDeleteGroup(ctx context.Context, id uint) error {
 func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (storeName, image, merName string, price, cost float64, merID uint, err error) {
 	var row struct {
 		StoreName string  `gorm:"column:store_name"`
-		Image     string  `gorm:"column:image"`
+		Image     string  `gorm:"column:cover_url"`
 		Price     float64 `gorm:"column:price"`
-		MerID     uint    `gorm:"column:mer_id"`
-		MerName   string  `gorm:"column:mer_name"`
+		MerID     uint    `gorm:"column:merchant_id"`
+		MerName   string  `gorm:"column:merchant_name"`
 		Cost      float64 `gorm:"column:cost"`
 	}
-	err = r.db.WithContext(ctx).Table("qixi_m_admin_store_product AS p").
-		Select("p.store_name, p.image, p.price, p.mer_id, p.cost, m.mer_name").
-		Joins("LEFT JOIN qixi_m_admin_merchant m ON m.mer_id = p.mer_id").
-		Where("p.product_id = ? AND p.is_del = 0", productID).
+	// 业务库只存商品投影；没有成本字段时按挂牌价作为订单成本快照，避免历史表读取与零成本记账。
+	err = r.db.WithContext(ctx).Table("qixi_crm_b_product_view AS p").
+		Select("p.store_name, p.cover_url, p.price, p.merchant_id, p.merchant_name, p.price AS cost").
+		Where("p.product_id = ? AND p.sale_status = 1", productID).
 		Scan(&row).Error
 	if err != nil {
 		return "", "", "", 0, 0, 0, err

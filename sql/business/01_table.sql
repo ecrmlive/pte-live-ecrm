@@ -39,6 +39,138 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_product_view` (
   `sales` int NOT NULL DEFAULT 0, `stock` int NOT NULL, `sale_status` tinyint NOT NULL, `version` bigint unsigned NOT NULL,
   `updated_at` datetime NOT NULL, PRIMARY KEY (`product_id`), KEY `idx_merchant_sale` (`merchant_id`,`sale_status`), KEY `idx_store_sale` (`store_id`,`sale_status`), KEY `idx_category_sale` (`category_id`,`sale_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 预约服务：活动配置、可售时段和日占位账本分离。日账本是余量的唯一来源，
+-- 不再从历史 qixi_m_app_store_order 反查，避免跨表前缀和并发超卖。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_reservation_activity` (
+  `product_reservation_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `product_id` bigint unsigned NOT NULL, `merchant_id` bigint unsigned NOT NULL, `store_id` bigint unsigned NOT NULL DEFAULT 0,
+  `reservation_type` tinyint NOT NULL DEFAULT 1, `show_reservation_days` int NOT NULL DEFAULT 7,
+  `is_cancel_reservation` tinyint NOT NULL DEFAULT 1, `time_period` text NOT NULL,
+  `status` tinyint NOT NULL DEFAULT 1, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_reservation_id`), UNIQUE KEY `uk_product` (`product_id`), KEY `idx_merchant_status` (`merchant_id`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_reservation_slot` (
+  `attr_reservation_id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL,
+  `slot_key` varchar(64) NOT NULL, `start_time` char(5) NOT NULL, `end_time` char(5) NOT NULL,
+  `stock` int NOT NULL, `use_num` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`attr_reservation_id`), UNIQUE KEY `uk_product_slot_key` (`product_id`,`slot_key`),
+  KEY `idx_product_time` (`product_id`,`start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_reservation_booking` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL, `slot_id` bigint unsigned NOT NULL,
+  `booking_date` date NOT NULL, `order_id` bigint unsigned NOT NULL, `user_id` bigint unsigned NOT NULL,
+  `status` tinyint NOT NULL DEFAULT 1, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_order` (`order_id`), KEY `idx_slot_day_status` (`slot_id`,`booking_date`,`status`),
+  KEY `idx_user_day` (`user_id`,`booking_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 拼团状态机：活动定义、开团记录、团员记录三表。订单支付前仅占位，支付成功后由业务服务推进成员和成团状态。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_combination_group` (
+  `product_group_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `product_id` bigint unsigned NOT NULL, `start_time` datetime NOT NULL, `end_time` datetime NOT NULL,
+  `time` int NOT NULL DEFAULT 24, `buying_count_num` int NOT NULL, `buying_num` int NOT NULL DEFAULT 1,
+  `pay_count` int NOT NULL DEFAULT 0, `once_pay_count` int NOT NULL DEFAULT 1,
+  `status` tinyint NOT NULL DEFAULT 1, `mer_id` bigint unsigned NOT NULL,
+  `is_show` tinyint NOT NULL DEFAULT 1, `is_del` tinyint NOT NULL DEFAULT 0,
+  `success_num` int NOT NULL DEFAULT 0, `product_status` tinyint NOT NULL DEFAULT 1,
+  `price` decimal(12,2) NOT NULL, `action_status` tinyint NOT NULL DEFAULT 1,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_group_id`), KEY `idx_app_listing` (`is_del`,`is_show`,`status`,`action_status`,`start_time`,`end_time`),
+  KEY `idx_merchant` (`mer_id`,`is_del`,`create_time`), KEY `idx_product` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_combination_buying` (
+  `group_buying_id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_group_id` bigint unsigned NOT NULL,
+  `status` tinyint NOT NULL DEFAULT 0, `buying_count_num` int NOT NULL, `buying_num` int NOT NULL DEFAULT 1,
+  `yet_buying_num` int NOT NULL DEFAULT 0, `is_del` tinyint NOT NULL DEFAULT 0, `mer_id` bigint unsigned NOT NULL,
+  `end_time` bigint NOT NULL, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`group_buying_id`), KEY `idx_open` (`product_group_id`,`status`,`is_del`,`end_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_combination_member` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `group_buying_id` bigint unsigned NOT NULL,
+  `product_group_id` bigint unsigned NOT NULL, `status` tinyint NOT NULL DEFAULT 0,
+  `is_initiator` tinyint NOT NULL DEFAULT 0, `order_id` bigint unsigned NOT NULL DEFAULT 0,
+  `uid` bigint unsigned NOT NULL, `nickname` varchar(64) NOT NULL DEFAULT '', `avatar` varchar(1024) NOT NULL DEFAULT '',
+  `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_leader` tinyint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`), KEY `idx_buying` (`group_buying_id`,`is_del`,`id`), KEY `idx_order` (`order_id`,`is_del`),
+  KEY `idx_user` (`uid`,`product_group_id`,`is_del`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 预售活动及定金尾款记录。活动库存由服务层在事务中扣减，尾款记录独立保存。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_presell` (
+  `product_presell_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `start_time` datetime NOT NULL, `end_time` datetime NOT NULL,
+  `final_start_time` varchar(32) NOT NULL DEFAULT '', `final_end_time` varchar(32) NOT NULL DEFAULT '',
+  `status` tinyint NOT NULL DEFAULT 1, `presell_type` tinyint NOT NULL DEFAULT 1,
+  `pay_count` int NOT NULL DEFAULT 0, `delivery_type` tinyint NOT NULL DEFAULT 1, `delivery_day` int NOT NULL DEFAULT 0,
+  `product_id` bigint unsigned NOT NULL, `price` decimal(12,2) NOT NULL,
+  `down_price` decimal(12,2) NOT NULL DEFAULT 0, `final_price` decimal(12,2) NOT NULL DEFAULT 0,
+  `stock` int NOT NULL DEFAULT 0, `is_show` tinyint NOT NULL DEFAULT 1,
+  `store_name` varchar(255) NOT NULL DEFAULT '', `mer_id` bigint unsigned NOT NULL, `store_info` text NOT NULL,
+  `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `product_status` tinyint NOT NULL DEFAULT 1, `refusal` varchar(500) NOT NULL DEFAULT '',
+  `action_status` tinyint NOT NULL DEFAULT 1, `seles` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`product_presell_id`), KEY `idx_app_listing` (`is_del`,`status`,`is_show`,`product_status`,`action_status`,`start_time`,`end_time`),
+  KEY `idx_merchant` (`mer_id`,`is_del`,`create_time`), KEY `idx_product` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_presell_order` (
+  `presell_order_id` bigint unsigned NOT NULL AUTO_INCREMENT, `presell_order_sn` varchar(64) NOT NULL,
+  `uid` bigint unsigned NOT NULL, `mer_id` bigint unsigned NOT NULL, `order_id` bigint unsigned NOT NULL,
+  `product_presell_id` bigint unsigned NOT NULL, `final_start_time` datetime NOT NULL, `final_end_time` datetime NOT NULL,
+  `paid` tinyint NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1, `pay_type` tinyint NOT NULL DEFAULT 0,
+  `pay_price` decimal(12,2) NOT NULL, `pay_time` datetime DEFAULT NULL, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`presell_order_id`), UNIQUE KEY `uk_order` (`order_id`), KEY `idx_user_status` (`uid`,`paid`,`status`,`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 助力活动、助力发起人和助力人记录。状态 1/10/20/-1 的推进由服务层定义。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_assist` (
+  `product_assist_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `start_time` datetime NOT NULL, `end_time` datetime NOT NULL, `status` tinyint NOT NULL DEFAULT 1,
+  `pay_count` int NOT NULL DEFAULT 0, `assist_count` int NOT NULL, `assist_user_count` int NOT NULL,
+  `product_id` bigint unsigned NOT NULL, `assist_price` decimal(12,2) NOT NULL, `stock` int NOT NULL DEFAULT 0,
+  `is_show` tinyint NOT NULL DEFAULT 1, `store_name` varchar(255) NOT NULL DEFAULT '', `mer_id` bigint unsigned NOT NULL,
+  `store_info` text NOT NULL, `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `product_status` tinyint NOT NULL DEFAULT 1, `refusal` varchar(500) NOT NULL DEFAULT '', `action_status` tinyint NOT NULL DEFAULT 1,
+  PRIMARY KEY (`product_assist_id`), KEY `idx_app_listing` (`is_del`,`status`,`is_show`,`product_status`,`action_status`,`start_time`,`end_time`),
+  KEY `idx_merchant` (`mer_id`,`is_del`,`create_time`), KEY `idx_product` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_assist_set` (
+  `product_assist_set_id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_assist_id` bigint unsigned NOT NULL,
+  `product_id` bigint unsigned NOT NULL, `uid` bigint unsigned NOT NULL, `status` tinyint NOT NULL DEFAULT 1,
+  `assist_count` int NOT NULL, `assist_user_count` int NOT NULL, `yet_assist_count` int NOT NULL DEFAULT 0,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `mer_id` bigint unsigned NOT NULL, `is_del` tinyint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`product_assist_set_id`), KEY `idx_open` (`product_assist_id`,`status`,`is_del`,`product_assist_set_id`), KEY `idx_user` (`uid`,`product_assist_id`,`is_del`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_assist_user` (
+  `product_assist_user_id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_assist_set_id` bigint unsigned NOT NULL,
+  `product_assist_id` bigint unsigned NOT NULL, `uid` bigint unsigned NOT NULL, `nickname` varchar(64) NOT NULL DEFAULT '',
+  `avatar_img` varchar(1024) NOT NULL DEFAULT '', `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_assist_user_id`), UNIQUE KEY `uk_set_user` (`product_assist_set_id`,`uid`), KEY `idx_assist_user` (`product_assist_id`,`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 社区旧模型的兼容业务表。与新的精简社区投影分开，避免字段语义和审核状态混用。
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_social_category` (
+  `category_id` bigint unsigned NOT NULL AUTO_INCREMENT, `cate_name` varchar(128) NOT NULL, `pid` int NOT NULL DEFAULT 0,
+  `is_show` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0, PRIMARY KEY (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_social_topic` (
+  `topic_id` bigint unsigned NOT NULL AUTO_INCREMENT, `topic_name` varchar(128) NOT NULL, `status` tinyint NOT NULL DEFAULT 1,
+  `is_hot` tinyint NOT NULL DEFAULT 0, `category_id` bigint unsigned NOT NULL DEFAULT 0, `is_del` tinyint NOT NULL DEFAULT 0,
+  `count_use` int NOT NULL DEFAULT 0, `sort` int NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`topic_id`), KEY `idx_public` (`is_del`,`status`,`is_hot`,`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_social_post` (
+  `community_id` bigint unsigned NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `image` varchar(1024) NOT NULL DEFAULT '',
+  `category_id` bigint unsigned NOT NULL DEFAULT 0, `topic_id` bigint unsigned NOT NULL DEFAULT 0, `uid` bigint unsigned NOT NULL,
+  `mer_id` bigint unsigned NOT NULL DEFAULT 0, `product_id` bigint unsigned NOT NULL DEFAULT 0,
+  `count_start` int NOT NULL DEFAULT 0, `count_reply` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 0,
+  `is_show` tinyint NOT NULL DEFAULT 1, `is_hot` tinyint NOT NULL DEFAULT 0, `is_type` tinyint NOT NULL DEFAULT 0,
+  `content` text NOT NULL, `refusal` varchar(500) NOT NULL DEFAULT '', `pv` int NOT NULL DEFAULT 0,
+  `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `status_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`community_id`), KEY `idx_public` (`is_del`,`status`,`is_show`,`is_hot`,`community_id`), KEY `idx_topic` (`topic_id`,`is_del`,`community_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_social_reply` (
+  `reply_id` bigint unsigned NOT NULL AUTO_INCREMENT, `content` varchar(1000) NOT NULL, `pid` bigint unsigned NOT NULL DEFAULT 0,
+  `uid` bigint unsigned NOT NULL, `community_id` bigint unsigned NOT NULL, `status` tinyint NOT NULL DEFAULT 1,
+  `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reply_id`), KEY `idx_post` (`community_id`,`is_del`,`status`,`reply_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_category_view` (
   `category_id` bigint unsigned NOT NULL, `parent_id` bigint unsigned NOT NULL DEFAULT 0,
   `name` varchar(128) NOT NULL, `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
@@ -112,9 +244,14 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_payment_transaction` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `group_order_id` bigint unsigned NOT NULL, `channel` enum('wechat','alipay','balance','mock') NOT NULL,
   `transaction_no` varchar(128) NOT NULL, `amount` decimal(12,2) NOT NULL,
   `status` enum('created','processing','succeeded','failed','closed','refunded') NOT NULL DEFAULT 'created',
-  `provider_transaction_no` varchar(128) DEFAULT NULL, `callback_idempotency_key` varchar(128) DEFAULT NULL, `paid_at` datetime DEFAULT NULL,
+  `provider_transaction_no` varchar(128) DEFAULT NULL, `provider_payload` json DEFAULT NULL, `callback_idempotency_key` varchar(128) DEFAULT NULL, `paid_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_transaction` (`transaction_no`), UNIQUE KEY `uk_callback_key` (`callback_idempotency_key`), KEY `idx_group_status` (`group_order_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_payment_payload_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_business' AND TABLE_NAME = 'qixi_crm_b_payment_transaction' AND COLUMN_NAME = 'provider_payload');
+SET @qixi_payment_payload_ddl := IF(@qixi_payment_payload_exists = 0, 'ALTER TABLE `qixi_crm_b_payment_transaction` ADD COLUMN `provider_payload` json DEFAULT NULL AFTER `provider_transaction_no`', 'SELECT 1');
+PREPARE qixi_payment_payload_stmt FROM @qixi_payment_payload_ddl;
+EXECUTE qixi_payment_payload_stmt;
+DEALLOCATE PREPARE qixi_payment_payload_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_order_delivery` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `order_id` bigint unsigned NOT NULL, `delivery_type` enum('express','pickup','city','service') NOT NULL,
   `carrier_code` varchar(64) DEFAULT NULL, `tracking_no` varchar(128) DEFAULT NULL, `status` varchar(32) NOT NULL,
@@ -208,12 +345,32 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_merchant_application` (
   `contact_mobile` varchar(32) NOT NULL,
   `category_name` varchar(128) NOT NULL DEFAULT '',
   `merchant_type` varchar(64) NOT NULL DEFAULT '',
+  `license_key` varchar(1024) NOT NULL DEFAULT '',
   `license_url` varchar(1024) NOT NULL DEFAULT '',
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_user_created` (`applicant_user_id`,`created_at`), KEY `idx_status_created` (`status`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_upload_object` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `owner_user_id` bigint unsigned NOT NULL,
+  `purpose` varchar(64) NOT NULL,
+  `object_key` varchar(512) NOT NULL,
+  `original_name` varchar(255) NOT NULL,
+  `content_type` varchar(128) NOT NULL,
+  `size` bigint unsigned NOT NULL,
+  `status` enum('issued','completed','expired') NOT NULL DEFAULT 'issued',
+  `expires_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_object_key` (`object_key`), KEY `idx_owner_purpose_status` (`owner_user_id`,`purpose`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_business_application_license_key_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_business' AND TABLE_NAME = 'qixi_crm_b_merchant_application' AND COLUMN_NAME = 'license_key');
+SET @qixi_business_application_license_key_ddl := IF(@qixi_business_application_license_key_exists = 0, 'ALTER TABLE `qixi_crm_b_merchant_application` ADD COLUMN `license_key` varchar(1024) NOT NULL DEFAULT '''' AFTER `merchant_type`', 'SELECT 1');
+PREPARE qixi_business_application_license_key_stmt FROM @qixi_business_application_license_key_ddl;
+EXECUTE qixi_business_application_license_key_stmt;
+DEALLOCATE PREPARE qixi_business_application_license_key_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_browse_history` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_id` bigint unsigned NOT NULL, `product_id` bigint unsigned NOT NULL,
   `store_id` bigint unsigned NOT NULL, `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

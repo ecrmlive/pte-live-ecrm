@@ -15,7 +15,7 @@ type ReservationHook interface {
 	ValidateBook(ctx context.Context, productID, slotID uint, date string) (
 		price float64, merID uint, storeName, image, merName, timePart string, cost float64, err error,
 	)
-	AfterBooked(ctx context.Context, slotID uint) error
+	AfterBooked(ctx context.Context, productID, slotID uint, date string, orderID, uid uint) error
 }
 
 func (s *Service) SetReservation(h ReservationHook) { s.reserve = h }
@@ -138,7 +138,7 @@ func (s *Service) ReservationCreate(ctx context.Context, uid uint, in Reservatio
 		if err := tx.CreateOrderProduct(ctx, p); err != nil {
 			return err
 		}
-		if err := s.reserve.AfterBooked(ctx, in.SlotID); err != nil {
+		if err := s.reserve.AfterBooked(ctx, in.ProductID, in.SlotID, in.Date, o.OrderID, uid); err != nil {
 			return err
 		}
 		created = g
@@ -149,4 +149,3 @@ func (s *Service) ReservationCreate(ctx context.Context, uid uint, in Reservatio
 	}
 	return s.attachGroup(ctx, created)
 }
-

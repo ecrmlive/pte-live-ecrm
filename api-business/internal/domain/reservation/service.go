@@ -20,7 +20,7 @@ type Store interface {
 	ReplaceSlots(ctx context.Context, productID uint, slots []Slot) error
 	GetSlot(ctx context.Context, slotID uint) (*Slot, error)
 	CountBooked(ctx context.Context, productID, slotID uint, date string) (int64, error)
-	BumpSlotUse(ctx context.Context, slotID uint) error
+	Book(ctx context.Context, productID, slotID uint, date string, orderID, uid uint) error
 }
 
 type Service struct{ store Store }
@@ -97,9 +97,12 @@ func (s *Service) SaveConfig(ctx context.Context, merID uint, in ConfigSaveInput
 	period, _ := json.Marshal(in.Slots)
 	cfg := &Config{
 		ProductID:           in.ProductID,
+		MerID:               p.MerID,
+		StoreID:             p.StoreID,
 		ReservationType:     rt,
 		ShowReservationDays: days,
 		IsCancelReservation: 1,
+		Status:              1,
 		TimePeriod:          string(period),
 	}
 	if err := s.store.UpsertConfig(ctx, cfg); err != nil {
@@ -213,8 +216,8 @@ func (s *Service) ValidateBook(ctx context.Context, productID, slotID uint, date
 	return nil, nil, ErrNoSlot
 }
 
-func (s *Service) AfterBooked(ctx context.Context, slotID uint) error {
-	return s.store.BumpSlotUse(ctx, slotID)
+func (s *Service) AfterBooked(ctx context.Context, productID, slotID uint, date string, orderID, uid uint) error {
+	return s.store.Book(ctx, productID, slotID, date, orderID, uid)
 }
 
 func validateDate(date string) error {

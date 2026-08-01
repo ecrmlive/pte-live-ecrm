@@ -5,6 +5,7 @@ export interface ReserveProduct {
   mer_id: number;
   mer_name?: string;
   store_name: string;
+  image?: string;
   price: number;
   ot_price?: number;
   show_reservation_days?: number;

@@ -36,7 +36,7 @@ type ProductAssist struct {
 	MerName string  `gorm:"-" json:"mer_name,omitempty"`
 }
 
-func (ProductAssist) TableName() string { return "qixi_m_admin_store_product_assist" }
+func (ProductAssist) TableName() string { return "qixi_crm_b_assist" }
 
 type AssistSet struct {
 	ProductAssistSetID uint      `gorm:"column:product_assist_set_id;primaryKey" json:"product_assist_set_id"`
@@ -57,7 +57,7 @@ type AssistSet struct {
 	Helpers     []AssistUser `gorm:"-" json:"helpers,omitempty"`
 }
 
-func (AssistSet) TableName() string { return "qixi_m_app_store_product_assist_set" }
+func (AssistSet) TableName() string { return "qixi_crm_b_assist_set" }
 
 type AssistUser struct {
 	ProductAssistUserID uint      `gorm:"column:product_assist_user_id;primaryKey" json:"product_assist_user_id"`
@@ -69,7 +69,7 @@ type AssistUser struct {
 	CreateTime          time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (AssistUser) TableName() string { return "qixi_m_app_store_product_assist_user" }
+func (AssistUser) TableName() string { return "qixi_crm_b_assist_user" }
 
 type SaveInput struct {
 	ProductID       uint    `json:"product_id"`

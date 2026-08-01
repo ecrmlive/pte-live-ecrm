@@ -70,12 +70,15 @@ function open(id: number) {
     <p v-else-if="!list.length" class="hint">暂无内容</p>
     <div v-else class="list">
       <article v-for="p in list" :key="p.community_id" class="card" @click="open(p.community_id)">
+        <img v-if="p.image" :src="p.image" :alt="p.title" />
+        <div class="card__content">
         <strong>{{ p.title }}</strong>
         <p class="meta">{{ p.nickname }} · {{ p.topic_name }}</p>
         <p class="body">{{ p.content }}</p>
         <p v-if="p.product_name" class="goods">
           {{ p.product_name }} · ¥{{ Number(p.product_price || 0).toFixed(2) }}
         </p>
+        </div>
       </article>
     </div>
   </div>
@@ -135,12 +138,16 @@ function open(id: number) {
   gap: 12px;
 }
 .card {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr);
+  gap: 18px;
   background: #fff;
   border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 20px;
+  padding: 14px;
   cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgb(0 0 0 / 8%); }.card > img { width: 172px; height: 126px; object-fit: cover; }.card__content { min-width: 0; padding-top: 2px; }
 .meta {
   margin: 8px 0;
   color: #999;
@@ -155,4 +162,5 @@ function open(id: number) {
   color: #c45c26;
   font-size: 14px;
 }
+@media (max-width: 640px) { .card { grid-template-columns: 1fr; }.card > img { width: 100%; height: auto; aspect-ratio: 1.45; } }
 </style>

@@ -37,6 +37,7 @@ function go(id: number) {
         class="card"
         @click="go(a.product_assist_id)"
       >
+        <img v-if="a.image" :src="a.image" :alt="a.store_name || '助力商品'" />
         <div class="row">
           <strong>{{ a.store_name || "助力商品" }}</strong>
           <span class="badge">需{{ a.assist_count }}人</span>
@@ -53,18 +54,11 @@ function go(id: number) {
 
 <style scoped>
 .page {
-  max-width: 1080px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px 64px;
+  padding: 28px 0 64px;
 }
-.head h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-}
-.head p,
-.hint {
-  color: #888;
-}
+.head { display: flex; align-items: end; justify-content: space-between; gap: 24px; min-height: 104px; padding: 0 30px; color: #3c2c28; background: #fff6f1 url('/demo/seckill-hero-v1.png') center / cover no-repeat; }.head h1 { margin: 0 0 25px; font-size: 28px; white-space: nowrap; }.head p { max-width: 560px; margin: 0 0 28px; color: #7b625c; font-size: 13px; line-height: 1.55; text-align: right; }.hint { margin: 44px 0; color: #999; text-align: center; }
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -74,10 +68,11 @@ function go(id: number) {
 .card {
   background: #fff;
   border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 20px;
+  padding: 0 16px 16px;
   cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgb(0 0 0 / 9%); }.card > img { display: block; width: calc(100% + 32px); aspect-ratio: 1; margin: 0 -16px 14px; object-fit: cover; }
 .row {
   display: flex;
   justify-content: space-between;
@@ -107,4 +102,5 @@ function go(id: number) {
   text-decoration: line-through;
   font-size: 13px;
 }
+@media (max-width: 860px) { .page { padding-inline: 16px; }.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.head { align-items: flex-start; flex-direction: column; justify-content: center; padding: 16px 20px; }.head h1,.head p { margin: 0; text-align: left; } }
 </style>

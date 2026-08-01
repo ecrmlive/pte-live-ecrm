@@ -19,42 +19,68 @@ const (
 
 func JWTRequired(mgr *authjwt.Manager, portal string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		raw := c.GetHeader("Authori-zation")
-		if raw == "" {
-			response.Fail(c, http.StatusUnauthorized, "未登录")
-			c.Abort()
+		if !authenticate(c, mgr, portal, true) {
 			return
 		}
-		token, err := authjwt.BearerToken(raw)
-		if err != nil {
-			response.Fail(c, http.StatusUnauthorized, "认证格式错误")
-			c.Abort()
-			return
-		}
-		claims, err := mgr.ParseExpect(token, portal, authjwt.TokenAccess)
-		if err != nil {
-			response.Fail(c, http.StatusUnauthorized, "登录已失效")
-			c.Abort()
-			return
-		}
-		if (portal == authjwt.PortalMerchant || portal == authjwt.PortalOpen || portal == authjwt.PortalManager) && (claims.MerchantID == 0 || claims.MerID != claims.MerchantID) {
-			response.Fail(c, http.StatusForbidden, "缺少商户上下文")
-			c.Abort()
-			return
-		}
-		if portal == authjwt.PortalApp && (claims.UID == 0 || claims.Scope != authjwt.ScopeCUser || claims.PrincipalType != authjwt.PrincipalCUser || claims.PrincipalID != claims.UID || claims.ClientPlatform == "") {
-			response.Fail(c, http.StatusForbidden, "缺少用户上下文")
-			c.Abort()
-			return
-		}
-		c.Set(CtxClaimsKey, claims)
-		c.Set(CtxAdminID, claims.AdminID)
-		c.Set(CtxMerID, claims.MerchantID)
-		c.Set(CtxStoreID, claims.StoreID)
-		c.Set(CtxStoreAppID, claims.MerchantAppID)
-		c.Set(CtxUID, claims.UID)
 		c.Next()
 	}
+}
+
+// JWTOptional 为可匿名浏览的接口补充已登录用户的只读上下文。只有客户端
+// 传入唯一允许的 Authori-zation: Bearer 头时才校验；不传头保持匿名访问。
+// 无效令牌不能降级为匿名，避免前端误把已失效会话当成新访客继续操作。
+func JWTOptional(mgr *authjwt.Manager, portal string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("Authori-zation") == "" {
+			c.Next()
+			return
+		}
+		if !authenticate(c, mgr, portal, false) {
+			return
+		}
+		c.Next()
+	}
+}
+
+func authenticate(c *gin.Context, mgr *authjwt.Manager, portal string, required bool) bool {
+	raw := c.GetHeader("Authori-zation")
+	if raw == "" {
+		if required {
+			response.Fail(c, http.StatusUnauthorized, "未登录")
+			c.Abort()
+			return false
+		}
+		return true
+	}
+	token, err := authjwt.BearerToken(raw)
+	if err != nil {
+		response.Fail(c, http.StatusUnauthorized, "认证格式错误")
+		c.Abort()
+		return false
+	}
+	claims, err := mgr.ParseExpect(token, portal, authjwt.TokenAccess)
+	if err != nil {
+		response.Fail(c, http.StatusUnauthorized, "登录已失效")
+		c.Abort()
+		return false
+	}
+	if (portal == authjwt.PortalMerchant || portal == authjwt.PortalOpen || portal == authjwt.PortalManager) && (claims.MerchantID == 0 || claims.MerID != claims.MerchantID) {
+		response.Fail(c, http.StatusForbidden, "缺少商户上下文")
+		c.Abort()
+		return false
+	}
+	if portal == authjwt.PortalApp && (claims.UID == 0 || claims.Scope != authjwt.ScopeCUser || claims.PrincipalType != authjwt.PrincipalCUser || claims.PrincipalID != claims.UID || claims.ClientPlatform == "") {
+		response.Fail(c, http.StatusForbidden, "缺少用户上下文")
+		c.Abort()
+		return false
+	}
+	c.Set(CtxClaimsKey, claims)
+	c.Set(CtxAdminID, claims.AdminID)
+	c.Set(CtxMerID, claims.MerchantID)
+	c.Set(CtxStoreID, claims.StoreID)
+	c.Set(CtxStoreAppID, claims.MerchantAppID)
+	c.Set(CtxUID, claims.UID)
+	return true
 }
 
 func ClaimsFrom(c *gin.Context) *authjwt.Claims {

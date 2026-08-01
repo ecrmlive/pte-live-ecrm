@@ -27,7 +27,7 @@ type payload struct {
 	ContactMobile   string `json:"contact_mobile"`
 	CategoryName    string `json:"category_name"`
 	MerchantType    string `json:"merchant_type"`
-	LicenseURL      string `json:"license_url"`
+	LicenseKey      string `json:"license_key"`
 }
 
 func Start(ctx context.Context, adminDB *gorm.DB, natsURL string) (*nats.Conn, error) {
@@ -65,8 +65,8 @@ func Apply(ctx context.Context, db *gorm.DB, raw []byte) error {
 		return nil
 	}
 	return db.WithContext(ctx).Exec(`INSERT INTO qixi_crm_a_merchant_application
-    (source_application_id, applicant_user_id, merchant_name, contact_name, contact_mobile, category_name, merchant_type, license_url, status, created_at)
+    (source_application_id, applicant_user_id, merchant_name, contact_name, contact_mobile, category_name, merchant_type, license_key, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
-    ON DUPLICATE KEY UPDATE merchant_name=VALUES(merchant_name), contact_name=VALUES(contact_name), contact_mobile=VALUES(contact_mobile), category_name=VALUES(category_name), merchant_type=VALUES(merchant_type), license_url=VALUES(license_url)`,
-		data.ID, data.ApplicantUserID, data.MerchantName, data.ContactName, data.ContactMobile, data.CategoryName, data.MerchantType, data.LicenseURL).Error
+    ON DUPLICATE KEY UPDATE merchant_name=VALUES(merchant_name), contact_name=VALUES(contact_name), contact_mobile=VALUES(contact_mobile), category_name=VALUES(category_name), merchant_type=VALUES(merchant_type), license_key=VALUES(license_key)`,
+		data.ID, data.ApplicantUserID, data.MerchantName, data.ContactName, data.ContactMobile, data.CategoryName, data.MerchantType, data.LicenseKey).Error
 }

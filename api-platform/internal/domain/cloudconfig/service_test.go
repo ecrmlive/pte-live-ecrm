@@ -55,3 +55,35 @@ func TestSecretIsEncryptedAndMasked(t *testing.T) {
 		t.Fatalf("secret should be preserved")
 	}
 }
+
+func TestPublicBootstrapConfigCanBeReadButCannotSeedSecret(t *testing.T) {
+	store := newMemoryStore()
+	store.rows["cos:enabled"] = Config{GroupKey: "cos", ConfigKey: "enabled", Ciphertext: "true", KeyVersion: keyVersionBootstrapPublic}
+	store.rows["cos:bucket"] = Config{GroupKey: "cos", ConfigKey: "bucket", Ciphertext: "demo-bucket", KeyVersion: keyVersionBootstrapPublic}
+	store.rows["tencent_account:secret_id"] = Config{GroupKey: "tencent_account", ConfigKey: "secret_id", Ciphertext: "forbidden", KeyVersion: keyVersionBootstrapPublic}
+	svc, err := NewService(store, "test-master-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	values, err := svc.Values(context.Background(), "cos")
+	if err != nil || values["bucket"] != "demo-bucket" || values["enabled"] != "true" {
+		t.Fatalf("values=%v err=%v", values, err)
+	}
+	if _, err := svc.Values(context.Background(), "tencent_account"); err == nil {
+		t.Fatal("expected bootstrap secret rejection")
+	}
+}
+
+func TestIgnoredKeySQLBootstrapCanSeedSecret(t *testing.T) {
+	store := newMemoryStore()
+	store.rows["tencent_account:secret_id"] = Config{GroupKey: "tencent_account", ConfigKey: "secret_id", Ciphertext: "local-secret", KeyVersion: keyVersionBootstrapLocal}
+	store.rows["tencent_account:region"] = Config{GroupKey: "tencent_account", ConfigKey: "region", Ciphertext: "ap-shanghai", KeyVersion: keyVersionBootstrapLocal}
+	svc, err := NewService(store, "test-master-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	values, err := svc.Values(context.Background(), "tencent_account")
+	if err != nil || values["secret_id"] != "local-secret" || values["region"] != "ap-shanghai" {
+		t.Fatalf("values=%v err=%v", values, err)
+	}
+}

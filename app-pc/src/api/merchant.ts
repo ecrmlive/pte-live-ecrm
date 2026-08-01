@@ -8,7 +8,7 @@ export interface MerchantApplication {
   contact_mobile: string;
   category_name: string;
   merchant_type: string;
-  license_url: string;
+  license_key: string;
   status: "pending" | "approved" | "rejected";
   created_at: string;
 }
