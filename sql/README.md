@@ -1,18 +1,31 @@
 # 七禧 CRM 初始化 SQL
 
-旧 `qixi_m_*` 与 `pte_live_ecrm` 单库初始化文件已删除，禁止执行。
+旧 `qixi_m_*` 与编号碎片迁移文件（`01_table` / `ALTER` 补丁等）已废弃，禁止执行。
 
-| 数据库 | 顺序执行文件 |
+开发阶段以 **drop + recreate** 为准：改表只改 `init_table.sql` 里的 `CREATE TABLE`，不要再新增「加列」SQL 文件。
+
+| 数据库 | 顺序执行文件（仓库） |
 | --- | --- |
-| `qixi_crm_admin` | `admin/01_table.sql` → `02_data.sql` → `03_config.sql` → `04_key.sql` → `05_test_data.sql` |
-| `qixi_crm_business` | `business/01_table.sql` → `02_data.sql` → `03_config.sql` → `04_key.sql` → `05_test_data.sql` |
-| `qixi_crm_merchant` | `merchant/01_table.sql` → `02_data.sql` → `03_config.sql` → `04_key.sql` → `05_test_data.sql` |
+| `qixi_crm_admin` | `admin/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
+| `qixi_crm_business` | `business/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
+| `qixi_crm_merchant` | `merchant/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
 
-所有脚本使用 utf8mb4、可重复执行的 `IF NOT EXISTS` / upsert 语义。密钥文件只保留结构和空值，真实 JWT、支付、云服务与 IM 凭证只能写入运行机 `app.yaml` 或后台加密配置。
+## 密钥文件
 
-## 完整 DDL 范围（未补齐前不得进入 Make/代码迁移）
+| 文件 | Git |
+| --- | --- |
+| `*/init_key.sql.example` | ✅ 提交（仅结构/说明，无真实密钥） |
+| `*/init_key.sql` | ❌ 本地/受控环境；`make local-db-init` 导入前从 example 复制并填入 |
 
-当前 `01_table.sql` 仅为三库基础骨架，**不是完整功能 DDL**。必须补齐以下域后才能宣称 SQL 重构完成：
+```bash
+cp sql/admin/init_key.sql.example sql/admin/init_key.sql
+cp sql/business/init_key.sql.example sql/business/init_key.sql
+cp sql/merchant/init_key.sql.example sql/merchant/init_key.sql
+```
+
+所有脚本使用 utf8mb4、可重复的 `CREATE TABLE IF NOT EXISTS` / upsert。真实 JWT、支付、云服务与 IM 凭证只能写入运行机 `app.yaml` 或后台加密配置 / 本地 `init_key.sql`。
+
+## 完整 DDL 范围
 
 | 库 | 必须覆盖的完整域 |
 | --- | --- |

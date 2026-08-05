@@ -25,7 +25,7 @@ job/           -> release/pte-live-ecrm-job/bin/job
 | `release/config/api-merchant/app.yaml` | 店铺系统 API |
 | `release/config/job/app.yaml` | 异步任务（仅 `databases.business`） |
 
-所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。COS、平台支付、小程序密钥不写入运行 YAML，也不写入 Git：统一保存于被忽略的 `sql/admin/04_key.sql`，`make local-db-init` / `make test-db-init` 自动导入到统一后台配置表；`sql/business/04_key.sql` 与 `sql/merchant/04_key.sql` 只保留各自数据库边界说明。local 与 test 必须使用同一份三文件密钥 SQL。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
+所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。COS、平台支付、小程序密钥不写入运行 YAML，也不写入 Git：统一保存于被忽略的 `sql/admin/init_key.sql`，`make local-db-init` / `make test-db-init` 自动导入到统一后台配置表；`sql/business/init_key.sql` 与 `sql/merchant/init_key.sql` 只保留各自数据库边界说明。local 与 test 必须使用同一份三文件密钥 SQL。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
 
 三套目标 API 只允许读取各自所属库的 `databases.<scope>.dsn`：`api-platform → admin`、`api-business → business`、`api-merchant → merchant`。跨库数据只能通过受控 API 或 NATS 事件读模型同步，禁止共享单一 `mysql.dsn`。
 
@@ -37,3 +37,17 @@ JWT 规则：
 - local 与 test 在不同宿主机使用完全相同的上述配置值。
 
 七禧 API 复用 `pte_live_net` 的 MySQL、Redis、etcd、NATS 容器；但三套 API 只读写自己的 `qixi_crm_*` 数据库，绝不访问 pte-live-im 的数据库或表。MySQL 初始化通过 `pte_live_mysql` 容器内已有根凭证执行，七禧不复制该密码。
+
+## 时区（强制 Asia/Shanghai）
+
+管理后台时间展示统一为 **`yyyy-MM-dd HH:mm:ss`**（上海时区）。部署与运行约定：
+
+| 层 | 要求 |
+| --- | --- |
+| Compose API / job | `environment.TZ=Asia/Shanghai`（见根目录 `docker-compose.yaml`） |
+| Go 进程 | `OpenMySQL` 启动时 `time.Local = Asia/Shanghai`（内嵌 `time/tzdata`，alpine 无需系统 zoneinfo） |
+| MySQL DSN | `parseTime=True&loc=Asia%2FShanghai&time_zone=%27%2B08%3A00%27`；`scripts/qixi-crm.sh` 同步 DSN 时写入；运行时 `NormalizeShanghaiDSN` 再次强制 |
+| MySQL 容器 | 共享 `pte_live_mysql` 须 `TZ=Asia/Shanghai`（或等价 `+08:00`）；`local-db-init` 会尽量 `SET GLOBAL time_zone='+08:00'` |
+| 管理端前端 | `formatShanghaiDateTime`（`admin-platform` / `admin-merchant` 的 `#/utils/date-time`）；禁止直接 `toLocaleString` 或裸显 API ISO 串 |
+
+Element 日期控件 `value-format` 使用 `YYYY-MM-DD HH:mm:ss`。

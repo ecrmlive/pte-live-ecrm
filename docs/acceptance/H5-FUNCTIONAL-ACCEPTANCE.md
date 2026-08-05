@@ -6,7 +6,7 @@
 
 ## 模拟数据
 
-- 入口：`sql/business/05_test_data.sql`，执行前已声明 `SET NAMES utf8mb4`。
+- 入口：`sql/business/init_test_data.sql`，执行前已声明 `SET NAMES utf8mb4`。
 - 数据仅限本地/测试：中文店铺、商品、营销、DIY、直播、社区与客服坐席投影，以及明确标记的演示消费者；
   不包含真实手机号、支付凭据、证书或个人身份信息。
 - 订单、支付回调和库存扣减不以 SQL 伪造成功；必须由 API 状态机与回调/测试驱动。
@@ -131,7 +131,7 @@
 - 2026-08-03：账户安全页已接入当前渠道密码修改；确认密码拦截、8–128 字符边界、旧密码校验、令牌版本递增和 H5 路由产物均有自动验证。
 - 2026-08-03：订单隐藏已按软归档实现；订单状态边界单测、H5 产物和更新后的 MySQL 8.4 双次建表验收通过，`user_archived_at` 列存在。
 - 2026-08-03：未支付主单关闭已提取为业务库统一事务；独立 `job` 只连接 `databases.business`，使用 `FOR UPDATE SKIP LOCKED` 扫描。隔离 MySQL 验收库中的中文预约模拟订单已验证关闭主单、取消子单、关闭支付单、解锁优惠券、归还时段和释放活动占位（`closed|cancelled|closed|unused|0|released`），临时库、临时授权和临时容器均已清理。
-- 2026-08-03：`sql/business/01_table.sql` 已移除 MySQL 8.4 不支持的冗余 `ALTER ... IF NOT EXISTS`；隔离库连续执行两次均成功，验收 84 张表和订单、客服、发票的 10 个关键字段，临时库已清理。
+- 2026-08-03：`sql/business/init_table.sql` 已移除 MySQL 8.4 不支持的冗余 `ALTER ... IF NOT EXISTS`；隔离库连续执行两次均成功，验收 84 张表和订单、客服、发票的 10 个关键字段，临时库已清理。
 
 ## 未关闭阻断项
 
@@ -270,7 +270,7 @@
 
 - 2026-08-04（补充）：SVIP 商品价格闭环完成。商户商品新增“无会员价 / 默认九折 / 固定专享价”受控配置，平台审核同步到 `qixi_crm_b_product_view`；普通订单在核对单和创建单时只根据当前用户 `qixi_crm_b_user_svip` 状态、业务消费投影与活动类型重算单价，活动商品不叠加、无效或不低于原价的配置自动忽略。确认订单页展示“SVIP 价”和原价，商品详情展示权益提示；商户、平台、目录、订单与资金定向 Go 回归通过，H5 产物包含 `svip_price_type`、`SVIP 价` 和 `SVIP 专享`。真实 MySQL 回归与既有 DCloud/UTS/IM 构建诊断仍未关闭。
 
-- 2026-08-04：H5 页面级类型收敛与本地模拟数据回归。恢复 uni-app x 官方 shim-uni.d.ts、shim-dom.d.ts 与 global.d.ts 的项目 include 后，生成入口 defineApp 类型错误已消除；所有带告警页面的空值安全渲染已回归，UNI_INPUT_DIR=. ./node_modules/.bin/uni build -p h5 的页面 warning 为 0，并生成 dist/build/h5/index.html。本机 DCloud CLI 5.01 仍把虚拟模块 tslib 作为项目 root file 报 TS6059，即使已安装 tslib 且显式 rootDir/inline helpers 均无效；该项不是业务或 IM SDK 代码诊断，须由兼容的 HBuilderX 5.0+ 处理器关闭。go test ./...（api-business）通过；sql/business/05_test_data.sql 保持 SET NAMES utf8mb4 并将所有用户可见七禧演示文案统一为 CRM Live，固定 qixi_crm 表前缀不变。
+- 2026-08-04：H5 页面级类型收敛与本地模拟数据回归。恢复 uni-app x 官方 shim-uni.d.ts、shim-dom.d.ts 与 global.d.ts 的项目 include 后，生成入口 defineApp 类型错误已消除；所有带告警页面的空值安全渲染已回归，UNI_INPUT_DIR=. ./node_modules/.bin/uni build -p h5 的页面 warning 为 0，并生成 dist/build/h5/index.html。本机 DCloud CLI 5.01 仍把虚拟模块 tslib 作为项目 root file 报 TS6059，即使已安装 tslib 且显式 rootDir/inline helpers 均无效；该项不是业务或 IM SDK 代码诊断，须由兼容的 HBuilderX 5.0+ 处理器关闭。go test ./...（api-business）通过；sql/business/init_test_data.sql 保持 SET NAMES utf8mb4 并将所有用户可见七禧演示文案统一为 CRM Live，固定 qixi_crm 表前缀不变。
 
 - 2026-08-04：城市选择闭环。新增业务库只读行政区划投影 `qixi_crm_b_city_view` 与公开 `GET /api/app/v1/system/city/lst` 与 `GET /api/app/v1/system/city/lst/:pid`，城市数据的目标来源为平台配送配置；当前本地验收由业务库 utf8mb4 夹具提供；平台管理员可调用受 RBAC 保护的城市重同步接口写事务 outbox，经 NATS 发布到业务投影，用户端禁止跨库直读或写入；utf8mb4 中文夹具提供四级演示地区。H5 新增 `pages/city/select`，首页持久化当前城市，收货地址可带回省/市/区及区域编码。`go test ./internal/business/city ./cmd` 通过；H5 页面告警为 0，构建产物存在，仍保留本机 DCloud tslib rootDir 基线诊断。注意：平台端尚未提供城市增改删管理页；城市配置变更后必须调用受 RBAC 保护的重同步接口，故本项仍需真实 NATS/MySQL 集成验收才能关闭。
 

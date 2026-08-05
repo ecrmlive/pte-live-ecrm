@@ -19,7 +19,7 @@ func TestMerchantRoutableMenuHasConcreteVbenComponent(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	seed, err := os.ReadFile(filepath.Join(root, "sql/merchant/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/merchant/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read merchant menu seed: %v", err)
 	}

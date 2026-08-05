@@ -27,6 +27,7 @@ type CreateInput struct {
 	UseIntegral    bool
 	IdempotencyKey string
 	Remark         string
+	DeliveryType   string
 }
 type CreatedOrder struct {
 	GroupOrderID  uint64
@@ -52,6 +53,11 @@ func Create(ctx context.Context, db *gorm.DB, userID uint64, input CreateInput) 
 		return CreatedOrder{}, err
 	}
 	input.Remark = remark
+	deliveryType, err := normalizeDeliveryType(input.DeliveryType)
+	if err != nil {
+		return CreatedOrder{}, err
+	}
+	input.DeliveryType = deliveryType
 	if !validIdempotencyKey(input.IdempotencyKey) {
 		return CreatedOrder{}, ErrIdempotencyKey
 	}
@@ -116,6 +122,18 @@ func Create(ctx context.Context, db *gorm.DB, userID uint64, input CreateInput) 
 					return err
 				}
 				if err := merchantstock.EnqueueReserve(tx, order.ID, store.StoreID, line.MerchantSKUID, line.Quantity, reservationExpiry); err != nil {
+					return err
+				}
+			}
+			if input.DeliveryType == "pickup" || input.DeliveryType == "service" || input.DeliveryType == "city" {
+				status := "awaiting"
+				if input.DeliveryType == "city" {
+					status = "pending_dispatch"
+				}
+				if err := tx.Exec(
+					`INSERT INTO qixi_crm_b_order_delivery (order_id,delivery_type,status) VALUES (?,?,?)`,
+					order.ID, input.DeliveryType, status,
+				).Error; err != nil {
 					return err
 				}
 			}

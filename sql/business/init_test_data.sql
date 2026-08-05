@@ -301,7 +301,8 @@ INSERT INTO `qixi_crm_b_marketing_activity_view` (`activity_id`,`store_id`,`acti
   (5001,1,'seckill','轻奢羊绒针织衫限时抢购',JSON_OBJECT('product_id',1001,'seckill_price',199.00,'time_slots',JSON_ARRAY('00:00','14:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
   (5002,1,'seckill','头层牛皮托特包限时抢购',JSON_OBJECT('product_id',1002,'seckill_price',329.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
   (5003,2,'seckill','无火藤条香氛礼盒限时抢购',JSON_OBJECT('product_id',1101,'seckill_price',169.00,'time_slots',JSON_ARRAY('00:00','14:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
-  (5004,3,'seckill','智能数显保温杯限时抢购',JSON_OBJECT('product_id',1201,'seckill_price',149.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
+  (5004,3,'seckill','智能数显保温杯限时抢购',JSON_OBJECT('product_id',1201,'seckill_price',149.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
+  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT('package_price',199.00,'product_ids',JSON_ARRAY(1004,1006),'free_shipping',true,'remark','中文演示套餐'),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
 ON DUPLICATE KEY UPDATE `store_id`=VALUES(`store_id`),`name`=VALUES(`name`),`rules`=VALUES(`rules`),`status`=VALUES(`status`),`version`=VALUES(`version`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`);
 
 -- 直播公开读模型夹具。直播流地址仅为本地演示标识，客户端不会把它当作生产推流密钥。
@@ -392,6 +393,22 @@ ON DUPLICATE KEY UPDATE carrier_code=VALUES(carrier_code),tracking_no=VALUES(tra
 -- 订单发票夹具仅用于平台只读监管；税号、邮箱均为虚构示例，后台接口会脱敏返回。
 INSERT INTO qixi_crm_b_order_invoice (id,order_id,invoice_profile_id,profile_type,title,tax_no,email,status,invoice_no,file_url,rejection_reason,requested_at,issued_at) VALUES
   (9900201,9900201,9601,'enterprise','CRM Live演示科技有限公司','91310000DEMO12345X','finance@invoice.invalid','issued','DEMO-INV-20260803-001','/demo/invoice-9900201.pdf','',DATE_SUB(NOW(),INTERVAL 1 DAY),NOW())
+ON DUPLICATE KEY UPDATE title=VALUES(title),tax_no=VALUES(tax_no),email=VALUES(email),status=VALUES(status),invoice_no=VALUES(invoice_no),file_url=VALUES(file_url),rejection_reason=VALUES(rejection_reason),issued_at=VALUES(issued_at);
+-- 待审发票夹具：供商户后台 invoice.audit 开票/驳回联调（独立订单，避免与上条 uk_order 冲突）。
+INSERT INTO qixi_crm_b_group_order (id,order_no,user_id,total_amount,discount_amount,freight_amount,pay_amount,total_quantity,activity_type,points_amount,recipient_snapshot,pay_channel,pay_status,paid_at,idempotency_key,remark) VALUES
+  (9900202,'CS-DEMO-G-20260803-002',9101,199.00,0.00,0.00,199.00,1,0,0,JSON_OBJECT('recipient','虚构收件人','mobile','演示号已脱敏'),'mock','paid',NOW(),'fixture-cs-order-9900202','商户发票待审夹具')
+ON DUPLICATE KEY UPDATE pay_status=VALUES(pay_status),pay_amount=VALUES(pay_amount),paid_at=VALUES(paid_at),remark=VALUES(remark),updated_at=NOW();
+INSERT INTO qixi_crm_b_payment_transaction (id,group_order_id,channel,transaction_no,amount,status,provider_transaction_no,callback_idempotency_key,paid_at) VALUES
+  (9900202,9900202,'mock','CS-DEMO-G-20260803-002',199.00,'succeeded','mock-payment-CS-20260803-002','fixture-payment-callback-9900202',NOW())
+ON DUPLICATE KEY UPDATE channel=VALUES(channel),amount=VALUES(amount),status=VALUES(status),provider_transaction_no=VALUES(provider_transaction_no),callback_idempotency_key=VALUES(callback_idempotency_key),paid_at=VALUES(paid_at);
+INSERT INTO qixi_crm_b_order (id,group_order_id,order_no,merchant_id,merchant_name_snapshot,store_id,store_name_snapshot,user_id,total_amount,discount_amount,freight_amount,pay_amount,total_quantity,activity_type,points_amount,recipient_snapshot,remark,status,paid_at) VALUES
+  (9900202,9900202,'CS-DEMO-O-20260803-002',1,'CRM Live服饰商户',1,'CRM Live服饰旗舰店',9101,199.00,0.00,0.00,199.00,1,0,0,JSON_OBJECT('recipient','虚构收件人','mobile','演示号已脱敏'),'商户发票待审演示订单','paid',NOW())
+ON DUPLICATE KEY UPDATE status=VALUES(status),pay_amount=VALUES(pay_amount),paid_at=VALUES(paid_at),remark=VALUES(remark),updated_at=NOW();
+INSERT INTO qixi_crm_b_order_item (id,order_id,product_id,merchant_sku_id,sku_key,title_snapshot,cover_url_snapshot,spec_snapshot,unit_price,quantity,refund_quantity) VALUES
+  (9900202,9900202,1001,61001,'61001','轻奢羊绒针织衫','/demo/product-knit-v1.png',JSON_OBJECT('默认','标准'),199.00,1,0)
+ON DUPLICATE KEY UPDATE merchant_sku_id=VALUES(merchant_sku_id),sku_key=VALUES(sku_key),title_snapshot=VALUES(title_snapshot),unit_price=VALUES(unit_price),quantity=VALUES(quantity),refund_quantity=VALUES(refund_quantity);
+INSERT INTO qixi_crm_b_order_invoice (id,order_id,invoice_profile_id,profile_type,title,tax_no,email,status,invoice_no,file_url,rejection_reason,requested_at,issued_at) VALUES
+  (9900202,9900202,9601,'enterprise','CRM Live演示科技有限公司','91310000DEMO12345X','finance@invoice.invalid','requested','','','',NOW(),NULL)
 ON DUPLICATE KEY UPDATE title=VALUES(title),tax_no=VALUES(tax_no),email=VALUES(email),status=VALUES(status),invoice_no=VALUES(invoice_no),file_url=VALUES(file_url),rejection_reason=VALUES(rejection_reason),issued_at=VALUES(issued_at);
 INSERT INTO qixi_crm_b_refund (id,order_id,refund_no,reason,amount,refund_type,order_status_before,status,idempotency_key) VALUES
   (9900201,9900201,'CS-DEMO-R-20260803-001','尺寸不合适，申请虚构退货退款演示。',299.00,'return_and_refund','shipped','awaiting_receipt','fixture-cs-refund-9900201')

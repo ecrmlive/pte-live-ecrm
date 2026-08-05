@@ -20,7 +20,7 @@ release/config/api-merchant/app.yaml
 release/config/job/app.yaml
 ```
 
-仅在这些 YAML 中填写密码、JWT 和 pte-live-im 受控 API 凭证。COS、平台支付、小程序密钥统一写入被 Git 忽略的 `sql/admin/04_key.sql`；`sql/business/04_key.sql`、`sql/merchant/04_key.sql` 只保留各库边界说明。`make local-db-init` / `make test-db-init` 会按三库固定顺序自动导入；local 与 test 必须同步同一份三文件密钥 SQL。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
+仅在这些 YAML 中填写密码、JWT 和 pte-live-im 受控 API 凭证。COS、平台支付、小程序密钥统一写入被 Git 忽略的 `sql/admin/init_key.sql`；`sql/business/init_key.sql`、`sql/merchant/init_key.sql` 只保留各库边界说明。`make local-db-init` / `make test-db-init` 会按三库固定顺序自动导入；local 与 test 必须同步同一份三文件密钥 SQL。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
 
 ## 构建与启动
 
@@ -52,10 +52,9 @@ make test-backend
 | --- | --- |
 | Compose project | `pte_live_ecrm` |
 | 共享网络 | `pte_live_net` / `172.30.0.0/24` |
-| 共享 MySQL | `pte_live_mysql` / `172.30.0.10` |
-| 共享 Redis | `pte_live_redis` / `172.30.0.11` |
-| 共享 etcd | `pte_live_etcd1`、`pte_live_etcd2`、`pte_live_etcd3` / `.12`、`.14`、`.15` |
-| 共享 NATS | `pte_live_nats1`、`pte_live_nats2`、`pte_live_nats3` / `.13`、`.16`、`.17` |
+| 共享 etcd | Compose 项目 `pte_live_mq`：`pte_live_etcd1`、`pte_live_etcd2`、`pte_live_etcd3` / `.12`、`.14`、`.15` |
+| 共享 NATS | Compose 项目 `pte_live_mq`：`pte_live_nats1`、`pte_live_nats2`、`pte_live_nats3` / `.13`、`.16`、`.17` |
+| 共享 MySQL / Redis | Compose 项目 `pte_live_db`：`pte_live_mysql` / `.10`，`pte_live_redis` / `.11` |
 | SQL 初始化 | 不创建容器；`make local-db-init` 直接执行到 `pte_live_mysql` |
 | API | `pte_live_ecrm_api_platform`、`pte_live_ecrm_api_business`、`pte_live_ecrm_api_merchant` / `.61`–`.63` |
 

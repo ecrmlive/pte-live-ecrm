@@ -55,3 +55,5 @@
 - 新鸿蒙项目：OpenHarmony API 23、ArkTS、ArkUI、MVVM/Repository、ohos.net.http、WebSocket API、RDB、Promise/TaskPool、Provider/手动 DI、HiLog、友盟 U-Push。
 - uni-app x 使用 UTS/HBuilderX 5.0+。
 - 管理后台使用 Vben 5+。
+- 管理后台列表/抽屉布局：**强制**对齐店铺列表金标准 `admin-platform/src/views/ecrm/merchant/list.vue`（见 `docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md`），禁止新建 `EcrmListPage` 列表骨架。
+- 管理后台时间：**强制** `yyyy-MM-dd HH:mm:ss`（Asia/Shanghai）；API/MySQL 时区见 `docs/release/PACK-AND-CONFIG.md`；前端用 `formatShanghaiDateTime`。

@@ -18,48 +18,8 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_admin_user` (
   PRIMARY KEY (`id`), UNIQUE KEY `uk_username` (`username`), UNIQUE KEY `uk_circle_agent_id` (`circle_agent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 已初始化数据库的向前兼容迁移。唯一约束保证一个代理最多绑定一个统一后台账号；
--- 若历史数据存在重复绑定，迁移应失败并要求先人工厘清账号归属，不能静默选择其中一个。
-SET @qixi_admin_circle_agent_column_exists := (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_admin_user' AND COLUMN_NAME = 'circle_agent_id'
-);
-SET @qixi_admin_circle_agent_column_ddl := IF(
-  @qixi_admin_circle_agent_column_exists = 0,
-  'ALTER TABLE `qixi_crm_a_admin_user` ADD COLUMN `circle_agent_id` bigint unsigned DEFAULT NULL AFTER `data_scope_version`',
-  'SELECT 1'
-);
-PREPARE qixi_admin_circle_agent_column_stmt FROM @qixi_admin_circle_agent_column_ddl;
-EXECUTE qixi_admin_circle_agent_column_stmt;
-DEALLOCATE PREPARE qixi_admin_circle_agent_column_stmt;
-
-SET @qixi_admin_circle_agent_index_exists := (
-  SELECT COUNT(*) FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_admin_user' AND INDEX_NAME = 'uk_circle_agent_id'
-);
-SET @qixi_admin_circle_agent_index_ddl := IF(
-  @qixi_admin_circle_agent_index_exists = 0,
-  'ALTER TABLE `qixi_crm_a_admin_user` ADD UNIQUE KEY `uk_circle_agent_id` (`circle_agent_id`)',
-  'SELECT 1'
-);
-PREPARE qixi_admin_circle_agent_index_stmt FROM @qixi_admin_circle_agent_index_ddl;
-EXECUTE qixi_admin_circle_agent_index_stmt;
-DEALLOCATE PREPARE qixi_admin_circle_agent_index_stmt;
-
 -- 逻辑删除用于保留后台操作、客服转接和资金审批的历史归属；已删除账号
 -- 不能重新登录，也不会再出现在可管理账号或客服转接坐席中。
-SET @qixi_admin_deleted_at_column_exists := (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_admin_user' AND COLUMN_NAME = 'deleted_at'
-);
-SET @qixi_admin_deleted_at_column_ddl := IF(
-  @qixi_admin_deleted_at_column_exists = 0,
-  'ALTER TABLE `qixi_crm_a_admin_user` ADD COLUMN `deleted_at` datetime DEFAULT NULL AFTER `updated_at`',
-  'SELECT 1'
-);
-PREPARE qixi_admin_deleted_at_column_stmt FROM @qixi_admin_deleted_at_column_ddl;
-EXECUTE qixi_admin_deleted_at_column_stmt;
-DEALLOCATE PREPARE qixi_admin_deleted_at_column_stmt;
 
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_role` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -88,23 +48,6 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_menu` (
   PRIMARY KEY (`id`), UNIQUE KEY `uk_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 兼容已初始化的 local/test 库：MySQL 8.4 不支持 ADD COLUMN IF NOT EXISTS，
--- 因此通过 information_schema 判断后再执行幂等迁移。
-SET @qixi_menu_icon_exists := (
-  SELECT COUNT(*)
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'qixi_crm_admin'
-    AND TABLE_NAME = 'qixi_crm_a_menu'
-    AND COLUMN_NAME = 'icon'
-);
-SET @qixi_menu_icon_ddl := IF(
-  @qixi_menu_icon_exists = 0,
-  'ALTER TABLE `qixi_crm_a_menu` ADD COLUMN `icon` varchar(96) NOT NULL DEFAULT '''' AFTER `title`',
-  'SELECT 1'
-);
-PREPARE qixi_menu_icon_stmt FROM @qixi_menu_icon_ddl;
-EXECUTE qixi_menu_icon_stmt;
-DEALLOCATE PREPARE qixi_menu_icon_stmt;
 
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_role_menu` (
   `role_id` bigint unsigned NOT NULL,
@@ -164,47 +107,63 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_application` (
   `review_note` varchar(500) NOT NULL DEFAULT '', `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `reviewed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_application` (`source_application_id`), KEY `idx_region_status` (`region_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 兼容已初始化的本地/测试库。MySQL 8.4 不支持 ALTER TABLE ... IF NOT EXISTS，
--- 因此与上方菜单迁移一样使用 information_schema + 动态 SQL 保持可重复执行。
-SET @qixi_application_source_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'source_application_id');
-SET @qixi_application_source_ddl := IF(@qixi_application_source_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `source_application_id` bigint unsigned DEFAULT NULL', 'SELECT 1');
-PREPARE qixi_application_source_stmt FROM @qixi_application_source_ddl;
-EXECUTE qixi_application_source_stmt;
-DEALLOCATE PREPARE qixi_application_source_stmt;
-SET @qixi_application_category_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'category_name');
-SET @qixi_application_category_ddl := IF(@qixi_application_category_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `category_name` varchar(128) NOT NULL DEFAULT ''''', 'SELECT 1');
-PREPARE qixi_application_category_stmt FROM @qixi_application_category_ddl;
-EXECUTE qixi_application_category_stmt;
-DEALLOCATE PREPARE qixi_application_category_stmt;
-SET @qixi_application_type_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'merchant_type');
-SET @qixi_application_type_ddl := IF(@qixi_application_type_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `merchant_type` varchar(64) NOT NULL DEFAULT ''''', 'SELECT 1');
-PREPARE qixi_application_type_stmt FROM @qixi_application_type_ddl;
-EXECUTE qixi_application_type_stmt;
-DEALLOCATE PREPARE qixi_application_type_stmt;
-SET @qixi_application_license_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'license_url');
-SET @qixi_application_license_ddl := IF(@qixi_application_license_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `license_url` varchar(1024) NOT NULL DEFAULT ''''', 'SELECT 1');
-PREPARE qixi_application_license_stmt FROM @qixi_application_license_ddl;
-EXECUTE qixi_application_license_stmt;
-DEALLOCATE PREPARE qixi_application_license_stmt;
-SET @qixi_application_license_key_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND COLUMN_NAME = 'license_key');
-SET @qixi_application_license_key_ddl := IF(@qixi_application_license_key_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD COLUMN `license_key` varchar(1024) NOT NULL DEFAULT ''''', 'SELECT 1');
-PREPARE qixi_application_license_key_stmt FROM @qixi_application_license_key_ddl;
-EXECUTE qixi_application_license_key_stmt;
-DEALLOCATE PREPARE qixi_application_license_key_stmt;
-SET @qixi_application_source_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_merchant_application' AND INDEX_NAME = 'uk_source_application');
-SET @qixi_application_source_index_ddl := IF(@qixi_application_source_index_exists = 0, 'ALTER TABLE `qixi_crm_a_merchant_application` ADD UNIQUE INDEX `uk_source_application` (`source_application_id`)', 'SELECT 1');
-PREPARE qixi_application_source_index_stmt FROM @qixi_application_source_index_ddl;
-EXECUTE qixi_application_source_index_stmt;
-DEALLOCATE PREPARE qixi_application_source_index_stmt;
 -- 平台监管只读取该投影，不直连 qixi_crm_merchant。由 api-merchant 的受控
 -- 命令和 NATS 事件同步，保证服务与数据库边界独立。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_view` (
   `merchant_id` bigint unsigned NOT NULL, `merchant_name` varchar(128) NOT NULL,
-  `contact_name` varchar(64) NOT NULL DEFAULT '', `contact_mobile` varchar(32) NOT NULL DEFAULT '',
+  `owner_name` varchar(128) NOT NULL DEFAULT '', `contact_name` varchar(64) NOT NULL DEFAULT '',
+  `contact_mobile` varchar(32) NOT NULL DEFAULT '', `address` varchar(255) NOT NULL DEFAULT '',
+  `category_id` bigint unsigned NOT NULL DEFAULT 0, `type_id` bigint unsigned NOT NULL DEFAULT 0,
+  `business_id` bigint unsigned NOT NULL DEFAULT 0,
   `region_id` bigint unsigned DEFAULT NULL, `status` tinyint NOT NULL DEFAULT 1,
+  `is_best` tinyint NOT NULL DEFAULT 0, `offline_pay` tinyint NOT NULL DEFAULT 0,
+  `is_trader` tinyint NOT NULL DEFAULT 0, `is_audit` tinyint NOT NULL DEFAULT 1,
+  `is_bro_room` tinyint NOT NULL DEFAULT 0, `is_bro_goods` tinyint NOT NULL DEFAULT 0,
+  `commission_switch` tinyint NOT NULL DEFAULT 0, `commission_rate` decimal(5,2) NOT NULL DEFAULT 0,
+  `mer_keyword` varchar(255) NOT NULL DEFAULT '', `mer_info` varchar(1000) NOT NULL DEFAULT '',
+  `mer_account` varchar(64) NOT NULL DEFAULT '', `sub_mchid` varchar(64) NOT NULL DEFAULT '',
+  `applyment_id` varchar(64) NOT NULL DEFAULT '',
+  `care_count` int NOT NULL DEFAULT 0, `care_ficti` int NOT NULL DEFAULT 0,
+  `goods_type` varchar(64) NOT NULL DEFAULT '', `platform_category_ids` varchar(500) NOT NULL DEFAULT '',
+  `mer_star` tinyint NOT NULL DEFAULT 5,
+  `sort` int NOT NULL DEFAULT 0, `mark` varchar(500) NOT NULL DEFAULT '',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`merchant_id`), KEY `idx_region_status` (`region_id`,`status`)
+  PRIMARY KEY (`merchant_id`), KEY `idx_region_status` (`region_id`,`status`),
+  KEY `idx_category_type` (`category_id`,`type_id`), KEY `idx_best_sort` (`is_best`,`sort`,`merchant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- CREATE IF NOT EXISTS 不会给旧表补列；幂等对齐 CRMEB 店铺列表/编辑抽屉监管字段。
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_view' AND COLUMN_NAME='owner_name')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_view` ADD COLUMN `owner_name` varchar(128) NOT NULL DEFAULT '''' AFTER `merchant_name`, ADD COLUMN `address` varchar(255) NOT NULL DEFAULT '''' AFTER `contact_mobile`, ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `address`, ADD COLUMN `type_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `category_id`, ADD COLUMN `is_best` tinyint NOT NULL DEFAULT 0 AFTER `status`, ADD COLUMN `offline_pay` tinyint NOT NULL DEFAULT 0 AFTER `is_best`, ADD COLUMN `sort` int NOT NULL DEFAULT 0 AFTER `offline_pay`, ADD COLUMN `mark` varchar(500) NOT NULL DEFAULT '''' AFTER `sort`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_view' AND COLUMN_NAME='business_id')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_view` ADD COLUMN `business_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `type_id`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_view' AND COLUMN_NAME='mer_keyword')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_view` ADD COLUMN `is_trader` tinyint NOT NULL DEFAULT 0 AFTER `offline_pay`, ADD COLUMN `is_audit` tinyint NOT NULL DEFAULT 1 AFTER `is_trader`, ADD COLUMN `is_bro_room` tinyint NOT NULL DEFAULT 0 AFTER `is_audit`, ADD COLUMN `is_bro_goods` tinyint NOT NULL DEFAULT 0 AFTER `is_bro_room`, ADD COLUMN `commission_switch` tinyint NOT NULL DEFAULT 0 AFTER `is_bro_goods`, ADD COLUMN `commission_rate` decimal(5,2) NOT NULL DEFAULT 0 AFTER `commission_switch`, ADD COLUMN `mer_keyword` varchar(255) NOT NULL DEFAULT '''' AFTER `commission_rate`, ADD COLUMN `mer_info` varchar(1000) NOT NULL DEFAULT '''' AFTER `mer_keyword`, ADD COLUMN `mer_account` varchar(64) NOT NULL DEFAULT '''' AFTER `mer_info`, ADD COLUMN `sub_mchid` varchar(64) NOT NULL DEFAULT '''' AFTER `mer_account`, ADD COLUMN `applyment_id` varchar(64) NOT NULL DEFAULT '''' AFTER `sub_mchid`, ADD COLUMN `care_count` int NOT NULL DEFAULT 0 AFTER `applyment_id`, ADD COLUMN `care_ficti` int NOT NULL DEFAULT 0 AFTER `care_count`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_view' AND COLUMN_NAME='goods_type')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_view` ADD COLUMN `goods_type` varchar(64) NOT NULL DEFAULT '''' AFTER `care_ficti`, ADD COLUMN `platform_category_ids` varchar(500) NOT NULL DEFAULT '''' AFTER `goods_type`, ADD COLUMN `mer_star` tinyint NOT NULL DEFAULT 5 AFTER `platform_category_ids`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 平台侧的店铺结算监管投影。结算事实由店铺库产生并通过事件同步，平台不能直连
 -- qixi_crm_merchant；本表只承担监管查询，不承担扣款、审批或打款。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_settlement_view` (
@@ -214,9 +173,6 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_settlement_view` (
   `status` enum('bill_pending','bill_frozen','withdraw_applied','approved','paid','rejected','cancelled') NOT NULL, `updated_at` datetime NOT NULL,
   PRIMARY KEY (`source_settlement_id`), KEY `idx_region_status_time` (`region_id`,`status`,`updated_at`), KEY `idx_merchant_period` (`merchant_id`,`period_start`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 兼容已初始化的历史投影；保留 cancelled 只用于历史展示，新增结算不会产生该状态。
-ALTER TABLE `qixi_crm_a_merchant_settlement_view`
-  MODIFY COLUMN `status` enum('bill_pending','bill_frozen','withdraw_applied','approved','paid','rejected','cancelled') NOT NULL;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `owner_scope` enum('platform','operations','merchant') NOT NULL,
   `owner_id` bigint unsigned NOT NULL DEFAULT 0, `media_type` enum('image','video','file') NOT NULL, `url` varchar(1024) NOT NULL,
@@ -481,8 +437,8 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_store_group_merchant` (
   PRIMARY KEY (`store_group_id`,`merchant_id`), KEY `idx_merchant_id` (`merchant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_brand` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(128) NOT NULL, `logo_url` varchar(1024) NOT NULL DEFAULT '',
-  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1, PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`)
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(128) NOT NULL, `category_id` bigint unsigned NOT NULL DEFAULT 0, `logo_url` varchar(1024) NOT NULL DEFAULT '',
+  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1, PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`), KEY `idx_category` (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_brand_category` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `parent_id` bigint unsigned NOT NULL DEFAULT 0,
@@ -490,9 +446,6 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_brand_category` (
   PRIMARY KEY (`id`), UNIQUE KEY `uk_parent_name` (`parent_id`,`name`),
   KEY `idx_parent_sort` (`parent_id`,`sort`,`id`), KEY `idx_status_sort` (`status`,`sort`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-SET @qixi_crm_a_brand_category_id_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_platform_brand' AND COLUMN_NAME = 'category_id');
-SET @qixi_crm_a_brand_category_id_ddl := IF(@qixi_crm_a_brand_category_id_exists = 0, 'ALTER TABLE `qixi_crm_a_platform_brand` ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `name`, ADD KEY `idx_category` (`category_id`)', 'SELECT 1');
-PREPARE qixi_crm_a_brand_category_id_stmt FROM @qixi_crm_a_brand_category_id_ddl; EXECUTE qixi_crm_a_brand_category_id_stmt; DEALLOCATE PREPARE qixi_crm_a_brand_category_id_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_review` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL, `store_id` bigint unsigned NOT NULL,
   `source_event_id` bigint unsigned DEFAULT NULL,
@@ -500,12 +453,6 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_review` (
   `reviewed_by` bigint unsigned DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `reviewed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_event` (`source_event_id`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_product` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-SET @qixi_crm_a_product_review_source_event_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_product_review' AND COLUMN_NAME = 'source_event_id');
-SET @qixi_crm_a_product_review_source_event_ddl := IF(@qixi_crm_a_product_review_source_event_exists = 0, 'ALTER TABLE `qixi_crm_a_product_review` ADD COLUMN `source_event_id` bigint unsigned DEFAULT NULL AFTER `store_id`', 'SELECT 1');
-PREPARE qixi_crm_a_product_review_source_event_stmt FROM @qixi_crm_a_product_review_source_event_ddl; EXECUTE qixi_crm_a_product_review_source_event_stmt; DEALLOCATE PREPARE qixi_crm_a_product_review_source_event_stmt;
-SET @qixi_crm_a_product_review_source_event_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_product_review' AND INDEX_NAME = 'uk_source_event');
-SET @qixi_crm_a_product_review_source_event_index_ddl := IF(@qixi_crm_a_product_review_source_event_index_exists = 0, 'ALTER TABLE `qixi_crm_a_product_review` ADD UNIQUE KEY `uk_source_event` (`source_event_id`)', 'SELECT 1');
-PREPARE qixi_crm_a_product_review_source_event_index_stmt FROM @qixi_crm_a_product_review_source_event_index_ddl; EXECUTE qixi_crm_a_product_review_source_event_index_stmt; DEALLOCATE PREPARE qixi_crm_a_product_review_source_event_index_stmt;
 -- 商品审核跨库投影 outbox：审核事实与待投递命令必须同库提交，业务消费视图
 -- 写入失败时保留 pending 以重试，禁止出现无法恢复的“已审核未投影”。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_projection_outbox` (
@@ -518,15 +465,6 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_projection_outbox` (
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_event` (`source_event_id`), UNIQUE KEY `uk_product_action` (`product_id`,`action`),
   KEY `idx_status_created` (`status`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 兼容已执行过早期建表脚本的环境：投影器以 processing 租约原子领取命令。
-ALTER TABLE `qixi_crm_a_product_projection_outbox`
-  MODIFY COLUMN `status` enum('pending','processing','published','failed') NOT NULL DEFAULT 'pending';
-SET @qixi_crm_a_product_projection_source_event_exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_product_projection_outbox' AND COLUMN_NAME = 'source_event_id');
-SET @qixi_crm_a_product_projection_source_event_ddl := IF(@qixi_crm_a_product_projection_source_event_exists = 0, 'ALTER TABLE `qixi_crm_a_product_projection_outbox` ADD COLUMN `source_event_id` bigint unsigned DEFAULT NULL AFTER `product_id`', 'SELECT 1');
-PREPARE qixi_crm_a_product_projection_source_event_stmt FROM @qixi_crm_a_product_projection_source_event_ddl; EXECUTE qixi_crm_a_product_projection_source_event_stmt; DEALLOCATE PREPARE qixi_crm_a_product_projection_source_event_stmt;
-SET @qixi_crm_a_product_projection_source_event_index_exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = 'qixi_crm_admin' AND TABLE_NAME = 'qixi_crm_a_product_projection_outbox' AND INDEX_NAME = 'uk_source_event');
-SET @qixi_crm_a_product_projection_source_event_index_ddl := IF(@qixi_crm_a_product_projection_source_event_index_exists = 0, 'ALTER TABLE `qixi_crm_a_product_projection_outbox` ADD UNIQUE KEY `uk_source_event` (`source_event_id`)', 'SELECT 1');
-PREPARE qixi_crm_a_product_projection_source_event_index_stmt FROM @qixi_crm_a_product_projection_source_event_index_ddl; EXECUTE qixi_crm_a_product_projection_source_event_index_stmt; DEALLOCATE PREPARE qixi_crm_a_product_projection_source_event_index_stmt;
 -- 平台商品元数据独立于店铺商品配置；只保存运营展示与筛选规则，不存商户私有规格。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_label` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(64) NOT NULL,
@@ -554,6 +492,29 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_rule` (
   `starts_at` datetime DEFAULT NULL, `ends_at` datetime DEFAULT NULL, `updated_by` bigint unsigned NOT NULL,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_status_time` (`rule_type`,`status`,`starts_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台营销装饰（氛围图/边框图/专题/报名），取代 setting_cache list stub；不含密钥。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_decor` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `decor_type` enum('atmosphere','border','topic','application') NOT NULL,
+  `name` varchar(128) NOT NULL, `code` varchar(64) NOT NULL DEFAULT '',
+  `cover_url` varchar(1024) NOT NULL DEFAULT '', `remark` varchar(500) NOT NULL DEFAULT '',
+  `payload` json NOT NULL, `status` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0,
+  `starts_at` datetime DEFAULT NULL, `ends_at` datetime DEFAULT NULL, `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_type_visible` (`decor_type`,`is_del`,`status`,`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台配置条目（热门搜索/组合数据/系统表单/备份登记），取代 setting_cache list stub。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `item_type` enum('hot_search','group_data','system_form','backup') NOT NULL,
+  `name` varchar(128) NOT NULL, `code` varchar(64) NOT NULL DEFAULT '',
+  `remark` varchar(500) NOT NULL DEFAULT '', `payload` json NOT NULL,
+  `status` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0, `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_type_visible` (`item_type`,`is_del`,`status`,`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_approval_task` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `task_type` varchar(64) NOT NULL, `subject_type` varchar(64) NOT NULL,

@@ -68,6 +68,9 @@ func PayMock(ctx context.Context, db *gorm.DB, userID, groupOrderID uint64) (Cre
 		if err := tx.Table("qixi_crm_b_coupon_user").Where("user_id = ? AND used_order_id = ? AND status = ?", userID, group.ID, "locked").Update("status", "used").Error; err != nil {
 			return err
 		}
+		if err := issueVerificationsForPaidGroup(tx, group.ID); err != nil {
+			return err
+		}
 		return tx.Model(&paymentRow{}).Where("group_order_id = ? AND channel = ?", group.ID, "mock").Updates(map[string]any{"status": "succeeded", "paid_at": now, "provider_transaction_no": fmt.Sprintf("mock-%d", group.ID)}).Error
 	})
 	return result, err

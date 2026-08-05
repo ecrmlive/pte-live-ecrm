@@ -7,6 +7,8 @@ services:
     image: alpine:3.24.1
     container_name: pte_live_ecrm_api_platform
     restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
     command: ["/app/api-platform", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18081:8080"
@@ -21,6 +23,8 @@ services:
     image: alpine:3.24.1
     container_name: pte_live_ecrm_api_business
     restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
     command: ["/app/api-business", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18082:8080"
@@ -35,6 +39,8 @@ services:
     image: alpine:3.24.1
     container_name: pte_live_ecrm_api_merchant
     restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
     command: ["/app/api-merchant", "-config", "/app/config/app.yaml"]
     ports:
       - "127.0.0.1:18083:8080"
@@ -50,6 +56,8 @@ services:
     container_name: pte_live_ecrm_job
     restart: unless-stopped
     profiles: ["job"]
+    environment:
+      TZ: Asia/Shanghai
     command: ["/app/job", "-config", "/app/config/app.yaml"]
     volumes:
       - ./release/pte-live-ecrm-job/bin/job:/app/job:ro

@@ -15,7 +15,9 @@ export interface InvoiceRow {
   tax_no: string;
   email: string;
   status: number;
+  status_code?: string;
   mark: string;
+  create_time?: string;
 }
 
 export interface ShippingTemplate {
@@ -32,7 +34,11 @@ export interface ShippingTemplate {
   }>;
 }
 
-export function fetchInvoices(params: { page: number; limit: number }) {
+export function fetchInvoices(params: {
+  page: number;
+  limit: number;
+  status?: string | number;
+}) {
   return requestClient.get<PageResult<InvoiceRow>>('/invoices', { params });
 }
 

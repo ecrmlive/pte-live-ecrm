@@ -11,10 +11,12 @@ export interface MerchantOrderProduct {
 }
 
 export interface MerchantOrder {
+  can_verify?: boolean;
   create_time: string;
   delivery_id: string;
   delivery_name: string;
   delivery_type: string;
+  has_verify_code?: boolean;
   mark: string;
   order_id: number;
   order_sn: string;
@@ -28,6 +30,7 @@ export interface MerchantOrder {
   user_address: string;
   user_phone: string;
   verify_code?: string;
+  verify_status?: string;
 }
 
 export interface MerchantOrderPage {
@@ -42,6 +45,7 @@ export function listMerchantOrdersApi(params: {
   page: number;
   paid?: number;
   status?: number;
+  verify_tab?: 'pending' | 'verified';
 }) {
   return requestClient.get<MerchantOrderPage>('/orders', { params });
 }

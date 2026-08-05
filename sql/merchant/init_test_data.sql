@@ -47,6 +47,13 @@ VALUES
   (1,1,99001,88001,'refund_reversal',-299.00,'settlement:reverse:88001','2026-08-02 09:00:00')
 ON DUPLICATE KEY UPDATE `amount`=VALUES(`amount`),`occurred_at`=VALUES(`occurred_at`);
 
+-- 优惠套餐夹具：店铺营销活动事实；不含收款或密钥。
+INSERT INTO `qixi_crm_m_marketing_activity`
+  (`id`,`store_id`,`activity_type`,`name`,`rules`,`status`,`starts_at`,`ends_at`)
+VALUES
+  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT('package_price',199.00,'product_ids',JSON_ARRAY(1004,1006),'free_shipping',true,'remark','中文演示套餐'),'active',DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`rules`=VALUES(`rules`),`status`=VALUES(`status`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`);
+
 -- 售后备注夹具：关联业务库的虚构退款 9900201，仅验证店铺操作审计；不含买家资料、支付凭据或真实客服账号。
 INSERT INTO `qixi_crm_m_aftersale_action`
   (`refund_id`,`store_id`,`account_id`,`action`,`note`,`attachments`,`idempotency_key`)

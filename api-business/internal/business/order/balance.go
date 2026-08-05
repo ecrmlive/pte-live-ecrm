@@ -86,6 +86,9 @@ func PayBalance(ctx context.Context, db *gorm.DB, userID, groupOrderID uint64) (
 		if err := tx.Table("qixi_crm_b_coupon_user").Where("user_id = ? AND used_order_id = ? AND status = ?", userID, group.ID, "locked").Update("status", "used").Error; err != nil {
 			return err
 		}
+		if err := issueVerificationsForPaidGroup(tx, group.ID); err != nil {
+			return err
+		}
 		return tx.Model(&paymentRow{}).Where("id = ? AND status = ?", payment.ID, "created").Updates(map[string]any{"status": "succeeded", "provider_transaction_no": fmt.Sprintf("balance-%d", group.ID), "paid_at": now}).Error
 	})
 	return result, err

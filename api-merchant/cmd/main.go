@@ -19,7 +19,6 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/finance"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/fulfillment"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
-	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/invoice"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/logistics"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/merchant"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/presell"
@@ -48,7 +47,6 @@ import (
 	financepersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/finance"
 	fulfillmentpersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/fulfillment"
 	identitypersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/identity"
-	invoicepersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/invoice"
 	logisticspersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/logistics"
 	merchantpersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/merchant"
 	presellpersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/presell"
@@ -78,15 +76,15 @@ import (
 	merchantfulfillment "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/fulfillment"
 	merchantimsdk "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/imsdk"
 	merchantintegralpolicy "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/integralpolicy"
-	merchantinvoice "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/invoice"
 	merchantlogistics "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/logistics"
 	merchantcatalog "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativecatalog"
 	nativeorder "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeorder"
+	nativeinvoice "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeinvoice"
+	nativediscount "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativediscount"
 	nativeproductmeta "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeproductmeta"
 	nativerefund "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativerefund"
 	merchantnativesettlement "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativesettlement"
 	merchantstaff "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativestaff"
-	merchantorder "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/order"
 	merchantpayment "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/payment"
 	merchantpresell "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/presell"
 	merchantproductmeta "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/productmeta"
@@ -186,7 +184,6 @@ func main() {
 	attachSvc := attachment.NewService(attachmentpersist.NewRepo(gdb))
 	csSvc := cs.NewService(cspersist.NewRepo(gdb))
 	fulfillSvc := fulfillment.NewService(fulfillmentpersist.NewRepo(gdb))
-	invoiceSvc := invoice.NewService(invoicepersist.NewRepo(gdb))
 	logisticsSvc := logistics.NewService(logisticspersist.NewRepo(gdb))
 	productMetaSvc := productmeta.NewService(productmetapersist.NewRepo(gdb))
 	// 上传只使用后台加密配置；未启用或未补齐密钥时明确拒绝上传。
@@ -207,7 +204,6 @@ func main() {
 	merchantCatH := merchantcatalog.NewHandler(gdb, businessDB)
 	merchantNativeProductMetaH := nativeproductmeta.NewHandler(gdb)
 	merchantStaffH := merchantstaff.NewHandler(gdb)
-	merchantOrderH := merchantorder.NewHandler(tradeSvc, idSvc, logisticsSvc)
 	merchantNativeOrderH := nativeorder.NewHandler(businessDB, gdb)
 	merchantRefundH := nativerefund.NewHandler(businessDB, gdb)
 	merchantFinanceH := merchantfinance.NewHandler(financeSvc)
@@ -227,7 +223,8 @@ func main() {
 	merchantIMSDKH := merchantimsdk.NewHandler(gdb)
 	merchantCsH := merchantcs.NewHandler(csSvc, idSvc)
 	merchantFulfillH := merchantfulfillment.NewHandler(fulfillSvc)
-	merchantInvoiceH := merchantinvoice.NewHandler(invoiceSvc)
+	merchantNativeInvoiceH := nativeinvoice.NewHandler(businessDB, gdb)
+	merchantNativeDiscountH := nativediscount.NewHandler(gdb, businessDB)
 	merchantIntegralPolicyH := merchantintegralpolicy.NewHandler(gdb)
 	merchantLogisticsH := merchantlogistics.NewHandler(logisticsSvc)
 	merchantProductMetaH := merchantproductmeta.NewHandler(productMetaSvc)
@@ -257,7 +254,6 @@ func main() {
 	merchantCatH.Register(merchantAuthed)
 	merchantNativeProductMetaH.Register(merchantAuthed)
 	merchantStaffH.Register(merchantAuthed)
-	merchantOrderH.RegisterVerify(merchantAuthed)
 	merchantNativeOrderH.Register(merchantAuthed)
 	merchantRefundH.Register(merchantAuthed)
 	merchantFinanceH.Register(merchantAuthed)
@@ -272,7 +268,8 @@ func main() {
 	merchantIMSDKH.Register(merchantAuthed)
 	merchantCsH.Register(merchantAuthed)
 	merchantFulfillH.Register(merchantAuthed)
-	merchantInvoiceH.Register(merchantAuthed)
+	merchantNativeInvoiceH.Register(merchantAuthed)
+	merchantNativeDiscountH.Register(merchantAuthed)
 	merchantIntegralPolicyH.Register(merchantAuthed)
 	merchantLogisticsH.Register(merchantAuthed)
 	merchantProductMetaH.Register(merchantAuthed)

@@ -20,6 +20,7 @@ const detail = ref<MerchantOrder>();
 const deliveryRow = ref<MerchantOrder>();
 const delivering = ref(false);
 const canDeliver = ref(false);
+const canVerifyAction = ref(false);
 const query = reactive({
   limit: 20,
   page: 1,
@@ -48,7 +49,7 @@ function rowCanDeliver(row: MerchantOrder) {
 }
 
 function canVerify(row: MerchantOrder) {
-  return row.paid === 1 && row.status !== 3 && Boolean(row.verify_code);
+  return canVerifyAction.value && Boolean(row.can_verify);
 }
 
 async function load() {
@@ -111,7 +112,7 @@ async function verify(row: MerchantOrder) {
       '核销确认',
       { confirmButtonText: '确认核销', cancelButtonText: '取消', type: 'warning' },
     );
-    await verifyMerchantOrderApi(row.order_id, row.verify_code);
+    await verifyMerchantOrderApi(row.order_id);
     ElMessage.success('订单已核销');
     await load();
   } catch {
@@ -122,6 +123,7 @@ async function verify(row: MerchantOrder) {
 onMounted(async () => {
   const codes = await getAccessCodesApi().catch(() => [] as string[]);
   canDeliver.value = codes.includes('order.deliver');
+  canVerifyAction.value = codes.includes('order.verify.action');
   await load();
 });
 </script>

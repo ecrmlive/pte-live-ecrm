@@ -28,6 +28,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/orders/proxy", middleware.RequireStorePermission(h.merchantDB, "order.proxy"), h.proxy)
 	r.GET("/orders/:id", h.get)
 	r.POST("/orders/:id/delivery", middleware.RequireStorePermission(h.merchantDB, "order.deliver"), h.deliver)
+	r.POST("/orders/:id/verify", middleware.RequireStorePermission(h.merchantDB, "order.verify.action"), h.verify)
 }
 
 type order struct {
@@ -78,6 +79,7 @@ func (h *Handler) list(c *gin.Context) {
 	if status := c.Query("status"); status != "" {
 		q = q.Where("o.status = ?", fromStatus(status))
 	}
+	q = applyVerifyTab(q, c.Query("verify_tab"))
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c, "查询订单失败")
@@ -181,6 +183,25 @@ func (h *Handler) responses(c *gin.Context, rows []order, details bool) ([]gin.H
 	for _, x := range deliveries {
 		deliveryByID[x.OrderID] = x
 	}
+	type verifyMeta struct {
+		OrderID uint64 `gorm:"column:order_id"`
+		Status  string `gorm:"column:status"`
+	}
+	var verifies []verifyMeta
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_order_verification").
+		Select("order_id,status").Where("order_id IN ?", ids).Find(&verifies).Error; err != nil {
+		return nil, err
+	}
+	unusedByID := map[uint64]bool{}
+	usedByID := map[uint64]bool{}
+	for _, x := range verifies {
+		switch x.Status {
+		case "unused":
+			unusedByID[x.OrderID] = true
+		case "used":
+			usedByID[x.OrderID] = true
+		}
+	}
 	itemsByID := map[uint64][]gin.H{}
 	if details {
 		var items []item
@@ -196,7 +217,24 @@ func (h *Handler) responses(c *gin.Context, rows []order, details bool) ([]gin.H
 		var r recipient
 		_ = json.Unmarshal(x.Recipient, &r)
 		d := deliveryByID[x.ID]
-		out = append(out, gin.H{"order_id": x.ID, "order_sn": x.OrderNo, "paid": paid(x.Status), "status": status(x.Status), "pay_price": x.PayAmount, "pay_type": payType(x.PayChannel), "total_num": x.TotalQuantity, "real_name": r.Recipient, "user_phone": r.Mobile, "user_address": strings.TrimSpace(r.Province + r.City + r.District + " " + r.Detail), "mark": x.Remark, "delivery_type": d.DeliveryType, "delivery_name": d.CarrierCode, "delivery_id": d.TrackingNo, "create_time": x.CreatedAt.Format("2006-01-02 15:04:05"), "products": itemsByID[x.ID]})
+		canVerify := (x.Status == "paid" || x.Status == "fulfilling") && !usedByID[x.ID] &&
+			(unusedByID[x.ID] || d.DeliveryType == "pickup" || d.DeliveryType == "service")
+		verifyStatus := ""
+		switch {
+		case usedByID[x.ID]:
+			verifyStatus = "used"
+		case unusedByID[x.ID]:
+			verifyStatus = "unused"
+		}
+		out = append(out, gin.H{
+			"order_id": x.ID, "order_sn": x.OrderNo, "paid": paid(x.Status), "status": status(x.Status),
+			"pay_price": x.PayAmount, "pay_type": payType(x.PayChannel), "total_num": x.TotalQuantity,
+			"real_name": r.Recipient, "user_phone": r.Mobile,
+			"user_address": strings.TrimSpace(r.Province + r.City + r.District + " " + r.Detail),
+			"mark": x.Remark, "delivery_type": d.DeliveryType, "delivery_name": d.CarrierCode, "delivery_id": d.TrackingNo,
+			"create_time": x.CreatedAt.Format("2006-01-02 15:04:05"), "products": itemsByID[x.ID],
+			"can_verify": canVerify, "verify_status": verifyStatus, "has_verify_code": unusedByID[x.ID] || usedByID[x.ID],
+		})
 	}
 	return out, nil
 }

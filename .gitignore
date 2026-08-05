@@ -93,4 +93,8 @@ release/config/
 release/admin-users.yaml
 
 # 本机/测试机密钥初始化数据；由 make local-db-init/test-db-init 导入，禁止提交。
+# 仓库只保留 sql/*/init_key.sql.example
+**/init_key.sql
+!**/init_key.sql.example
 *_key.sql
+!*_key.sql.example

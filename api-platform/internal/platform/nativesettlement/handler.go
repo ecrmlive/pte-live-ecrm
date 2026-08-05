@@ -32,6 +32,8 @@ func (h *Handler) Register(r gin.IRoutes) {
 	readSettlement := middleware.RequireAdminMenu(h.adminDB, "accounts.merchant_settlement.read")
 	r.GET("/finance/merchant-settlements", platformOrRegion, readSettlement, h.List)
 	r.GET("/finance/merchant-settlements/summary", platformOrRegion, readSettlement, h.Summary)
+	// 转账记录 = 结算打款链路只读投影，取代 setting_cache stub。
+	r.GET("/finance/transfer-records", platformOrRegion, readSettlement, h.ListTransferRecords)
 	platformOnly := middleware.RequireAdminRoles("platform")
 	reviewSettlement := middleware.RequireAdminMenu(h.adminDB, "accounts.merchant_settlement.review")
 	r.POST("/finance/merchant-settlements/:id/approve", platformOnly, reviewSettlement, h.approve)
@@ -113,6 +115,44 @@ func (h *Handler) Summary(c *gin.Context) {
 	response.OK(c, gin.H{"list": rows})
 }
 
+// ListTransferRecords returns settlement payout pipeline rows only
+// (approved / paid / rejected). It never returns bank accounts or secrets.
+func (h *Handler) ListTransferRecords(c *gin.Context) {
+	page, limit := paging(c)
+	q, err := h.scopedQuery(c)
+	if err != nil {
+		writeScopeFailure(c, err)
+		return
+	}
+	if status, ok := transferStatus(c.Query("status")); !ok {
+		response.Fail(c, http.StatusBadRequest, "转账状态错误")
+		return
+	} else if status != "" {
+		q = q.Where("status = ?", status)
+	} else {
+		q = q.Where("status IN ?", []string{"approved", "paid", "rejected"})
+	}
+	if rawMerchantID := strings.TrimSpace(c.Query("merchant_id")); rawMerchantID != "" {
+		merchantID, err := strconv.ParseUint(rawMerchantID, 10, 64)
+		if err != nil || merchantID == 0 {
+			response.Fail(c, http.StatusBadRequest, "商户 ID 错误")
+			return
+		}
+		q = q.Where("merchant_id = ?", merchantID)
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		fail(c)
+		return
+	}
+	rows := make([]settlementRow, 0)
+	if err := q.Select("source_settlement_id,merchant_id,store_id,merchant_name,period_start,period_end,amount,status,updated_at").Order("updated_at DESC, source_settlement_id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
+		fail(c)
+		return
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
+}
+
 func (h *Handler) approve(c *gin.Context)  { h.command(c, "approve") }
 func (h *Handler) reject(c *gin.Context)   { h.command(c, "reject") }
 func (h *Handler) markPaid(c *gin.Context) { h.command(c, "mark_paid") }
@@ -180,6 +220,15 @@ func settlementRegionScope(scope adminscope.MerchantScope) ([]uint64, error) {
 func settlementStatus(raw string) (string, bool) {
 	switch strings.TrimSpace(raw) {
 	case "", "bill_pending", "bill_frozen", "withdraw_applied", "approved", "paid", "rejected", "cancelled":
+		return strings.TrimSpace(raw), true
+	default:
+		return "", false
+	}
+}
+
+func transferStatus(raw string) (string, bool) {
+	switch strings.TrimSpace(raw) {
+	case "", "approved", "paid", "rejected":
 		return strings.TrimSpace(raw), true
 	default:
 		return "", false

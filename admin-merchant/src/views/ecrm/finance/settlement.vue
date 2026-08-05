@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-
-import { Page } from '@vben/common-ui';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 import { getAccessCodesApi } from '#/api/core/auth';
@@ -12,6 +10,8 @@ import {
   type MerchantSettlement,
   type MerchantSettlementStatus,
 } from '#/api/core/merchant-finance';
+import { EcrmListPage } from '#/components/ecrm';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
 const loading = ref(false);
 const applying = ref(false);
@@ -45,8 +45,7 @@ const statusTypes: Record<MerchantSettlementStatus, 'danger' | 'info' | 'success
 };
 
 function formatTime(value?: string | null) {
-  if (!value) return '—';
-  return String(value).replace('T', ' ').slice(0, 19);
+  return formatShanghaiDateTime(value || null);
 }
 
 function canApplyRow(row: MerchantSettlement) {
@@ -114,12 +113,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Page title="结算管理" description="查看本店结算账期与申请进度；仅账期已冻结且金额大于 0 时可提交结算申请，审核与打款由平台处理。">
-    <el-card shadow="never">
+  <EcrmListPage
+    title="结算管理"
+    description="查看本店结算账期与申请进度；仅账期已冻结且金额大于 0 时可提交结算申请，审核与打款由平台处理。申请需 finance.settlement.apply。"
+  >
+    <template #filters>
       <el-form class="flex flex-wrap gap-x-4" label-width="72px" @submit.prevent="search">
         <el-form-item label="结算状态">
           <el-select v-model="query.status" clearable class="w-40" placeholder="全部">
-            <el-option v-for="(label, status) in statusLabels" :key="status" :label="label" :value="status" />
+            <el-option
+              v-for="(label, status) in statusLabels"
+              :key="status"
+              :label="label"
+              :value="status"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -127,54 +134,78 @@ onMounted(async () => {
           <el-button @click="reset">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </template>
 
-    <el-card class="mt-4" shadow="never">
-      <el-table v-loading="loading" :data="rows" row-key="settlement_id">
-        <el-table-column label="结算 ID" prop="settlement_id" width="100" />
-        <el-table-column label="结算周期" min-width="280">
-          <template #default="{ row }">{{ formatTime(row.period_start) }} 至 {{ formatTime(row.period_end) }}</template>
-        </el-table-column>
-        <el-table-column label="结算金额" width="120">
-          <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="statusTypes[row.status]">{{ statusLabels[row.status] }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="申请单号" min-width="140" prop="application_no" show-overflow-tooltip />
-        <el-table-column label="更新时间" min-width="170">
-          <template #default="{ row }">{{ formatTime(row.updated_at) }}</template>
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="148">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">详情</el-button>
-            <el-button v-if="canApplyRow(row)" :loading="applying" link type="success" @click="apply(row)">申请结算</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="mt-4 flex justify-end">
-        <el-pagination
-          :current-page="query.page"
-          :page-size="query.limit"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          background
-          layout="total, sizes, prev, pager, next"
-          @current-change="(page) => { query.page = page; load(); }"
-          @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }"
-        />
-      </div>
-    </el-card>
+    <el-table v-loading="loading" :data="rows" border row-key="settlement_id" stripe>
+      <el-table-column label="结算 ID" prop="settlement_id" width="100" />
+      <el-table-column label="结算周期" min-width="280">
+        <template #default="{ row }">
+          {{ formatTime(row.period_start) }} 至 {{ formatTime(row.period_end) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="结算金额" width="120">
+        <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
+      </el-table-column>
+      <el-table-column label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="statusTypes[row.status]" size="small">{{ statusLabels[row.status] }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="申请单号" min-width="140" prop="application_no" show-overflow-tooltip />
+      <el-table-column label="更新时间" min-width="170">
+        <template #default="{ row }">{{ formatTime(row.updated_at) }}</template>
+      </el-table-column>
+      <el-table-column fixed="right" label="操作" width="148">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="openDetail(row)">详情</el-button>
+          <el-button
+            v-if="canApplyRow(row)"
+            :loading="applying"
+            link
+            type="success"
+            @click="apply(row)"
+          >
+            申请结算
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <template #pager>
+      <el-pagination
+        :current-page="query.page"
+        :page-size="query.limit"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        background
+        layout="total, sizes, prev, pager, next"
+        @current-change="
+          (page) => {
+            query.page = page;
+            void load();
+          }
+        "
+        @size-change="
+          (limit) => {
+            query.limit = limit;
+            query.page = 1;
+            void load();
+          }
+        "
+      />
+    </template>
 
     <el-drawer v-model="detailOpen" :with-header="false" size="560px">
       <template v-if="detail">
         <div class="mb-5 text-lg font-medium">结算详情</div>
         <el-descriptions :column="1" border>
           <el-descriptions-item label="结算 ID">{{ detail.settlement_id }}</el-descriptions-item>
-          <el-descriptions-item label="结算周期">{{ formatTime(detail.period_start) }} 至 {{ formatTime(detail.period_end) }}</el-descriptions-item>
-          <el-descriptions-item label="结算金额">¥{{ Number(detail.amount).toFixed(2) }}</el-descriptions-item>
+          <el-descriptions-item label="结算周期">
+            {{ formatTime(detail.period_start) }} 至 {{ formatTime(detail.period_end) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="结算金额">
+            ¥{{ Number(detail.amount).toFixed(2) }}
+          </el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="statusTypes[detail.status]">{{ statusLabels[detail.status] }}</el-tag>
           </el-descriptions-item>
@@ -188,5 +219,5 @@ onMounted(async () => {
         </div>
       </template>
     </el-drawer>
-  </Page>
+  </EcrmListPage>
 </template>

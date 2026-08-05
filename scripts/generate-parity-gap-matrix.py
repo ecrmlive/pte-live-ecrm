@@ -15,7 +15,7 @@ PORTALS = {
     "平台后台": {
         "slug": "platform",
         "registry": ROOT / "admin-platform/src/views/ecrm/registry.ts",
-        "sql": ROOT / "sql/admin/02_data.sql",
+        "sql": ROOT / "sql/admin/init_data.sql",
         "sql_path_re": re.compile(
             r"\(\d+,\d+,'[^']+','[^']*','[^']*','([^']+)','page',\d+\)"
         ),
@@ -25,7 +25,7 @@ PORTALS = {
     "商户后台": {
         "slug": "merchant",
         "registry": ROOT / "admin-merchant/src/views/ecrm/registry.ts",
-        "sql": ROOT / "sql/merchant/02_data.sql",
+        "sql": ROOT / "sql/merchant/init_data.sql",
         "sql_path_re": re.compile(
             r"\(\d+,\d+,'[^']+','[^']+','(/[^']+)','views/ecrm/[^']*',"
         ),

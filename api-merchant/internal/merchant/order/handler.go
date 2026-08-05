@@ -24,13 +24,7 @@ func NewHandler(svc *trade.Service, id *identity.Service, logisticsSvc *logistic
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
-	h.RegisterVerify(r)
-}
-
-// RegisterVerify remains temporarily isolated while pickup verification is
-// migrated to qixi_crm_b_order_verification. List/detail/delivery are native.
-func (h *Handler) RegisterVerify(r gin.IRoutes) {
-	r.POST("/orders/:id/verify", middleware.RequireMerchantMenu(h.id, identity.MerPermOrderVerify), h.Verify)
+	// List/detail/delivery/verify are served by nativeorder against qixi_crm_b_*.
 }
 
 func (h *Handler) List(c *gin.Context) {

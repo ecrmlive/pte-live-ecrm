@@ -136,7 +136,7 @@ X-AppId → store_id → merchant_id → 当前启用的 merchant IM SDK AppId
 
 已补齐（本轮）：店铺后台对当前启用 IM SDK AppId 的启用、停用、在用配置更新均在同一商户库事务内写入 `qixi_crm_m_outbox`；事件只含商户、SDK AppId、公开端点和受控配置引用，不含 PTE Token、UserSig 或密钥。`api-merchant` 重试发布 pending Outbox 至 NATS `qixi.merchant.im-sdk-app.v1`，`api-business` 订阅并幂等维护 `qixi_crm_b_merchant_im_sdk_app_view`，全程不跨库直查商户表。
 
-仍未完成：C 端的 `X-AppId → qixi_crm_b_store_view` 全量路由强制与订单/客服会话二次归属校验；pte-live-im 商城 S2S 目前仍强制单个业务 AppId，尚未支持按七禧商户“当前 SDK AppId”签发 UserSig；所有受保护业务路由对 `identity_version` 的缓存化即时拒绝；存量库仍需补齐 `qixi_crm_m_store.app_id`。`auth_version` 已通过三个 `01_table.sql` 中的 MySQL 8.4 幂等 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 纳入初始化/升级。
+仍未完成：C 端的 `X-AppId → qixi_crm_b_store_view` 全量路由强制与订单/客服会话二次归属校验；pte-live-im 商城 S2S 目前仍强制单个业务 AppId，尚未支持按七禧商户“当前 SDK AppId”签发 UserSig；所有受保护业务路由对 `identity_version` 的缓存化即时拒绝；存量库仍需补齐 `qixi_crm_m_store.app_id`。`auth_version` 已通过三个 `init_table.sql` 中的 MySQL 8.4 幂等 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 纳入初始化/升级。
 
 迁移必须按以下顺序执行：
 

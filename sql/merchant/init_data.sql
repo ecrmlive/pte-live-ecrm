@@ -65,11 +65,12 @@ INSERT INTO `qixi_crm_m_menu` (`id`,`parent_id`,`code`,`name`,`path`,`component`
   (16,10,'product.cdkey','卡密库','/product/cdkey','views/ecrm/product/cdkey.vue','',1,1,6,1),
   (17,10,'product.reviews','商品评论','/product/reviews','views/ecrm/product/reviews.vue','',1,1,7,1),
   (25,20,'order.customer','代客下单','/order/customer','views/ecrm/order/customer.vue','',1,1,5,1),
+  (26,20,'order.invoice','发票管理','/order/invoice','views/ecrm/order/invoice.vue','',1,1,6,1),
   (44,40,'finance.statement','对账单','/accounts/statement','views/ecrm/finance/statement.vue','',1,1,4,1),
   (45,40,'finance.capitalFlow','资金流水','/accounts/capitalFlow','views/ecrm/finance/capital-flow.vue','',1,1,5,1),
   (46,40,'finance.transfer','转账管理','/accounts/transManagement','views/ecrm/finance/transfer.vue','',1,1,6,1),
   (47,40,'finance.profitsharing','分账申请','/systemForm/applyments','views/ecrm/finance/profitsharing.vue','',1,1,7,1),
-  (35,30,'marketing.discounts','限时折扣','/marketing/discounts/list','views/ecrm/marketing/discounts.vue','',1,1,5,1),
+  (35,30,'marketing.discounts','优惠套餐','/marketing/discounts/list','views/ecrm/marketing/discounts.vue','',1,1,5,1),
   (36,30,'marketing.topic','专题活动','/group/topic/95','views/ecrm/marketing/topic.vue','',1,1,6,1),
   (80,0,'user','用户','/user','','lucide:users',1,0,35,1),
   (81,80,'user.list','用户列表','/user/list','views/ecrm/user/list.vue','',1,1,1,1),
@@ -98,6 +99,7 @@ INSERT INTO `qixi_crm_m_menu` (`id`,`parent_id`,`code`,`name`,`path`,`component`
   (1106,11,'product.stock','调整库存','','','',2,0,6,1),
   (1201,21,'order.deliver','订单发货','','','',2,0,1,1),
   (1202,21,'order.proxy','代客下单','','','',2,0,2,1),
+  (1203,23,'order.verify.action','确认核销','','','',2,0,1,1),
   (1301,22,'refund.approve','同意售后','','','',2,0,1,1),
   (1302,22,'refund.reject','驳回售后','','','',2,0,2,1),
   (1303,22,'refund.log','查看售后操作记录','','','',2,0,3,1),
@@ -114,7 +116,9 @@ INSERT INTO `qixi_crm_m_menu` (`id`,`parent_id`,`code`,`name`,`path`,`component`
   (1420,13,'product.category.create','新增商品分类','','','',2,0,1,1),
   (1421,13,'product.category.update','编辑商品分类','','','',2,0,2,1),
   (1422,13,'product.category.delete','删除商品分类','','','',2,0,3,1),
-  (1501,43,'finance.settlement.apply','提交结算申请','','','',2,0,1,1)
+  (1501,43,'finance.settlement.apply','提交结算申请','','','',2,0,1,1),
+  (1601,26,'invoice.audit','发票审核','','','',2,0,1,1),
+  (1701,35,'marketing.discounts.manage','维护优惠套餐','','','',2,0,1,1)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`name`=VALUES(`name`),`is_menu`=VALUES(`is_menu`),`is_route`=VALUES(`is_route`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
 INSERT IGNORE INTO `qixi_crm_m_role_menu` (`role_code`,`menu_id`)
 SELECT roles.role_code, menus.id FROM (SELECT 'owner' AS role_code UNION ALL SELECT 'manager') AS roles CROSS JOIN `qixi_crm_m_menu` AS menus;

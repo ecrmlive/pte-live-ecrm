@@ -4,17 +4,19 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strconv"
 	"strings"
 
 	"gorm.io/gorm"
 )
 
 type Store interface {
-	ListMerchants(ctx context.Context, keyword string, status *int8, scope MerchantScope, page, limit int) ([]Merchant, int64, error)
+	ListMerchants(ctx context.Context, filter ListFilter, scope MerchantScope) ([]Merchant, int64, error)
 	GetMerchant(ctx context.Context, id uint) (*Merchant, error)
 	UpdateMerchantStatus(ctx context.Context, id uint, status, merState int8) error
 	UpdateSvipCouponMerge(ctx context.Context, merID uint, merge int8) error
-	UpdateShopProfile(ctx context.Context, merID uint, merName, realName, merPhone, merAddress, merInfo string) error
+	UpdateMerchant(ctx context.Context, m *Merchant) error
+	CreateMerchant(ctx context.Context, m *Merchant) error
 	UpsertMerchantView(ctx context.Context, m *Merchant) error
 
 	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]Intention, int64, error)
@@ -29,6 +31,22 @@ type Store interface {
 
 	WithTx(fn func(tx Store) error) error
 }
+
+// ListFilter 对齐 CRMEB 店铺列表筛选项。
+type ListFilter struct {
+	Keyword    string
+	Status     *int8
+	CategoryID *uint
+	TypeID     *uint
+	RegionID   *uint
+	IsBest     *int8
+	OfflinePay *int8
+	DateFrom   string
+	DateTo     string
+	Page       int
+	Limit      int
+}
+
 
 type Service struct {
 	store Store
@@ -50,11 +68,12 @@ type PageResult[T any] struct {
 	Limit int   `json:"limit"`
 }
 
-func (s *Service) ListMerchants(ctx context.Context, keyword string, status *int8, scope MerchantScope, page, limit int) (*PageResult[Merchant], error) {
-	list, total, err := s.store.ListMerchants(ctx, keyword, status, scope, page, limit)
+func (s *Service) ListMerchants(ctx context.Context, filter ListFilter, scope MerchantScope) (*PageResult[Merchant], error) {
+	list, total, err := s.store.ListMerchants(ctx, filter, scope)
 	if err != nil {
 		return nil, err
 	}
+	page, limit := filter.Page, filter.Limit
 	if page <= 0 {
 		page = 1
 	}
@@ -111,11 +130,38 @@ func (s *Service) SetMerchantEnabled(ctx context.Context, id uint, enabled bool)
 }
 
 type ShopProfileInput struct {
-	MerName    string `json:"mer_name"`
-	RealName   string `json:"real_name"`
-	MerPhone   string `json:"mer_phone"`
-	MerAddress string `json:"mer_address"`
-	MerInfo    string `json:"mer_info"`
+	MerName          string  `json:"mer_name"`
+	OwnerName        string  `json:"owner_name"`
+	RealName         string  `json:"real_name"`
+	MerPhone         string  `json:"mer_phone"`
+	MerAddress       string  `json:"mer_address"`
+	MerInfo          string  `json:"mer_info"`
+	MerKeyword       string  `json:"mer_keyword"`
+	Mark             string  `json:"mark"`
+	CategoryID       uint    `json:"category_id"`
+	TypeID           uint    `json:"type_id"`
+	BusinessID       uint    `json:"business_id"`
+	RegionID         uint    `json:"region_id"`
+	IsBest           *bool   `json:"is_best"`
+	OfflinePay       *bool   `json:"offline_pay"`
+	IsTrader         *bool   `json:"is_trader"`
+	IsAudit          *bool   `json:"is_audit"`
+	IsBroRoom        *bool   `json:"is_bro_room"`
+	IsBroGoods       *bool   `json:"is_bro_goods"`
+	CommissionSwitch *bool   `json:"commission_switch"`
+	CommissionRate   *float64 `json:"commission_rate"`
+	MerAccount       string  `json:"mer_account"`
+	MerPassword      string  `json:"mer_password"`
+	SubMchid         string  `json:"sub_mchid"`
+	ApplymentID      string  `json:"applyment_id"`
+	CareCount        *int    `json:"care_count"`
+	CareFicti        *int    `json:"care_ficti"`
+	GoodsTypes       []int   `json:"goods_types"`
+	PlatformCategoryIDs []uint `json:"platform_category_ids"`
+	MerStar          *int8   `json:"mer_star"`
+	Sort             *int    `json:"sort"`
+	Status           *bool   `json:"status"`
+	StoreGroupIDs    []uint  `json:"store_group_ids"`
 }
 
 func (s *Service) UpdateShopProfile(ctx context.Context, merID uint, in ShopProfileInput) (*Merchant, error) {
@@ -126,30 +172,166 @@ func (s *Service) UpdateShopProfile(ctx context.Context, merID uint, in ShopProf
 	if err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(in.MerName)
-	if name == "" {
-		name = m.MerName
-	}
-	realName := strings.TrimSpace(in.RealName)
-	if realName == "" {
-		realName = m.RealName
-	}
-	phone := strings.TrimSpace(in.MerPhone)
-	if phone == "" {
-		phone = m.MerPhone
-	}
-	addr := strings.TrimSpace(in.MerAddress)
-	if addr == "" {
-		addr = m.MerAddress
-	}
-	info := strings.TrimSpace(in.MerInfo)
-	if info == "" {
-		info = m.MerInfo
-	}
-	if err := s.store.UpdateShopProfile(ctx, merID, name, realName, phone, addr, info); err != nil {
+	applyProfile(m, in)
+	if err := s.store.UpdateMerchant(ctx, m); err != nil {
 		return nil, err
 	}
 	return s.GetMerchant(ctx, merID)
+}
+
+func (s *Service) CreateMerchant(ctx context.Context, in ShopProfileInput) (*Merchant, error) {
+	name := strings.TrimSpace(in.MerName)
+	if name == "" {
+		return nil, ErrBadParam
+	}
+	m := &Merchant{
+		MerName: name,
+		Status:  1,
+		MerState: 1,
+		IsAudit: 1,
+		MerStar: 5,
+	}
+	applyProfile(m, in)
+	m.MerName = name
+	if err := s.store.CreateMerchant(ctx, m); err != nil {
+		return nil, err
+	}
+	return s.GetMerchant(ctx, m.MerID)
+}
+
+func (s *Service) SetMerchantRecommend(ctx context.Context, id uint, enabled bool) error {
+	m, err := s.GetMerchant(ctx, id)
+	if err != nil {
+		return err
+	}
+	if enabled {
+		m.IsBest = 1
+	} else {
+		m.IsBest = 0
+	}
+	return s.store.UpdateMerchant(ctx, m)
+}
+
+func applyBool8(dst *int8, src *bool) {
+	if src == nil {
+		return
+	}
+	if *src {
+		*dst = 1
+	} else {
+		*dst = 0
+	}
+}
+
+func applyProfile(m *Merchant, in ShopProfileInput) {
+	if v := strings.TrimSpace(in.MerName); v != "" {
+		m.MerName = v
+	}
+	m.RealName = strings.TrimSpace(in.RealName)
+	m.MerPhone = strings.TrimSpace(in.MerPhone)
+	m.MerAddress = strings.TrimSpace(in.MerAddress)
+	m.MerInfo = strings.TrimSpace(in.MerInfo)
+	m.MerKeyword = strings.TrimSpace(in.MerKeyword)
+	m.Mark = strings.TrimSpace(in.Mark)
+	m.MerAccount = strings.TrimSpace(in.MerAccount)
+	m.SubMchid = strings.TrimSpace(in.SubMchid)
+	m.ApplymentID = strings.TrimSpace(in.ApplymentID)
+	m.CategoryID = in.CategoryID
+	m.TypeID = in.TypeID
+	m.BusinessID = in.BusinessID
+	m.RegionID = in.RegionID
+	m.StoreGroupIDs = in.StoreGroupIDs
+	applyBool8(&m.IsBest, in.IsBest)
+	applyBool8(&m.OfflinePay, in.OfflinePay)
+	applyBool8(&m.IsTrader, in.IsTrader)
+	applyBool8(&m.IsAudit, in.IsAudit)
+	applyBool8(&m.IsBroRoom, in.IsBroRoom)
+	applyBool8(&m.IsBroGoods, in.IsBroGoods)
+	applyBool8(&m.CommissionSwitch, in.CommissionSwitch)
+	if in.CommissionRate != nil {
+		m.CommissionRate = *in.CommissionRate
+	}
+	if in.CareCount != nil {
+		m.CareCount = *in.CareCount
+	}
+	if in.CareFicti != nil {
+		m.CareFicti = *in.CareFicti
+	}
+	if in.MerStar != nil {
+		m.MerStar = *in.MerStar
+	}
+	if in.GoodsTypes != nil {
+		m.GoodsTypes = append([]int(nil), in.GoodsTypes...)
+		m.GoodsType = joinInts(in.GoodsTypes)
+	}
+	if in.PlatformCategoryIDs != nil {
+		m.PlatformCategoryIDList = append([]uint(nil), in.PlatformCategoryIDs...)
+		m.PlatformCategoryIDs = joinUints(in.PlatformCategoryIDs)
+	}
+	if in.Sort != nil {
+		m.Sort = *in.Sort
+	}
+	if in.Status != nil {
+		if *in.Status {
+			m.Status, m.MerState = 1, 1
+		} else {
+			m.Status, m.MerState = 0, 0
+		}
+	}
+}
+
+func joinInts(vals []int) string {
+	if len(vals) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(vals))
+	for _, v := range vals {
+		parts = append(parts, strconv.Itoa(v))
+	}
+	return strings.Join(parts, ",")
+}
+
+func joinUints(vals []uint) string {
+	if len(vals) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(vals))
+	for _, v := range vals {
+		parts = append(parts, strconv.FormatUint(uint64(v), 10))
+	}
+	return strings.Join(parts, ",")
+}
+
+func parseIntsCSV(raw string) []int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []int{}
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]int, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
+		if err == nil {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+func parseUintsCSV(raw string) []uint {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []uint{}
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]uint, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.ParseUint(strings.TrimSpace(p), 10, 64)
+		if err == nil {
+			out = append(out, uint(n))
+		}
+	}
+	return out
 }
 
 func (s *Service) GetSvipConfig(ctx context.Context, merID uint) (*SvipConfig, error) {

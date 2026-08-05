@@ -16,7 +16,7 @@ func TestAdminMenuSeedHasUniquePrimaryKeys(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -54,9 +54,9 @@ func TestBaseSeedDataDeclaresUTF8MB4(t *testing.T) {
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
 	for _, relative := range []string{
-		"sql/admin/02_data.sql",
-		"sql/business/02_data.sql",
-		"sql/merchant/02_data.sql",
+		"sql/admin/init_data.sql",
+		"sql/business/init_data.sql",
+		"sql/merchant/init_data.sql",
 	} {
 		seed, err := os.ReadFile(filepath.Join(root, relative))
 		if err != nil {
@@ -77,7 +77,7 @@ func TestAdminPageMenuHasConcreteVbenComponent(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -103,11 +103,11 @@ func TestBusinessSchemaAndChineseFixtureContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	schema, err := os.ReadFile(filepath.Join(root, "sql/business/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/business/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read business schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -254,11 +254,11 @@ func TestProductCommentVirtualFixtureContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	schema, err := os.ReadFile(filepath.Join(root, "sql/business/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/business/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read business schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -275,11 +275,11 @@ func TestMerchantSettlementLedgerFixtureContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	schema, err := os.ReadFile(filepath.Join(root, "sql/merchant/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/merchant/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read merchant schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/merchant/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/merchant/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read merchant fixture: %v", err)
 	}
@@ -321,11 +321,11 @@ func TestAdminMerchantSettlementProjectionFixtureContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
@@ -348,7 +348,7 @@ func TestMerchantStatusAndIntentionMutationsHaveRBACContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -382,7 +382,7 @@ func TestMerchantCategoryHasIndependentTablePageAndRBAC(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	adminSchema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	adminSchema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
@@ -390,7 +390,7 @@ func TestMerchantCategoryHasIndependentTablePageAndRBAC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read merchant repo: %v", err)
 	}
-	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -423,15 +423,15 @@ func TestStoreGroupHasTreeMembershipTemplateAndRBACContract(t *testing.T) {
 		t.Fatal("cannot resolve current test file")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
-	adminSchema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	adminSchema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
-	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	menuSeed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -488,7 +488,7 @@ func TestAdminPlatformDoesNotRegisterPlaceholderAsBusinessPage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read admin page registry: %v", err)
 	}
-	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
@@ -528,7 +528,7 @@ func TestAssistDomainUsesBusinessPrefixAndFixture(t *testing.T) {
 	if !strings.Contains(string(mainSource), "assistpersist.NewRepo(businessDB)") {
 		t.Fatal("assist repository must be connected to the business database")
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -575,11 +575,11 @@ func TestBroadcastDomainUsesBusinessPrefixAndDoesNotSerializeSensitiveFields(t *
 	if !strings.Contains(string(mainSource), "broadcastpersist.NewRepo(businessDB)") {
 		t.Fatal("broadcast repository must be connected to the business database")
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/business/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/business/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read business schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -621,11 +621,11 @@ func TestCommunityDomainUsesBusinessTablesAndChineseFixture(t *testing.T) {
 	if !strings.Contains(string(mainSource), "communitypersist.NewRepo(businessDB)") {
 		t.Fatal("community repository must be connected to the business database")
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/business/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/business/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read business schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -682,11 +682,11 @@ func TestUserTagDomainUsesBusinessTablesChineseFixtureAndRBAC(t *testing.T) {
 			t.Fatalf("usertag handler missing RBAC guard %q", required)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/business/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/business/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read business schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/business/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read business fixture: %v", err)
 	}
@@ -758,15 +758,15 @@ func TestBusinessZoneUsesUnifiedAdminTablesRBACAndDoesNotSerializePaymentData(t 
 			t.Fatalf("business-zone handler missing RBAC guard %q", required)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
@@ -820,15 +820,15 @@ func TestLogisticsUsesUnifiedAdminTablesRBACAndChineseFixture(t *testing.T) {
 			t.Fatalf("logistics handler missing RBAC guard %q", required)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/02_data.sql"))
+	seed, err := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin menu seed: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
@@ -865,11 +865,11 @@ func TestArticleDomainUsesUnifiedAdminTablesAndChineseFixture(t *testing.T) {
 			t.Fatalf("article model missing unified admin table %q", required)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
@@ -904,19 +904,25 @@ func TestContentDomainUsesUnifiedAdminTablesAndChineseFixture(t *testing.T) {
 			t.Fatalf("content source %s must not use legacy qixi_m_ tables", relative)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}
 	for _, required := range []string{
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_notice`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_setting_cache`",
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_decor`",
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item`",
 		"INSERT INTO `qixi_crm_a_notice`",
+		"INSERT INTO `qixi_crm_a_marketing_decor`",
+		"INSERT INTO `qixi_crm_a_config_item`",
 		"七禧商城本地验收公告",
+		"夏日焕新氛围图",
+		"夏日香氛",
 		"本地验收未配置通道",
 	} {
 		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) {
@@ -943,11 +949,11 @@ func TestAttachmentDomainUsesUnifiedAdminTablesAndChineseFixture(t *testing.T) {
 			t.Fatalf("attachment model missing unified admin table %q", required)
 		}
 	}
-	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/01_table.sql"))
+	schema, err := os.ReadFile(filepath.Join(root, "sql/admin/init_table.sql"))
 	if err != nil {
 		t.Fatalf("read admin schema: %v", err)
 	}
-	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/05_test_data.sql"))
+	fixture, err := os.ReadFile(filepath.Join(root, "sql/admin/init_test_data.sql"))
 	if err != nil {
 		t.Fatalf("read admin fixture: %v", err)
 	}

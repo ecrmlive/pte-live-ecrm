@@ -1,367 +1,1923 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Page } from '@vben/common-ui';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
-  ElDescriptions,
-  ElDescriptionsItem,
-  ElDrawer,
-  ElEmpty,
+  ElButton,
+  ElCascader,
+  ElCheckbox,
+  ElCheckboxGroup,
+  ElDatePicker,
+  ElDropdown,
+  ElDropdownItem,
+  ElDropdownMenu,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
   ElMessage,
-  ElMessageBox,
+  ElOption,
+  ElPagination,
+  ElRadio,
+  ElRadioGroup,
+  ElSelect,
+  ElSwitch,
+  ElTabPane,
+  ElTable,
+  ElTableColumn,
+  ElTabs,
+  ElTag,
 } from 'element-plus';
+import { MoreFilled, Plus, Shop } from '@element-plus/icons-vue';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
+  createPlatformMerchant,
+  fetchBusinessZoneOptions,
+  fetchMerchantCategories,
+  fetchMerchantOperateLogs,
+  fetchMerchantTypes,
   fetchPlatformMerchant,
   fetchPlatformMerchants,
+  fetchStoreGroups,
+  updatePlatformMerchant,
+  updatePlatformMerchantRecommend,
   updatePlatformMerchantStatus,
+  type BusinessZoneOptionNode,
+  type MerchantCategoryRow,
+  type MerchantOperateLogRow,
+  type MerchantTypeRow,
   type PlatformMerchantRow,
+  type PlatformMerchantSaveInput,
+  type StoreGroupRow,
 } from '#/api/core/ecrm';
+import {
+  listPlatformCategoriesApi,
+  type PlatformCategory,
+} from '#/api/core/platform-catalog';
 import { getAccessCodesApi } from '#/api/core/auth';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 
-const loading = ref(false);
-const rows = ref<PlatformMerchantRow[]>([]);
-const total = ref(0);
-const detailOpen = ref(false);
-const detailLoading = ref(false);
-const detail = ref<PlatformMerchantRow>();
-const canManageStatus = ref(false);
-const query = reactive({ keyword: '', page: 1, limit: 20, status: undefined as number | undefined });
+type DrawerMode = 'create' | 'edit' | 'view';
 
-const statusOptions = [
-  { label: '全部状态', value: undefined },
-  { label: '正常开启', value: 1 },
-  { label: '已关闭', value: 0 },
-];
+const GOODS_TYPE_OPTIONS = [
+  { label: '普通商品', value: 0 },
+  { label: '虚拟', value: 1 },
+  { label: '云盘', value: 2 },
+  { label: '卡密', value: 3 },
+  { label: '预约', value: 4 },
+  { label: '年/次卡', value: 5 },
+] as const;
 
-const isEnabled = (row: PlatformMerchantRow) => row.status === 1 && row.mer_state === 1;
-const statusText = (row: PlatformMerchantRow) => (isEnabled(row) ? '营业中' : '已关闭');
-const auditText = (row: PlatformMerchantRow) => (row.is_audit === 1 ? '已审核' : '未审核');
-const contact = (row: PlatformMerchantRow) => row.real_name || '—';
-const phone = (row: PlatformMerchantRow) => row.mer_phone || '—';
-const formatTime = (value?: string) => {
-  if (!value) return '—';
-  return formatShanghaiDateTime(value);
+const STAR_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({
+  label: `${n}星`,
+  value: n,
+}));
+
+const openCount = ref(0);
+const closedCount = ref(0);
+const statusFilter = ref<number>(1);
+const canManage = ref(false);
+const categories = ref<MerchantCategoryRow[]>([]);
+const types = ref<MerchantTypeRow[]>([]);
+const regions = ref<{ label: string; value: number }[]>([]);
+const businessOptions = ref<BusinessZoneOptionNode[]>([]);
+const storeGroupOptions = ref<{ label: string; value: number }[]>([]);
+const platformCategoryOptions = ref<{ label: string; value: number }[]>([]);
+const drawerMode = ref<DrawerMode>('create');
+const editingId = ref(0);
+const activeTab = ref('basic');
+const headerSnapshot = ref<Partial<PlatformMerchantRow>>({});
+const operateLogs = ref<MerchantOperateLogRow[]>([]);
+const operateLogTotal = ref(0);
+const operateLogLoading = ref(false);
+const operateLogPage = ref(1);
+const operateLogLimit = ref(10);
+const operateLogTerminal = ref<string>('');
+const operateLogDates = ref<string[]>([]);
+
+const form = reactive<
+  PlatformMerchantSaveInput & { mer_password?: string; store_group_ids: number[] }
+>({
+  mer_name: '',
+  business_id: undefined,
+  real_name: '',
+  mer_phone: '',
+  mer_address: '',
+  mer_info: '',
+  mer_keyword: '',
+  mark: '',
+  category_id: undefined,
+  type_id: undefined,
+  region_id: undefined,
+  is_best: false,
+  offline_pay: false,
+  is_trader: false,
+  is_audit: true,
+  is_bro_room: false,
+  is_bro_goods: false,
+  commission_switch: false,
+  commission_rate: 0,
+  mer_account: '',
+  mer_password: '',
+  sub_mchid: '',
+  applyment_id: '',
+  care_count: 0,
+  care_ficti: 0,
+  sort: 0,
+  status: true,
+  store_group_ids: [],
+  goods_types: [] as number[],
+  platform_category_ids: [] as number[],
+  mer_star: 5,
+});
+
+const isReadonly = computed(() => drawerMode.value === 'view');
+const selectedType = computed(() =>
+  types.value.find((t) => t.id === Number(form.type_id)),
+);
+const selectedCategory = computed(() =>
+  categories.value.find(
+    (c) => c.merchant_category_id === Number(form.category_id),
+  ),
+);
+const selectedBusinessLabel = computed(() => {
+  const id = Number(form.business_id || 0);
+  if (!id) return headerSnapshot.value.owner_name || '—';
+  const hit = flattenZoneOptions(businessOptions.value).find((x) => x.value === id);
+  return hit?.label || headerSnapshot.value.owner_name || '—';
+});
+const selectedRegionLabel = computed(() => {
+  const id = Number(form.region_id || 0);
+  if (!id) return headerSnapshot.value.region_name || '—';
+  return (
+    regions.value.find((r) => r.value === id)?.label ||
+    headerSnapshot.value.region_name ||
+    '—'
+  );
+});
+const selectedStoreGroupLabels = computed(() => {
+  const ids = new Set((form.store_group_ids || []).map(Number));
+  if (!ids.size) return '—';
+  const labels = storeGroupOptions.value
+    .filter((item) => ids.has(item.value))
+    .map((item) => item.label);
+  return labels.length ? labels.join('，') : '—';
+});
+const selectedPlatformCategoryLabels = computed(() => {
+  const ids = new Set((form.platform_category_ids || []).map(Number));
+  if (!ids.size) return '—';
+  const labels = platformCategoryOptions.value
+    .filter((item) => ids.has(item.value))
+    .map((item) => item.label);
+  return labels.length ? labels.join('，') : '—';
+});
+const selectedGoodsTypeLabels = computed(() => {
+  const ids = new Set((form.goods_types || []).map(Number));
+  if (!ids.size) return '—';
+  const labels = GOODS_TYPE_OPTIONS.filter((item) => ids.has(item.value)).map(
+    (item) => item.label,
+  );
+  return labels.length ? labels.join('，') : '—';
+});
+const categoryCommissionHint = computed(() => {
+  const rate = selectedCategory.value?.commission_rate;
+  if (rate === undefined || rate === null) return '';
+  return `该分类下的店铺手续费是${Number(rate)}%`;
+});
+const depositStatusText = computed(() => {
+  switch (headerSnapshot.value.deposit_state) {
+    case 'funded':
+      return '已缴';
+    case 'pending':
+      return '待缴';
+    case 'shortfall':
+      return '已缴';
+    case 'refund_pending':
+      return '退款中';
+    case 'refunded':
+      return '已退';
+    case 'not_required':
+    default:
+      return depositText(headerSnapshot.value.deposit_state);
+  }
+});
+const depositNeedsTopUp = computed(
+  () => headerSnapshot.value.deposit_state === 'shortfall',
+);
+const marginAmountText = computed(() => {
+  if (!(selectedType.value?.is_margin || headerSnapshot.value.type_is_margin)) {
+    return '无';
+  }
+  const amount =
+    selectedType.value?.margin ?? headerSnapshot.value.type_margin ?? 0;
+  return Number(amount).toFixed(2);
+});
+
+const isEnabled = (row: PlatformMerchantRow) =>
+  row.status === 1 && row.mer_state === 1;
+const statusText = (row: Partial<PlatformMerchantRow>) =>
+  row.status === 1 ? '开启' : '关闭';
+const formatTime = (value?: string) =>
+  value ? formatShanghaiDateTime(value) : '—';
+const depositText = (state?: string) => {
+  switch (state) {
+    case 'funded':
+      return '已缴';
+    case 'pending':
+      return '待缴';
+    case 'shortfall':
+      return '不足';
+    case 'refund_pending':
+      return '退款中';
+    case 'refunded':
+      return '已退';
+    case 'not_required':
+    default:
+      return '无';
+  }
+};
+const yesNo = (value: boolean | number | undefined) =>
+  value === true || value === 1 ? '是' : '否';
+const auditText = (needAudit: boolean) => (needAudit ? '需审核' : '免审核');
+const displayOrDash = (value?: string | number | null) => {
+  if (value === undefined || value === null || value === '') return '—';
+  return String(value);
 };
 
-const drawerTitle = computed(() => detail.value ? `店铺详情 · ${detail.value.mer_name}` : '店铺详情');
+function flattenStoreGroups(
+  rows: StoreGroupRow[],
+  prefix = '',
+): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = [];
+  for (const row of rows || []) {
+    const label = prefix ? `${prefix} / ${row.name}` : row.name;
+    out.push({ label, value: Number(row.id) });
+    if (row.children?.length) {
+      out.push(...flattenStoreGroups(row.children, label));
+    }
+  }
+  return out;
+}
 
-async function load() {
-  loading.value = true;
+function flattenPlatformCategories(
+  rows: PlatformCategory[],
+  prefix = '',
+): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = [];
+  for (const row of rows || []) {
+    const label = prefix ? `${prefix} / ${row.cate_name}` : row.cate_name;
+    out.push({ label, value: Number(row.store_category_id) });
+    if (row.children?.length) {
+      out.push(...flattenPlatformCategories(row.children, label));
+    }
+  }
+  return out;
+}
+
+function parseGoodsTypes(row?: PlatformMerchantRow): number[] {
+  if (row?.goods_types?.length) {
+    return [...row.goods_types];
+  }
+  const raw = row?.goods_type?.trim();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((value) => Number.isFinite(value));
+}
+
+function parsePlatformCategoryIds(row?: PlatformMerchantRow): number[] {
+  if (row?.platform_category_id_list?.length) {
+    return row.platform_category_id_list.map((id) => Number(id));
+  }
+  const raw = row?.platform_category_ids?.trim();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((value) => Number.isFinite(value));
+}
+
+async function loadCounts() {
+  const [opened, closed] = await Promise.all([
+    fetchPlatformMerchants({ page: 1, limit: 1, status: 1 }),
+    fetchPlatformMerchants({ page: 1, limit: 1, status: 0 }),
+  ]);
+  openCount.value = opened.total || 0;
+  closedCount.value = closed.total || 0;
+}
+
+function flattenZoneOptions(
+  nodes: BusinessZoneOptionNode[],
+): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = [];
+  const walk = (list: BusinessZoneOptionNode[]) => {
+    for (const node of list || []) {
+      out.push({ label: node.label, value: Number(node.value) });
+      if (node.children?.length) walk(node.children);
+    }
+  };
+  walk(nodes);
+  return out;
+}
+
+async function loadFilterOptions() {
   try {
-    const result = await fetchPlatformMerchants({ ...query, keyword: query.keyword.trim() || undefined });
-    rows.value = result.list;
-    total.value = result.total;
-  } finally {
-    loading.value = false;
+    const [cats, typeList, regionTree, businessTree, groups, platformCats] =
+      await Promise.all([
+      fetchMerchantCategories().catch(() => ({ list: [] as MerchantCategoryRow[] })),
+      fetchMerchantTypes().catch(() => ({ list: [] as MerchantTypeRow[] })),
+      fetchBusinessZoneOptions(0).catch(() => ({ list: [] as BusinessZoneOptionNode[] })),
+      fetchBusinessZoneOptions(1).catch(() => ({ list: [] as BusinessZoneOptionNode[] })),
+      fetchStoreGroups().catch(() => ({ list: [] as StoreGroupRow[] })),
+      listPlatformCategoriesApi().catch(() => ({ list: [] as PlatformCategory[] })),
+    ]);
+    categories.value = cats.list || [];
+    types.value = typeList.list || [];
+    regions.value = flattenZoneOptions(regionTree.list || []);
+    businessOptions.value = businessTree.list || [];
+    storeGroupOptions.value = flattenStoreGroups(groups.list || []);
+    platformCategoryOptions.value = flattenPlatformCategories(
+      platformCats.list || [],
+    );
+  } catch {
+    /* 筛选项失败不阻断列表 */
   }
 }
 
-function search() {
-  query.page = 1;
-  void load();
+function yesNoOptions() {
+  return [
+    { label: '是', value: 1 },
+    { label: '否', value: 0 },
+  ];
 }
 
-function reset() {
-  query.keyword = '';
-  query.status = undefined;
-  query.page = 1;
-  void load();
+const formOptions: VbenFormProps = {
+  collapsed: false,
+  commonConfig: { componentProps: { class: 'w-full' } },
+  showCollapseButton: false,
+  wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  schema: [
+    {
+      component: 'DatePicker',
+      componentProps: {
+        type: 'daterange',
+        valueFormat: 'YYYY-MM-DD',
+        startPlaceholder: '开始时间',
+        endPlaceholder: '结束时间',
+      },
+      fieldName: 'date_range',
+      label: '选择时间',
+    },
+    {
+      component: 'Select',
+      componentProps: { clearable: true, options: [], placeholder: '请选择' },
+      fieldName: 'category_id',
+      label: '店铺分类',
+    },
+    {
+      component: 'Select',
+      componentProps: { clearable: true, options: [], placeholder: '请选择' },
+      fieldName: 'type_id',
+      label: '店铺类型',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: yesNoOptions(),
+        placeholder: '请选择',
+      },
+      fieldName: 'is_best',
+      label: '是否推荐',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: yesNoOptions(),
+        placeholder: '请选择',
+      },
+      fieldName: 'offline_pay',
+      label: '线下支付',
+    },
+    {
+      component: 'Select',
+      componentProps: { clearable: true, options: [], placeholder: '请选择' },
+      fieldName: 'region_id',
+      label: '店铺区域',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+        placeholder: '请输入店铺名称/联系人/联系电话',
+      },
+      fieldName: 'keyword',
+      label: '店铺搜索',
+    },
+  ],
+};
+
+const gridOptions: VxeGridProps<PlatformMerchantRow> = {
+  columns: [
+    { field: 'mer_id', title: 'ID', width: 72 },
+    { field: 'mer_name', minWidth: 140, showOverflow: false, title: '店铺名称' },
+    {
+      field: 'owner_name',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 120,
+      showOverflow: false,
+      title: '所属商户',
+    },
+    {
+      field: 'real_name',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 100,
+      showOverflow: false,
+      title: '联系人',
+    },
+    {
+      field: 'type_name',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 120,
+      showOverflow: false,
+      title: '店铺类型',
+    },
+    {
+      field: 'deposit_state',
+      formatter: ({ cellValue }) => depositText(cellValue),
+      title: '保证金',
+      width: 88,
+    },
+    {
+      field: 'is_best',
+      slots: { default: 'recommend' },
+      title: '推荐',
+      width: 90,
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '开启/关闭',
+      width: 100,
+    },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatTime(cellValue),
+      minWidth: 160,
+      showOverflow: false,
+      title: '创建时间',
+    },
+    { field: 'sort', title: '排序', width: 72 },
+    {
+      field: 'mark',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 140,
+      showOverflow: false,
+      title: '备注',
+    },
+    platformListActionColumn({ width: 168 }),
+  ],
+  pagerConfig: {
+    enabled: true,
+    pageSize: 20,
+    pageSizes: [10, 20, 50, 100],
+  },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const data = await fetchPlatformMerchants({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status: statusFilter.value,
+          category_id: formValues?.category_id
+            ? Number(formValues.category_id)
+            : undefined,
+          type_id: formValues?.type_id ? Number(formValues.type_id) : undefined,
+          region_id: formValues?.region_id
+            ? Number(formValues.region_id)
+            : undefined,
+          is_best:
+            formValues?.is_best === 0 || formValues?.is_best === 1
+              ? Number(formValues.is_best)
+              : undefined,
+          offline_pay:
+            formValues?.offline_pay === 0 || formValues?.offline_pay === 1
+              ? Number(formValues.offline_pay)
+              : undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'mer_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
+  onConfirm: async () => {
+    if (drawerMode.value === 'view') {
+      switchToEditFromDetail();
+      return;
+    }
+    if (!form.mer_name?.trim()) {
+      ElMessage.warning('请填写店铺名称');
+      activeTab.value = 'basic';
+      return;
+    }
+    if (!form.category_id) {
+      ElMessage.warning('请选择店铺分类');
+      activeTab.value = 'basic';
+      return;
+    }
+    if (!form.type_id) {
+      ElMessage.warning('请选择店铺类型');
+      activeTab.value = 'basic';
+      return;
+    }
+    if (!form.goods_types?.length) {
+      ElMessage.warning('请选择商品类型');
+      activeTab.value = 'basic';
+      return;
+    }
+    if (!form.platform_category_ids?.length) {
+      ElMessage.warning('请选择平台分类');
+      activeTab.value = 'basic';
+      return;
+    }
+    if (!form.mer_account?.trim()) {
+      ElMessage.warning('请填写店铺账号');
+      activeTab.value = 'account';
+      return;
+    }
+    if (drawerMode.value === 'create' && !form.mer_password?.trim()) {
+      ElMessage.warning('请填写登录密码');
+      activeTab.value = 'account';
+      return;
+    }
+    if (drawerMode.value === 'create' && !form.mer_phone?.trim()) {
+      ElMessage.warning('请填写联系电话');
+      activeTab.value = 'account';
+      return;
+    }
+    const payload: PlatformMerchantSaveInput = {
+      ...form,
+      mer_name: form.mer_name.trim(),
+      real_name: form.real_name?.trim(),
+      mer_phone: form.mer_phone?.trim(),
+      mer_address: form.mer_address?.trim(),
+      mer_info: form.mer_info?.trim(),
+      mer_keyword: form.mer_keyword?.trim(),
+      mark: form.mark?.trim(),
+      mer_account: form.mer_account?.trim(),
+      mer_password: form.mer_password?.trim() || undefined,
+      sub_mchid: form.sub_mchid?.trim(),
+      applyment_id: form.applyment_id?.trim(),
+      business_id: form.business_id ? Number(form.business_id) : 0,
+      store_group_ids: [...(form.store_group_ids || [])],
+      goods_types: [...(form.goods_types || [])],
+      platform_category_ids: [...(form.platform_category_ids || [])],
+      mer_star: form.mer_star ?? 5,
+    };
+    shopDrawerApi.lock();
+    try {
+      if (editingId.value) {
+        await updatePlatformMerchant(editingId.value, payload);
+        ElMessage.success('店铺已更新');
+      } else {
+        await createPlatformMerchant(payload);
+        ElMessage.success('店铺已添加');
+      }
+      shopDrawerApi.close();
+      await loadCounts();
+      gridApi.reload();
+    } finally {
+      shopDrawerApi.unlock();
+    }
+  },
+});
+
+function setStatusTab(status: number) {
+  if (statusFilter.value === status) return;
+  statusFilter.value = status;
+  gridApi.reload();
 }
 
-function pageChange(page: number) {
-  query.page = page;
-  void load();
+function resetForm(row?: PlatformMerchantRow) {
+  editingId.value = row?.mer_id || 0;
+  headerSnapshot.value = row ? { ...row } : {};
+  const isCreate = !row;
+  Object.assign(form, {
+    mer_name: row?.mer_name || '',
+    business_id: row?.business_id || undefined,
+    real_name: row?.real_name || '',
+    mer_phone: row?.mer_phone || '',
+    mer_address: row?.mer_address || '',
+    mer_info: row?.mer_info || '',
+    mer_keyword: row?.mer_keyword || '',
+    mark: row?.mark || '',
+    category_id: row?.category_id || undefined,
+    type_id: row?.type_id || undefined,
+    region_id: row?.region_id || undefined,
+    is_best: row ? row.is_best === 1 : false,
+    offline_pay: row ? row.offline_pay === 1 : false,
+    is_trader: row ? row.is_trader === 1 : false,
+    is_audit: row ? row.is_audit !== 0 : isCreate ? false : true,
+    is_bro_room: row ? row.is_bro_room === 1 : false,
+    is_bro_goods: row ? row.is_bro_goods === 1 : false,
+    commission_switch: row ? row.commission_switch === 1 : false,
+    commission_rate: row?.commission_rate ?? 0,
+    mer_account: row?.mer_account || '',
+    mer_password: '',
+    sub_mchid: row?.sub_mchid || '',
+    applyment_id: row?.applyment_id || '',
+    care_count: row?.care_count ?? 0,
+    care_ficti: row?.care_ficti ?? 0,
+    sort: row?.sort ?? 0,
+    status: row ? isEnabled(row) : true,
+    store_group_ids: [...(row?.store_group_ids || [])],
+    goods_types: isCreate ? [] : parseGoodsTypes(row),
+    platform_category_ids: isCreate ? [] : parsePlatformCategoryIds(row),
+    mer_star: row?.mer_star ?? 5,
+  });
 }
 
-function limitChange(limit: number) {
-  query.limit = limit;
-  query.page = 1;
-  void load();
+function openCreate() {
+  drawerMode.value = 'create';
+  activeTab.value = 'basic';
+  resetForm();
+  shopDrawerApi
+    .setState({
+      title: '添加店铺',
+      showConfirmButton: true,
+      confirmText: '提交',
+    })
+    .open();
 }
+
+async function openEdit(row: PlatformMerchantRow) {
+  drawerMode.value = 'edit';
+  activeTab.value = 'basic';
+  resetForm(row);
+  shopDrawerApi
+    .setState({
+      loading: true,
+      title: `编辑店铺 · ${row.mer_name}`,
+      showConfirmButton: true,
+      confirmText: '完成',
+    })
+    .open();
+  try {
+    const detail = await fetchPlatformMerchant(row.mer_id);
+    resetForm(detail);
+    headerSnapshot.value = detail;
+  } finally {
+    shopDrawerApi.setState({ loading: false });
+  }
+}
+
+async function openDetail(row: PlatformMerchantRow) {
+  drawerMode.value = 'view';
+  activeTab.value = 'basic';
+  resetOperateLogQuery();
+  resetForm(row);
+  shopDrawerApi
+    .setState({
+      loading: true,
+      title: '店铺详情',
+      showConfirmButton: false,
+      cancelText: '关闭',
+    })
+    .open();
+  try {
+    const detail = await fetchPlatformMerchant(row.mer_id);
+    resetForm(detail);
+    headerSnapshot.value = detail;
+  } finally {
+    shopDrawerApi.setState({ loading: false });
+  }
+}
+
+function switchToEditFromDetail() {
+  if (!canManage.value || !editingId.value) return;
+  drawerMode.value = 'edit';
+  if (activeTab.value === 'logs') {
+    activeTab.value = 'basic';
+  }
+  shopDrawerApi.setState({
+    title: `编辑店铺 · ${form.mer_name || ''}`,
+    showConfirmButton: true,
+    confirmText: '完成',
+    cancelText: '取消',
+  });
+}
+
+function resetOperateLogQuery() {
+  operateLogs.value = [];
+  operateLogTotal.value = 0;
+  operateLogPage.value = 1;
+  operateLogLimit.value = 10;
+  operateLogTerminal.value = '';
+  operateLogDates.value = [];
+}
+
+async function loadOperateLogs() {
+  if (drawerMode.value !== 'view' || !editingId.value) return;
+  operateLogLoading.value = true;
+  try {
+    const range = Array.isArray(operateLogDates.value)
+      ? operateLogDates.value
+      : [];
+    const data = await fetchMerchantOperateLogs(editingId.value, {
+      page: operateLogPage.value,
+      limit: operateLogLimit.value,
+      terminal: operateLogTerminal.value || undefined,
+      start_date: range[0],
+      end_date: range[1],
+    });
+    operateLogs.value = data.list || [];
+    operateLogTotal.value = data.total || 0;
+  } catch {
+    operateLogs.value = [];
+    operateLogTotal.value = 0;
+  } finally {
+    operateLogLoading.value = false;
+  }
+}
+
+function onOperateLogPageChange(page: number) {
+  operateLogPage.value = page;
+  void loadOperateLogs();
+}
+
+function onOperateLogSizeChange(size: number) {
+  operateLogLimit.value = size;
+  operateLogPage.value = 1;
+  void loadOperateLogs();
+}
+
+function onOperateLogFilterChange() {
+  operateLogPage.value = 1;
+  void loadOperateLogs();
+}
+
+function openLogin(row: PlatformMerchantRow) {
+  ElMessage.info(
+    `「${row.mer_name}」店铺登录需签发商户后台会话，当前环境尚未接通一键登录。`,
+  );
+}
+
+function onDetailMoreCommand(command: string) {
+  if (!editingId.value) return;
+  const row = {
+    mer_id: editingId.value,
+    mer_name: form.mer_name || headerSnapshot.value.mer_name || '',
+    status: form.status ? 1 : 0,
+    mer_state: form.status ? 1 : 0,
+    is_best: form.is_best ? 1 : 0,
+  } as PlatformMerchantRow;
+  if (command === 'login') {
+    openLogin(row);
+    return;
+  }
+  if (command === 'toggle-status' && canManage.value) {
+    void (async () => {
+      const enabled = !form.status;
+      try {
+        await confirm({
+          content: `${enabled ? '开启' : '关闭'}后将立即影响该店铺的经营状态，是否继续？`,
+          icon: 'warning',
+          title: '提示',
+        });
+        await updatePlatformMerchantStatus(editingId.value, enabled);
+        form.status = enabled;
+        headerSnapshot.value = {
+          ...headerSnapshot.value,
+          status: enabled ? 1 : 0,
+          mer_state: enabled ? 1 : 0,
+        };
+        ElMessage.success('店铺状态已更新');
+        await loadCounts();
+        gridApi.reload();
+      } catch {
+        // cancelled or failed
+      }
+    })();
+  }
+}
+
+watch(activeTab, (tab) => {
+  if (tab === 'logs' && drawerMode.value === 'view') {
+    void loadOperateLogs();
+  }
+});
 
 async function changeStatus(row: PlatformMerchantRow, enabled: boolean) {
-  const before = row.status === 1 && row.mer_state === 1;
+  const before = isEnabled(row);
   try {
-    await ElMessageBox.confirm(
-      `${enabled ? '开启' : '关闭'}后将立即影响该店铺的经营状态，是否继续？`,
-      `${enabled ? '开启' : '关闭'}店铺`,
-      { cancelButtonText: '取消', confirmButtonText: '确定', type: 'warning' },
-    );
+    await confirm({
+      content: `${enabled ? '开启' : '关闭'}后将立即影响该店铺的经营状态，是否继续？`,
+      icon: 'warning',
+      title: '提示',
+    });
     await updatePlatformMerchantStatus(row.mer_id, enabled);
     row.status = enabled ? 1 : 0;
     row.mer_state = enabled ? 1 : 0;
     ElMessage.success('店铺状态已更新');
+    await loadCounts();
+    if (Number(isEnabled(row)) !== statusFilter.value) {
+      gridApi.reload();
+    }
   } catch {
     row.status = before ? 1 : 0;
     row.mer_state = before ? 1 : 0;
   }
 }
 
-async function openDetail(row: PlatformMerchantRow) {
-  detailOpen.value = true;
-  detailLoading.value = true;
-  detail.value = undefined;
+async function changeRecommend(row: PlatformMerchantRow, enabled: boolean) {
+  const before = row.is_best === 1;
   try {
-    detail.value = await fetchPlatformMerchant(row.mer_id);
-  } finally {
-    detailLoading.value = false;
+    await updatePlatformMerchantRecommend(row.mer_id, enabled);
+    row.is_best = enabled ? 1 : 0;
+    ElMessage.success(enabled ? '已设为推荐' : '已取消推荐');
+  } catch {
+    row.is_best = before ? 1 : 0;
   }
 }
 
+function syncFilterSelectOptions() {
+  gridApi.formApi?.updateSchema([
+    {
+      fieldName: 'category_id',
+      componentProps: {
+        clearable: true,
+        options: categories.value.map((c) => ({
+          label: c.category_name,
+          value: c.merchant_category_id,
+        })),
+        placeholder: '请选择',
+      },
+    },
+    {
+      fieldName: 'type_id',
+      componentProps: {
+        clearable: true,
+        options: types.value.map((t) => ({ label: t.name, value: t.id })),
+        placeholder: '请选择',
+      },
+    },
+    {
+      fieldName: 'region_id',
+      componentProps: {
+        clearable: true,
+        options: regions.value,
+        placeholder: '请选择',
+      },
+    },
+  ]);
+}
+
 onMounted(async () => {
-  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
-  canManageStatus.value = permissions.includes('merchant.status.manage');
+  const permissions = await getAccessCodesApi();
+  canManage.value = permissions.includes('merchant.status.manage');
+  await Promise.all([loadCounts(), loadFilterOptions()]);
+  syncFilterSelectOptions();
 });
 </script>
 
 <template>
-  <Page
-    title="店铺管理"
-    description="集中查看店铺入驻、联系人和经营状态；启停操作会立即影响店铺经营。"
-    content-class="merchant-list-page"
-  >
-    <el-card class="merchant-filter-card" shadow="never">
-      <div class="section-heading">
-        <div>
-          <h2>筛选条件</h2>
-          <p>按店铺信息和经营状态快速定位记录</p>
+  <Page auto-content-height>
+    <Grid>
+      <template #toolbar-actions>
+        <div class="merchant-toolbar">
+          <div class="merchant-status-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              class="merchant-status-tabs__item"
+              :aria-selected="statusFilter === 1"
+              :class="{ 'is-active': statusFilter === 1 }"
+              @click="setStatusTab(1)"
+            >
+              正常开启的店铺({{ openCount }})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="merchant-status-tabs__item"
+              :aria-selected="statusFilter === 0"
+              :class="{ 'is-active': statusFilter === 0 }"
+              @click="setStatusTab(0)"
+            >
+              已关闭店铺({{ closedCount }})
+            </button>
+          </div>
+          <div class="merchant-toolbar__actions">
+            <ElButton
+              v-if="canManage"
+              :icon="Plus"
+              type="primary"
+              @click="openCreate"
+            >
+              添加店铺
+            </ElButton>
+          </div>
         </div>
-      </div>
-      <el-form class="merchant-filter-form" label-position="top" @submit.prevent="search">
-        <el-form-item label="店铺搜索">
-          <el-input
-            v-model="query.keyword"
-            clearable
-            placeholder="店铺名称、联系人或手机号"
-            @keyup.enter="search"
-          />
-        </el-form-item>
-        <el-form-item label="经营状态">
-          <el-select v-model="query.status" placeholder="全部状态">
-            <el-option v-for="item in statusOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item class="filter-actions" label=" ">
-          <el-button type="primary" @click="search">搜索</el-button>
-          <el-button @click="reset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      </template>
 
-    <el-card class="merchant-table-card" shadow="never">
-      <div class="table-heading">
-        <div>
-          <h2>店铺列表</h2>
-          <p>共 {{ total }} 家店铺</p>
+      <template #recommend="{ row }">
+        <ElSwitch
+          v-if="canManage"
+          :model-value="row.is_best === 1"
+          @change="(enabled: string | number | boolean) => changeRecommend(row, Boolean(enabled))"
+        />
+        <ElTag v-else :type="row.is_best === 1 ? 'success' : 'info'">
+          {{ row.is_best === 1 ? '是' : '否' }}
+        </ElTag>
+      </template>
+
+      <template #status="{ row }">
+        <ElSwitch
+          v-if="canManage"
+          :model-value="isEnabled(row)"
+          @change="(enabled: string | number | boolean) => changeStatus(row, Boolean(enabled))"
+        />
+        <ElTag v-else :type="isEnabled(row) ? 'success' : 'info'">
+          {{ statusText(row) }}
+        </ElTag>
+      </template>
+
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openLogin(row)">登录</ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          type="primary"
+          @click="openEdit(row)"
+        >
+          编辑
+        </ElButton>
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
+      </template>
+    </Grid>
+
+    <ShopDrawer>
+      <div class="shop-drawer">
+        <div v-if="drawerMode !== 'create'" class="shop-drawer__header">
+          <div class="shop-drawer__brand-row">
+            <div class="shop-drawer__brand">
+              <div class="shop-drawer__avatar">
+                <Shop />
+              </div>
+              <div class="shop-drawer__titles">
+                <div class="shop-drawer__name-row">
+                  <span class="shop-drawer__name">
+                    {{ form.mer_name || '未命名店铺' }}
+                  </span>
+                  <ElTag
+                    v-if="selectedType?.name || headerSnapshot.type_name"
+                    size="small"
+                    type="danger"
+                  >
+                    {{ selectedType?.name || headerSnapshot.type_name }}
+                  </ElTag>
+                </div>
+                <div class="shop-drawer__sub">
+                  {{ selectedBusinessLabel }}
+                </div>
+              </div>
+            </div>
+            <div v-if="drawerMode === 'view'" class="shop-drawer__actions">
+              <ElButton
+                v-if="canManage"
+                type="primary"
+                @click="switchToEditFromDetail"
+              >
+                编辑
+              </ElButton>
+              <ElDropdown trigger="click" @command="onDetailMoreCommand">
+                <ElButton :icon="MoreFilled" />
+                <template #dropdown>
+                  <ElDropdownMenu>
+                    <ElDropdownItem command="login">登录店铺</ElDropdownItem>
+                    <ElDropdownItem
+                      v-if="canManage"
+                      command="toggle-status"
+                    >
+                      {{ form.status ? '关闭店铺' : '开启店铺' }}
+                    </ElDropdownItem>
+                  </ElDropdownMenu>
+                </template>
+              </ElDropdown>
+            </div>
+          </div>
+          <div class="shop-drawer__meta">
+            <div class="shop-drawer__meta-item">
+              <span class="label">联系人</span>
+              <span class="value">{{ form.real_name || '—' }}</span>
+            </div>
+            <div class="shop-drawer__meta-item">
+              <span class="label">联系电话</span>
+              <span class="value">{{ form.mer_phone || '—' }}</span>
+            </div>
+            <div class="shop-drawer__meta-item">
+              <span class="label">状态</span>
+              <span class="value">{{ form.status ? '开启' : '关闭' }}</span>
+            </div>
+            <div class="shop-drawer__meta-item">
+              <span class="label">入驻时间</span>
+              <span class="value">{{ formatTime(headerSnapshot.create_time) }}</span>
+            </div>
+          </div>
         </div>
-        <el-button plain @click="load">刷新列表</el-button>
-      </div>
-      <el-table class="merchant-table" v-loading="loading" :data="rows" row-key="mer_id">
-        <el-table-column align="center" label="ID" prop="mer_id" width="80" />
-        <el-table-column label="店铺名称" min-width="190" prop="mer_name" show-overflow-tooltip />
-        <el-table-column label="联系人" min-width="130">
-          <template #default="{ row }">{{ contact(row) }}</template>
-        </el-table-column>
-        <el-table-column label="联系电话" min-width="150">
-          <template #default="{ row }">{{ phone(row) }}</template>
-        </el-table-column>
-        <el-table-column label="店铺地址" min-width="220" prop="mer_address" show-overflow-tooltip />
-        <el-table-column align="center" label="入驻审核" width="108">
-          <template #default="{ row }">
-            <el-tag :type="row.is_audit === 1 ? 'success' : 'info'" effect="light">
-              {{ auditText(row) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column align="center" label="经营状态" width="116">
-          <template #default="{ row }">
-            <el-switch
-              v-if="canManageStatus"
-              :model-value="isEnabled(row)"
-              active-text="启用"
-              inactive-text="停用"
-              inline-prompt
-              width="52"
-              @change="(enabled) => changeStatus(row, Boolean(enabled))"
-            />
-            <el-tag v-else :type="isEnabled(row) ? 'success' : 'info'">{{ statusText(row) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" min-width="180">
-          <template #default="{ row }">{{ formatTime(row.create_time) }}</template>
-        </el-table-column>
-        <el-table-column align="center" fixed="right" label="操作" width="94">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <ElEmpty v-if="!loading && rows.length === 0" description="暂无店铺数据" />
-      <div class="table-footer">
-        <el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10, 20, 50, 100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="pageChange" @size-change="limitChange" />
-      </div>
-    </el-card>
 
-    <ElDrawer v-model="detailOpen" :title="drawerTitle" size="520px">
-      <div v-loading="detailLoading">
-        <ElDescriptions v-if="detail" :column="1" border>
-          <ElDescriptionsItem label="店铺 ID">{{ detail.mer_id }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="店铺名称">{{ detail.mer_name }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="联系人">{{ contact(detail) }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="联系电话">{{ phone(detail) }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="店铺地址">{{ detail.mer_address || '—' }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="经营状态">{{ statusText(detail) }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="审核状态">{{ auditText(detail) }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="备注">{{ detail.mark || '—' }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="店铺简介">{{ detail.mer_info || '—' }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="创建时间">{{ formatTime(detail.create_time) }}</ElDescriptionsItem>
-        </ElDescriptions>
+        <ElTabs v-model="activeTab" class="shop-drawer__tabs">
+          <ElTabPane label="基本信息" name="basic">
+            <template v-if="drawerMode === 'view'">
+              <div class="shop-section">
+                <div class="shop-section__title">基础信息</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">店铺名称</span>
+                    <span class="value">{{ displayOrDash(form.mer_name) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺类型</span>
+                    <span class="value">{{ form.is_trader ? '自营' : '非自营' }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺分类</span>
+                    <span class="value">
+                      {{
+                        selectedCategory?.category_name ||
+                        headerSnapshot.category_name ||
+                        '—'
+                      }}
+                      <span v-if="categoryCommissionHint" class="hint-danger">
+                        {{ categoryCommissionHint }}
+                      </span>
+                    </span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺分组</span>
+                    <span class="value">{{ selectedStoreGroupLabels }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺区域</span>
+                    <span class="value">{{ selectedRegionLabel }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">所属商户</span>
+                    <span class="value">{{ selectedBusinessLabel }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">推荐店铺</span>
+                    <span class="value">{{ yesNo(form.is_best) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺类型</span>
+                    <span class="value">
+                      {{ selectedType?.name || headerSnapshot.type_name || '—' }}
+                    </span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">平台分类</span>
+                    <span class="value">{{ selectedPlatformCategoryLabels }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">商品类型</span>
+                    <span class="value">{{ selectedGoodsTypeLabels }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺状态</span>
+                    <span class="value">{{ form.status ? '开启' : '关闭' }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺星级</span>
+                    <span class="value">{{ form.mer_star || 5 }}星</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">排序</span>
+                    <span class="value">{{ form.sort ?? 0 }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">更新时间</span>
+                    <span class="value">{{ formatTime(headerSnapshot.create_time) }}</span>
+                  </div>
+                  <div class="shop-desc shop-desc--full">
+                    <span class="label">备注</span>
+                    <span class="value">{{ displayOrDash(form.mark) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+            <div class="shop-section">
+              <div class="shop-section__title">基础信息</div>
+              <ElForm
+                class="shop-form-columns"
+                label-position="top"
+                :disabled="isReadonly"
+              >
+                <div class="shop-form-col">
+                  <ElFormItem label="店铺名称" required>
+                    <ElInput v-model="form.mer_name" maxlength="128" />
+                    <div class="field-help">
+                      支持中英文、数字与符号，将作为店铺展示名称
+                    </div>
+                  </ElFormItem>
+                  <ElFormItem label="所属商户">
+                    <ElCascader
+                      v-model="form.business_id"
+                      :options="businessOptions"
+                      :props="{
+                        checkStrictly: true,
+                        emitPath: false,
+                        value: 'value',
+                        label: 'label',
+                        children: 'children',
+                      }"
+                      clearable
+                      filterable
+                      class="w-full"
+                      placeholder="请选择所属商户"
+                    />
+                    <div class="field-help">
+                      选择店铺归属的商户主体，决定店铺管理权限
+                    </div>
+                  </ElFormItem>
+                  <ElFormItem label="店铺分类" required>
+                    <ElSelect v-model="form.category_id" clearable class="w-full">
+                      <ElOption
+                        v-for="item in categories"
+                        :key="item.merchant_category_id"
+                        :label="item.category_name"
+                        :value="item.merchant_category_id"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="平台分类" required>
+                    <ElSelect
+                      v-model="form.platform_category_ids"
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      multiple
+                      class="w-full"
+                      placeholder="请选择平台分类"
+                    >
+                      <ElOption
+                        v-for="item in platformCategoryOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="商品类型" required>
+                    <ElCheckboxGroup v-model="form.goods_types">
+                      <ElCheckbox
+                        v-for="item in GOODS_TYPE_OPTIONS"
+                        :key="item.value"
+                        :label="item.value"
+                      >
+                        {{ item.label }}
+                      </ElCheckbox>
+                    </ElCheckboxGroup>
+                  </ElFormItem>
+                  <ElFormItem label="店铺类型" required>
+                    <ElSelect v-model="form.type_id" clearable class="w-full">
+                      <ElOption
+                        v-for="item in types"
+                        :key="item.id"
+                        :label="item.name"
+                        :value="item.id"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="推荐店铺">
+                    <ElSwitch v-model="form.is_best" />
+                  </ElFormItem>
+                  <ElFormItem label="备注">
+                    <ElInput
+                      v-model="form.mark"
+                      :rows="2"
+                      maxlength="500"
+                      type="textarea"
+                    />
+                  </ElFormItem>
+                </div>
+                <div class="shop-form-col">
+                  <ElFormItem label="店铺地址">
+                    <ElInput v-model="form.mer_address" maxlength="255" />
+                  </ElFormItem>
+                  <ElFormItem label="店铺分组">
+                    <ElSelect
+                      v-model="form.store_group_ids"
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      multiple
+                      class="w-full"
+                    >
+                      <ElOption
+                        v-for="item in storeGroupOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="店铺区域">
+                    <ElSelect v-model="form.region_id" clearable class="w-full">
+                      <ElOption
+                        v-for="item in regions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="店铺星级">
+                    <ElSelect v-model="form.mer_star" class="w-full">
+                      <ElOption
+                        v-for="item in STAR_OPTIONS"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </ElSelect>
+                  </ElFormItem>
+                  <ElFormItem label="自营类型">
+                    <ElRadioGroup v-model="form.is_trader">
+                      <ElRadio :label="true">自营</ElRadio>
+                      <ElRadio :label="false">非自营</ElRadio>
+                    </ElRadioGroup>
+                  </ElFormItem>
+                  <ElFormItem label="排序">
+                    <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
+                    <div class="field-help">数值越小越靠前。</div>
+                  </ElFormItem>
+                  <ElFormItem label="店铺状态">
+                    <ElSwitch v-model="form.status" />
+                  </ElFormItem>
+                </div>
+              </ElForm>
+            </div>
+            </template>
+          </ElTabPane>
+
+          <ElTabPane label="经营信息" name="operate">
+            <template v-if="drawerMode === 'view'">
+              <div class="shop-section">
+                <div class="shop-section__title">费用信息</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">手续费单独设置</span>
+                    <span class="value">{{ form.commission_switch ? '开启' : '关闭' }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">手续费</span>
+                    <span class="value">
+                      {{ Number(form.commission_rate || 0).toFixed(2) }}%
+                      <span class="hint-danger">
+                        （注：此处如未设置手续费，系统会自动读取店铺分类下对应手续费；此处已设置，则优先以此处设置为准）
+                      </span>
+                    </span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">店铺保证金</span>
+                    <span class="value">{{ marginAmountText }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">保证金支付状态</span>
+                    <span class="value">
+                      {{ depositStatusText }}
+                      <span v-if="depositNeedsTopUp" class="hint-danger">
+                        （需补缴）
+                      </span>
+                    </span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">保证金余额</span>
+                    <span class="value">
+                      {{ Number(headerSnapshot.deposit_available ?? 0).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="shop-section">
+                <div class="shop-section__title">经营数据</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">实际关注人数</span>
+                    <span class="value">{{ form.care_count ?? 0 }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">已关注人数</span>
+                    <span class="value">{{ form.care_ficti ?? 0 }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="shop-section">
+                <div class="shop-section__title">审核信息</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">商品审核</span>
+                    <span class="value">{{ auditText(!!form.is_audit) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">直播间审核</span>
+                    <span class="value">{{ auditText(!!form.is_bro_room) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">直播商品</span>
+                    <span class="value">{{ auditText(!!form.is_bro_goods) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">线下支付</span>
+                    <span class="value">{{ form.offline_pay ? '开启' : '关闭' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="shop-section">
+                <div class="shop-section__title">其他信息</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">搜索店铺关键字</span>
+                    <span class="value">{{ displayOrDash(form.mer_keyword) }}</span>
+                  </div>
+                  <div class="shop-desc shop-desc--full">
+                    <span class="label">店铺简介</span>
+                    <span class="value">{{ displayOrDash(form.mer_info) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+            <div class="shop-section">
+              <div class="shop-section__title">费用信息</div>
+              <div
+                v-if="drawerMode !== 'create'"
+                class="shop-kv-grid"
+              >
+                <div class="shop-kv">
+                  <span class="label">店铺保证金</span>
+                  <span class="value">
+                    {{
+                      selectedType?.is_margin || headerSnapshot.type_is_margin
+                        ? `${selectedType?.margin ?? headerSnapshot.type_margin ?? 0} 元`
+                        : '无'
+                    }}
+                  </span>
+                </div>
+                <div class="shop-kv">
+                  <span class="label">支付状态</span>
+                  <span class="value">{{ depositText(headerSnapshot.deposit_state) }}</span>
+                </div>
+                <div class="shop-kv">
+                  <span class="label">保证金余额</span>
+                  <span class="value">
+                    {{ headerSnapshot.deposit_available ?? 0 }} 元
+                  </span>
+                </div>
+              </div>
+              <div class="shop-kv shop-kv--form">
+                <span class="label">手续费设置</span>
+                <div class="inline-fee" :class="{ 'is-disabled': isReadonly }">
+                  <ElSwitch
+                    v-model="form.commission_switch"
+                    :disabled="isReadonly"
+                  />
+                  <ElInputNumber
+                    v-model="form.commission_rate"
+                    :disabled="isReadonly || !form.commission_switch"
+                    :min="0"
+                    :max="100"
+                    :precision="2"
+                  />
+                  <span>%</span>
+                </div>
+                <div class="field-help">
+                  开启后按店铺独立手续费；关闭则沿用分类默认比例。
+                </div>
+              </div>
+            </div>
+
+            <div class="shop-section">
+              <div class="shop-section__title">审核信息</div>
+              <div class="shop-audit-grid">
+                <div class="shop-audit">
+                  <div class="shop-audit__row">
+                    <span>商品审核</span>
+                    <ElSwitch v-model="form.is_audit" :disabled="isReadonly" />
+                  </div>
+                  <div class="field-help">开启后新增商品需平台审核。</div>
+                </div>
+                <div class="shop-audit">
+                  <div class="shop-audit__row">
+                    <span>直播间审核</span>
+                    <ElSwitch v-model="form.is_bro_room" :disabled="isReadonly" />
+                  </div>
+                  <div class="field-help">开启后创建直播间需平台审核。</div>
+                </div>
+                <div class="shop-audit">
+                  <div class="shop-audit__row">
+                    <span>直播商品审核</span>
+                    <ElSwitch v-model="form.is_bro_goods" :disabled="isReadonly" />
+                  </div>
+                  <div class="field-help">开启后直播商品需平台审核。</div>
+                </div>
+                <div class="shop-audit">
+                  <div class="shop-audit__row">
+                    <span>线下支付</span>
+                    <ElSwitch v-model="form.offline_pay" :disabled="isReadonly" />
+                  </div>
+                  <div class="field-help">开启后支持线下收款核销。</div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="drawerMode !== 'create'" class="shop-section">
+              <div class="shop-section__title">经营数据</div>
+              <ElForm class="shop-form-grid" label-position="top" :disabled="isReadonly">
+                <ElFormItem label="实际关注人数">
+                  <ElInputNumber v-model="form.care_count" :min="0" class="w-full" />
+                </ElFormItem>
+                <ElFormItem label="已关注人数（含虚拟）">
+                  <ElInputNumber v-model="form.care_ficti" :min="0" class="w-full" />
+                </ElFormItem>
+              </ElForm>
+            </div>
+
+            <div class="shop-section">
+              <div class="shop-section__title">其他信息</div>
+              <ElForm label-position="top" :disabled="isReadonly">
+                <ElFormItem label="店铺关键字">
+                  <ElInput v-model="form.mer_keyword" maxlength="255" />
+                  <div class="field-help">
+                    用于店铺搜索与 SEO，多个关键字可用空格分隔。
+                  </div>
+                </ElFormItem>
+                <ElFormItem v-if="drawerMode !== 'create'" label="店铺简介">
+                  <ElInput
+                    v-model="form.mer_info"
+                    :rows="3"
+                    maxlength="1000"
+                    type="textarea"
+                  />
+                </ElFormItem>
+              </ElForm>
+            </div>
+            </template>
+          </ElTabPane>
+
+          <ElTabPane label="账号信息" name="account">
+            <template v-if="drawerMode === 'view'">
+              <div class="shop-section">
+                <div class="shop-section__title">登录账号</div>
+                <div class="shop-desc-grid">
+                  <div class="shop-desc">
+                    <span class="label">店铺账号</span>
+                    <span class="value">{{ displayOrDash(form.mer_account) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">登录密码</span>
+                    <span class="value">**********</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">联系人</span>
+                    <span class="value">{{ displayOrDash(form.real_name) }}</span>
+                  </div>
+                  <div class="shop-desc">
+                    <span class="label">联系电话</span>
+                    <span class="value">{{ displayOrDash(form.mer_phone) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+            <div class="shop-section">
+              <div class="shop-section__title">登录账号</div>
+              <ElForm class="shop-form-grid" label-position="top" :disabled="isReadonly">
+                <ElFormItem label="店铺账号" required>
+                  <ElInput
+                    v-model="form.mer_account"
+                    maxlength="64"
+                    :disabled="isReadonly || drawerMode === 'edit'"
+                  />
+                  <div class="field-help">用于店铺管理员登录后台，创建后不可随意变更。</div>
+                </ElFormItem>
+                <ElFormItem
+                  v-if="drawerMode === 'create'"
+                  label="登录密码"
+                  required
+                >
+                  <ElInput
+                    v-model="form.mer_password"
+                    maxlength="32"
+                    show-password
+                    type="password"
+                  />
+                  <div class="field-help">建议 8-16 位，含字母与数字。</div>
+                </ElFormItem>
+                <ElFormItem label="联系人">
+                  <ElInput v-model="form.real_name" maxlength="64" />
+                </ElFormItem>
+                <ElFormItem
+                  label="联系电话"
+                  :required="drawerMode === 'create'"
+                >
+                  <ElInput v-model="form.mer_phone" maxlength="32" />
+                </ElFormItem>
+              </ElForm>
+            </div>
+
+            <div class="shop-section">
+              <div class="shop-section__title">财务账号</div>
+              <ElForm class="shop-form-grid" label-position="top" :disabled="isReadonly">
+                <ElFormItem label="平台收付通">
+                  <ElInput v-model="form.sub_mchid" maxlength="64" />
+                  <div class="field-help">微信收付通 / 分账子商户号。</div>
+                </ElFormItem>
+                <ElFormItem label="服务商特约店铺">
+                  <ElInput v-model="form.applyment_id" maxlength="64" />
+                  <div class="field-help">服务商特约商户申请单号或标识。</div>
+                </ElFormItem>
+              </ElForm>
+            </div>
+            </template>
+          </ElTabPane>
+
+          <ElTabPane
+            v-if="drawerMode === 'view'"
+            label="操作记录"
+            name="logs"
+          >
+            <div class="shop-log-filters">
+              <ElSelect
+                v-model="operateLogTerminal"
+                clearable
+                placeholder="操作端"
+                style="width: 160px"
+                @change="onOperateLogFilterChange"
+              >
+                <ElOption label="平台操作" value="platform" />
+                <ElOption label="商户操作" value="merchant" />
+              </ElSelect>
+              <ElDatePicker
+                v-model="operateLogDates"
+                type="daterange"
+                value-format="YYYY-MM-DD"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+                @change="onOperateLogFilterChange"
+              />
+            </div>
+            <ElTable
+              v-loading="operateLogLoading"
+              :data="operateLogs"
+              border
+              class="shop-log-table"
+            >
+              <ElTableColumn
+                type="index"
+                label="序号"
+                width="70"
+                :index="(index: number) => (operateLogPage - 1) * operateLogLimit + index + 1"
+              />
+              <ElTableColumn prop="action_label" label="操作记录" min-width="160" />
+              <ElTableColumn prop="terminal" label="操作端" width="120" />
+              <ElTableColumn prop="role_label" label="操作角色" width="140" />
+              <ElTableColumn label="操作人" min-width="160">
+                <template #default="{ row }">
+                  {{ row.operator_name }}/ID:{{ row.operator_id }}
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="操作时间" width="180">
+                <template #default="{ row }">
+                  {{ formatTime(row.created_at) }}
+                </template>
+              </ElTableColumn>
+            </ElTable>
+            <div class="shop-log-pagination">
+              <ElPagination
+                background
+                layout="total, prev, pager, next, jumper"
+                :current-page="operateLogPage"
+                :page-size="operateLogLimit"
+                :total="operateLogTotal"
+                @current-change="onOperateLogPageChange"
+                @size-change="onOperateLogSizeChange"
+              />
+            </div>
+          </ElTabPane>
+        </ElTabs>
       </div>
-    </ElDrawer>
+    </ShopDrawer>
   </Page>
 </template>
 
 <style scoped>
-.merchant-list-page {
+.merchant-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
   min-width: 0;
 }
 
-.merchant-filter-card,
-.merchant-table-card {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
+.merchant-status-tabs {
+  display: flex;
+  gap: 28px;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
-.merchant-filter-card {
-  margin-bottom: 16px;
+.merchant-status-tabs__item {
+  margin-bottom: -1px;
+  padding: 10px 2px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: hsl(var(--foreground) / 70%);
+  font-size: 14px;
+  line-height: 22px;
+  cursor: pointer;
 }
 
-.section-heading,
-.table-heading {
+.merchant-status-tabs__item:hover {
+  color: hsl(var(--primary));
+}
+
+.merchant-status-tabs__item.is-active {
+  border-bottom-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.merchant-toolbar__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.shop-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+
+.shop-drawer__header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.shop-drawer__brand-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
-.section-heading {
+.shop-drawer__brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.shop-drawer__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  align-items: center;
+}
+
+.shop-drawer__avatar {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: hsl(var(--primary) / 12%);
+  color: hsl(var(--primary));
+  font-size: 22px;
+}
+
+.shop-drawer__name-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.shop-drawer__name {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.shop-drawer__sub {
+  margin-top: 2px;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+}
+
+.shop-drawer__meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.shop-drawer__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shop-drawer__meta-item .label,
+.shop-kv .label,
+.shop-desc .label,
+.field-help {
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.shop-drawer__meta-item .value,
+.shop-kv .value,
+.shop-desc .value {
+  font-size: 14px;
+  line-height: 22px;
+  word-break: break-word;
+}
+
+.shop-desc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+}
+
+.shop-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shop-desc--full {
+  grid-column: 1 / -1;
+}
+
+.hint-danger {
+  margin-left: 6px;
+  color: hsl(var(--destructive));
+  font-size: 12px;
+}
+
+.shop-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
-.section-heading h2,
-.table-heading h2 {
-  margin: 0;
-  color: var(--el-text-color-primary);
-  font-size: 16px;
+.shop-log-table {
+  width: 100%;
+}
+
+.shop-log-table :deep(thead th) {
+  background: hsl(var(--primary) / 8%) !important;
+}
+
+.shop-log-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.shop-section {
+  margin-bottom: 20px;
+}
+
+.shop-section__title {
+  position: relative;
+  margin-bottom: 14px;
+  padding-left: 10px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 24px;
 }
 
-.section-heading p,
-.table-heading p {
-  margin: 4px 0 0;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 20px;
+.shop-section__title::before {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: hsl(var(--primary));
+  content: '';
 }
 
-.merchant-filter-form {
+.shop-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+}
+
+.shop-form-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+}
+
+.shop-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shop-form-columns :deep(.el-checkbox-group) {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px 16px;
+  gap: 8px 16px;
 }
 
-.merchant-filter-form :deep(.el-form-item) {
-  margin: 0;
+.shop-form-grid :deep(.span-2),
+.shop-form-grid .span-2 {
+  grid-column: 1 / -1;
 }
 
-.merchant-filter-form :deep(.el-form-item__label) {
-  height: auto;
-  margin-bottom: 6px;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  line-height: 20px;
+.shop-kv-grid,
+.shop-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
 }
 
-.merchant-filter-form :deep(.el-input),
-.merchant-filter-form :deep(.el-select) {
-  width: 260px;
-}
-
-.merchant-filter-form .filter-actions :deep(.el-form-item__label) {
-  color: transparent;
-}
-
-.merchant-table-card :deep(.el-card__body) {
-  padding: 16px 18px 14px;
-}
-
-.table-heading {
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.merchant-table {
-  width: 100%;
-}
-
-.merchant-table :deep(.el-table__header th.el-table__cell) {
-  height: 48px;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.merchant-table :deep(.el-table__cell) {
-  height: 58px;
-  padding: 8px 0;
-}
-
-.table-footer {
+.shop-kv {
   display: flex;
-  justify-content: flex-end;
-  min-height: 40px;
-  margin-top: 16px;
-  overflow-x: auto;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.table-footer :deep(.el-pagination) {
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
+.inline-fee {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-@media (max-width: 960px) {
-  .merchant-filter-form :deep(.el-input),
-  .merchant-filter-form :deep(.el-select) {
-    width: min(100%, 320px);
-  }
-
-  .merchant-filter-form :deep(.el-form-item) {
-    flex: 1 1 240px;
-  }
-
-  .merchant-filter-form .filter-actions {
-    flex: 0 0 auto;
-  }
+.shop-audit {
+  padding: 12px 14px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
 }
 
-@media (max-width: 640px) {
-  .merchant-filter-card :deep(.el-card__body),
-  .merchant-table-card :deep(.el-card__body) {
-    padding: 14px;
-  }
+.shop-audit__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
 
-  .merchant-filter-form :deep(.el-form-item),
-  .merchant-filter-form :deep(.el-input),
-  .merchant-filter-form :deep(.el-select) {
-    width: 100%;
-  }
-
-  .table-heading {
-    align-items: flex-start;
+@media (max-width: 900px) {
+  .shop-drawer__meta,
+  .shop-form-grid,
+  .shop-form-columns,
+  .shop-kv-grid,
+  .shop-audit-grid,
+  .shop-desc-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

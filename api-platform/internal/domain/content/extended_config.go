@@ -10,24 +10,14 @@ import (
 )
 
 const (
-	StorageConfigKey           = "storage_config"
-	UserSetupConfigKey         = "user_setup_config"
-	TransferSettingsConfigKey  = "transfer_settings_config"
-	RoutineAppConfigKey        = "routine_app_config"
-	WechatReplyConfigKey       = "wechat_reply_config"
-	WechatMenusConfigKey       = "wechat_menus_config"
-	WechatTemplateConfigKey    = "wechat_template_config"
-	WechatNewsConfigKey        = "wechat_news_config"
-	MarketingDiscountsCacheKey = "marketing_discounts"
-	MarketingApplicationKey    = "marketing_application"
-	MarketingAtmosphereKey     = "marketing_atmosphere"
-	MarketingBorderKey         = "marketing_border"
-	MarketingTopicKey          = "marketing_topic"
-	MaintainBackupCacheKey     = "maintain_backup"
-	MaintainGroupDataCacheKey  = "maintain_group_data"
-	MaintainHotSearchCacheKey  = "maintain_hot_search"
-	DiySystemFormCacheKey      = "diy_system_form"
-	TransferRecordCacheKey     = "finance_transfer_record"
+	StorageConfigKey          = "storage_config"
+	UserSetupConfigKey        = "user_setup_config"
+	TransferSettingsConfigKey = "transfer_settings_config"
+	RoutineAppConfigKey       = "routine_app_config"
+	WechatReplyConfigKey      = "wechat_reply_config"
+	WechatMenusConfigKey      = "wechat_menus_config"
+	WechatTemplateConfigKey   = "wechat_template_config"
+	WechatNewsConfigKey       = "wechat_news_config"
 )
 
 var appStubConfigKeys = map[string]struct{}{

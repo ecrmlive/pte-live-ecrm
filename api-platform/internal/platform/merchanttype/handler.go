@@ -27,7 +27,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
 	p := middleware.RequireAdminRoles("platform")
 	m := middleware.RequireAdminMenu(h.db, "merchant.type.manage")
-	r.GET("/merchant-types", p, m, h.List)
+	r.GET("/merchant-types", p, h.List)
 	r.GET("/merchant-types/:id", p, m, h.Get)
 	r.POST("/merchant-types", p, m, h.Create)
 	r.PUT("/merchant-types/:id", p, m, h.Update)

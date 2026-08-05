@@ -15,8 +15,22 @@ func NewStoreAdapter(repo *Repo) *StoreAdapter {
 	return &StoreAdapter{Repo: repo}
 }
 
-func (s *StoreAdapter) ListMerchants(ctx context.Context, keyword string, status *int8, scope merchant.MerchantScope, page, limit int) ([]merchant.Merchant, int64, error) {
-	return s.Repo.ListMerchants(ctx, ListMerchantsFilter{Keyword: keyword, Status: status, MerchantIDs: scope.MerchantIDs, RegionIDs: scope.RegionIDs, Page: page, Limit: limit})
+func (s *StoreAdapter) ListMerchants(ctx context.Context, filter merchant.ListFilter, scope merchant.MerchantScope) ([]merchant.Merchant, int64, error) {
+	return s.Repo.ListMerchants(ctx, ListMerchantsFilter{
+		Keyword:     filter.Keyword,
+		Status:      filter.Status,
+		CategoryID:  filter.CategoryID,
+		TypeID:      filter.TypeID,
+		RegionID:    filter.RegionID,
+		IsBest:      filter.IsBest,
+		OfflinePay:  filter.OfflinePay,
+		DateFrom:    filter.DateFrom,
+		DateTo:      filter.DateTo,
+		MerchantIDs: scope.MerchantIDs,
+		RegionIDs:   scope.RegionIDs,
+		Page:        filter.Page,
+		Limit:       filter.Limit,
+	})
 }
 
 func (s *StoreAdapter) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]merchant.Intention, int64, error) {
@@ -33,6 +47,14 @@ func (s *StoreAdapter) AssignIntentionRegion(ctx context.Context, id, regionID u
 
 func (s *StoreAdapter) UpsertMerchantView(ctx context.Context, row *merchant.Merchant) error {
 	return s.Repo.UpsertMerchantView(ctx, row)
+}
+
+func (s *StoreAdapter) UpdateMerchant(ctx context.Context, m *merchant.Merchant) error {
+	return s.Repo.UpdateMerchant(ctx, m)
+}
+
+func (s *StoreAdapter) CreateMerchant(ctx context.Context, m *merchant.Merchant) error {
+	return s.Repo.CreateMerchant(ctx, m)
 }
 
 func (s *StoreAdapter) WithTx(fn func(tx merchant.Store) error) error {

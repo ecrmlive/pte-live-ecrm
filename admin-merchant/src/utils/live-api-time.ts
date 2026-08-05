@@ -1,11 +1,9 @@
 /**
  * api-live 时间字段 — 客户端展示（勿原样显示 API 字符串）
- * 时间展示与服务端返回保持一致。
+ * 时间展示统一为 Asia/Shanghai · yyyy-MM-dd HH:mm:ss。
  */
 
-function pad2(n: number) {
-  return String(n).padStart(2, '0');
-}
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
 /** 解析 Unix 秒/毫秒、ISO 字符串、YYYY-MM-DD */
 export function parseLiveApiTime(value: unknown): Date | null {
@@ -41,18 +39,25 @@ export function formatLiveApiChartAxis(
   if (!d) {
     return value == null ? '' : String(value);
   }
-  if (DAY_CHART_RANGES.has(range)) {
-    return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const text = formatShanghaiDateTime(d);
+  if (text === '—') {
+    return '';
   }
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  if (DAY_CHART_RANGES.has(range)) {
+    // MM-dd
+    return text.slice(5, 10);
+  }
+  // HH:mm
+  return text.slice(11, 16);
 }
 
 export function formatLiveApiDateTime(value: unknown): string {
-  const d = parseLiveApiTime(value);
-  if (!d) {
+  const parsed = parseLiveApiTime(value);
+  if (!parsed && (value == null || value === '')) {
     return '-';
   }
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  const formatted = formatShanghaiDateTime(parsed ?? String(value));
+  return formatted === '—' ? '-' : formatted;
 }
 
 export function formatLiveApiChartAxisList(

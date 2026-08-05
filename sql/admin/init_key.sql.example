@@ -1,0 +1,5 @@
+-- 示例：复制为 init_key.sql 后按本机需要填写（init_key.sql 禁止提交 Git）。
+--   cp sql/admin/init_key.sql.example sql/admin/init_key.sql
+-- 仓库不得保存任何真实支付、小程序、云服务或私钥材料。
+-- 云服务配置应由具备权限的平台管理员在运行时配置中心加密保存。
+USE `qixi_crm_admin`;

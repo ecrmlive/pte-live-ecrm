@@ -5,6 +5,7 @@ import { Page } from '@vben/common-ui';
 import { ElButton, ElCard, ElSkeleton, ElTag } from 'element-plus';
 
 import { getMerchantDashboardSummaryApi } from '#/api/core/merchant-dashboard';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
 type Stat = {
   label: string;
@@ -50,7 +51,7 @@ async function loadDashboard() {
     stats.value = stats.value.map((item) => ({ ...item, value: null }));
     failed.value = true;
   }
-  updatedAt.value = new Date().toLocaleString('zh-CN', { hour12: false });
+  updatedAt.value = formatShanghaiDateTime(new Date());
   loading.value = false;
 }
 

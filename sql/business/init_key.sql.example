@@ -1,0 +1,5 @@
+-- 示例：复制为 init_key.sql（禁止提交 Git）。
+--   cp sql/business/init_key.sql.example sql/business/init_key.sql
+-- 业务库不保存平台级 COS、支付、小程序原始密钥。
+-- 平台密钥唯一来源：sql/admin/init_key.sql -> qixi_crm_a_cloud_config。
+USE `qixi_crm_business`;

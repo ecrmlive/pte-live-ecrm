@@ -12,14 +12,27 @@ ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`status`=VALUES(`status`);
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
   (2,0,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
 
-  (10,0,'merchant','商户管理','lucide:store','/merchant','directory',10),
-  (11,10,'merchant.list','商户列表','lucide:store','/merchant/list','page',1),
-  (12,10,'merchant.audit','入驻审核','lucide:badge-check','/merchant/audit','page',2),
-  (13,10,'merchant.category','商户分类','lucide:tags','/merchant/categories','page',3),
-  (14,10,'merchant.grouping','店铺分组','lucide:network','/merchant/grouping','page',4),
-  (15,10,'merchant.type','店铺类型','lucide:badge-plus','/merchant/types','page',5),
-  (16,10,'merchant.deposit','店铺保证金','lucide:shield-dollar','/merchant/deposits','page',6),
-  (17,10,'merchant.applyments','店铺分账申请','lucide:split','/merchant/applyments','page',7),
+  -- 店铺侧栏：一级「店铺功能」→ 店铺管理 / 店铺设置；商户管理为独立一级。
+  -- icon 必须是 admin-platform 离线 lucide 白名单（见 platform-lucide-icons.ts）。
+  (10,0,'store','店铺功能','lucide:store','/store','directory',10),
+  (18,10,'store.manage','店铺管理','lucide:layout-grid','/mer/mer','directory',1),
+  (11,18,'merchant.list','店铺列表','lucide:store','/merchant/list','page',1),
+  (13,18,'merchant.category','店铺分类','lucide:folder-tree','/merchant/classify','page',2),
+  (14,18,'merchant.grouping','店铺分组','lucide:git-branch','/merchant/grouping','page',3),
+  (15,18,'merchant.type','店铺类型','lucide:award','/merchant/type','page',4),
+  (12,18,'merchant.audit','店铺入驻申请','lucide:badge-check','/merchant/application','page',5),
+  (17,18,'merchant.applyments','店铺分账申请','lucide:wallet','/merchant/applyments','page',6),
+  (19,10,'store.settings','店铺设置','lucide:settings','/mer/store','directory',2),
+  (16,19,'merchant.deposit','店铺保证金','lucide:shield-check','/merchant/deposit_list','page',1),
+  (213,19,'store.margin_config','保证金配置','lucide:key-round','/systemForm/Basics/margin','page',2),
+  (214,19,'store.menu','店铺菜单','lucide:folder-tree','/merchant/system','page',3),
+  (215,19,'store.description','说明提示','lucide:receipt-text','/merchant/type/description','page',4),
+
+  (25,0,'merchant.mgmt','商户管理','lucide:users','/merchant-mgmt','directory',11),
+  (26,25,'merchant.mgmt.list','商户列表','lucide:store','/merchant/index','page',1),
+  (27,25,'merchant.mgmt.review','商户入驻审核','lucide:badge-check','/merchant/review','page',2),
+  (28,25,'merchant.mgmt.admins','商户管理员','lucide:user-round-cog','/merchant/admin-list','page',3),
+  (29,25,'merchant.mgmt.settings','商户设置','lucide:settings','/merchant/apply-setting','page',4),
 
   (20,0,'region','区域管理','lucide:map-pinned','/business-zones','directory',20),
   (21,20,'region.index','区域商圈','lucide:map-pinned','/region','page',1),
@@ -53,8 +66,14 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (67,60,'marketing.assist','好友助力','lucide:hand-heart','/marketing/assist','page',7),
   (68,60,'marketing.points','积分商城','lucide:badge-plus','/marketing/points','page',8),
   (69,60,'marketing.recharge','用户充值','lucide:circle-dollar-sign','/marketing/recharge','page',9),
+  (207,60,'marketing.discounts','优惠套餐','lucide:package','/marketing/discounts/list','page',12),
+  (208,60,'marketing.atmosphere','活动氛围','lucide:sparkles','/marketing/atmosphere/list','page',13),
+  (209,60,'marketing.border','活动边框','lucide:frame','/marketing/border/list','page',14),
+  (210,60,'marketing.topic','活动专题','lucide:layout-template','/group/topic/94','page',15),
+  (211,60,'marketing.application','活动报名','lucide:clipboard-list','/marketing/application/list','page',16),
   (185,60,'marketing.coupon.send_records','优惠券发送记录','lucide:ticket-check','/marketing/coupon/send-records','page',10),
   (186,60,'marketing.coupon.receipt_records','优惠券领取记录','lucide:ticket','/marketing/coupon/receipt-records','page',11),
+  (212,110,'operations.system_form','系统表单','lucide:clipboard-pen','/systemForm/form_list','page',2),
 
   (70,0,'user','用户管理','lucide:users','/user','directory',70),
   (71,70,'user.label','用户标签','lucide:badge-check','/user/label','page',1),
@@ -136,7 +155,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(205,130,'app.wechat_template','模板消息','lucide:mail','/app/wechat/template','page',5)
   ,(206,130,'app.wechat_news','图文消息','lucide:newspaper','/app/wechat/newsCategory','page',6)
 ON DUPLICATE KEY UPDATE
-  `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),
+  `parent_id`=VALUES(`parent_id`),`code`=VALUES(`code`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),
   `route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
 
 -- 统一后台按钮节点必须使用 qixi_crm_a_* RBAC；运营写操作不再依赖旧系统菜单表。
@@ -155,6 +174,17 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (20916,63,'marketing.combination.manage','维护拼团活动','','marketing/combination','button',1),
   (20917,64,'marketing.presell.manage','维护预售活动','','marketing/presell','button',1),
   (20918,61,'marketing.coupon.manage','维护平台优惠券','','marketing/coupon','button',1),
+  (21010,207,'marketing.discounts.read','查看优惠套餐监管投影','','marketing/discounts/list','button',1),
+  (21011,207,'marketing.discounts.manage','上下架优惠套餐投影','','marketing/discounts/list','button',2),
+  (21012,208,'marketing.atmosphere.read','查看活动氛围','','marketing/atmosphere/list','button',1),
+  (21013,208,'marketing.atmosphere.manage','维护活动氛围','','marketing/atmosphere/list','button',2),
+  (21014,209,'marketing.border.read','查看活动边框','','marketing/border/list','button',1),
+  (21015,209,'marketing.border.manage','维护活动边框','','marketing/border/list','button',2),
+  (21016,210,'marketing.topic.read','查看活动专题','','group/topic/94','button',1),
+  (21017,210,'marketing.topic.manage','维护活动专题','','group/topic/94','button',2),
+  (21018,211,'marketing.application.read','查看活动报名','','marketing/application/list','button',1),
+  (21019,211,'marketing.application.manage','维护活动报名','','marketing/application/list','button',2),
+  (21020,212,'operations.system_form.manage','维护系统表单','','systemForm/form_list','button',1),
   (20919,83,'content.attachment.manage','维护素材库','','content/attachment','button',1),
   (20920,82,'content.community.audit','审核社区内容','','content/community','button',1),
   (20921,82,'content.community.delete','删除社区内容','','content/community','button',2),
@@ -226,9 +256,9 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20987,131,'app.wechat.manage','维护公众号基础开关','','app/wechat','button',1)
   ,(20988,196,'setting.storage.manage','维护存储配置开关','','setting/storage','button',1)
   ,(20989,198,'maintain.cache.manage','提交缓存清理','','maintain/cache','button',1)
-  ,(20990,199,'maintain.backup.manage','维护备份记录 stub','','maintain/dataBackup','button',1)
-  ,(20991,200,'maintain.group_data.manage','维护组合数据 stub','','group/list','button',1)
-  ,(20992,201,'maintain.hot_search.manage','维护热门搜索 stub','','group/config/67','button',1)
+  ,(20990,199,'maintain.backup.manage','维护备份记录','','maintain/dataBackup','button',1)
+  ,(20991,200,'maintain.group_data.manage','维护组合数据','','group/list','button',1)
+  ,(20992,201,'maintain.hot_search.manage','维护热门搜索','','group/config/67','button',1)
   ,(20993,202,'app.routine.manage','维护小程序基础开关','','app/routine','button',1)
   ,(20994,203,'app.wechat_reply.manage','维护微信回复开关','','admin/app/wechat/reply','button',1)
   ,(20995,204,'app.wechat_menus.manage','维护微信菜单开关','','app/wechat/menus','button',1)
@@ -263,7 +293,7 @@ FROM `qixi_crm_a_role_menu` AS rm
 INNER JOIN `qixi_crm_a_role` AS r ON r.id = rm.role_id
 INNER JOIN `qixi_crm_a_menu` AS m ON m.id = rm.menu_id
 WHERE (r.code = 'merchant' AND m.code IN (
-  'marketing','marketing.coupon','marketing.seckill','marketing.combination','marketing.presell','marketing.spread','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge',
+  'marketing','marketing.coupon','marketing.seckill','marketing.combination','marketing.presell','marketing.spread','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge','marketing.discounts','marketing.atmosphere','marketing.border','marketing.topic','marketing.application',
   'content','content.notice','content.community','content.community.category','content.community.topic','content.community.list','content.community.reply','content.attachment','content.article'
 )) OR (r.code = 'region' AND m.code IN ('region','region.index','region.agents','region.agent_review'))
   OR (r.code = 'operations' AND m.code IN ('dashboard','user','user.label','user.group','user.svip.plan','user.svip.record','user.svip.interest'));
@@ -274,11 +304,11 @@ FROM `qixi_crm_a_role` AS r
 JOIN `qixi_crm_a_menu` AS m
 WHERE r.code = 'platform'
    OR (r.code = 'merchant' AND m.code IN (
-      'dashboard','merchant','merchant.list','merchant.audit',
+      'dashboard','store','store.manage','merchant.list','merchant.audit',
       'product','product.audit',
       'order','order.list','order.refund','order.cancellation'))
    OR (r.code = 'region' AND m.code IN (
-      'dashboard','merchant','merchant.list','merchant.audit',
+      'dashboard','store','store.manage','merchant.list','merchant.audit',
       'product','product.audit','order','order.list','order.refund','order.cancellation',
       'accounts','accounts.merchant_settlement','accounts.merchant_settlement.read','merchant.intention.audit'))
    OR (r.code = 'customer_service' AND m.code IN (
@@ -286,10 +316,16 @@ WHERE r.code = 'platform'
       'user','user.feedback','user.feedback.list','user.feedback.read','user.feedback.manage'))
    OR (r.code = 'operations' AND m.code IN (
       'marketing','marketing.coupon','marketing.seckill','marketing.combination',
-      'marketing.presell','marketing.spread','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge','marketing.spread.read',
+      'marketing.presell','marketing.spread','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge',
+      'marketing.discounts','marketing.discounts.read','marketing.discounts.manage',
+      'marketing.atmosphere','marketing.atmosphere.read','marketing.atmosphere.manage',
+      'marketing.border','marketing.border.read','marketing.border.manage',
+      'marketing.topic','marketing.topic.read','marketing.topic.manage',
+      'marketing.application','marketing.application.read','marketing.application.manage','marketing.spread.read',
       'user','user.svip.plan','user.svip.record','user.svip.interest','user.svip.plan.manage','user.svip.record.read','user.svip.interest.manage',
       'content','content.notice','content.community','content.community.category','content.community.topic','content.community.list','content.community.reply','content.attachment','content.article',
-      'operations','operations.diy','setting','setting.agreements',
+      'operations','operations.diy','operations.system_form','operations.system_form.manage','setting','setting.agreements',
       'content.article.manage','content.article_category.manage','content.notice.manage','setting.agreement.manage',
       'operations.diy.manage','marketing.seckill.manage','marketing.combination.manage','marketing.presell.manage','marketing.coupon.manage','marketing.assist.manage','marketing.points.manage','marketing.recharge.manage',
+      'maintain','maintain.cache','maintain.cache.manage','maintain.backup','maintain.backup.manage','maintain.group_data','maintain.group_data.manage','maintain.hot_search','maintain.hot_search.manage',
       'content.attachment.manage','content.community.audit','content.community.delete','marketing.broadcast.audit'));

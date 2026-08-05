@@ -82,31 +82,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/setting/wechat-news", appSetting, wechatNewsManage, h.GetWechatNews)
 	r.PUT("/setting/wechat-news", appSetting, wechatNewsManage, h.SaveWechatNews)
 
-	marketingSetting := middleware.RequireAdminRoles("platform", "operations")
-	r.GET("/marketing/discounts", marketingSetting, h.GetMarketingDiscounts)
-	r.PUT("/marketing/discounts", marketingSetting, h.SaveMarketingDiscounts)
-	r.GET("/marketing/applications", marketingSetting, h.GetMarketingApplications)
-	r.PUT("/marketing/applications", marketingSetting, h.SaveMarketingApplications)
-	r.GET("/marketing/atmosphere", marketingSetting, h.GetMarketingAtmosphere)
-	r.PUT("/marketing/atmosphere", marketingSetting, h.SaveMarketingAtmosphere)
-	r.GET("/marketing/border", marketingSetting, h.GetMarketingBorder)
-	r.PUT("/marketing/border", marketingSetting, h.SaveMarketingBorder)
-	r.GET("/marketing/topic", marketingSetting, h.GetMarketingTopic)
-	r.PUT("/marketing/topic", marketingSetting, h.SaveMarketingTopic)
-
 	maintainSetting := middleware.RequireAdminRoles("platform")
 	maintainManage := middleware.RequireAdminMenu(h.adminDB, "maintain.cache.manage")
 	r.POST("/maintain/cache/clear", maintainSetting, maintainManage, h.ClearMaintainCache)
-	r.GET("/maintain/backups", maintainSetting, h.GetMaintainBackups)
-	r.PUT("/maintain/backups", maintainSetting, maintainManage, h.SaveMaintainBackups)
-	r.GET("/maintain/group-data", maintainSetting, h.GetMaintainGroupData)
-	r.PUT("/maintain/group-data", maintainSetting, maintainManage, h.SaveMaintainGroupData)
-	r.GET("/maintain/hot-search", maintainSetting, h.GetMaintainHotSearch)
-	r.PUT("/maintain/hot-search", maintainSetting, maintainManage, h.SaveMaintainHotSearch)
-	r.GET("/diy/system-forms", maintainSetting, h.GetDiySystemForms)
-	r.PUT("/diy/system-forms", maintainSetting, maintainManage, h.SaveDiySystemForms)
-	r.GET("/finance/transfer-records", transferSetting, h.GetTransferRecords)
-	r.PUT("/finance/transfer-records", transferSetting, transferManage, h.SaveTransferRecords)
+	// 热搜/组合数据/备份/系统表单已迁至 nativeconfigitem（qixi_crm_a_config_item）。
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -404,21 +383,6 @@ func (h *Handler) SaveWechatNews(c *gin.Context) {
 	h.saveAppStubSetting(c, content.WechatNewsConfigKey)
 }
 
-func (h *Handler) GetMarketingDiscounts(c *gin.Context)  { h.getCacheList(c, content.MarketingDiscountsCacheKey) }
-func (h *Handler) SaveMarketingDiscounts(c *gin.Context) { h.saveCacheList(c, content.MarketingDiscountsCacheKey) }
-func (h *Handler) GetMarketingApplications(c *gin.Context) {
-	h.getCacheList(c, content.MarketingApplicationKey)
-}
-func (h *Handler) SaveMarketingApplications(c *gin.Context) {
-	h.saveCacheList(c, content.MarketingApplicationKey)
-}
-func (h *Handler) GetMarketingAtmosphere(c *gin.Context)  { h.getCacheList(c, content.MarketingAtmosphereKey) }
-func (h *Handler) SaveMarketingAtmosphere(c *gin.Context) { h.saveCacheList(c, content.MarketingAtmosphereKey) }
-func (h *Handler) GetMarketingBorder(c *gin.Context)      { h.getCacheList(c, content.MarketingBorderKey) }
-func (h *Handler) SaveMarketingBorder(c *gin.Context)     { h.saveCacheList(c, content.MarketingBorderKey) }
-func (h *Handler) GetMarketingTopic(c *gin.Context)       { h.getCacheList(c, content.MarketingTopicKey) }
-func (h *Handler) SaveMarketingTopic(c *gin.Context)      { h.saveCacheList(c, content.MarketingTopicKey) }
-
 func (h *Handler) ClearMaintainCache(c *gin.Context) {
 	if err := h.svc.ClearMaintainCache(c.Request.Context()); err != nil {
 		writeErr(c, err)
@@ -426,21 +390,6 @@ func (h *Handler) ClearMaintainCache(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"ok": true, "note": "已提交缓存清理请求；不含密钥或敏感凭据"})
 }
-
-func (h *Handler) GetMaintainBackups(c *gin.Context)  { h.getCacheList(c, content.MaintainBackupCacheKey) }
-func (h *Handler) SaveMaintainBackups(c *gin.Context) { h.saveCacheList(c, content.MaintainBackupCacheKey) }
-func (h *Handler) GetMaintainGroupData(c *gin.Context) {
-	h.getCacheList(c, content.MaintainGroupDataCacheKey)
-}
-func (h *Handler) SaveMaintainGroupData(c *gin.Context) {
-	h.saveCacheList(c, content.MaintainGroupDataCacheKey)
-}
-func (h *Handler) GetMaintainHotSearch(c *gin.Context)  { h.getCacheList(c, content.MaintainHotSearchCacheKey) }
-func (h *Handler) SaveMaintainHotSearch(c *gin.Context) { h.saveCacheList(c, content.MaintainHotSearchCacheKey) }
-func (h *Handler) GetDiySystemForms(c *gin.Context)     { h.getCacheList(c, content.DiySystemFormCacheKey) }
-func (h *Handler) SaveDiySystemForms(c *gin.Context)    { h.saveCacheList(c, content.DiySystemFormCacheKey) }
-func (h *Handler) GetTransferRecords(c *gin.Context)    { h.getCacheList(c, content.TransferRecordCacheKey) }
-func (h *Handler) SaveTransferRecords(c *gin.Context)   { h.saveCacheList(c, content.TransferRecordCacheKey) }
 
 func (h *Handler) getJSONSetting(c *gin.Context, load func(context.Context) (string, error), note string) {
 	raw, err := load(c.Request.Context())
@@ -486,29 +435,6 @@ func (h *Handler) saveAppStubSetting(c *gin.Context, key string) {
 		return
 	}
 	response.OK(c, gin.H{"config": raw})
-}
-
-func (h *Handler) getCacheList(c *gin.Context, key string) {
-	list, err := h.svc.GetCacheList(c.Request.Context(), key)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	response.OK(c, gin.H{"list": list})
-}
-
-func (h *Handler) saveCacheList(c *gin.Context, key string) {
-	var req cacheListSaveReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "参数错误")
-		return
-	}
-	list, err := h.svc.SaveCacheList(c.Request.Context(), key, req.List)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	response.OK(c, gin.H{"list": list})
 }
 
 func writeErr(c *gin.Context, err error) {

@@ -45,6 +45,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.DELETE("/orders/:id", h.Archive)
 	r.GET("/order/:id", h.GetOrder)
 	r.GET("/order/:id/delivery", h.Delivery)
+	r.GET("/order/:id/verify-code", h.VerifyCode)
 	r.POST("/order/:id/confirm-receipt", h.ConfirmReceipt)
 }
 
@@ -60,6 +61,7 @@ type createRequest struct {
 	CouponUserIDs  []uint64 `json:"coupon_user_ids"`
 	UseIntegral    bool     `json:"use_integral"`
 	IdempotencyKey string   `json:"idempotency_key"`
+	DeliveryType   string   `json:"delivery_type"`
 }
 
 func (h *Handler) Check(c *gin.Context) {
@@ -97,7 +99,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 	uid := uint64(middleware.UID(c))
-	created, err := Create(c.Request.Context(), h.db, uid, CreateInput{CartIDs: req.CartIDs, AddressID: req.AddressID, CouponUserIDs: req.CouponUserIDs, UseIntegral: req.UseIntegral, IdempotencyKey: req.IdempotencyKey, Remark: req.Mark})
+	created, err := Create(c.Request.Context(), h.db, uid, CreateInput{CartIDs: req.CartIDs, AddressID: req.AddressID, CouponUserIDs: req.CouponUserIDs, UseIntegral: req.UseIntegral, IdempotencyKey: req.IdempotencyKey, Remark: req.Mark, DeliveryType: req.DeliveryType})
 	if err != nil {
 		writeOrderError(c, err)
 		return
@@ -240,6 +242,11 @@ func (h *Handler) GetGroup(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "预约信息查询失败")
 		return
 	}
+	verifications, err := verificationSummaries(c.Request.Context(), h.db, detail.Orders)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "核销码查询失败")
+		return
+	}
 	orders := make([]gin.H, 0, len(detail.Orders))
 	for _, order := range detail.Orders {
 		items := make([]gin.H, 0, len(detail.Items[order.ID]))
@@ -254,6 +261,11 @@ func (h *Handler) GetGroup(c *gin.Context) {
 		}
 		if reservation, ok := reservations[order.ID]; ok {
 			for key, value := range reservation {
+				out[key] = value
+			}
+		}
+		if verification, ok := verifications[order.ID]; ok {
+			for key, value := range verification {
 				out[key] = value
 			}
 		}
@@ -378,6 +390,11 @@ func (h *Handler) GetOrder(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "预约信息查询失败")
 		return
 	}
+	verifications, verr := verificationSummaries(c.Request.Context(), h.db, []orderRow{order})
+	if verr != nil {
+		response.Fail(c, http.StatusInternalServerError, "核销码查询失败")
+		return
+	}
 	responseBody := orderResponse(order, out)
 	if delivery, ok := deliveries[order.ID]; ok {
 		for key, value := range delivery {
@@ -389,7 +406,42 @@ func (h *Handler) GetOrder(c *gin.Context) {
 			responseBody[key] = value
 		}
 	}
+	if verification, ok := verifications[order.ID]; ok {
+		for key, value := range verification {
+			responseBody[key] = value
+		}
+	}
 	response.OK(c, responseBody)
+}
+
+func (h *Handler) VerifyCode(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		bad(c, "订单 ID 错误")
+		return
+	}
+	order, _, err := GetOrder(c.Request.Context(), h.db, uint64(middleware.UID(c)), id)
+	if err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	var row struct {
+		VerifyCode string `gorm:"column:verify_code"`
+		Status     string `gorm:"column:status"`
+	}
+	err = h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_order_verification").
+		Select("verify_code,status").
+		Where("order_id = ? AND status = 'unused'", order.ID).
+		Order("id ASC").Limit(1).Take(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) || row.VerifyCode == "" {
+		response.Fail(c, http.StatusNotFound, "核销码不存在或已使用")
+		return
+	}
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "核销码查询失败")
+		return
+	}
+	response.OK(c, gin.H{"order_id": order.ID, "order_sn": order.OrderNo, "verify_code": row.VerifyCode, "status": row.Status})
 }
 
 func orderItemResponse(item orderItemRow) gin.H {
@@ -423,7 +475,7 @@ func orderResponse(order orderRow, items []gin.H) gin.H {
 func bad(c *gin.Context, message string) { response.Fail(c, http.StatusBadRequest, message) }
 func writeOrderError(c *gin.Context, err error) {
 	switch err {
-	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled, ErrCouponOwnership, ErrCouponConflict, ErrCouponMinNotMet, ErrOrderRemark, ErrOrderNotCancellable, ErrOrderNotPayable, ErrInsufficientBalance, ErrOrderNotReceivable, ErrOrderNotArchivable, ErrH5PaymentConfig, ErrPaymentProcessing, merchantstock.ErrReservationsPending, merchantstock.ErrReservationsFailed:
+	case ErrEmptyCart, ErrUnavailableCart, ErrMixedActivity, ErrMixedPaySubject, ErrAddressOwnership, ErrIdempotencyKey, ErrCartOwnership, ErrPayChannel, ErrStoreChannelDisabled, ErrCouponOwnership, ErrCouponConflict, ErrCouponMinNotMet, ErrOrderRemark, ErrDeliveryType, ErrOrderNotCancellable, ErrOrderNotPayable, ErrInsufficientBalance, ErrOrderNotReceivable, ErrOrderNotArchivable, ErrH5PaymentConfig, ErrPaymentProcessing, merchantstock.ErrReservationsPending, merchantstock.ErrReservationsFailed:
 		bad(c, err.Error())
 	case ErrOrderOwnership:
 		response.Fail(c, http.StatusNotFound, err.Error())
@@ -449,6 +501,40 @@ func deliverySummaries(ctx context.Context, db *gorm.DB, orders []orderRow) (map
 		if _, exists := out[row.OrderID]; !exists {
 			out[row.OrderID] = deliverySummary(row)
 		}
+	}
+	return out, nil
+}
+
+func verificationSummaries(ctx context.Context, db *gorm.DB, orders []orderRow) (map[uint64]gin.H, error) {
+	ids := make([]uint64, 0, len(orders))
+	for _, order := range orders {
+		ids = append(ids, order.ID)
+	}
+	out := make(map[uint64]gin.H)
+	if len(ids) == 0 {
+		return out, nil
+	}
+	type row struct {
+		OrderID    uint64 `gorm:"column:order_id"`
+		VerifyCode string `gorm:"column:verify_code"`
+		Status     string `gorm:"column:status"`
+	}
+	var rows []row
+	if err := db.WithContext(ctx).Table("qixi_crm_b_order_verification").
+		Select("order_id,verify_code,status").
+		Where("order_id IN ?", ids).
+		Order("id ASC").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		if _, exists := out[item.OrderID]; exists {
+			continue
+		}
+		payload := gin.H{"verify_status": item.Status, "has_verify_code": item.Status == "unused" || item.VerifyCode != ""}
+		if item.Status == "unused" && item.VerifyCode != "" {
+			payload["verify_code"] = item.VerifyCode
+		}
+		out[item.OrderID] = payload
 	}
 	return out, nil
 }

@@ -44,6 +44,7 @@ function nodeTitle(node: MergersMenuNode) {
  */
 const MENU_ICON_FALLBACK: Record<string, string> = {
   dashboard: 'layout-dashboard',
+  store: 'store',
   merchant: 'store',
   region: 'map-pinned',
   service: 'messages-square',

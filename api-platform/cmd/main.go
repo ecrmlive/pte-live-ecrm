@@ -87,8 +87,11 @@ import (
 	platformmerchantdeposit "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchantdeposit"
 	platformmerchanttype "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchanttype"
 	nativecatalog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativecatalog"
+	platformnativeconfigitem "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeconfigitem"
+	platformnativediscount "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativediscount"
 	platformnativedistribution "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativedistribution"
 	platformnativeledger "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeledger"
+	platformnativemarketingdecor "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativemarketingdecor"
 	platformnativeorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeorder"
 	platformnativerefund "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativerefund"
 	platformnativesettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativesettlement"
@@ -249,6 +252,9 @@ func main() {
 	platformLedgerH := platformnativeledger.NewHandler(businessDB, gdb)
 	platformDistributionH := platformnativedistribution.NewHandler(businessDB, gdb)
 	platformSettlementH := platformnativesettlement.NewHandler(gdb, merchantSettlementCommands)
+	platformDiscountH := platformnativediscount.NewHandler(businessDB, gdb)
+	platformMarketingDecorH := platformnativemarketingdecor.NewHandler(gdb)
+	platformConfigItemH := platformnativeconfigitem.NewHandler(gdb)
 	platformCouponH := platformcoupon.NewHandler(promoSvc, gdb)
 	platformContentH := platformcontent.NewHandler(contentSvc, gdb)
 	platformDiyH := platformdiy.NewHandler(diySvc, gdb)
@@ -313,6 +319,9 @@ func main() {
 	platformLedgerH.Register(platformAuthed)
 	platformDistributionH.Register(platformAuthed)
 	platformSettlementH.Register(platformAuthed)
+	platformDiscountH.Register(platformAuthed)
+	platformMarketingDecorH.Register(platformAuthed)
+	platformConfigItemH.Register(platformAuthed)
 	platformCouponH.Register(platformAuthed)
 	platformContentH.Register(platformAuthed)
 	platformDiyH.Register(platformAuthed)

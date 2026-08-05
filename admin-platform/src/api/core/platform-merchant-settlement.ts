@@ -64,3 +64,15 @@ export function rejectPlatformMerchantSettlementApi(settlementId: number, data: 
 export function markPlatformMerchantSettlementPaidApi(settlementId: number, data: MerchantSettlementCommandInput) {
   return requestClient.post(`/finance/merchant-settlements/${settlementId}/mark-paid`, data);
 }
+
+export type TransferRecordStatus = Extract<MerchantSettlementStatus, 'approved' | 'paid' | 'rejected'>;
+
+/** 转账记录：结算打款链路只读投影（approved / paid / rejected）。 */
+export function listPlatformTransferRecordsApi(params: {
+  limit: number;
+  merchant_id?: number;
+  page: number;
+  status?: TransferRecordStatus;
+}) {
+  return requestClient.get<MerchantSettlementPage>('/finance/transfer-records', { params });
+}

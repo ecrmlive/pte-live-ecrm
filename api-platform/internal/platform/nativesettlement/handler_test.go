@@ -20,6 +20,19 @@ func TestSettlementStatusAllowsOnlyProjectionStates(t *testing.T) {
 	}
 }
 
+func TestTransferStatusAllowsOnlyPayoutPipeline(t *testing.T) {
+	for _, raw := range []string{"", "approved", "paid", "rejected"} {
+		if _, ok := transferStatus(raw); !ok {
+			t.Fatalf("transfer status %q should be allowed", raw)
+		}
+	}
+	for _, raw := range []string{"bill_pending", "withdraw_applied", "已打款"} {
+		if _, ok := transferStatus(raw); ok {
+			t.Fatalf("transfer status %q must be rejected", raw)
+		}
+	}
+}
+
 func TestSettlementRegionScopeNeverUsesMerchantIDs(t *testing.T) {
 	cases := []struct {
 		name  string

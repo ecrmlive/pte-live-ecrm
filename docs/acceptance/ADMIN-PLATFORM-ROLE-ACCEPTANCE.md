@@ -16,7 +16,7 @@
 | RBAC 与角色边界 | 已通过本地 MySQL 运行时验收 | `TestStoreGroupHTTPRBACAcrossFiveRoles` 串联生产同构 JWT、会话版本、默认角色/区域限制及按钮权限链；平台读取为 HTTP 200，商户、区域、运营、客服均为 HTTP 403，未登录为 HTTP 401。 |
 | 树与关联约束 | 已通过本地 MySQL 运行时验收 | 使用 `qixi_crm_a_store_group`、`qixi_crm_a_store_group_merchant`；隔离库中文三级树实测拒绝根分组移动至孙分组，关联不存在的统一后台商户投影请求原子拒绝。 |
 | 模板与状态 | 已通过本地 MySQL 运行时验收 | 非零模板 ID 必须存在于平台 DIY 页；缺失模板为 HTTP 400、缺失分组为 HTTP 404；实测停用根分组按路径同步停用子、孙分组。 |
-| 中文模拟数据 | 已提供 | `sql/admin/05_test_data.sql` 含“七禧中文演示商圈”“华东精选店铺”和虚构店铺关联；不含真实身份或凭据。 |
+| 中文模拟数据 | 已提供 | `sql/admin/init_test_data.sql` 含“七禧中文演示商圈”“华东精选店铺”和虚构店铺关联；不含真实身份或凭据。 |
 | 自动化与构建 | 通过 | `api-platform go test ./...`、`admin-platform pnpm run build:platform`、`git diff --check` 通过。 |
 | 隔离数据库/浏览器闭环 | 已关闭 | 临时 API 与真实 Vben 使用虚构平台账号完成“中文分组页面验收→已编辑→关联七禧演示店铺→查看关联→停用→删除”；模板弹框取消后浏览器仅有 Vite 调试日志，无 warning/error。所有临时账号和页面夹具均已清理。 |
 
@@ -48,7 +48,7 @@
 | 项目 | 结果 | 证据 |
 | --- | --- | --- |
 | 未实现页面处理 | 已实现 | `admin-platform/src/utils/ecrm-menu.ts` 过滤没有 `registry.ts` 真实组件的服务端叶子，目录在子页均被过滤后同步隐藏；不再注册 `ecrm/placeholder/index`。 |
-| 种子路由约束 | 已实现 | `api-platform/internal/domain/business_sql_fixture_contract_test.go` 逐项校验 `sql/admin/02_data.sql` 中每一个 `page` 路由均存在 Vben 组件映射。 |
+| 种子路由约束 | 已实现 | `api-platform/internal/domain/business_sql_fixture_contract_test.go` 逐项校验 `sql/admin/init_data.sql` 中每一个 `page` 路由均存在 Vben 组件映射。 |
 | 自动化与构建 | 通过 | `api-platform go test ./internal/domain`、`admin-platform pnpm run build:platform`、`git diff --check`。 |
 | 全量完成度 | 未关闭 | 当前受保护的是已迁移的种子菜单，不能替代 CRMEB 1333 项平台操作、18 项客服操作的逐项 API、范围、中文数据、截图与运行时闭环。 |
 
@@ -60,7 +60,7 @@
 | 转接目标范围 | 已实现（代码） | 名册仅返回 `customer_service` 角色的最小投影；客服仅看与自身队列共享店铺的坐席，平台可监管全量。转接接口仍逐请求校验目标坐席启用状态和目标店铺范围。 |
 | 客服设置 | 已实现（代码） | `GET/PUT /customer-service/settings` 保存到 `qixi_crm_a_config.customer_service.settings`；仅平台角色可写，字段仅含分配策略、并发上限和自动回复业务文案。 |
 | 凭据边界 | 已实现 | 客服设置、名册和返回值均不包含密码、手机号、IM Token、UserSig 或云密钥；IM 传输继续由 pte-live-im 管理。 |
-| 中文模拟数据与测试 | 已通过静态回归 | `sql/admin/05_test_data.sql` 使用“虚构演示客服将在工作时间内回复您”配置；客服处理器单元测试覆盖中文修剪、自动回复、并发上限与共享店铺边界。 |
+| 中文模拟数据与测试 | 已通过静态回归 | `sql/admin/init_test_data.sql` 使用“虚构演示客服将在工作时间内回复您”配置；客服处理器单元测试覆盖中文修剪、自动回复、并发上限与共享店铺边界。 |
 | 构建 | 通过 | `go test ./internal/admin/customerservice ./internal/pkg/middleware ./cmd`、`admin-platform pnpm run build:platform`、`git diff --check` 通过。 |
 | 隔离数据库/浏览器闭环 | 部分关闭 | `TestCustomerServiceHTTPRBACAndQueueClosure` 已在隔离 admin/business MySQL 使用虚构中文账号、店铺和会话运行生产同构 JWT、会话与路由链：平台可更新设置；商户、区域、运营、客服写设置均为 403。客服人员名册页面截图仍待补。 |
 
@@ -135,7 +135,7 @@
 | 统一后台入口 | 已实现 | 客服工作台新增“快捷回复管理”，包含按店铺查询、新增、编辑、启停与删除。 |
 | 业务数据归属 | 已实现 | 新增 `qixi_crm_b_customer_service_quick_reply`，不复用旧独立客服链路及 `qixi_m_admin_*` 表。 |
 | 数据范围与审计 | 已实现 | 所有读写均按 `service_queue.store_ids` 过滤；范围外店铺和回复 ID 不可读写。删除仅写 `deleted_at`，并记录创建/更新后台用户 ID。 |
-| 中文模拟数据 | 已提供 | `sql/business/05_test_data.sql` 提供“七禧演示茶铺”“发货时效”等明显虚构中文夹具，不含真实个人信息或凭据。 |
+| 中文模拟数据 | 已提供 | `sql/business/init_test_data.sql` 提供“七禧演示茶铺”“发货时效”等明显虚构中文夹具，不含真实个人信息或凭据。 |
 | 自动化与构建 | 通过 | 客服处理器单元测试覆盖中文内容、状态校验和店铺范围；`pnpm run build:platform`、`git diff --check` 通过。 |
 | 本地数据库/浏览器闭环 | 部分关闭 | `TestCustomerServiceHTTPRBACAndQueueClosure` 在隔离业务库中以 UTF-8 虚构店铺和客服账号实际完成“授权店铺新增 → 列表可见 → 编辑为停用 → 软删除 → 列表隐藏”；范围外店铺的创建与查询为 403、更新为 404。库内复核被删除记录保留 `disabled` 状态、操作者及 `deleted_at`，测试后客服、快捷回复均清理为 0。Vben 同状态截图仍待补。 |
 
@@ -450,7 +450,7 @@
 | 路由与菜单一致性 | 已实现 | `operations` 获权的秒杀、拼团、预售、分销、直播、社区、素材接口均列入统一角色白名单；权限回归覆盖新增允许路径。 |
 | 活动启停 | 已实现 | Vben 秒杀、拼团、预售监管页以 `platform/operations` 角色和各自 `marketing.*.manage` 按钮码双重控制启停；服务端相同校验继续生效。 |
 | 业务表迁移 | 已实现 | 平台秒杀、拼团、预售仓库已改读 `qixi_crm_b_*`；秒杀新增业务表与中文夹具，拼团/预售复用已存在的业务表和夹具，产品元数据统一取 `qixi_crm_b_product_view`。 |
-| SQL/夹具回归 | 通过真实 MySQL | 临时库 `qixi_crm_verify_platform_20260803` 成功导入 `01_table.sql`、`05_test_data.sql`；验证秒杀 4 条、预售 3 条中文记录和 `status=1 → 0` 条件停用后恢复。期间修复了不兼容的索引 DDL 和内容夹具括号错误，并以 `business_sql_fixture_contract_test.go` 防回归。 |
+| SQL/夹具回归 | 通过真实 MySQL | 临时库 `qixi_crm_verify_platform_20260803` 成功导入 `init_table.sql`、`init_test_data.sql`；验证秒杀 4 条、预售 3 条中文记录和 `status=1 → 0` 条件停用后恢复。期间修复了不兼容的索引 DDL 和内容夹具括号错误，并以 `business_sql_fixture_contract_test.go` 防回归。 |
 | 状态防御 | 通过单元测试 | 三个领域服务在访问数据前拒绝非 `0/1` 状态，避免绕过前端写入非法活动状态。 |
 | 高风险操作 | 未开放 | 删除及价格、库存、日期等复杂字段编辑需先完成已下单、成团、尾款订单的影响审计、中文模拟数据回归和浏览器证据；定金支付/尾款总账仍依赖旧交易链路，未完成跨库状态机迁移前不作为生产验收闭环。 |
 
@@ -460,7 +460,7 @@
 | --- | --- | --- |
 | 运行表边界 | 已实现（代码） | 助力活动、助力单、助力人模型均改为 `qixi_crm_b_assist*`；`api-platform` 启动时助力仓储显式连接 `businessDB`，不再使用旧 CRMEB 表。 |
 | 关联投影 | 已实现（代码） | 商品元数据从 `qixi_crm_b_product_view`、用户昵称从 `qixi_crm_b_user` 获取，保持业务库边界，不跨连管理库或店铺库。 |
-| 中文模拟数据 | 已提供 | `sql/business/05_test_data.sql` 已有“真丝印花方巾礼盒”“好友助力满员后可按助力价下单。”及助力完成单，作为 utf8mb4 回归夹具。 |
+| 中文模拟数据 | 已提供 | `sql/business/init_test_data.sql` 已有“真丝印花方巾礼盒”“好友助力满员后可按助力价下单。”及助力完成单，作为 utf8mb4 回归夹具。 |
 | 自动化 | 通过 | 新增源码与夹具契约，阻止助力域回写 `qixi_m_*`；`api-platform go test ./...`、`git diff --check` 通过。 |
 | 统一后台入口与 RBAC | 已实现（代码） | 新增“好友助力监管”真实 Vben 页面、`marketing.assist` 菜单和 `marketing.assist.manage` 按钮码；仅 `platform/operations` 且拥有按钮码可上架/下架。非平台角色总闸默认拒绝。 |
 | 高风险写入收口 | 已实现（代码） | 平台路由只注册 `PUT /assist/actives/:id`，请求体只接受 `is_show: 0|1`；删除、改价、库存和时间调整不在统一后台开放，不能由菜单权限绕过订单影响审计。 |
@@ -617,7 +617,7 @@
 | 幂等与审计 | 已通过本地 MySQL 运行时验收 | 专用审计表仅保存代理 ID、受影响后台账号 ID、中文原因、操作人和幂等键；因审计不保存口令或派生摘要，密码重置采用单次提交语义：同代理同键再次提交一律 HTTP 400 冲突，避免不同新口令被伪装为重放成功。代理仍绑定后台账号时不可撤销。 |
 | 代理设置页面 | 已实现（代码） | 补齐 `/business-zones/settings` 菜单、Vben 页面与只读接口；显示服务端聚合的状态数量、审核/绑定规则、密码边界、凭据只写策略和撤销阻断条件，不伪造 CRMEB 未定义的写配置。 |
 | 会话即时失效 | 已实现（代码） | 新增统一后台会话版本中间件，受保护接口均比对账号启用状态、`auth_version` 与 `data_scope_version`；重置密码、禁用账号或更新数据范围后旧令牌在下一次任意请求被拒绝。 |
-| 中文模拟数据 | 已提供 | 既有 `sql/admin/05_test_data.sql` 提供“区域主管王小明”等明显虚构中文代理和空结算资料；后台账号与密码刻意不写入夹具，须通过受控管理员设置创建，避免仓库保存任何凭据。 |
+| 中文模拟数据 | 已提供 | 既有 `sql/admin/init_test_data.sql` 提供“区域主管王小明”等明显虚构中文代理和空结算资料；后台账号与密码刻意不写入夹具，须通过受控管理员设置创建，避免仓库保存任何凭据。 |
 | 自动化与生产验收边界 | 本项已关闭 | `TestResetAgentPasswordIntegrationSingleSubmit` 验证 bcrypt 更新、旧口令失效、`auth_version 1→2` 与同键单次提交；`TestAgentPasswordResetHTTPRBACAndSessionInvalidation` 串联统一后台 JWT、会话版本、角色和按钮码：平台为 HTTP 200，商户、区域、运营、客服均为 403，未登录及被重置账号的旧会话均为 401。真实 Vben 以“七禧代理密码页面验收”等 UTF-8 虚构数据提交中文原因后显示“后台密码已重置，该代理旧后台会话已失效”；审计仅一条且不保存口令或派生摘要。临时账号、代理与审计均已清理。 |
 
 ## 2026-08-04：退款监管日志、审计导出与统一后台 RBAC
@@ -627,7 +627,7 @@
 | CRMEB 基线覆盖 | 已实现（代码） | 平台退款页补齐“日志、导出”操作，现覆盖列表、详情、日志、审核、导出；导出列表/下载以一次受审计的浏览器 CSV 下载实现，不另建无法回收的文件副本。 |
 | 统一后台授权 | 已实现（代码） | 审核、拒绝、日志、导出均使用 `RequireAdminRoles("platform")` 和 `RequireAdminMenu` 校验 `qixi_crm_a_role_menu`；已移除退款处理对旧 `qixi_m_admin_*` 身份服务的依赖。区域、商户、运营、客服均不能调用日志或导出接口。 |
 | 范围与隐私 | 已实现（代码） | 日志先按退款归属商户执行数据范围检查；导出同样复用范围查询且只允许平台角色。CSV 仅含退款、订单、商户、店铺、类型、金额、状态和时间，不含用户身份、退款原因或退货物流；退款单号同样做公式注入防护。 |
-| 审计与中文夹具 | 已实现/已提供 | 新增 `qixi_crm_b_refund_export_audit`，只记录筛选摘要、行数、中文原因、操作人和时间；`sql/business/05_test_data.sql` 增加“用户已提交退货物流，等待商户确认收货”的 UTF-8 中文流转夹具。 |
+| 审计与中文夹具 | 已实现/已提供 | 新增 `qixi_crm_b_refund_export_audit`，只记录筛选摘要、行数、中文原因、操作人和时间；`sql/business/init_test_data.sql` 增加“用户已提交退货物流，等待商户确认收货”的 UTF-8 中文流转夹具。 |
 | 自动化与生产验收边界 | 部分关闭 | `TestRefundHTTPRBACAndMerchantRegionScopes` 已在隔离三库 MySQL 实测平台、商户、区域、运营、客服和无范围账号的退款列表/详情/审批边界，中文数据通过 HTTP JSON 回读。平台可读取中文状态流转日志、按状态导出两笔退款并写入一条含中文原因和行数的 `qixi_crm_b_refund_export_audit`；导出正文含字段标题但不含退款原因。商户、区域、运营、客服读取日志或导出均为 403。真实 Vben 以虚构平台账号显示 `refunding` 为“退款处理中”，操作列只保留详情/日志、无同意/拒绝按钮，浏览器控制台无错误；页面截图为 `/tmp/ecrm-refund-ui-acceptance.png`。同时修复空店铺排行榜返回 `null` 时控制台的 `null.length` 渲染异常：后端稳定输出 `[]`，前端兼容历史 `null`，新会话控制台无错误。`api-platform go test ./...`、`admin-platform pnpm run build:platform` 与 `git diff --check` 通过。退货寄回→商户确认→退款回调同次链路已另行在隔离双服务 HTTP 关闭；其余角色页面截图仍未完成，不以本项代表整个后台生产验收完成。 |
 
 ## 2026-08-04：商户退款日志、物流快照与导出
@@ -723,7 +723,7 @@
 | CRMEB 基线补齐 | 已实现（代码） | 新增“会员类型”与“会员记录”两个 Vben 入口，分别覆盖会员类型列表/新增/编辑/启停和会员购买记录列表/状态筛选/统计；人工用户 SVIP 状态仍保留在原“付费会员”页。 |
 | 资金与权益边界 | 已实现（代码） | 后台仅维护未来可售 `qixi_crm_b_svip_plan`；不提供删除、补单、改价、人工置已支付或人工发放权益。`qixi_crm_b_svip_order` 只读，支付回调仍应作为唯一推进订单和授予权益的幂等事务。 |
 | RBAC | 已实现（代码） | 类型接口限 `platform`/`operations` 并要求 `user.svip.plan.manage`；记录接口要求 `user.svip.record.read`；运营总闸仅开放 `/svip/`，原手工 SVIP 授权继续严格限平台。商户、区域、客服没有相应菜单或接口权限。 |
-| 中文模拟数据与自动化 | 通过静态验证 | `sql/business/05_test_data.sql` 提供“SVIP 月度会员”等 UTF-8 类型及待支付、已关闭的虚构订单，刻意不伪造成功支付或渠道流水。`api-platform go test ./internal/platform/svip ./internal/pkg/middleware ./cmd`、`api-platform go test ./internal/domain`、`admin-platform pnpm run build:platform`、目标文件 `git diff --check` 均通过。 |
+| 中文模拟数据与自动化 | 通过静态验证 | `sql/business/init_test_data.sql` 提供“SVIP 月度会员”等 UTF-8 类型及待支付、已关闭的虚构订单，刻意不伪造成功支付或渠道流水。`api-platform go test ./internal/platform/svip ./internal/pkg/middleware ./cmd`、`api-platform go test ./internal/domain`、`admin-platform pnpm run build:platform`、目标文件 `git diff --check` 均通过。 |
 | 隔离运行时验收 | 已关闭 | 独立假凭据 MySQL 中平台、运营均可读取；商户、区域、客服拒绝。运营实际新增“验收专用体验会员”；中文 Vben 页面展示套餐、权益与只读订单统计。支付回调重放、过期任务和折扣计价仍由独立高风险链路验收。 |
 
 ## 2026-08-04：平台用户搜索记录监管
@@ -789,7 +789,7 @@
 | CRMEB 基线补齐 | 已实现（代码） | 新增“系统设置 / 操作日志”真实 Vben 页面与筛选、分页查询，覆盖 CRMEB `维护 / 操作日志` 的只读职责。 |
 | 审计边界 | 已实现（代码） | 统一后台成功的 POST、PUT、PATCH、DELETE 请求由中间件记录管理员 ID、角色、路由资源、资源 ID、请求号和时间；不记录请求体、密码、令牌、手机号或个人资料。领域状态机仍以各领域不可变审计为准。 |
 | RBAC | 已实现（代码） | 日志查询只允许平台角色，并要求 `setting.operation_log.read`；商户、区域、运营、客服均无菜单和接口权限。 |
-| 中文模拟数据与自动化 | 通过全量后端与前端静态验证 | `sql/admin/05_test_data.sql` 提供两条中文业务语义的虚构操作日志，不初始化真实后台账号、密码或凭据。`api-platform go test ./...`、`admin-platform pnpm run build:platform` 已通过。 |
+| 中文模拟数据与自动化 | 通过全量后端与前端静态验证 | `sql/admin/init_test_data.sql` 提供两条中文业务语义的虚构操作日志，不初始化真实后台账号、密码或凭据。`api-platform go test ./...`、`admin-platform pnpm run build:platform` 已通过。 |
 | 隔离运行时验收 | 已通过（隔离双库 HTTP 与真实 Vben） | `TestCustomerServiceHTTPRBACAndQueueClosure` 使用虚构中文客服执行真实 `DELETE /setting/admins/:id`：仅成功的平台删除写入一条 `setting/987672006` 操作审计，包含平台角色、路由模板与非空请求号；商户、区域、运营、客服的失败删除均不落审计。平台可按 action 查询该行，四种非平台角色读取操作日志均为 403；审计响应不含测试密码散列或请求体。另在一次性本地 Vben 环境发起成功的客服设置更新，操作日志页实际显示 `PUT /api/platform/v1/customer-service/settings`、`customer-service`、固定虚构请求号与 1 条结果，内联截图已复验。夹具清理后账号、会话、审计均为 0。 |
 | 生产验收边界 | 未关闭 | 本项关闭真实成功写操作落库、失败操作不落库、五角色读取拒绝和清理证据；全局审计的其余写域与全后台功能仍须逐项验收，不能据此宣称全量完成。 |
 
@@ -843,7 +843,7 @@
 | 业务审计基础 | 已实现（数据模型） | 新增 `qixi_crm_b_user_feedback_audit`，为平台回复、关闭、幂等重放保留原状态、目标状态、回复、操作人及唯一幂等键；不覆盖 C 端原始反馈。 |
 | API、RBAC 与页面 | 已实现（代码） | 平台新增 `/user-feedback` 列表和回复/关闭/删除命令；`platform/customer_service` 角色以 `user.feedback.read`、`user.feedback.manage` 区分读取与写入，客服种子菜单已授予“用户管理 → 用户反馈”，角色总闸也只额外放行该反馈路由。Vben 拆分“反馈列表、反馈分类”页面，支持状态筛选、分页、回复、关闭和软删除；不返回手机号等个人资料。 |
 | 状态机与命令 | 已实现（代码） | NATS 命令仅允许 `pending → replied` 与 `pending/replied → closed`；业务事务同时更新反馈和审计，回复、关闭均有全局幂等键。 |
-| 分类、删除与中文模拟数据 | 已实现（代码） | 已新增反馈分类的新增、编辑、启停、软删除及独立审计；反馈列表支持软删除，分类快照不因后续改名或删除而改写。`sql/business/05_test_data.sql` 提供“功能建议、订单问题、使用体验、历史分类”及三条 UTF-8 中文反馈夹具。 |
+| 分类、删除与中文模拟数据 | 已实现（代码） | 已新增反馈分类的新增、编辑、启停、软删除及独立审计；反馈列表支持软删除，分类快照不因后续改名或删除而改写。`sql/business/init_test_data.sql` 提供“功能建议、订单问题、使用体验、历史分类”及三条 UTF-8 中文反馈夹具。 |
 | 生产验收 | 未关闭 | 尚缺隔离 MySQL/NATS 的真实往返、幂等冲突/断链恢复、五角色授权截图，以及 C 端分类选择和平台分类维护的浏览器截图。 |
 
 ## 2026-08-03：平台商品标签、保障与参数模板
@@ -853,7 +853,7 @@
 | 数据边界 | 已实现（代码） | 平台商品标签、保障服务和参数模板改为 `qixi_crm_a_product_label`、`qixi_crm_a_product_guarantee`、`qixi_crm_a_product_parameter_template`；`api-platform` 启动入口已移除旧 `qixi_m_admin_store_product_*` 仓储依赖。店铺私有元数据仍归 `api-merchant`。 |
 | API 与 RBAC | 已实现（代码） | 三组 `GET/POST/PUT/DELETE` 路由均只允许 `platform`，并分别要求 `product.label.manage`、`product.guarantee.manage`、`product.parameter.manage` 按钮码。名称唯一、状态仅 `0/1`；参数值必须非空、去重且最多 50 项。 |
 | Vben 页面 | 已实现（代码） | `/product/label`、`/product/guarantee`、`/product/specs` 均指向真实元数据工作台，可新增、编辑、删除、启停和展示中文参数值；未注册路径不会降级为占位页。 |
-| 中文模拟数据与自动化 | 通过静态校验 | `sql/admin/05_test_data.sql` 提供“七天无理由”“正品保障”“演示规格颜色”等 utf8mb4 虚构数据；元数据规则单测、`api-platform go test ./...`、`admin-platform pnpm run build:platform`、`git diff --check` 通过。 |
+| 中文模拟数据与自动化 | 通过静态校验 | `sql/admin/init_test_data.sql` 提供“七天无理由”“正品保障”“演示规格颜色”等 utf8mb4 虚构数据；元数据规则单测、`api-platform go test ./...`、`admin-platform pnpm run build:platform`、`git diff --check` 通过。 |
 | 生产验收边界 | 未关闭 | 尚未在隔离三库中导入夹具，以平台和无权限角色分别验证 CRUD、唯一冲突、参数值边界和页面截图；商品与店铺的标签/保障投影关系也须在对应商品履约闭环中继续验证。 |
 
 ## 2026-08-03：平台商品评论审核
@@ -864,7 +864,7 @@
 | 状态机与幂等 | 已实现（代码） | 仅允许 `pending/hidden → published` 与 `pending/published → hidden`；虚拟评论可创建、编辑、排序和软删除，真实用户评论不能被编辑或删除。每次命令写入审计表并以全局唯一幂等键保护。 |
 | 权限与最小数据 | 已实现（代码） | 读审与展示使用 `product.comment.review`；虚拟评论维护、排序、删除分别要求独立按钮码。响应不包含用户手机号、昵称、收款资料或媒体敏感地址。 |
 | Vben 页面与受控图片 | 已实现（代码） | `/product/comment` 提供筛选、分页、展示/隐藏；虚拟评论明确标识来源并可新增、编辑、排序、软删除。图片仅能由现有平台素材选择器选择，平台验证素材 ID 为平台归属的图片后才传给业务服务；未重新选择图片的编辑不会清空既有图片。真实评论界面不出现篡改或删除操作。 |
-| 中文模拟数据 | 已提供 | `sql/business/05_test_data.sql` 包含“羊绒柔软，版型合身”“香氛淡雅，包装完整”及显著标识来源的“演示用户小满”虚构评论；全部为 utf8mb4 中文夹具。 |
+| 中文模拟数据 | 已提供 | `sql/business/init_test_data.sql` 包含“羊绒柔软，版型合身”“香氛淡雅，包装完整”及显著标识来源的“演示用户小满”虚构评论；全部为 utf8mb4 中文夹具。 |
 | 自动化与构建 | 通过 | 平台命令客户端、业务状态机、平台路由包与两个启动入口定向 Go 测试通过；新增图片数量上限、空素材、无损编辑语义的单元测试；`admin-platform pnpm run build:platform`、`git diff --check` 通过。 |
 | 生产验收边界 | 未关闭 | 尚未建立隔离 MySQL/NATS 假凭据运行时执行消息往返、并发重放、五角色拒绝/允许矩阵和浏览器截图；不得据此将评论模块或全后台标为生产验收完成。 |
 

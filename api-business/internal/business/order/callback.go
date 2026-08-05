@@ -295,6 +295,9 @@ func (h *CallbackHandler) markWechatPaid(ctx context.Context, notify wechatpayv3
 		if err := tx.Table("qixi_crm_b_coupon_user").Where("user_id = ? AND used_order_id = ? AND status = ?", group.UserID, group.ID, "locked").Update("status", "used").Error; err != nil {
 			return err
 		}
+		if err := issueVerificationsForPaidGroup(tx, group.ID); err != nil {
+			return err
+		}
 		return tx.Model(&paymentRow{}).Where("id = ?", payment.ID).Updates(map[string]any{"status": "succeeded", "provider_transaction_no": notify.TransactionID, "callback_idempotency_key": notify.EventID, "paid_at": now}).Error
 	})
 }

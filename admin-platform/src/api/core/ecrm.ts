@@ -37,17 +37,85 @@ export interface UserLabelRow {
 export interface PlatformMerchantRow {
   mer_id: number;
   category_id: number;
+  type_id: number;
+  business_id: number;
   mer_name: string;
+  owner_name: string;
   real_name: string;
   mer_phone: string;
   mer_address: string;
   mer_info: string;
+  mer_keyword: string;
   mark: string;
   status: number;
   mer_state: number;
   is_audit: number;
+  is_best: number;
+  offline_pay: number;
+  is_trader: number;
+  is_bro_room: number;
+  is_bro_goods: number;
+  commission_switch: number;
+  commission_rate: number;
+  mer_account: string;
+  sub_mchid: string;
+  applyment_id: string;
+  care_count: number;
+  care_ficti: number;
+  sort: number;
+  region_id: number;
+  category_name: string;
+  type_name: string;
+  region_name: string;
+  deposit_state: string;
+  deposit_required: number;
+  deposit_available: number;
+  type_margin: number;
+  type_is_margin: number;
+  store_group_ids?: number[];
+  goods_type?: string;
+  goods_types?: number[];
+  platform_category_ids?: string;
+  platform_category_id_list?: number[];
+  mer_star?: number;
   create_time: string;
 }
+
+export interface PlatformMerchantSaveInput {
+  mer_name: string;
+  owner_name?: string;
+  real_name?: string;
+  mer_phone?: string;
+  mer_address?: string;
+  mer_info?: string;
+  mer_keyword?: string;
+  mark?: string;
+  category_id?: number;
+  type_id?: number;
+  business_id?: number;
+  region_id?: number;
+  is_best?: boolean;
+  offline_pay?: boolean;
+  is_trader?: boolean;
+  is_audit?: boolean;
+  is_bro_room?: boolean;
+  is_bro_goods?: boolean;
+  commission_switch?: boolean;
+  commission_rate?: number;
+  mer_account?: string;
+  mer_password?: string;
+  sub_mchid?: string;
+  applyment_id?: string;
+  care_count?: number;
+  care_ficti?: number;
+  sort?: number;
+  status?: boolean;
+  store_group_ids?: number[];
+  goods_types?: number[];
+  platform_category_ids?: number[];
+  mer_star?: number;
+}
+
 
 export interface MerchantIntentionRow {
   mer_intention_id: number;
@@ -291,6 +359,13 @@ export function fetchPlatformMerchants(params: {
   limit: number;
   page: number;
   status?: number;
+  category_id?: number;
+  type_id?: number;
+  region_id?: number;
+  is_best?: number;
+  offline_pay?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<PageResult<PlatformMerchantRow>>('/merchants', {
     params,
@@ -301,8 +376,50 @@ export function fetchPlatformMerchant(id: number) {
   return requestClient.get<PlatformMerchantRow>(`/merchants/${id}`);
 }
 
+export interface MerchantOperateLogRow {
+  id: number;
+  action: string;
+  action_label: string;
+  terminal: string;
+  role_code: string;
+  role_label: string;
+  operator_id: number;
+  operator_name: string;
+  created_at: string;
+}
+
+export function fetchMerchantOperateLogs(
+  id: number,
+  params: {
+    page: number;
+    limit: number;
+    terminal?: string;
+    start_date?: string;
+    end_date?: string;
+  },
+) {
+  return requestClient.get<{ list: MerchantOperateLogRow[]; total: number }>(
+    `/merchants/${id}/operate-logs`,
+    { params },
+  );
+}
+
+export function createPlatformMerchant(input: PlatformMerchantSaveInput) {
+  return requestClient.post<PlatformMerchantRow>('/merchants', input);
+}
+
+export function updatePlatformMerchant(id: number, input: PlatformMerchantSaveInput) {
+  return requestClient.put<PlatformMerchantRow>(`/merchants/${id}`, input);
+}
+
 export function updatePlatformMerchantStatus(id: number, enabled: boolean) {
   return requestClient.put<{ ok: boolean }>(`/merchants/${id}/status`, {
+    enabled,
+  });
+}
+
+export function updatePlatformMerchantRecommend(id: number, enabled: boolean) {
+  return requestClient.put<{ ok: boolean }>(`/merchants/${id}/recommend`, {
     enabled,
   });
 }
@@ -443,6 +560,19 @@ export interface BusinessZoneAgentRow {
 
 export function fetchBusinessZones(params: { keyword?: string; status?: number; page: number; limit: number }) {
   return requestClient.get<PageResult<BusinessZoneRow>>('/business-zones', { params });
+}
+
+export interface BusinessZoneOptionNode {
+  value: number;
+  label: string;
+  children?: BusinessZoneOptionNode[];
+}
+
+/** type=0 区域，type=1 所属商户（CRMEB business_id）。 */
+export function fetchBusinessZoneOptions(type?: 0 | 1) {
+  return requestClient.get<{ list: BusinessZoneOptionNode[] }>('/business-zones/options', {
+    params: type === undefined ? undefined : { type },
+  });
 }
 
 export function createBusinessZone(data: Partial<BusinessZoneRow>) {

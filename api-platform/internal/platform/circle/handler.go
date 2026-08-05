@@ -32,6 +32,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	agentPasswordReset := middleware.RequireAdminMenu(h.adminDB, "region.agent.password.reset")
 	r.GET("/business-zones", platform, zoneManage, h.ListCircles)
 	r.POST("/business-zones", platform, zoneManage, h.CreateCircle)
+	r.GET("/business-zones/options", platform, h.ZoneOptions)
 	r.GET("/business-zones/:id", platform, zoneManage, h.GetCircle)
 	r.PUT("/business-zones/:id", platform, zoneManage, h.UpdateCircle)
 	r.DELETE("/business-zones/:id", platform, zoneManage, h.DeleteCircle)
@@ -86,6 +87,56 @@ func (h *Handler) ListCircles(c *gin.Context) {
 	}
 	response.OK(c, out)
 }
+
+type zoneOptionNode struct {
+	Value    uint             `json:"value"`
+	Label    string           `json:"label"`
+	Children []zoneOptionNode `json:"children,omitempty"`
+}
+
+// ZoneOptions 店铺表单「所属商户 / 店铺区域」级联选项；type=1 商户，type=0 区域。
+func (h *Handler) ZoneOptions(c *gin.Context) {
+	typeRaw := strings.TrimSpace(c.Query("type"))
+	type qrow struct {
+		CircleID uint   `gorm:"column:circle_id"`
+		PID      uint   `gorm:"column:pid"`
+		Name     string `gorm:"column:name"`
+	}
+	q := h.adminDB.WithContext(c.Request.Context()).
+		Table("qixi_crm_a_business_zone").
+		Select("circle_id, pid, name").
+		Where("status = 1").
+		Order("sort ASC, circle_id ASC")
+	if typeRaw != "" {
+		n, err := strconv.ParseInt(typeRaw, 10, 8)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "参数错误")
+			return
+		}
+		q = q.Where("type = ?", int8(n))
+	}
+	var rows []qrow
+	if err := q.Scan(&rows).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	byPID := map[uint][]qrow{}
+	for _, row := range rows {
+		byPID[row.PID] = append(byPID[row.PID], row)
+	}
+	var build func(pid uint) []zoneOptionNode
+	build = func(pid uint) []zoneOptionNode {
+		children := byPID[pid]
+		out := make([]zoneOptionNode, 0, len(children))
+		for _, row := range children {
+			node := zoneOptionNode{Value: row.CircleID, Label: row.Name, Children: build(row.CircleID)}
+			out = append(out, node)
+		}
+		return out
+	}
+	response.OK(c, gin.H{"list": build(0)})
+}
+
 func (h *Handler) GetCircle(c *gin.Context) {
 	key, err := id(c)
 	if err != nil {

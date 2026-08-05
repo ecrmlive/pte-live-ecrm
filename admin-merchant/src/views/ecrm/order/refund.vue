@@ -36,6 +36,8 @@ const canExport = ref(false);
 const canExpress = ref(false);
 const canRemark = ref(false);
 const canDelete = ref(false);
+const canApprove = ref(false);
+const canReject = ref(false);
 const rejectForm = reactive({ failMessage: '' });
 const query = reactive({ limit: 20, page: 1, status: undefined as number | undefined });
 
@@ -61,8 +63,16 @@ function canAudit(row: MerchantRefundOrder) {
   return row.status === 0;
 }
 
-function canConfirmReturn(row: MerchantRefundOrder) {
-  return row.status === 2 && row.refund_type === 2;
+function rowCanApprove(row: MerchantRefundOrder) {
+  return canApprove.value && canAudit(row);
+}
+
+function rowCanReject(row: MerchantRefundOrder) {
+  return canReject.value && canAudit(row);
+}
+
+function rowCanConfirmReturn(row: MerchantRefundOrder) {
+  return canApprove.value && row.status === 2 && row.refund_type === 2;
 }
 
 async function load() {
@@ -152,7 +162,16 @@ async function reject() {
   }
 }
 
-onMounted(async () => { const [permissions] = await Promise.all([getAccessCodesApi(), load()]); canLog.value = permissions.includes('refund.log'); canExport.value = permissions.includes('refund.export'); canExpress.value = permissions.includes('refund.express'); canRemark.value = permissions.includes('refund.remark'); canDelete.value = permissions.includes('refund.delete'); });
+onMounted(async () => {
+  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
+  canApprove.value = permissions.includes('refund.approve');
+  canReject.value = permissions.includes('refund.reject');
+  canLog.value = permissions.includes('refund.log');
+  canExport.value = permissions.includes('refund.export');
+  canExpress.value = permissions.includes('refund.express');
+  canRemark.value = permissions.includes('refund.remark');
+  canDelete.value = permissions.includes('refund.delete');
+});
 </script>
 
 <template>
@@ -204,11 +223,9 @@ onMounted(async () => { const [permissions] = await Promise.all([getAccessCodesA
         <el-table-column fixed="right" label="操作" width="210">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
-            <template v-if="canAudit(row)">
-              <el-button link type="success" @click="approve(row)">同意</el-button>
-              <el-button link type="danger" @click="openReject(row)">拒绝</el-button>
-            </template>
-            <el-button v-if="canConfirmReturn(row)" link type="success" @click="confirmReturn(row)">确认收货</el-button>
+            <el-button v-if="rowCanApprove(row)" link type="success" @click="approve(row)">同意</el-button>
+            <el-button v-if="rowCanReject(row)" link type="danger" @click="openReject(row)">拒绝</el-button>
+            <el-button v-if="rowCanConfirmReturn(row)" link type="success" @click="confirmReturn(row)">确认收货</el-button>
             <el-button v-if="canLog" link @click="openLog(row)">日志</el-button>
             <el-button v-if="canExpress && row.refund_type === 2" link @click="loadExpress(row)">退货物流</el-button>
             <el-button v-if="canRemark" link @click="addRemark(row)">备注</el-button>

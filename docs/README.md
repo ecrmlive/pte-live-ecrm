@@ -20,6 +20,7 @@
 14. **[接入 pte-live-im（客服）](./integration-pte-live-im.md)** — 与现有 IM 项目对接分析
 16. **[云服务配置中心](./cloud-config-center.md)** — 支付、腾讯云、直播与 IM 的加密数据库配置
 17. **[CRMEB → Vben 后台对齐验收](./crmeb-vben-parity.md)** — 各后台角色的真实实现状态与逐页验收标准
+17b. **[管理后台布局强制标准（100%）](./acceptance/LAYOUT-FIDELITY-CHECKLIST.md)** — 以店铺列表为金标准；列表/抽屉页必须遵守
 18. **[H5 / 小程序 DIY 装修运行链路](./diy-h5-runtime.md)** — 后台配置、启用发布与 uni-app x 动态渲染
 19. **[CRMEB 全端功能验收总清单](./CRMEB-FULL-FUNCTION-CHECKLIST.md)** — 各端模块、2409 条逐操作基线入口与完成判定
 20. **[CRMEB 全端实施与验收台账](./acceptance/CRMEB-PORTAL-PARITY-LEDGER.md)** — 当前实现证据、逐端阻断项与关闭规则

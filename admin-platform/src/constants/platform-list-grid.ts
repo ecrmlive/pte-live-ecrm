@@ -2,6 +2,12 @@ import type { VxeGridPropTypes } from 'vxe-table';
 
 import { PLATFORM_LIST_PAGER_DEFAULTS } from './platform-list-pager';
 
+/**
+ * 列表布局强制标准（100%）：以店铺列表为准。
+ * @see admin-platform/src/views/ecrm/merchant/list.vue
+ * @see docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md
+ */
+
 /** 列表页操作列：统一右侧固定 */
 export function platformListActionColumn(
   overrides: Partial<VxeGridPropTypes.Column> = {},
