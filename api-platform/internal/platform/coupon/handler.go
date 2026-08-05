@@ -5,52 +5,30 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc *promotion.Service
-	id  *identity.Service
+	svc     *promotion.Service
+	adminDB *gorm.DB
 }
 
-func NewHandler(svc *promotion.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *promotion.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/coupons", h.List)
-	r.POST("/coupons", middleware.RequirePlatformMenu(h.id, identity.PlatPermCouponCreate), h.Create)
-	r.PUT("/coupons/:id", h.Update)
-	r.DELETE("/coupons/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermCouponDelete), h.Delete)
-	r.POST("/coupons/:id/status", middleware.RequirePlatformMenu(h.id, identity.PlatPermCouponToggle), h.Status)
-	r.GET("/spread/logs", h.SpreadLogs)
-	r.GET("/spread/bills", h.SpreadBills)
-}
-
-func (h *Handler) SpreadLogs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListSpreadLogs(c.Request.Context(), page, limit)
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "查询失败")
-		return
-	}
-	response.OK(c, res)
-}
-
-func (h *Handler) SpreadBills(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListBrokerageBills(c.Request.Context(), nil, page, limit)
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "查询失败")
-		return
-	}
-	response.OK(c, res)
+	write := middleware.RequireAdminRoles("platform", "operations")
+	manage := middleware.RequireAdminMenu(h.adminDB, "marketing.coupon.manage")
+	r.POST("/coupons", write, manage, h.Create)
+	r.PUT("/coupons/:id", write, manage, h.Update)
+	r.DELETE("/coupons/:id", write, manage, h.Delete)
+	r.POST("/coupons/:id/status", write, manage, h.Status)
 }
 
 func (h *Handler) List(c *gin.Context) {

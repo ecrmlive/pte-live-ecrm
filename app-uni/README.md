@@ -1,6 +1,8 @@
-# 七禧商城用户端
+# CRM Live用户端
 
 `app-uni/` 是唯一的 **uni-app x** 工程，使用 HBuilderX 5.0+ 打开后，分别选择“运行到浏览器”和“运行到微信开发者工具”。两种目标使用同一份 `pages.json`、`.uvue` 页面与 `.uts` 逻辑。
+
+本机 CLI 验证使用 `npm run build:h5`。工程采用 HBuilderX 根目录布局，脚本会显式设置 `UNI_INPUT_DIR=.`；正式 H5 验收仍应使用兼容当前处理器的 HBuilderX 5.0+，以加载完整 uni-app x 类型运行时。
 
 本目录只承载 H5 与小程序；iOS、Android、鸿蒙分别由 `app-ios/`、`app-adnroid/`、`app-harmony/` 独立实现，但与本目录共享 C 端接口、JWT 与功能验收基线。
 

@@ -7,32 +7,34 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/attachment"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/upload"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc    *attachment.Service
-	id     *identity.Service
-	upload upload.Store
+	svc     *attachment.Service
+	adminDB *gorm.DB
+	upload  upload.Store
 }
 
-func NewHandler(svc *attachment.Service, id *identity.Service, up upload.Store) *Handler {
-	return &Handler{svc: svc, id: id, upload: up}
+func NewHandler(svc *attachment.Service, adminDB *gorm.DB, up upload.Store) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB, upload: up}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
+	write := middleware.RequireAdminRoles("platform", "operations")
+	manage := middleware.RequireAdminMenu(h.adminDB, "content.attachment.manage")
 	r.GET("/attachments/categories", h.ListCategories)
-	r.POST("/attachments/categories", middleware.RequirePlatformMenu(h.id, identity.PlatPermAttachmentUpload), h.CreateCategory)
-	r.PUT("/attachments/categories/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermAttachmentUpload), h.UpdateCategory)
-	r.DELETE("/attachments/categories/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermAttachmentDelete), h.DeleteCategory)
+	r.POST("/attachments/categories", write, manage, h.CreateCategory)
+	r.PUT("/attachments/categories/:id", write, manage, h.UpdateCategory)
+	r.DELETE("/attachments/categories/:id", write, manage, h.DeleteCategory)
 	r.GET("/attachments", h.List)
-	r.POST("/attachments/upload", middleware.RequirePlatformMenu(h.id, identity.PlatPermAttachmentUpload), h.Upload)
-	r.DELETE("/attachments/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermAttachmentDelete), h.Delete)
+	r.POST("/attachments/upload", write, manage, h.Upload)
+	r.DELETE("/attachments/:id", write, manage, h.Delete)
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {

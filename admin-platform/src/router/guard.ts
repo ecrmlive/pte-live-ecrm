@@ -11,11 +11,10 @@ import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 import { usePlatformUserStore } from '#/store/platform-user';
 import {
-  QIXI_PLATFORM_APP_ID,
-} from '#/utils/pte-live-api';
-import {
   clearEncryptedToken,
+  getDecryptedRefreshToken,
   hydrateAccessTokenFromLegacy,
+  setEncryptedRefreshToken,
   setEncryptedToken,
 } from '#/utils/pte-live-token';
 import {
@@ -34,10 +33,13 @@ import { applySubMenuDefaultIcons } from './menu-default-icons';
 
 const SERVICE_ERROR_PATH = '/auth/service-error';
 
-function applyPlatformToken(token: string) {
+function applyPlatformToken(token: string, refreshToken?: string) {
   const accessStore = useAccessStore();
   accessStore.setAccessToken(token);
   setEncryptedToken(token);
+  if (refreshToken) {
+    setEncryptedRefreshToken(refreshToken);
+  }
   usePlatformUserStore().setToken(token);
 }
 
@@ -49,20 +51,17 @@ function clearPlatformToken() {
 
 async function runPlatformStoredJwtRefresh(force = false) {
   const accessStore = useAccessStore();
-  const token = accessStore.accessToken;
-  if (!token) {
+  if (!accessStore.accessToken) {
     return 'skipped' as const;
   }
   if (!force && !shouldRefreshStoredJwt()) {
     return 'skipped' as const;
   }
   return refreshStoredJwtSession({
-    appId: QIXI_PLATFORM_APP_ID,
     force,
-    loginPlatform: 'platform_admin',
     onClear: clearPlatformToken,
     onToken: applyPlatformToken,
-    token,
+    refreshToken: getDecryptedRefreshToken() || '',
   });
 }
 
@@ -173,11 +172,13 @@ function setupAccessGuard(router: Router) {
       return to;
     }
 
-    // 是否已经生成过动态路由（HMR 后 root.children 可能为空，需重新生成）
+    // 已生成动态路由时，正常命中的页面可直接放行。router.getRoutes() 返回的
+    // 标准化记录并不可靠地保留 children；据此重复生成并重定向同一路径会让
+    // 登录后的 /dashboard 发生无限导航。只有当前仍命中 404 回退时才重建。
     if (accessStore.isAccessChecked) {
-      const rootRoute = router.getRoutes().find((item) => item.path === '/');
-      const hasAccessRoutes = (rootRoute?.children?.length ?? 0) > 0;
-      if (hasAccessRoutes) {
+      // 浏览器刷新或直接粘贴受保护的深层菜单地址时，Vue Router 会先命中
+      // FallbackNotFound；此时重新加载并注册菜单路由，避免“侧栏可点、刷新 404”。
+      if (to.name !== 'FallbackNotFound') {
         return true;
       }
       accessStore.setIsAccessChecked(false);

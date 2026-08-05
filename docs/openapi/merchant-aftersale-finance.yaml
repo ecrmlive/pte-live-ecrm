@@ -16,10 +16,15 @@ paths:
       summary: 售后详情
   /refunds/{id}/approve:
     post:
-      summary: 同意仅退款（→ status=3，退余额/库存；需 order/refund/approve）
+      summary: 审核通过售后（需 refund.approve）
+      description: 仅退款进入 refunding；退货退款进入 awaiting_return，等待用户登记退货物流。不会把退款直接标记为已退款，资金到账只能由支付渠道的已验证回调确认。
   /refunds/{id}/reject:
     post:
       summary: 拒绝（status=-1；需 order/refund/reject）
+  /refunds/{id}/confirm-return:
+    post:
+      summary: 确认收到退货（需 refund.approve）
+      description: 仅适用于 awaiting_receipt 的退货退款；确认后进入 refunding，仍须等待支付渠道已验证回调。
   /finance/balance:
     get:
       summary: 店铺余额

@@ -2,13 +2,16 @@ openapi: 3.0.3
 info:
   title: pte-live-ecrm platform live
   version: 0.7.0
-  description: 平台直播监管（房间详情、审核、C 端显示控制）
+  description: >-
+    平台直播监管（房间详情、审核、C 端显示控制）。直播间与挂货读取业务库投影；
+    响应不得返回推流地址或主播手机号。
 servers:
   - url: /api/platform/v1
 paths:
   /broadcast/rooms:
     get:
       summary: 直播间列表
+      security: [{ authorization: [] }]
       parameters:
         - name: page
           in: query
@@ -19,12 +22,14 @@ paths:
   /broadcast/rooms/{id}:
     get:
       summary: 直播间详情（含挂货商品）
+      security: [{ authorization: [] }]
       parameters:
         - $ref: '#/components/parameters/BroadcastRoomID'
   /broadcast/rooms/{id}/status:
     put:
       summary: 审核或控制 C 端显示
       description: 仅具备直播审房按钮权限的平台账号可调用。审核仅允许待审房间；驳回必须提供 refusal；已审核通过的房间可仅提交 status=0 与 is_show 调整 C 端显示。
+      security: [{ authorization: [] }]
       parameters:
         - $ref: '#/components/parameters/BroadcastRoomID'
       requestBody:
@@ -48,6 +53,11 @@ paths:
                   enum: [0, 1]
                   description: 0=隐藏，1=显示
 components:
+  securitySchemes:
+    authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     BroadcastRoomID:
       name: id

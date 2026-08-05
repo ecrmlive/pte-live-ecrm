@@ -26,6 +26,13 @@ type Store interface {
 	FindCustomerServiceID(ctx context.Context, merID uint) (uint, error)
 	LoadUserNickname(ctx context.Context, uid uint) (string, error)
 	LoadMerName(ctx context.Context, merID uint) (string, error)
+	LoadMerchantIMConfig(ctx context.Context, merID uint) (*MerchantIMConfig, error)
+}
+
+type MerchantIMConfig struct {
+	SDKAppID     string
+	APIPublicURL string
+	WSPublicURL  string
 }
 
 type IMSettings struct {
@@ -70,6 +77,13 @@ func (s *Service) OpenUserThread(ctx context.Context, uid uint, merID uint) (*Th
 	}
 	row, err := s.store.FindThreadByMerUID(ctx, merID, uid)
 	if err == nil {
+		if row.Status == StatusClosed {
+			now := time.Now()
+			row.Status, row.LastMsg, row.LastTime = StatusOpen, "会话已重新开启", &now
+			if updateErr := s.store.UpdateThread(ctx, row); updateErr != nil {
+				return nil, updateErr
+			}
+		}
 		_ = s.ensureIMConversation(ctx, row)
 		return s.enrichThread(ctx, row), nil
 	}
@@ -80,10 +94,20 @@ func (s *Service) OpenUserThread(ctx context.Context, uid uint, merID uint) (*Th
 	svcID, _ := s.store.FindCustomerServiceID(ctx, merID)
 	t := &Thread{
 		MerID: merID, UID: uid, ServiceID: svcID, Status: StatusOpen,
-		LastMsg: "会话已创建", LastTime: &now, CreateTime: now,
+		ImConversationID: fmt.Sprintf("pending:%d:%d:%d", merID, uid, now.UnixNano()),
+		LastMsg:          "会话已创建", LastTime: &now, CreateTime: now,
+	}
+	if svcID > 0 {
+		t.AssignedAt = &now
 	}
 	if err := s.store.CreateThread(ctx, t); err != nil {
-		return nil, err
+		// uk_user_store closes the concurrent-open race. Re-read the winner instead of creating duplicate business sessions.
+		winner, findErr := s.store.FindThreadByMerUID(ctx, merID, uid)
+		if findErr != nil {
+			return nil, err
+		}
+		_ = s.ensureIMConversation(ctx, winner)
+		return s.enrichThread(ctx, winner), nil
 	}
 	sys := &Message{
 		ThreadID: t.ThreadID, MerID: merID, SenderRole: "system", SenderID: 0,
@@ -131,6 +155,8 @@ func (s *Service) Claim(ctx context.Context, merID, serviceID, threadID uint) (*
 	}
 	if t.ServiceID == 0 || t.ServiceID == serviceID {
 		t.ServiceID = serviceID
+		now := time.Now()
+		t.AssignedAt = &now
 		if err := s.store.UpdateThread(ctx, t); err != nil {
 			return nil, err
 		}
@@ -177,6 +203,8 @@ func (s *Service) SendService(ctx context.Context, merID, serviceID, threadID ui
 	}
 	if t.ServiceID == 0 {
 		t.ServiceID = serviceID
+		now := time.Now()
+		t.AssignedAt = &now
 	} else if t.ServiceID != serviceID {
 		return nil, ErrForbidden
 	}
@@ -241,6 +269,7 @@ func (s *Service) IssueCredentialForThread(ctx context.Context, portal string, l
 	}
 
 	var convID uint64
+	var merchantID uint
 	if threadID > 0 {
 		var t *Thread
 		var err error
@@ -256,10 +285,11 @@ func (s *Service) IssueCredentialForThread(ctx context.Context, portal string, l
 			return nil, err
 		}
 		_ = s.ensureIMConversation(ctx, t)
-		convID = t.ImConversationID
+		convID, _ = strconv.ParseUint(t.ImConversationID, 10, 64)
+		merchantID = t.MerID
 	}
 
-	im, err := s.effectiveIMSettings(ctx)
+	im, err := s.effectiveIMSettingsForMerchant(ctx, merchantID)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +329,7 @@ func (s *Service) ensureIMConversation(ctx context.Context, t *Thread) error {
 	if t == nil {
 		return nil
 	}
-	im, err := s.effectiveIMSettings(ctx)
+	im, err := s.effectiveIMSettingsForMerchant(ctx, t.MerID)
 	if err != nil {
 		return err
 	}
@@ -307,7 +337,7 @@ func (s *Service) ensureIMConversation(ctx context.Context, t *Thread) error {
 	if remote == nil || !remote.Enabled() {
 		return nil
 	}
-	if t.ImConversationID > 0 {
+	if convID, parseErr := strconv.ParseUint(t.ImConversationID, 10, 64); parseErr == nil && convID > 0 {
 		return nil
 	}
 	if t.ServiceID == 0 {
@@ -325,8 +355,31 @@ func (s *Service) ensureIMConversation(ctx context.Context, t *Thread) error {
 	if err != nil {
 		return err
 	}
-	t.ImConversationID = convID
+	t.ImConversationID = strconv.FormatUint(convID, 10)
 	return s.store.UpdateThread(ctx, t)
+}
+
+func (s *Service) effectiveIMSettingsForMerchant(ctx context.Context, merID uint) (IMSettings, error) {
+	im, err := s.effectiveIMSettings(ctx)
+	if err != nil || merID == 0 {
+		return im, err
+	}
+	merchant, err := s.store.LoadMerchantIMConfig(ctx, merID)
+	if err != nil {
+		return IMSettings{}, err
+	}
+	if merchant != nil {
+		if value := strings.TrimSpace(merchant.SDKAppID); value != "" {
+			im.AppID = value
+		}
+		if value := strings.TrimSpace(merchant.APIPublicURL); value != "" {
+			im.APIPublicURL = value
+		}
+		if value := strings.TrimSpace(merchant.WSPublicURL); value != "" {
+			im.WSPublicURL = value
+		}
+	}
+	return im, nil
 }
 
 func (s *Service) effectiveIMSettings(ctx context.Context) (IMSettings, error) {
@@ -375,9 +428,7 @@ func (s *Service) getOwned(ctx context.Context, merID, uid, threadID uint, asSer
 		}
 		return nil, err
 	}
-	if t.IsDel == 1 {
-		return nil, ErrNotFound
-	}
+
 	if uid > 0 && t.UID != uid {
 		return nil, ErrForbidden
 	}

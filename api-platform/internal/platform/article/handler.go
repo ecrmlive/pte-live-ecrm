@@ -5,26 +5,36 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/article"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-type Handler struct{ svc *article.Service }
+type Handler struct {
+	svc     *article.Service
+	adminDB *gorm.DB
+}
 
-func NewHandler(svc *article.Service) *Handler { return &Handler{svc: svc} }
+func NewHandler(svc *article.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/article/categories", h.ListCategories)
-	r.POST("/article/categories", h.CreateCategory)
-	r.PUT("/article/categories/:id", h.UpdateCategory)
-	r.DELETE("/article/categories/:id", h.DeleteCategory)
+	write := middleware.RequireAdminRoles("platform", "operations")
+	categoryWrite := middleware.RequireAdminMenu(h.adminDB, "content.article_category.manage")
+	r.POST("/article/categories", write, categoryWrite, h.CreateCategory)
+	r.PUT("/article/categories/:id", write, categoryWrite, h.UpdateCategory)
+	r.DELETE("/article/categories/:id", write, categoryWrite, h.DeleteCategory)
 
 	r.GET("/articles", h.List)
 	r.GET("/articles/:id", h.Get)
-	r.POST("/articles", h.Create)
-	r.PUT("/articles/:id", h.Update)
-	r.DELETE("/articles/:id", h.Delete)
+	articleWrite := middleware.RequireAdminMenu(h.adminDB, "content.article.manage")
+	r.POST("/articles", write, articleWrite, h.Create)
+	r.PUT("/articles/:id", write, articleWrite, h.Update)
+	r.DELETE("/articles/:id", write, articleWrite, h.Delete)
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {

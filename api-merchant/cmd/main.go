@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/aftersale"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/assist"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/attachment"
@@ -31,6 +30,11 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/trade"
 	merchantdiyevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantdiy"
 	merchantimevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantim"
+	merchantintegralpolicyevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantintegralpolicy"
+	merchantledgerevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantledger"
+	merchantonboardingevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantonboarding"
+	merchantsettlementevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantsettlement"
+	merchantstockevent "github.com/crmlive/pte-live-ecrm/api-merchant/internal/event/merchantstock"
 	aftersalepersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/aftersale"
 	assistpersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/assist"
 	attachmentpersist "github.com/crmlive/pte-live-ecrm/api-merchant/internal/infra/persist/attachment"
@@ -64,15 +68,24 @@ import (
 	merchantcoupon "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/coupon"
 	merchantcs "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/cs"
 	merchantdashboard "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/dashboard"
+	merchantcomment "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativecomment"
+	merchantledger "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeledger"
+	merchantoperationlog "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeoperationlog"
+	merchantstoreconfig "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativestoreconfig"
+	merchantstorecustomer "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativestorecustomer"
 	merchantdiy "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/diy"
 	merchantfinance "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/finance"
 	merchantfulfillment "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/fulfillment"
 	merchantimsdk "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/imsdk"
+	merchantintegralpolicy "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/integralpolicy"
 	merchantinvoice "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/invoice"
 	merchantlogistics "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/logistics"
 	merchantcatalog "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativecatalog"
 	nativeorder "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeorder"
+	nativeproductmeta "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativeproductmeta"
 	nativerefund "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativerefund"
+	merchantnativesettlement "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativesettlement"
+	merchantstaff "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/nativestaff"
 	merchantorder "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/order"
 	merchantpayment "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/payment"
 	merchantpresell "github.com/crmlive/pte-live-ecrm/api-merchant/internal/merchant/presell"
@@ -88,6 +101,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/upload"
 	storeauth "github.com/crmlive/pte-live-ecrm/api-merchant/internal/store/auth"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -108,7 +122,38 @@ func main() {
 		log.Fatalf("mysql: %v", err)
 	}
 	merchantimevent.StartMerchantOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantintegralpolicyevent.StartMerchantOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
 	merchantdiyevent.StartMerchantOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantsettlementevent.StartOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantSettlementCommands, err := merchantsettlementevent.StartCommandSubscriber(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant settlement command subscriber unavailable: %v", err)
+	}
+	if merchantSettlementCommands != nil {
+		defer merchantSettlementCommands.Close()
+	}
+	merchantStockCommands, err := merchantstockevent.StartCommandSubscriber(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant stock command subscriber unavailable: %v", err)
+	}
+	if merchantStockCommands != nil {
+		defer merchantStockCommands.Close()
+	}
+	merchantLedgerCommands, err := merchantledgerevent.StartCommandSubscriber(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant settlement ledger subscriber unavailable: %v", err)
+	}
+	if merchantLedgerCommands != nil {
+		defer merchantLedgerCommands.Close()
+	}
+	merchantledgerevent.StartPendingBillFreezer(context.Background(), gdb)
+	merchantOnboarding, err := merchantonboardingevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant onboarding subscriber unavailable: %v", err)
+	}
+	if merchantOnboarding != nil {
+		defer merchantOnboarding.Close()
+	}
 	businessDSN, err := cfg.DSNFor(config.DatabaseBusiness)
 	if err != nil {
 		log.Fatalf("business payment projection database config: %v", err)
@@ -154,11 +199,19 @@ func main() {
 
 	storeAuthH := storeauth.NewHandler(gdb, jwtMgr)
 	merchantDashboardH := merchantdashboard.NewHandler(gdb, businessDB)
-	merchantCatH := merchantcatalog.NewHandler(gdb, businessDB, idSvc)
+	merchantStoreCustomerH := merchantstorecustomer.NewHandler(businessDB)
+	merchantCommentH := merchantcomment.NewHandler(businessDB)
+	merchantLedgerH := merchantledger.NewHandler(gdb)
+	merchantOperationLogH := merchantoperationlog.NewHandler(gdb)
+	merchantStoreConfigH := merchantstoreconfig.NewHandler(gdb, businessDB)
+	merchantCatH := merchantcatalog.NewHandler(gdb, businessDB)
+	merchantNativeProductMetaH := nativeproductmeta.NewHandler(gdb)
+	merchantStaffH := merchantstaff.NewHandler(gdb)
 	merchantOrderH := merchantorder.NewHandler(tradeSvc, idSvc, logisticsSvc)
-	merchantNativeOrderH := nativeorder.NewHandler(businessDB, idSvc)
-	merchantRefundH := nativerefund.NewHandler(businessDB, idSvc)
+	merchantNativeOrderH := nativeorder.NewHandler(businessDB, gdb)
+	merchantRefundH := nativerefund.NewHandler(businessDB, gdb)
 	merchantFinanceH := merchantfinance.NewHandler(financeSvc)
+	merchantSettlementH := merchantnativesettlement.NewHandler(gdb)
 	merchantCouponH := merchantcoupon.NewHandler(promoSvc, idSvc)
 	merchantSeckillH := merchantseckill.NewHandler(seckillSvc, idSvc)
 	merchantComboH := merchantcombination.NewHandler(comboSvc, idSvc)
@@ -175,6 +228,7 @@ func main() {
 	merchantCsH := merchantcs.NewHandler(csSvc, idSvc)
 	merchantFulfillH := merchantfulfillment.NewHandler(fulfillSvc)
 	merchantInvoiceH := merchantinvoice.NewHandler(invoiceSvc)
+	merchantIntegralPolicyH := merchantintegralpolicy.NewHandler(gdb)
 	merchantLogisticsH := merchantlogistics.NewHandler(logisticsSvc)
 	merchantProductMetaH := merchantproductmeta.NewHandler(productMetaSvc)
 	merchantDiyH := merchantdiy.NewHandler(diySvc)
@@ -192,14 +246,22 @@ func main() {
 
 	merchantPublic := r.Group("/api/merchant/v1")
 	merchantAuthed := r.Group("/api/merchant/v1")
-	merchantAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalMerchant), middleware.RequireStoreConsole(), middleware.RequireStoreAppID())
+	merchantAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalMerchant), middleware.RequireStoreConsole(), middleware.RequireStoreAppID(), middleware.RequireActiveStoreSession(gdb))
 	storeAuthH.Register(merchantPublic, merchantAuthed)
 	merchantDashboardH.Register(merchantAuthed)
+	merchantStoreCustomerH.Register(merchantAuthed)
+	merchantCommentH.Register(merchantAuthed)
+	merchantLedgerH.Register(merchantAuthed)
+	merchantOperationLogH.Register(merchantAuthed)
+	merchantStoreConfigH.Register(merchantAuthed)
 	merchantCatH.Register(merchantAuthed)
+	merchantNativeProductMetaH.Register(merchantAuthed)
+	merchantStaffH.Register(merchantAuthed)
 	merchantOrderH.RegisterVerify(merchantAuthed)
 	merchantNativeOrderH.Register(merchantAuthed)
 	merchantRefundH.Register(merchantAuthed)
 	merchantFinanceH.Register(merchantAuthed)
+	merchantSettlementH.Register(merchantAuthed)
 	merchantCouponH.Register(merchantAuthed)
 	merchantSeckillH.Register(merchantAuthed)
 	merchantComboH.Register(merchantAuthed)
@@ -211,6 +273,7 @@ func main() {
 	merchantCsH.Register(merchantAuthed)
 	merchantFulfillH.Register(merchantAuthed)
 	merchantInvoiceH.Register(merchantAuthed)
+	merchantIntegralPolicyH.Register(merchantAuthed)
 	merchantLogisticsH.Register(merchantAuthed)
 	merchantProductMetaH.Register(merchantAuthed)
 	merchantReserveH.Register(merchantAuthed)
@@ -254,7 +317,7 @@ func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, X-Requested-With,Form-type,Referer,Connection,Content-Length,Host,Origin,Authori-zation,Accept,Accept-Encoding,Accept-Language,X-AppId")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, X-Requested-With,Form-type,Referer,Connection,Content-Length,Host,Origin,Authori-zation,Accept,Accept-Encoding,Accept-Language,X-AppId,X-Idempotency-Key")
 		c.Header("Vary", "Origin, Access-Control-Request-Headers")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)

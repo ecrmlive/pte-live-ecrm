@@ -1,7 +1,14 @@
 <script lang="uts">
 export default {
   onLaunch() {
-    console.log('七禧商城 uni-app x 已启动')
+    console.log('CRM Live uni-app x 已启动')
+  },
+  onError(error: any) {
+    console.error('CRM Live 运行异常', error)
+    uni.showModal({ title: '页面加载异常', content: '页面初始化失败，请刷新后重试。', showCancel: false })
+  },
+  onUnhandledRejection(event: any) {
+    console.error('CRM Live 未处理异步异常', event)
   },
 }
 </script>

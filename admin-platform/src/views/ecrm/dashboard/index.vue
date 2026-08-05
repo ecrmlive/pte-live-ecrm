@@ -24,6 +24,8 @@ import {
   type DashboardMetric,
   type PlatformDashboardSummary,
 } from '#/api/core/platform-dashboard';
+import { getUserInfoApi } from '#/api/core/auth';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
 type MetricCard = {
   icon: Component;
@@ -35,11 +37,13 @@ type MetricCard = {
 const loading = ref(false);
 const failed = ref(false);
 const updatedAt = ref('');
+const roles = ref<string[]>([]);
 const dashboard = ref<PlatformDashboardSummary>({
   new_users: { month: 0, today: 0, yesterday: 0 },
   on_sale_product: 0,
   page_views: { month: 0, today: 0, yesterday: 0 },
   paid_order: 0,
+	  scope: 'all',
   pending_delivery: 0,
   pending_product_audit: 0,
   pending_refund: 0,
@@ -54,30 +58,46 @@ const dashboard = ref<PlatformDashboardSummary>({
   visitors: { month: 0, today: 0, yesterday: 0 },
 });
 
+const isPlatform = computed(() => roles.value.includes('platform'));
+const isMerchantOrRegion = computed(() => roles.value.includes('merchant') || roles.value.includes('region'));
+const isCustomerService = computed(() => roles.value.includes('customer_service'));
 const metricCards = computed<MetricCard[]>(() => [
-  { icon: User, label: '新增用户', metric: dashboard.value.new_users, tone: 'blue' },
+  { icon: User, label: dashboard.value.scope === 'all' ? '新增用户' : '下单用户', metric: dashboard.value.new_users, tone: 'blue' },
   { icon: View, label: '浏览量', metric: dashboard.value.page_views, tone: 'cyan' },
   { icon: UserFilled, label: '访客数', metric: dashboard.value.visitors, tone: 'purple' },
 ]);
 
-const quickLinks: Array<{ icon: Component; label: string; route: string; tone: string }> = [
+const platformQuickLinks: Array<{ icon: Component; label: string; route: string; tone: string }> = [
   { icon: Goods, label: '商品管理', route: '/product/audit', tone: 'mint' },
   { icon: User, label: '用户管理', route: '/user/group', tone: 'blue' },
   { icon: Document, label: '订单管理', route: '/order/list', tone: 'orange' },
   { icon: Connection, label: '分销管理', route: '/marketing/spread', tone: 'purple' },
   { icon: ChatDotRound, label: '客服管理', route: '/service', tone: 'gold' },
-  { icon: Document, label: '文章管理', route: '/content/article', tone: 'cyan' },
+  { icon: Document, label: '文章管理', route: '/cms/article', tone: 'cyan' },
   { icon: Ticket, label: '平台优惠券', route: '/marketing/coupon', tone: 'peach' },
   { icon: Setting, label: '系统设置', route: '/setting/admin', tone: 'amber' },
 ];
 
-const todos = computed(() => [
+const quickLinks = computed(() => {
+  if (isPlatform.value) return platformQuickLinks;
+  if (isCustomerService.value) return platformQuickLinks.filter((item) => item.route === '/service');
+  if (isMerchantOrRegion.value) return platformQuickLinks.filter((item) => ['/product/audit', '/order/list'].includes(item.route));
+  return [];
+});
+
+const allTodos = computed(() => [
   { icon: Goods, label: '待审核商品', route: '/product/audit', tone: 'blue', value: dashboard.value.pending_product_audit },
   { icon: Shop, label: '待审核商户入驻', route: '/merchant/audit', tone: 'orange', value: dashboard.value.pending_store_audit },
   { icon: Document, label: '待发货订单', route: '/order/list', tone: 'purple', value: dashboard.value.pending_delivery },
   { icon: Money, label: '待处理退款', route: '/order/refund', tone: 'cyan', value: dashboard.value.pending_refund },
   { icon: ChatDotRound, label: '待处理用户咨询', route: '/service', tone: 'green', value: dashboard.value.pending_service },
 ]);
+const todos = computed(() => {
+  if (isPlatform.value) return allTodos.value;
+  if (isCustomerService.value) return allTodos.value.filter((item) => item.route === '/service');
+  if (isMerchantOrRegion.value) return allTodos.value.filter((item) => ['/product/audit', '/order/list', '/order/refund'].includes(item.route));
+  return [];
+});
 
 const formatCount = (value: number | null | undefined) => Number(value || 0).toLocaleString('zh-CN');
 const formatMoney = (value: number | null | undefined) => Number(value || 0).toLocaleString('zh-CN', {
@@ -93,12 +113,18 @@ async function loadDashboard() {
   } catch {
     failed.value = true;
   } finally {
-    updatedAt.value = new Date().toLocaleString('zh-CN', { hour12: false });
+    updatedAt.value = formatShanghaiDateTime(new Date());
     loading.value = false;
   }
 }
 
-onMounted(() => void loadDashboard());
+onMounted(async () => {
+  try {
+    roles.value = (await getUserInfoApi()).roles || [];
+  } finally {
+    await loadDashboard();
+  }
+});
 </script>
 
 <template>
@@ -169,8 +195,8 @@ onMounted(() => void loadDashboard());
               <ElTag effect="plain" type="primary">本月</ElTag>
             </div>
           </template>
-          <ElEmpty v-if="!loading && dashboard.store_sales_rank.length === 0" description="本月暂无已支付订单" :image-size="76" />
-          <el-table v-else v-loading="loading" class="rank-table" :data="dashboard.store_sales_rank" size="small">
+          <ElEmpty v-if="!loading && !(dashboard.store_sales_rank?.length)" description="本月暂无已支付订单" :image-size="76" />
+          <el-table v-else v-loading="loading" class="rank-table" :data="dashboard.store_sales_rank || []" size="small">
             <el-table-column align="center" label="排名" width="68">
               <template #default="{ $index }"><span class="rank-badge" :class="{ 'rank-badge--top': $index < 3 }">{{ $index + 1 }}</span></template>
             </el-table-column>

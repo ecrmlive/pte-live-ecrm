@@ -2,9 +2,15 @@
 import { appRequest } from '../../common/request'
 type PresellFinal = { presell_order_id: number; presell_order_sn: string; store_name: string; pay_price: number; paid: number; final_start_time: string; final_end_time: string }
 const id = ref(0); const item = ref<PresellFinal | null>(null); const paying = ref(false)
+function hasItem(): boolean { return item.value != null }
+function presellName(): string { const order = item.value; return order == null || order.store_name.length == 0 ? '预售尾款' : order.store_name }
+function presellOrderSN(): string { const order = item.value; return order == null ? '--' : order.presell_order_sn }
+function finalPayWindow(): string { const order = item.value; return order == null ? '--' : order.final_start_time + ' 至 ' + order.final_end_time }
+function finalPayPrice(): number { const order = item.value; return order == null ? 0 : order.pay_price }
+function canPay(): boolean { const order = item.value; return order != null && order.paid == 0 }
 function load(): void { if (id.value > 0) appRequest(`/presell/finals/${id.value}`).then((data) => { item.value = data as PresellFinal }).catch((error) => uni.showToast({ title: error.message || '尾款信息加载失败', icon: 'none' })) }
 function pay(): void { if (item.value == null || item.value.paid == 1) return; paying.value = true; appRequest(`/presell/pay/${id.value}`, 'POST', { pay_type: 'balance' } as UTSJSONObject).then((data) => { item.value = data as PresellFinal; uni.showToast({ title: '余额支付成功', icon: 'success' }); uni.redirectTo({ url: '/pages/order/list' }) }).catch((error) => uni.showToast({ title: error.message || '尾款支付失败', icon: 'none' })).finally(() => { paying.value = false }) }
-onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+onLoad((query) => { id.value = Number(query?.['id'] || 0); load() })
 </script>
-<template><view class="qx-page"><qx-nav title="支付预售尾款" /><view v-if="item != null" class="qx-card"><text class="name">{{ item.store_name || '预售尾款' }}</text><text class="sub">尾款单号：{{ item.presell_order_sn }}</text><text class="sub">支付窗口：{{ item.final_start_time }} 至 {{ item.final_end_time }}</text><text class="price">¥{{ item.pay_price }}</text></view><view v-if="item != null && item.paid == 0" class="footer"><button :loading="paying" class="qx-primary" @click="pay">余额支付尾款</button></view></view></template>
+<template><view class="qx-page"><qx-nav title="支付预售尾款" /><view v-if="hasItem()" class="qx-card"><text class="name">{{ presellName() }}</text><text class="sub">尾款单号：{{ presellOrderSN() }}</text><text class="sub">支付窗口：{{ finalPayWindow() }}</text><text class="price">¥{{ finalPayPrice() }}</text></view><view v-if="canPay()" class="footer"><button :loading="paying" class="qx-primary" @click="pay">余额支付尾款</button></view></view></template>
 <style>.name, .sub, .price { display: block; }.name { font-size: 17px; font-weight: 600; }.sub { margin-top: 10px; color: #86909c; font-size: 13px; }.price { margin-top: 20px; color: #d72828; font-size: 26px; font-weight: 700; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

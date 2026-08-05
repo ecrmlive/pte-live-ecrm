@@ -1,0 +1,32 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { setAccessToken } from '../../common/session'
+
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const saving = ref(false)
+
+function save(): void {
+  if (currentPassword.value.length == 0 || newPassword.value.length == 0 || confirmPassword.value.length == 0) { uni.showToast({ title: '请完整填写密码', icon: 'none' }); return }
+  if (newPassword.value != confirmPassword.value) { uni.showToast({ title: '两次新密码不一致', icon: 'none' }); return }
+  if (newPassword.value.length < 8 || newPassword.value.length > 128) { uni.showToast({ title: '新密码需为 8 至 128 个字符', icon: 'none' }); return }
+  if (currentPassword.value == newPassword.value) { uni.showToast({ title: '新密码不能与旧密码相同', icon: 'none' }); return }
+  saving.value = true
+  appRequest('/auth/password', 'POST', { current_password: currentPassword.value, new_password: newPassword.value, confirm_password: confirmPassword.value } as UTSJSONObject).then((data) => {
+    const token = (data as UTSJSONObject)['token'] as UTSJSONObject
+    const accessToken = String(token['access_token'] || '')
+    if (accessToken.length == 0) throw new Error('登录凭证刷新失败，请重新登录')
+    setAccessToken(accessToken)
+    currentPassword.value = ''; newPassword.value = ''; confirmPassword.value = ''
+    uni.showToast({ title: '密码已更新', icon: 'success' })
+    setTimeout(() => uni.navigateBack(), 600)
+  }).catch((error) => uni.showToast({ title: error.message || '密码更新失败', icon: 'none' })).finally(() => { saving.value = false })
+}
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="账户安全" /><view class="qx-card"><text class="hint">修改成功后，其他设备上的登录会话将自动失效。</text><input v-model="currentPassword" class="input" password placeholder="当前密码" /><input v-model="newPassword" class="input" password maxlength="128" placeholder="新密码（8 至 128 个字符）" /><input v-model="confirmPassword" class="input" password maxlength="128" placeholder="再次输入新密码" /><button class="qx-primary" :loading="saving" @click="save">确认修改密码</button></view></view>
+</template>
+
+<style>.hint{display:block;margin-bottom:14px;color:#86909c;font-size:12px;line-height:18px}.input{height:44px;margin-bottom:12px;padding:0 10px;box-sizing:border-box;background:#f6f7f9;border-radius:8px}.qx-primary{margin-top:8px;border-radius:22px}</style>

@@ -14,6 +14,7 @@ import {
   updateAttachmentCategoryApi,
   uploadAttachmentApi,
 } from '#/api/core/attachment';
+import { getAccessCodesApi } from '#/api/core/auth';
 
 const categories = ref<AttachmentCategory[]>([]);
 const files = ref<AttachmentItem[]>([]);
@@ -23,6 +24,7 @@ const loading = ref(false);
 const page = ref(1);
 const pageSize = 24;
 const total = ref(0);
+const canManage = ref(false);
 const accept = computed(() => kind.value === 'image' ? 'image/jpeg,image/png,image/webp,image/gif' : 'video/mp4,video/quicktime,video/webm');
 
 async function loadCategories() {
@@ -117,8 +119,8 @@ async function removeFile(row: AttachmentItem) {
 }
 
 onMounted(async () => {
-  await loadCategories();
-  await loadFiles();
+  const [permissions] = await Promise.all([getAccessCodesApi(), loadCategories(), loadFiles()]);
+  canManage.value = permissions.includes('content.attachment.manage');
 });
 </script>
 
@@ -128,12 +130,12 @@ onMounted(async () => {
       <aside class="attachment-page__sidebar">
         <div class="attachment-page__side-head">
           <span>素材分类</span>
-          <ElButton link type="primary" @click="addCategory">新增</ElButton>
+          <ElButton v-if="canManage" link type="primary" @click="addCategory">新增</ElButton>
         </div>
         <button class="attachment-page__category" :class="{ active: categoryID === 0 }" @click="selectCategory(0)">全部素材</button>
         <div v-for="row in categories" :key="row.attachment_category_id" class="attachment-page__category-row">
           <button class="attachment-page__category" :class="{ active: categoryID === row.attachment_category_id }" @click="selectCategory(row.attachment_category_id)">{{ row.attachment_category_name }}</button>
-          <span class="attachment-page__category-actions">
+          <span v-if="canManage" class="attachment-page__category-actions">
             <ElButton link size="small" @click="editCategory(row)">编辑</ElButton>
             <ElButton link size="small" type="danger" @click="removeCategory(row)">删除</ElButton>
           </span>
@@ -145,7 +147,7 @@ onMounted(async () => {
             <ElButton :type="kind === 'image' ? 'primary' : 'default'" @click="selectKind('image')">图片</ElButton>
             <ElButton :type="kind === 'video' ? 'primary' : 'default'" @click="selectKind('video')">视频</ElButton>
           </div>
-          <ElUpload :accept="accept" :http-request="upload" :show-file-list="false">
+          <ElUpload v-if="canManage" :accept="accept" :http-request="upload" :show-file-list="false">
             <ElButton type="primary">上传{{ kind === 'image' ? '图片' : '视频' }}</ElButton>
           </ElUpload>
         </div>
@@ -159,7 +161,7 @@ onMounted(async () => {
                 <p :title="row.attachment_name">{{ row.attachment_name }}</p>
                 <ElTag size="small" :type="row.attachment_type === 0 ? 'success' : 'warning'">{{ row.attachment_type === 0 ? '图片' : '视频' }}</ElTag>
               </div>
-              <ElButton link type="danger" @click="removeFile(row)">删除</ElButton>
+              <ElButton v-if="canManage" link type="danger" @click="removeFile(row)">删除</ElButton>
             </div>
           </article>
         </div>

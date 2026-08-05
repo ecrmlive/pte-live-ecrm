@@ -3,14 +3,15 @@ import CryptoJS from 'crypto-js';
 import { QIXI_ADMIN_TOKEN_KEY } from './pte-live-api';
 
 const SECRET_KEY = 'jjj_shop_single_admin_2024';
+const QIXI_ADMIN_REFRESH_TOKEN_KEY = `${QIXI_ADMIN_TOKEN_KEY}:refresh`;
 
-export function setEncryptedToken(token: string, name = QIXI_ADMIN_TOKEN_KEY) {
+function setEncryptedValue(token: string, name: string) {
   if (!token) return;
   const encrypted = CryptoJS.AES.encrypt(JSON.stringify(token), SECRET_KEY).toString();
   sessionStorage.setItem(name, encrypted);
 }
 
-export function getDecryptedToken(name = QIXI_ADMIN_TOKEN_KEY) {
+function getDecryptedValue(name: string) {
   const encrypted = sessionStorage.getItem(name);
   if (!encrypted) return null;
   try {
@@ -22,8 +23,27 @@ export function getDecryptedToken(name = QIXI_ADMIN_TOKEN_KEY) {
   }
 }
 
+export function setEncryptedToken(token: string, name = QIXI_ADMIN_TOKEN_KEY) {
+  setEncryptedValue(token, name);
+}
+
+export function getDecryptedToken(name = QIXI_ADMIN_TOKEN_KEY) {
+  return getDecryptedValue(name);
+}
+
+export function setEncryptedRefreshToken(token: string) {
+  setEncryptedValue(token, QIXI_ADMIN_REFRESH_TOKEN_KEY);
+}
+
+export function getDecryptedRefreshToken() {
+  return getDecryptedValue(QIXI_ADMIN_REFRESH_TOKEN_KEY);
+}
+
 export function clearEncryptedToken(name = QIXI_ADMIN_TOKEN_KEY) {
   sessionStorage.removeItem(name);
+  if (name === QIXI_ADMIN_TOKEN_KEY) {
+    sessionStorage.removeItem(QIXI_ADMIN_REFRESH_TOKEN_KEY);
+  }
 }
 
 export function syncLegacyUserSession(userName: string) {

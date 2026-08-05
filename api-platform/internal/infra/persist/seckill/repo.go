@@ -80,10 +80,9 @@ func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (storeName, 
 		MerID     uint    `gorm:"column:mer_id"`
 		MerName   string  `gorm:"column:mer_name"`
 	}
-	err = r.db.WithContext(ctx).Table("qixi_m_admin_store_product AS p").
-		Select("p.store_name, p.image, p.price, p.mer_id, m.mer_name").
-		Joins("LEFT JOIN qixi_m_admin_merchant m ON m.mer_id = p.mer_id").
-		Where("p.product_id = ? AND p.is_del = 0", productID).
+	err = r.db.WithContext(ctx).Table("qixi_crm_b_product_view AS p").
+		Select("p.title AS store_name, p.cover_url AS image, p.price, p.merchant_id AS mer_id, p.merchant_name AS mer_name").
+		Where("p.product_id = ? AND p.sale_status = 1", productID).
 		Scan(&row).Error
 	if err != nil {
 		return "", "", "", 0, 0, err

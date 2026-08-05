@@ -1,0 +1,65 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Withdrawal = { id: number; withdrawal_no: string; amount: number; channel: string; status: string; status_text: string; review_note: string; created_at: string }
+type WithdrawalPage = { list: Withdrawal[]; total: number; page: number; limit: number; withdrawable_commission: number; reserved_commission: number }
+
+const amount = ref('')
+const channel = ref('wechat')
+const accountName = ref('')
+const accountNo = ref('')
+const withdrawable = ref(0)
+const reserved = ref(0)
+const records = ref<Withdrawal[]>([])
+const submitting = ref(false)
+const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const limit = 20
+function hasMore(): boolean { return records.value.length < total.value }
+
+function load(reset: boolean = false): void {
+  if (loading.value || (!reset && !hasMore())) return
+  const next = reset ? 1 : page.value + 1
+  loading.value = true
+  appRequest(`/spread/withdrawals?page=${next}&limit=${limit}`).then((data) => {
+    const result = data as WithdrawalPage
+    page.value = result.page || next
+    total.value = result.total || 0
+    withdrawable.value = result.withdrawable_commission || 0
+    reserved.value = result.reserved_commission || 0
+    records.value = reset ? (result.list || []) : records.value.concat(result.list || [])
+  }).catch((error) => uni.showToast({ title: error.message || '提现记录加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+function choose(value: string): void {
+  channel.value = value
+  accountNo.value = ''
+}
+function apply(): void {
+  const money = Number(amount.value)
+  if (money <= 0 || money > withdrawable.value) { uni.showToast({ title: '请输入不超过可提现佣金的金额', icon: 'none' }); return }
+  if (accountName.value.trim().length < 2) { uni.showToast({ title: '请填写收款人姓名', icon: 'none' }); return }
+  if (channel.value == 'bank' && accountNo.value.trim().length < 6) { uni.showToast({ title: '请填写银行卡号', icon: 'none' }); return }
+  submitting.value = true
+  const key = 'withdrawal-' + new Date().getTime().toString() + '-' + Math.floor(Math.random() * 1000000).toString()
+  appRequest('/spread/withdrawals', 'POST', { amount: money, channel: channel.value, account_name: accountName.value.trim(), account_no: channel.value == 'bank' ? accountNo.value.trim() : '', idempotency_key: key } as UTSJSONObject).then(() => {
+    uni.showToast({ title: '申请已提交，等待审核', icon: 'success' })
+    amount.value = ''
+    load(true)
+  }).catch((error) => uni.showToast({ title: error.message || '提交失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+onShow(() => load(true))
+onReachBottom(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="佣金提现" />
+    <view class="summary"><text class="caption">当前可提现佣金</text><text class="money">¥{{ withdrawable }}</text><text class="reserved">审核与打款中的申请：¥{{ reserved }}</text></view>
+    <view class="qx-card"><text class="title">申请提现</text><input v-model="amount" class="input" type="digit" placeholder="请输入提现金额" /><view class="channels"><text :class="channel == 'wechat' ? 'channel active' : 'channel'" @click="choose('wechat')">微信零钱</text><text :class="channel == 'bank' ? 'channel active' : 'channel'" @click="choose('bank')">银行卡</text></view><input v-model="accountName" class="input" placeholder="收款人姓名" /><input v-if="channel == 'bank'" v-model="accountNo" class="input" type="number" placeholder="银行卡号" /><text class="tip">提交后由平台审核；审核通过后才会进入打款流程。</text><button :loading="submitting" class="qx-primary" @click="apply">提交提现申请</button></view>
+    <view class="section">申请记录</view><view v-if="!loading && records.length == 0" class="qx-card empty">暂无提现申请</view><view v-for="item in records" :key="item.id" class="qx-card record"><view><text class="record__title">{{ item.channel }} ¥{{ item.amount }}</text><text class="record__time">{{ item.created_at }} · {{ item.withdrawal_no }}</text><text v-if="item.review_note" class="record__note">审核说明：{{ item.review_note }}</text></view><text :class="item.status == 'rejected' ? 'status rejected' : item.status == 'paid' ? 'status paid' : 'status'">{{ item.status_text }}</text></view>
+  </view>
+</template>
+
+<style>
+.summary{margin:12px;padding:20px;color:#fff;background:linear-gradient(135deg,#402c75,#7465d8);border-radius:12px}.caption,.money,.reserved{display:block}.caption{font-size:13px}.money{margin-top:6px;font-size:32px;font-weight:700}.reserved{margin-top:8px;font-size:12px;opacity:.88}.title{display:block;font-size:16px;font-weight:600}.input{height:44px;margin-top:12px;padding:0 12px;background:#f6f7f9;border-radius:8px;box-sizing:border-box}.channels{display:flex;gap:10px;margin-top:12px}.channel{padding:8px 14px;color:#4e5969;background:#f2f3f5;border-radius:16px;font-size:13px}.active{color:#fff;background:#d72828}.tip{display:block;margin:12px 0;color:#86909c;font-size:12px;line-height:18px}.qx-primary{border-radius:22px}.section{padding:14px;color:#4e5969;font-size:14px;font-weight:600}.empty{color:#86909c;text-align:center}.record{display:flex;align-items:flex-start;justify-content:space-between}.record__title,.record__time,.record__note{display:block}.record__title{font-size:15px;font-weight:600}.record__time,.record__note{margin-top:6px;color:#86909c;font-size:11px}.record__note{color:#f56c6c}.status{margin-left:12px;padding:4px 8px;color:#e6a23c;background:#fdf6ec;border-radius:12px;font-size:11px;white-space:nowrap}.paid{color:#00b42a;background:#e8ffea}.rejected{color:#f56c6c;background:#fff1f0}
+</style>

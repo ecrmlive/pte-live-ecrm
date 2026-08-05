@@ -34,6 +34,9 @@ function createWebStorageAdapter(
 ): ViewedRowStorageAdapter {
   const manager = new StorageManager({
     driver: new LocalStorageDriver({ storageType }),
+    // 访问过的表格行只属于 Vxe 插件；不能把 clear()/keys() 扩展到同域内
+    // 其他应用的登录、偏好或业务缓存。
+    prefix: 'vben-vxe-viewed-row',
   });
 
   return {

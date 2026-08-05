@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: pte-live-ecrm app browsing history
+  version: 1.0.0
+  description: C 端私有浏览记录。仅保存当前用户访问过的商品与店铺 ID，全部接口要求 C 端 JWT。
+servers:
+  - url: /api/app/v1
+paths:
+  /history/products/{id}:
+    post:
+      summary: 记录商品浏览
+      description: 仅接受在售商品；同一用户同一商品刷新最近浏览时间。
+      security: [{ bearerAuth: [] }]
+  /history:
+    get:
+      summary: 浏览记录列表
+      security: [{ bearerAuth: [] }]
+  /history/delete/{id}:
+    post:
+      summary: 删除一条自己的浏览记录
+      security: [{ bearerAuth: [] }]
+  /history/batch/delete:
+    post:
+      summary: 批量删除或清空自己的浏览记录
+      description: history_ids 为空数组时清空当前用户记录。
+      security: [{ bearerAuth: [] }]

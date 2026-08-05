@@ -17,6 +17,8 @@ import {
   updatePlatformMerchantStatus,
   type PlatformMerchantRow,
 } from '#/api/core/ecrm';
+import { getAccessCodesApi } from '#/api/core/auth';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
 const loading = ref(false);
 const rows = ref<PlatformMerchantRow[]>([]);
@@ -24,6 +26,7 @@ const total = ref(0);
 const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detail = ref<PlatformMerchantRow>();
+const canManageStatus = ref(false);
 const query = reactive({ keyword: '', page: 1, limit: 20, status: undefined as number | undefined });
 
 const statusOptions = [
@@ -39,8 +42,7 @@ const contact = (row: PlatformMerchantRow) => row.real_name || '—';
 const phone = (row: PlatformMerchantRow) => row.mer_phone || '—';
 const formatTime = (value?: string) => {
   if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? value : date.toLocaleString('zh-CN', { hour12: false });
+  return formatShanghaiDateTime(value);
 };
 
 const drawerTitle = computed(() => detail.value ? `店铺详情 · ${detail.value.mer_name}` : '店铺详情');
@@ -108,7 +110,10 @@ async function openDetail(row: PlatformMerchantRow) {
   }
 }
 
-onMounted(load);
+onMounted(async () => {
+  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
+  canManageStatus.value = permissions.includes('merchant.status.manage');
+});
 </script>
 
 <template>
@@ -173,6 +178,7 @@ onMounted(load);
         <el-table-column align="center" label="经营状态" width="116">
           <template #default="{ row }">
             <el-switch
+              v-if="canManageStatus"
               :model-value="isEnabled(row)"
               active-text="启用"
               inactive-text="停用"
@@ -180,6 +186,7 @@ onMounted(load);
               width="52"
               @change="(enabled) => changeStatus(row, Boolean(enabled))"
             />
+            <el-tag v-else :type="isEnabled(row) ? 'success' : 'info'">{{ statusText(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" min-width="180">

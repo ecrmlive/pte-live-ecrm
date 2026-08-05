@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -28,16 +28,37 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.DELETE("/favorites/stores/:id", h.deleteStore)
 }
 
+func favoritesPagination(c *gin.Context) (int, int) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 50 {
+		limit = 50
+	}
+	return page, limit
+}
+
 func (h *Handler) list(c *gin.Context) {
 	uid := uint64(middleware.UID(c))
+	page, limit := favoritesPagination(c)
 	switch c.DefaultQuery("type", "product") {
 	case "product":
-		var rows []productFavorite
-		err := h.db.WithContext(c.Request.Context()).
-			Table("qixi_crm_b_product_favorite AS f").
-			Select("p.product_id,p.merchant_id,p.store_id,p.merchant_name,p.store_name,p.category_id,p.title,p.cover_url,p.price,p.original_price,p.sales,p.stock,f.created_at").
+		base := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_product_favorite AS f").
 			Joins("JOIN qixi_crm_b_product_view AS p ON p.product_id = f.product_id AND p.sale_status = 1").
-			Where("f.user_id = ?", uid).Order("f.created_at DESC").Scan(&rows).Error
+			Where("f.user_id = ?", uid)
+		var total int64
+		if err := base.Count(&total).Error; err != nil {
+			internal(c)
+			return
+		}
+		var rows []productFavorite
+		err := base.Select("p.product_id,p.merchant_id,p.store_id,p.merchant_name,p.store_name,p.category_id,p.title,p.cover_url,p.price,p.original_price,p.sales,p.stock").
+			Order("f.created_at DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error
 		if err != nil {
 			internal(c)
 			return
@@ -46,15 +67,23 @@ func (h *Handler) list(c *gin.Context) {
 		for _, row := range rows {
 			list = append(list, row.view())
 		}
-		response.OK(c, gin.H{"type": "product", "list": list})
+		response.OK(c, gin.H{"type": "product", "list": list, "total": total, "page": page, "limit": limit})
 	case "store":
+		countQuery := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_user_follow_store AS f").
+			Joins("JOIN qixi_crm_b_store_view AS s ON s.store_id = f.store_id AND s.status = 1").
+			Where("f.user_id = ?", uid)
+		var total int64
+		if err := countQuery.Count(&total).Error; err != nil {
+			internal(c)
+			return
+		}
 		var rows []storeFavorite
-		err := h.db.WithContext(c.Request.Context()).
-			Table("qixi_crm_b_user_follow_store AS f").
+		err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_user_follow_store AS f").
 			Select("s.store_id,s.merchant_id,s.store_name,s.store_app_id,COUNT(all_follow.user_id) AS follower_count,f.created_at").
 			Joins("JOIN qixi_crm_b_store_view AS s ON s.store_id = f.store_id AND s.status = 1").
 			Joins("LEFT JOIN qixi_crm_b_user_follow_store AS all_follow ON all_follow.store_id = s.store_id").
-			Where("f.user_id = ?", uid).Group("s.store_id,s.merchant_id,s.store_name,s.store_app_id,f.created_at").Order("f.created_at DESC").Scan(&rows).Error
+			Where("f.user_id = ?", uid).Group("s.store_id,s.merchant_id,s.store_name,s.store_app_id,f.created_at").
+			Order("f.created_at DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error
 		if err != nil {
 			internal(c)
 			return
@@ -63,7 +92,7 @@ func (h *Handler) list(c *gin.Context) {
 		for _, row := range rows {
 			list = append(list, row.view())
 		}
-		response.OK(c, gin.H{"type": "store", "list": list})
+		response.OK(c, gin.H{"type": "store", "list": list, "total": total, "page": page, "limit": limit})
 	default:
 		response.Fail(c, http.StatusBadRequest, "收藏类型错误")
 	}

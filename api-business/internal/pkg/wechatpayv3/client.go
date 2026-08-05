@@ -35,12 +35,17 @@ var (
 
 type Config struct {
 	AppID              string
+	H5AppID            string
+	H5SiteURL          string
 	MchID              string
 	MerchantSerialNo   string
 	MerchantPrivateKey string
 	MerchantCertPEM    string
 	APIv3Key           string
 	NotifyURL          string
+	// RefundNotifyURL is deliberately separate from payment notifications so a
+	// refund callback cannot be parsed as a payment-success notification.
+	RefundNotifyURL string
 	// PublicKeyID/PublicKeyPEM are the platform callback verification key.
 	// The fields also support the platform-certificate PEM/serial fallback.
 	PublicKeyID        string
@@ -53,6 +58,19 @@ func (c Config) ValidForNative() bool {
 	return strings.TrimSpace(c.AppID) != "" && strings.TrimSpace(c.MchID) != "" &&
 		c.resolvedMerchantSerialNo() != "" && strings.TrimSpace(c.MerchantPrivateKey) != "" &&
 		strings.TrimSpace(c.NotifyURL) != ""
+}
+
+// ValidForJSAPI has the same merchant-signing requirements as Native. The
+// caller must additionally provide the authenticated mini-program openid.
+func (c Config) ValidForJSAPI() bool { return c.ValidForNative() }
+
+func (c Config) ValidForH5() bool {
+	return c.ValidForNative() && strings.TrimSpace(c.H5AppID) != "" && strings.HasPrefix(strings.TrimSpace(c.H5SiteURL), "https://")
+}
+
+func (c Config) ValidForRefund() bool {
+	return strings.TrimSpace(c.MchID) != "" && c.resolvedMerchantSerialNo() != "" &&
+		strings.TrimSpace(c.MerchantPrivateKey) != "" && strings.HasPrefix(strings.TrimSpace(c.RefundNotifyURL), "https://")
 }
 
 func (c Config) ValidForCallback() bool {
@@ -69,6 +87,26 @@ type NativeRequest struct {
 
 type NativeResponse struct {
 	CodeURL string
+}
+
+type JSAPIRequest struct {
+	Description string
+	OutTradeNo  string
+	AmountCents int64
+	OpenID      string
+	Attach      string
+	ExpireAt    time.Time
+}
+
+// JSAPIResponse is passed to uni.requestPayment without exposing any merchant
+// credential. Field names intentionally match the Mini Program API.
+type JSAPIResponse struct {
+	AppID     string `json:"appId"`
+	TimeStamp string `json:"timeStamp"`
+	NonceStr  string `json:"nonceStr"`
+	Package   string `json:"package"`
+	SignType  string `json:"signType"`
+	PaySign   string `json:"paySign"`
 }
 
 type Client struct {
@@ -162,6 +200,110 @@ func (c *Client) NativePrepay(ctx context.Context, config Config, request Native
 		return NativeResponse{}, ErrInvalidCallback
 	}
 	return NativeResponse{CodeURL: output.CodeURL}, nil
+}
+
+// JSAPIPrepay creates a Mini Program payment and signs the client invocation
+// parameters. openid is sourced from a verified mini-program login, never from
+// a request body.
+func (c *Client) JSAPIPrepay(ctx context.Context, config Config, request JSAPIRequest) (JSAPIResponse, error) {
+	if !config.ValidForJSAPI() || request.AmountCents <= 0 || strings.TrimSpace(request.OutTradeNo) == "" || strings.TrimSpace(request.OpenID) == "" {
+		return JSAPIResponse{}, ErrInvalidConfig
+	}
+	privateKey, err := parseRSAPrivateKey(config.MerchantPrivateKey)
+	if err != nil {
+		return JSAPIResponse{}, ErrInvalidConfig
+	}
+	now := c.now()
+	expires := request.ExpireAt.UTC()
+	if expires.IsZero() || !expires.After(now) {
+		expires = now.Add(15 * time.Minute)
+	}
+	body, err := json.Marshal(struct {
+		AppID       string `json:"appid"`
+		MchID       string `json:"mchid"`
+		Description string `json:"description"`
+		OutTradeNo  string `json:"out_trade_no"`
+		Attach      string `json:"attach,omitempty"`
+		NotifyURL   string `json:"notify_url"`
+		TimeExpire  string `json:"time_expire"`
+		Amount      struct {
+			Total    int64  `json:"total"`
+			Currency string `json:"currency"`
+		} `json:"amount"`
+		Payer struct {
+			OpenID string `json:"openid"`
+		} `json:"payer"`
+	}{
+		AppID:       strings.TrimSpace(config.AppID),
+		MchID:       strings.TrimSpace(config.MchID),
+		Description: truncate(strings.TrimSpace(request.Description), 127),
+		OutTradeNo:  strings.TrimSpace(request.OutTradeNo),
+		Attach:      truncate(strings.TrimSpace(request.Attach), 127),
+		NotifyURL:   strings.TrimSpace(config.NotifyURL),
+		TimeExpire:  expires.Format(time.RFC3339),
+		Amount: struct {
+			Total    int64  `json:"total"`
+			Currency string `json:"currency"`
+		}{Total: request.AmountCents, Currency: "CNY"},
+		Payer: struct {
+			OpenID string `json:"openid"`
+		}{OpenID: strings.TrimSpace(request.OpenID)},
+	})
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	const path = "/v3/pay/transactions/jsapi"
+	nonce, err := c.nonce()
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	timestamp := fmt.Sprintf("%d", now.Unix())
+	signature, err := sign(privateKey, strings.Join([]string{http.MethodPost, path, timestamp, nonce, string(body), ""}, "\n"))
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL()+path, bytes.NewReader(body))
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf(`WECHATPAY2-SHA256-RSA2048 mchid="%s",nonce_str="%s",timestamp="%s",serial_no="%s",signature="%s"`, config.MchID, nonce, timestamp, config.resolvedMerchantSerialNo(), signature))
+
+	resp, err := c.httpClient().Do(req)
+	if err != nil {
+		return JSAPIResponse{}, fmt.Errorf("微信支付下单请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		var failure struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		_ = json.Unmarshal(data, &failure)
+		return JSAPIResponse{}, fmt.Errorf("微信支付下单失败: %s", providerMessage(failure.Code, failure.Message, resp.StatusCode))
+	}
+	var output struct {
+		PrepayID string `json:"prepay_id"`
+	}
+	if err := json.Unmarshal(data, &output); err != nil || strings.TrimSpace(output.PrepayID) == "" {
+		return JSAPIResponse{}, ErrInvalidCallback
+	}
+	payNonce, err := c.nonce()
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	payTimestamp := fmt.Sprintf("%d", c.now().Unix())
+	payPackage := "prepay_id=" + strings.TrimSpace(output.PrepayID)
+	paySign, err := sign(privateKey, strings.Join([]string{strings.TrimSpace(config.AppID), payTimestamp, payNonce, payPackage, ""}, "\n"))
+	if err != nil {
+		return JSAPIResponse{}, err
+	}
+	return JSAPIResponse{AppID: strings.TrimSpace(config.AppID), TimeStamp: payTimestamp, NonceStr: payNonce, Package: payPackage, SignType: "RSA", PaySign: paySign}, nil
 }
 
 type CallbackTransaction struct {

@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/productmeta"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct{ svc *productmeta.Service }
@@ -16,11 +16,6 @@ type Handler struct{ svc *productmeta.Service }
 func NewHandler(svc *productmeta.Service) *Handler { return &Handler{svc: svc} }
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/product/labels", h.ListLabels)
-	r.POST("/product/labels", h.CreateLabel)
-	r.PUT("/product/labels/:id", h.UpdateLabel)
-	r.DELETE("/product/labels/:id", h.DeleteLabel)
-
 	r.GET("/product/guarantees", h.ListGuarantees)
 	r.POST("/product/guarantees", h.CreateGuarantee)
 	r.PUT("/product/guarantees/:id", h.UpdateGuarantee)

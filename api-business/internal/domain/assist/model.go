@@ -2,12 +2,13 @@ package assist
 
 import "time"
 
-// Set 状态：1 进行中 / 10 已完成可下单 / 20 已支付 / -1 失败
+// Set 状态：1 进行中 / 10 已完成可下单 / 11 待支付锁定 / 20 已支付 / -1 失败
 const (
-	SetStatusRunning = 1
-	SetStatusDone    = 10
-	SetStatusPaid    = 20
-	SetStatusFailed  = -1
+	SetStatusRunning     = 1
+	SetStatusDone        = 10
+	SetStatusAwaitingPay = 11
+	SetStatusPaid        = 20
+	SetStatusFailed      = -1
 )
 
 type ProductAssist struct {

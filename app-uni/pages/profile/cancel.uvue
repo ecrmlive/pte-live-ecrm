@@ -1,0 +1,33 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { clearSession } from '../../common/session'
+
+type CancelResult = { cancelled: boolean; requires_confirmation: boolean; confirmation_token: string; blockers: string[] }
+const submitting = ref(false)
+
+function finish(): void {
+  clearSession()
+  uni.showToast({ title: '账户已注销', icon: 'success' })
+  setTimeout(() => uni.reLaunch({ url: '/pages/user/index' }), 500)
+}
+
+function submit(token: string = ''): void {
+  if (submitting.value) return
+  submitting.value = true
+  appRequest('/auth/cancel', 'POST', { confirmation_token: token } as UTSJSONObject).then((data) => {
+    const result = data as CancelResult
+    if (result.cancelled) { finish(); return }
+    if (!result.requires_confirmation || result.confirmation_token.length == 0) throw new Error('注销确认信息无效，请重试')
+    const reason = result.blockers.length > 0 ? result.blockers.join('、') + '。' : ''
+    uni.showModal({ title: '确认注销账户', content: reason + '注销后无法恢复，所有登录设备将退出，确认继续吗？', confirmText: '确认注销', confirmColor: '#d72828', success: (modal) => { if (modal.confirm) submit(result.confirmation_token) } })
+  }).catch((error) => uni.showToast({ title: error.message || '注销失败', icon: 'none' })).finally(() => { submitting.value = false })
+}
+
+function start(): void { submit() }
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="注销账户" /><view class="qx-card"><text class="title">注销前请确认</text><text class="hint">账户注销不可恢复。订单、售后、发票和资金流水会为交易与合规目的保留，账户本身会被停用。</text><text class="hint">若仍有余额、积分、佣金、未完成订单或处理中售后，需再次确认后才能注销。</text><button class="danger-button" :loading="submitting" @click="start">申请注销账户</button></view></view>
+</template>
+
+<style>.title{display:block;font-size:17px;font-weight:600;margin-bottom:12px}.hint{display:block;color:#86909c;font-size:13px;line-height:20px;margin-bottom:8px}.danger-button{margin-top:20px;background:#fff0f0;color:#d72828;border:1px solid #f3b5b5;border-radius:22px}</style>

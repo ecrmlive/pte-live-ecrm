@@ -21,14 +21,18 @@ func TestLoadJWTSecretFromAppYAML(t *testing.T) {
 	}
 }
 
-func TestLoadRejectsMissingJWTSecret(t *testing.T) {
+func TestLoadAllowsNoJWTSecret(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "app.yaml")
 	if err := os.WriteFile(configPath, []byte("server:\n  addr: ':8080'\n"), 0o600); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
 
-	if _, err := Load(configPath); err == nil {
-		t.Fatal("Load() error = nil, want missing jwt.secret error")
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if cfg.JWT.Secret != "" {
+		t.Fatalf("JWT secret = %q, want empty for job", cfg.JWT.Secret)
 	}
 }
 

@@ -1,13 +1,12 @@
 import { requestClient } from '#/api/request';
 
 export interface PlatformSvipUser {
-  account: string;
   integral: number;
   is_svip: number;
   is_svip_active: boolean;
   nickname: string;
   now_money: number;
-  phone: string;
+  phone_masked?: string;
   svip_endtime?: string | null;
   uid: number;
 }

@@ -6,31 +6,35 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/community"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc *community.Service
-	id  *identity.Service
+	svc     *community.Service
+	adminDB *gorm.DB
 }
 
-func NewHandler(svc *community.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *community.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
+	write := middleware.RequireAdminRoles("platform", "operations")
+	audit := middleware.RequireAdminMenu(h.adminDB, "content.community.audit")
+	delete := middleware.RequireAdminMenu(h.adminDB, "content.community.delete")
 	r.GET("/community/posts", h.List)
 	r.GET("/community/posts/:id", h.Get)
 	r.GET("/community/posts/:id/replies", h.ListReplies)
-	r.POST("/community/posts/:id/audit", middleware.RequirePlatformMenu(h.id, identity.PlatPermCommunityAudit), h.Audit)
-	r.DELETE("/community/posts/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermCommunityDelete), h.Delete)
-	r.DELETE("/community/replies/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermCommunityDelete), h.DeleteReply)
+	r.POST("/community/posts/:id/audit", write, audit, h.Audit)
+	r.DELETE("/community/posts/:id", write, delete, h.Delete)
+	r.DELETE("/community/replies/:id", write, delete, h.DeleteReply)
 	r.GET("/community/categories", h.ListCategories)
 	r.GET("/community/topics", h.ListTopics)
+	r.GET("/community/replies", h.ListAllReplies)
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -111,6 +115,17 @@ func (h *Handler) DeleteReply(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"ok": true})
+}
+
+func (h *Handler) ListAllReplies(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	res, err := h.svc.ListAllReplies(c.Request.Context(), c.Query("keyword"), page, limit)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, res)
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {

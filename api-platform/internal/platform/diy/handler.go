@@ -5,41 +5,43 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/diy"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc *diy.Service
-	id  *identity.Service
+	svc     *diy.Service
+	adminDB *gorm.DB
 }
 
-func NewHandler(svc *diy.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *diy.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
+	write := middleware.RequireAdminRoles("platform", "operations")
+	manage := middleware.RequireAdminMenu(h.adminDB, "operations.diy.manage")
 	r.GET("/diy/pages", h.List)
 	r.GET("/diy/pages/:id", h.Get)
 	r.GET("/diy/editor/bootstrap", h.Bootstrap)
 	r.GET("/diy/editor/bootstrap/:id", h.Bootstrap)
-	r.POST("/diy/pages", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyCreate), h.Create)
-	r.PUT("/diy/pages/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyUpdate), h.Update)
-	r.POST("/diy/pages/:id/active", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyActive), h.SetActive)
-	r.POST("/diy/pages/:id/copy", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyCreate), h.Copy)
-	r.POST("/diy/pages/:id/recovery", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyUpdate), h.Recovery)
-	r.DELETE("/diy/pages/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyDelete), h.Delete)
+	r.POST("/diy/pages", write, manage, h.Create)
+	r.PUT("/diy/pages/:id", write, manage, h.Update)
+	r.POST("/diy/pages/:id/active", write, manage, h.SetActive)
+	r.POST("/diy/pages/:id/copy", write, manage, h.Copy)
+	r.POST("/diy/pages/:id/recovery", write, manage, h.Recovery)
+	r.DELETE("/diy/pages/:id", write, manage, h.Delete)
 	r.GET("/diy/page-categories", h.ListCategories)
-	r.POST("/diy/page-categories", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyCreate), h.CreateCategory)
-	r.PUT("/diy/page-categories/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyUpdate), h.UpdateCategory)
-	r.DELETE("/diy/page-categories/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyDelete), h.DeleteCategory)
+	r.POST("/diy/page-categories", write, manage, h.CreateCategory)
+	r.PUT("/diy/page-categories/:id", write, manage, h.UpdateCategory)
+	r.DELETE("/diy/page-categories/:id", write, manage, h.DeleteCategory)
 	r.GET("/diy/page-links", h.ListLinks)
-	r.POST("/diy/page-links", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyCreate), h.CreateLink)
-	r.PUT("/diy/page-links/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyUpdate), h.UpdateLink)
-	r.DELETE("/diy/page-links/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermDiyDelete), h.DeleteLink)
+	r.POST("/diy/page-links", write, manage, h.CreateLink)
+	r.PUT("/diy/page-links/:id", write, manage, h.UpdateLink)
+	r.DELETE("/diy/page-links/:id", write, manage, h.DeleteLink)
 }
 
 func platformLinkScope(c *gin.Context) int8 {

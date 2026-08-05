@@ -4,15 +4,19 @@ import { appRequest } from '../../common/request'
 type Notice = { notice_id: number; title: string; content: string; create_time: string }
 const item = ref<Notice | null>(null)
 
+function hasNotice(): boolean { return item.value != null }
+function noticeTitle(): string { const notice = item.value; return notice == null ? '公告加载中' : notice.title }
+function noticeTime(): string { const notice = item.value; return notice == null ? '--' : notice.create_time }
+function noticeContent(): string { const notice = item.value; return notice == null ? '--' : notice.content }
 function load(id: number): void {
   if (id <= 0) return
   appRequest(`/notices/${id}`, 'GET', null, false).then((data) => { item.value = data as Notice }).catch((error) => uni.showToast({ title: error.message || '公告加载失败', icon: 'none' }))
 }
-onLoad((query) => load(Number(query['id'] || 0)))
+onLoad((query) => load(Number(query?.['id'] || 0)))
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="公告详情" /><view v-if="item != null" class="article"><text class="title">{{ item.title }}</text><text class="time">{{ item.create_time }}</text><text class="content">{{ item.content }}</text></view></view>
+  <view class="qx-page"><qx-nav title="公告详情" /><view v-if="hasNotice()" class="article"><text class="title">{{ noticeTitle() }}</text><text class="time">{{ noticeTime() }}</text><text class="content">{{ noticeContent() }}</text></view></view>
 </template>
 
 <style>

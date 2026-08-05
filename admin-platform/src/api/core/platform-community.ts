@@ -1,5 +1,24 @@
 import { requestClient } from '#/api/request';
 
+export interface CommunityCategory {
+  category_id: number;
+  cate_name: string;
+  pid: number;
+  is_show: number;
+  sort: number;
+}
+
+export interface CommunityTopic {
+  topic_id: number;
+  topic_name: string;
+  status: number;
+  is_hot: number;
+  category_id: number;
+  count_use: number;
+  sort: number;
+  create_time: string;
+}
+
 export interface CommunityPost {
   cate_name?: string;
   category_id: number;
@@ -28,6 +47,7 @@ export interface CommunityReply {
   content: string;
   create_time: string;
   nickname?: string;
+  post_title?: string;
   reply_id: number;
   uid: number;
 }
@@ -46,6 +66,14 @@ export interface CommunityAuditPayload {
   status: -1 | 0 | 1;
 }
 
+export function listCommunityCategoriesApi() {
+  return requestClient.get<{ list: CommunityCategory[] }>('/community/categories');
+}
+
+export function listCommunityTopicsApi() {
+  return requestClient.get<{ list: CommunityTopic[] }>('/community/topics');
+}
+
 export function listCommunityPostsApi(params: { keyword?: string; limit: number; page: number; status?: number }) {
   return requestClient.get<CommunityPage<CommunityPost>>('/community/posts', { params });
 }
@@ -56,6 +84,10 @@ export function getCommunityPostApi(id: number) {
 
 export function listCommunityRepliesApi(id: number, params: { limit: number; page: number }) {
   return requestClient.get<CommunityPage<CommunityReply>>(`/community/posts/${id}/replies`, { params });
+}
+
+export function listAllCommunityRepliesApi(params: { keyword?: string; limit: number; page: number }) {
+  return requestClient.get<CommunityPage<CommunityReply>>('/community/replies', { params });
 }
 
 export function auditCommunityPostApi(id: number, data: CommunityAuditPayload) {

@@ -93,7 +93,7 @@ onMounted(async () => {
     </div>
     <div class="gray ml-[100px]">
       文章数据请到
-      <a href="#/plus/article/index" target="_blank">内容管理 - 文章列表</a>
+      <a href="#/cms/article" target="_blank">内容管理 - 文章列表</a>
       中管理
     </div>
   </div>

@@ -16,6 +16,8 @@ export interface StoreSalesRankRow {
 }
 
 export interface PlatformDashboardSummary {
+	/** all: 平台全量；store: 当前账号获授权店铺范围 */
+	scope: 'all' | 'store';
   new_users: DashboardMetric;
   on_sale_product: number;
   page_views: DashboardMetric;

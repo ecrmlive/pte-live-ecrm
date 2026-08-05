@@ -19,8 +19,10 @@ func LoadCheckout(ctx context.Context, db *gorm.DB, userID uint64, cartIDs []uin
 	}
 	var rows []checkoutRow
 	err = db.WithContext(ctx).Table("qixi_crm_b_cart AS c").
-		Select("c.id AS cart_id,c.product_id,c.sku_key,c.quantity,p.merchant_id,p.merchant_name,p.store_id,p.store_name,p.title,p.cover_url,p.price,p.stock,p.sale_status,p.product_type").
+		Select("c.id AS cart_id,c.product_id,c.sku_key,c.quantity,ps.merchant_sku_id,ps.spec_snapshot,p.merchant_id,p.merchant_name,p.store_id,p.store_name,p.title,p.cover_url,ps.price,ps.stock,ps.sale_status,p.product_type,s.integral_enabled,s.integral_points_per_yuan,s.integral_max_deduction_bps,p.svip_price_type,p.svip_price").
 		Joins("INNER JOIN qixi_crm_b_product_view AS p ON p.product_id = c.product_id").
+		Joins("INNER JOIN qixi_crm_b_product_sku_view AS ps ON ps.product_id = c.product_id AND ps.sku_key = c.sku_key").
+		Joins("INNER JOIN qixi_crm_b_store_view AS s ON s.store_id = p.store_id AND s.status = 1").
 		Where("c.user_id = ? AND c.id IN ?", userID, ids).Order("c.id ASC").Scan(&rows).Error
 	if err != nil {
 		return Checkout{}, err
@@ -28,32 +30,47 @@ func LoadCheckout(ctx context.Context, db *gorm.DB, userID uint64, cartIDs []uin
 	if len(rows) != len(ids) {
 		return Checkout{}, ErrCartOwnership
 	}
+	svipActive, err := activeSVIP(ctx, db, userID)
+	if err != nil {
+		return Checkout{}, err
+	}
 	lines := make([]CartLine, 0, len(rows))
 	for _, row := range rows {
 		cents, err := cents(row.Price)
 		if err != nil {
 			return Checkout{}, err
 		}
-		lines = append(lines, CartLine{CartID: row.CartID, ProductID: row.ProductID, SKUKey: row.SKUKey, MerchantID: row.MerchantID, MerchantName: row.MerchantName, StoreID: row.StoreID, StoreName: row.StoreName, Title: row.Title, CoverURL: row.CoverURL, UnitCents: cents, Quantity: row.Quantity, Stock: row.Stock, SaleStatus: row.SaleStatus, ProductType: row.ProductType})
+		if row.MerchantSKUID == 0 {
+			return Checkout{}, ErrUnavailableCart
+		}
+		memberCents := ResolveSVIPUnitCents(cents, row.ProductType, svipActive, row.SVIPPriceType, row.SVIPPrice)
+		lines = append(lines, CartLine{CartID: row.CartID, ProductID: row.ProductID, MerchantSKUID: row.MerchantSKUID, SKUKey: row.SKUKey, SpecSnapshot: normalizeSpecSnapshot(row.SpecSnapshot), MerchantID: row.MerchantID, MerchantName: row.MerchantName, StoreID: row.StoreID, StoreName: row.StoreName, Title: row.Title, CoverURL: row.CoverURL, ListCents: cents, UnitCents: memberCents, SVIPApplied: memberCents < cents, IntegralEnabled: row.IntegralEnabled, IntegralPointsPerYuan: row.IntegralPointsPerYuan, IntegralMaxDeductionBps: row.IntegralMaxDeductionBps, Quantity: row.Quantity, Stock: row.Stock, SaleStatus: row.SaleStatus, ProductType: row.ProductType})
 	}
 	return BuildCheckout(lines)
 }
 
 type checkoutRow struct {
-	CartID       uint64  `gorm:"column:cart_id"`
-	ProductID    uint64  `gorm:"column:product_id"`
-	SKUKey       string  `gorm:"column:sku_key"`
-	Quantity     int     `gorm:"column:quantity"`
-	MerchantID   uint64  `gorm:"column:merchant_id"`
-	MerchantName string  `gorm:"column:merchant_name"`
-	StoreID      uint64  `gorm:"column:store_id"`
-	StoreName    string  `gorm:"column:store_name"`
-	Title        string  `gorm:"column:title"`
-	CoverURL     string  `gorm:"column:cover_url"`
-	Price        float64 `gorm:"column:price"`
-	Stock        int     `gorm:"column:stock"`
-	SaleStatus   int8    `gorm:"column:sale_status"`
-	ProductType  int8    `gorm:"column:product_type"`
+	CartID                  uint64  `gorm:"column:cart_id"`
+	ProductID               uint64  `gorm:"column:product_id"`
+	MerchantSKUID           uint64  `gorm:"column:merchant_sku_id"`
+	SKUKey                  string  `gorm:"column:sku_key"`
+	SpecSnapshot            string  `gorm:"column:spec_snapshot"`
+	Quantity                int     `gorm:"column:quantity"`
+	MerchantID              uint64  `gorm:"column:merchant_id"`
+	MerchantName            string  `gorm:"column:merchant_name"`
+	StoreID                 uint64  `gorm:"column:store_id"`
+	StoreName               string  `gorm:"column:store_name"`
+	Title                   string  `gorm:"column:title"`
+	CoverURL                string  `gorm:"column:cover_url"`
+	Price                   float64 `gorm:"column:price"`
+	Stock                   int     `gorm:"column:stock"`
+	SaleStatus              int8    `gorm:"column:sale_status"`
+	ProductType             int8    `gorm:"column:product_type"`
+	SVIPPriceType           int8    `gorm:"column:svip_price_type"`
+	SVIPPrice               float64 `gorm:"column:svip_price"`
+	IntegralEnabled         bool    `gorm:"column:integral_enabled"`
+	IntegralPointsPerYuan   int64   `gorm:"column:integral_points_per_yuan"`
+	IntegralMaxDeductionBps int64   `gorm:"column:integral_max_deduction_bps"`
 }
 
 func uniqueCartIDs(ids []uint64) ([]uint64, error) {

@@ -10,10 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,33 +25,37 @@ const (
 type Handler struct {
 	merchantDB *gorm.DB
 	businessDB *gorm.DB
-	identity   *identity.Service
 }
 
-func NewHandler(merchantDB, businessDB *gorm.DB, id *identity.Service) *Handler {
-	return &Handler{merchantDB: merchantDB, businessDB: businessDB, identity: id}
+func NewHandler(merchantDB, businessDB *gorm.DB) *Handler {
+	return &Handler{merchantDB: merchantDB, businessDB: businessDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/product-categories", h.categories)
 	r.GET("/products", h.list)
+	r.GET("/products/recycle-bin", h.listRecycleBin)
 	r.GET("/products/:id", h.get)
-	r.POST("/products", middleware.RequireMerchantMenu(h.identity, identity.MerPermProductCreate), h.create)
-	r.PUT("/products/:id", h.update)
-	r.DELETE("/products/:id", middleware.RequireMerchantMenu(h.identity, identity.MerPermProductDelete), h.remove)
-	r.PUT("/products/:id/show", middleware.RequireMerchantMenu(h.identity, identity.MerPermProductShow), h.setShow)
-	r.PUT("/products/:id/stock", middleware.RequireMerchantMenu(h.identity, identity.MerPermProductStock), h.setStock)
+	r.POST("/products", middleware.RequireStorePermission(h.merchantDB, "product.create"), h.create)
+	r.PUT("/products/:id", middleware.RequireStorePermission(h.merchantDB, "product.update"), h.update)
+	r.DELETE("/products/:id", middleware.RequireStorePermission(h.merchantDB, "product.delete"), h.remove)
+	r.POST("/products/:id/restore", middleware.RequireStorePermission(h.merchantDB, "product.restore"), h.restore)
+	r.PUT("/products/:id/show", middleware.RequireStorePermission(h.merchantDB, "product.show"), h.setShow)
+	r.PUT("/products/:id/stock", middleware.RequireStorePermission(h.merchantDB, "product.stock"), h.setStock)
 }
 
 type product struct {
-	ID         uint64    `gorm:"column:id;primaryKey"`
-	StoreID    uint64    `gorm:"column:store_id"`
-	Title      string    `gorm:"column:title"`
-	CategoryID uint64    `gorm:"column:category_id"`
-	Status     string    `gorm:"column:status"`
-	Version    uint64    `gorm:"column:version"`
-	CreatedAt  time.Time `gorm:"column:created_at"`
-	UpdatedAt  time.Time `gorm:"column:updated_at"`
+	ID            uint64    `gorm:"column:id;primaryKey"`
+	StoreID       uint64    `gorm:"column:store_id"`
+	Title         string    `gorm:"column:title"`
+	CategoryID    uint64    `gorm:"column:category_id"`
+	BrandName     string    `gorm:"column:brand_name"`
+	SVIPPriceType int8      `gorm:"column:svip_price_type"`
+	SVIPPrice     float64   `gorm:"column:svip_price"`
+	Status        string    `gorm:"column:status"`
+	Version       uint64    `gorm:"column:version"`
+	CreatedAt     time.Time `gorm:"column:created_at"`
+	UpdatedAt     time.Time `gorm:"column:updated_at"`
 }
 
 func (product) TableName() string { return "qixi_crm_m_product" }
@@ -103,34 +106,62 @@ type outboxEvent struct {
 
 func (outboxEvent) TableName() string { return "qixi_crm_m_outbox" }
 
+type recycleBin struct {
+	ProductID          uint64    `gorm:"column:product_id;primaryKey"`
+	StoreID            uint64    `gorm:"column:store_id"`
+	DeletedByAccountID uint64    `gorm:"column:deleted_by_account_id"`
+	DeletedAt          time.Time `gorm:"column:deleted_at"`
+	RestoreUntil       time.Time `gorm:"column:restore_until"`
+}
+
+func (recycleBin) TableName() string { return "qixi_crm_m_product_recycle_bin" }
+
+type stockLedger struct {
+	SKUId           uint64 `gorm:"column:sku_id"`
+	ChangeQuantity  int    `gorm:"column:change_quantity"`
+	BalanceQuantity int    `gorm:"column:balance_quantity"`
+	ReasonType      string `gorm:"column:reason_type"`
+	ReferenceType   string `gorm:"column:reference_type"`
+	ReferenceID     string `gorm:"column:reference_id"`
+	IdempotencyKey  string `gorm:"column:idempotency_key"`
+}
+
+func (stockLedger) TableName() string { return "qixi_crm_m_stock_ledger" }
+
 type saveRequest struct {
-	CateID      uint64  `json:"cate_id" binding:"required"`
-	StoreName   string  `json:"store_name" binding:"required"`
-	StoreInfo   string  `json:"store_info"`
-	Keyword     string  `json:"keyword"`
-	UnitName    string  `json:"unit_name"`
-	Price       float64 `json:"price" binding:"gte=0"`
-	OtPrice     float64 `json:"ot_price" binding:"gte=0"`
-	Stock       int     `json:"stock" binding:"gte=0"`
-	Image       string  `json:"image"`
-	SliderImage string  `json:"slider_image"`
+	CateID        uint64  `json:"cate_id" binding:"required"`
+	BrandName     string  `json:"brand_name"`
+	StoreName     string  `json:"store_name" binding:"required"`
+	StoreInfo     string  `json:"store_info"`
+	Keyword       string  `json:"keyword"`
+	UnitName      string  `json:"unit_name"`
+	Price         float64 `json:"price" binding:"gte=0"`
+	OtPrice       float64 `json:"ot_price" binding:"gte=0"`
+	Stock         int     `json:"stock" binding:"gte=0"`
+	Image         string  `json:"image"`
+	SliderImage   string  `json:"slider_image"`
+	SVIPPriceType int8    `json:"svip_price_type"`
+	SVIPPrice     float64 `json:"svip_price"`
 }
 
 type productResponse struct {
-	ProductID  uint64  `json:"product_id"`
-	CateID     uint64  `json:"cate_id"`
-	CateName   string  `json:"cate_name"`
-	StoreName  string  `json:"store_name"`
-	StoreInfo  string  `json:"store_info"`
-	Keyword    string  `json:"keyword"`
-	UnitName   string  `json:"unit_name"`
-	Image      string  `json:"image"`
-	Price      float64 `json:"price"`
-	OtPrice    float64 `json:"ot_price"`
-	Stock      int     `json:"stock"`
-	Status     int8    `json:"status"`
-	IsShow     int8    `json:"is_show"`
-	CreateTime string  `json:"create_time"`
+	ProductID     uint64  `json:"product_id"`
+	CateID        uint64  `json:"cate_id"`
+	CateName      string  `json:"cate_name"`
+	BrandName     string  `json:"brand_name"`
+	StoreName     string  `json:"store_name"`
+	StoreInfo     string  `json:"store_info"`
+	Keyword       string  `json:"keyword"`
+	UnitName      string  `json:"unit_name"`
+	Image         string  `json:"image"`
+	Price         float64 `json:"price"`
+	OtPrice       float64 `json:"ot_price"`
+	SVIPPriceType int8    `json:"svip_price_type"`
+	SVIPPrice     float64 `json:"svip_price"`
+	Stock         int     `json:"stock"`
+	Status        int8    `json:"status"`
+	IsShow        int8    `json:"is_show"`
+	CreateTime    string  `json:"create_time"`
 }
 
 func (h *Handler) categories(c *gin.Context) {
@@ -157,7 +188,9 @@ func (h *Handler) categories(c *gin.Context) {
 
 func (h *Handler) list(c *gin.Context) {
 	page, limit := page(c)
-	query := h.merchantDB.WithContext(c.Request.Context()).Model(&product{}).Where("store_id = ?", middleware.StoreID(c))
+	query := h.merchantDB.WithContext(c.Request.Context()).Model(&product{}).
+		Where("store_id = ?", middleware.StoreID(c)).
+		Where("NOT EXISTS (SELECT 1 FROM qixi_crm_m_product_recycle_bin AS rb WHERE rb.product_id = qixi_crm_m_product.id)")
 	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
 		query = query.Where("title LIKE ?", "%"+keyword+"%")
 	}
@@ -178,6 +211,33 @@ func (h *Handler) list(c *gin.Context) {
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "加载商品详情失败")
 		return
+	}
+	response.OK(c, gin.H{"list": items, "total": total, "page": page, "limit": limit})
+}
+
+func (h *Handler) listRecycleBin(c *gin.Context) {
+	page, limit := page(c)
+	base := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product_recycle_bin AS rb").
+		Joins("INNER JOIN qixi_crm_m_product AS p ON p.id = rb.product_id").
+		Where("rb.store_id = ?", middleware.StoreID(c))
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询回收站失败")
+		return
+	}
+	var rows []struct {
+		ProductID uint64    `gorm:"column:product_id"`
+		Title     string    `gorm:"column:title"`
+		DeletedAt time.Time `gorm:"column:deleted_at"`
+		RestoreAt time.Time `gorm:"column:restore_until"`
+	}
+	if err := base.Select("rb.product_id,p.title,rb.deleted_at,rb.restore_until").Order("rb.deleted_at DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询回收站失败")
+		return
+	}
+	items := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, gin.H{"product_id": row.ProductID, "store_name": row.Title, "deleted_at": row.DeletedAt.Format("2006-01-02 15:04:05"), "restore_until": row.RestoreAt.Format("2006-01-02 15:04:05")})
 	}
 	response.OK(c, gin.H{"list": items, "total": total, "page": page, "limit": limit})
 }
@@ -208,7 +268,7 @@ func (h *Handler) create(c *gin.Context) {
 	}
 	var created product
 	err := h.merchantDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		created = product{StoreID: uint64(middleware.StoreID(c)), Title: strings.TrimSpace(req.StoreName), CategoryID: req.CateID, Status: "pending_review", Version: 1}
+		created = product{StoreID: uint64(middleware.StoreID(c)), Title: strings.TrimSpace(req.StoreName), CategoryID: req.CateID, BrandName: strings.TrimSpace(req.BrandName), SVIPPriceType: req.SVIPPriceType, SVIPPrice: req.SVIPPrice, Status: "pending_review", Version: 1}
 		if err := tx.Create(&created).Error; err != nil {
 			return err
 		}
@@ -242,10 +302,10 @@ func (h *Handler) update(c *gin.Context) {
 		if status == "on_sale" || status == "off_sale" {
 			status = "pending_review"
 		}
-		if err := tx.Model(&product{}).Where("id = ? AND store_id = ?", id, middleware.StoreID(c)).Updates(map[string]any{"title": strings.TrimSpace(req.StoreName), "category_id": req.CateID, "status": status, "version": gorm.Expr("version + 1")}).Error; err != nil {
+		if err := tx.Model(&product{}).Where("id = ? AND store_id = ?", id, middleware.StoreID(c)).Updates(map[string]any{"title": strings.TrimSpace(req.StoreName), "category_id": req.CateID, "brand_name": strings.TrimSpace(req.BrandName), "svip_price_type": req.SVIPPriceType, "svip_price": req.SVIPPrice, "status": status, "version": gorm.Expr("version + 1")}).Error; err != nil {
 			return err
 		}
-		updated.Title, updated.CategoryID, updated.Status, updated.Version = strings.TrimSpace(req.StoreName), req.CateID, status, updated.Version+1
+		updated.Title, updated.CategoryID, updated.BrandName, updated.SVIPPriceType, updated.SVIPPrice, updated.Status, updated.Version = strings.TrimSpace(req.StoreName), req.CateID, strings.TrimSpace(req.BrandName), req.SVIPPriceType, req.SVIPPrice, status, updated.Version+1
 		return h.saveFields(tx, updated, req)
 	})
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -275,7 +335,11 @@ func (h *Handler) remove(c *gin.Context) {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND store_id = ?", id, middleware.StoreID(c)).First(&p).Error; err != nil {
 			return err
 		}
-		if err := tx.Delete(&product{}, id).Error; err != nil {
+		now := time.Now()
+		if err := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "product_id"}},
+			DoUpdates: clause.Assignments(map[string]any{"store_id": middleware.StoreID(c), "deleted_by_account_id": middleware.AdminID(c), "deleted_at": now, "restore_until": now.Add(30 * 24 * time.Hour)}),
+		}).Create(&recycleBin{ProductID: id, StoreID: uint64(middleware.StoreID(c)), DeletedByAccountID: uint64(middleware.AdminID(c)), DeletedAt: now, RestoreUntil: now.Add(30 * 24 * time.Hour)}).Error; err != nil {
 			return err
 		}
 		return enqueue(tx, eventProductRemove, id, gin.H{"product_id": id})
@@ -286,6 +350,40 @@ func (h *Handler) remove(c *gin.Context) {
 	}
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "删除商品失败")
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
+}
+
+func (h *Handler) restore(c *gin.Context) {
+	id := parseID(c)
+	if id == 0 {
+		response.Fail(c, http.StatusBadRequest, "商品 ID 错误")
+		return
+	}
+	err := h.merchantDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		var row recycleBin
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("product_id = ? AND store_id = ?", id, middleware.StoreID(c)).First(&row).Error; err != nil {
+			return err
+		}
+		if time.Now().After(row.RestoreUntil) {
+			return errRestoreExpired
+		}
+		if err := tx.Model(&product{}).Where("id = ? AND store_id = ?", id, middleware.StoreID(c)).Updates(map[string]any{"status": "pending_review", "version": gorm.Expr("version + 1")}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&recycleBin{}, "product_id = ?", id).Error
+	})
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		response.Fail(c, http.StatusNotFound, "回收站商品不存在")
+		return
+	}
+	if errors.Is(err, errRestoreExpired) {
+		response.Fail(c, http.StatusConflict, "商品已超过可恢复期限")
+		return
+	}
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "恢复商品失败")
 		return
 	}
 	response.OK(c, gin.H{"ok": true})
@@ -340,7 +438,8 @@ func (h *Handler) setStock(c *gin.Context) {
 	var req struct {
 		Stock *int `json:"stock"`
 	}
-	if id == 0 || c.ShouldBindJSON(&req) != nil || req.Stock == nil || *req.Stock < 0 {
+	idempotencyKey := strings.TrimSpace(c.GetHeader("X-Idempotency-Key"))
+	if id == 0 || c.ShouldBindJSON(&req) != nil || req.Stock == nil || *req.Stock < 0 || idempotencyKey == "" || len(idempotencyKey) > 128 {
 		response.Fail(c, http.StatusBadRequest, "库存错误")
 		return
 	}
@@ -349,7 +448,20 @@ func (h *Handler) setStock(c *gin.Context) {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND store_id = ?", id, middleware.StoreID(c)).First(&p).Error; err != nil {
 			return err
 		}
-		return tx.Model(&sku{}).Where("product_id = ?", id).Update("stock", *req.Stock).Error
+		var current sku
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("product_id = ? AND status = 1", id).First(&current).Error; err != nil {
+			return err
+		}
+		var prior stockLedger
+		if err := tx.Where("sku_id = ? AND idempotency_key = ?", current.ID, idempotencyKey).Take(&prior).Error; err == nil {
+			return nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err := tx.Model(&sku{}).Where("id = ?", current.ID).Update("stock", *req.Stock).Error; err != nil {
+			return err
+		}
+		return tx.Create(&stockLedger{SKUId: current.ID, ChangeQuantity: *req.Stock - current.Stock, BalanceQuantity: *req.Stock, ReasonType: "merchant_manual_adjust", ReferenceType: "product", ReferenceID: strconv.FormatUint(id, 10), IdempotencyKey: idempotencyKey}).Error
 	})
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		response.Fail(c, http.StatusNotFound, "商品不存在")
@@ -429,7 +541,7 @@ func (h *Handler) responses(c *gin.Context, rows []product) ([]productResponse, 
 		if d.OriginalPrice != nil {
 			ot = *d.OriginalPrice
 		}
-		out = append(out, productResponse{ProductID: p.ID, CateID: p.CategoryID, CateName: nameByID[p.CategoryID], StoreName: p.Title, StoreInfo: d.Brief, Keyword: d.Keyword, UnitName: nonEmpty(d.UnitName, "件"), Image: d.CoverURL, Price: s.Price, OtPrice: ot, Stock: s.Stock, Status: statusCode(p.Status), IsShow: showCode(p.Status), CreateTime: p.CreatedAt.Format("2006-01-02 15:04:05")})
+		out = append(out, productResponse{ProductID: p.ID, CateID: p.CategoryID, CateName: nameByID[p.CategoryID], BrandName: p.BrandName, StoreName: p.Title, StoreInfo: d.Brief, Keyword: d.Keyword, UnitName: nonEmpty(d.UnitName, "件"), Image: d.CoverURL, Price: s.Price, OtPrice: ot, SVIPPriceType: p.SVIPPriceType, SVIPPrice: p.SVIPPrice, Stock: s.Stock, Status: statusCode(p.Status), IsShow: showCode(p.Status), CreateTime: p.CreatedAt.Format("2006-01-02 15:04:05")})
 	}
 	return out, nil
 }
@@ -463,7 +575,16 @@ func nonEmpty(value, fallback string) string {
 	return strings.TrimSpace(value)
 }
 func valid(req saveRequest) bool {
-	return req.CateID > 0 && strings.TrimSpace(req.StoreName) != "" && req.Price >= 0 && req.Stock >= 0
+	if req.CateID == 0 || strings.TrimSpace(req.StoreName) == "" || req.Price < 0 || req.Stock < 0 {
+		return false
+	}
+	if len([]rune(strings.TrimSpace(req.BrandName))) > 64 || strings.ContainsAny(req.BrandName, "\x00\r\n") {
+		return false
+	}
+	if req.SVIPPriceType < 0 || req.SVIPPriceType > 2 || req.SVIPPrice < 0 {
+		return false
+	}
+	return req.SVIPPriceType != 2 || (req.SVIPPrice > 0 && req.SVIPPrice < req.Price)
 }
 func statusCode(status string) int8 {
 	switch status {
@@ -497,3 +618,4 @@ func statusName(value string) string {
 }
 
 var errInvalidTransition = errors.New("invalid product state transition")
+var errRestoreExpired = errors.New("product restore expired")

@@ -3,26 +3,24 @@ package merchant
 import (
 	"context"
 	"errors"
-	"fmt"
+	"math"
 	"strings"
 
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type Store interface {
-	ListMerchants(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]Merchant, int64, error)
+	ListMerchants(ctx context.Context, keyword string, status *int8, scope MerchantScope, page, limit int) ([]Merchant, int64, error)
 	GetMerchant(ctx context.Context, id uint) (*Merchant, error)
 	UpdateMerchantStatus(ctx context.Context, id uint, status, merState int8) error
 	UpdateSvipCouponMerge(ctx context.Context, merID uint, merge int8) error
 	UpdateShopProfile(ctx context.Context, merID uint, merName, realName, merPhone, merAddress, merInfo string) error
-	CreateMerchant(ctx context.Context, m *Merchant) error
-	CreateMerchantAdmin(ctx context.Context, a *identity.MerchantAdmin) error
+	UpsertMerchantView(ctx context.Context, m *Merchant) error
 
-	ListIntentions(ctx context.Context, keyword string, status *int8, page, limit int) ([]Intention, int64, error)
-	GetIntention(ctx context.Context, id uint) (*Intention, error)
+	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]Intention, int64, error)
+	GetIntention(ctx context.Context, id uint, regionIDs []uint) (*Intention, error)
 	SaveIntention(ctx context.Context, row *Intention) error
+	AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error)
 
 	ListCategories(ctx context.Context) ([]Category, error)
 	CreateCategory(ctx context.Context, c *Category) error
@@ -36,6 +34,13 @@ type Service struct {
 	store Store
 }
 
+// MerchantScope is resolved from qixi_crm_a_data_scope. A nil pair denotes
+// full-platform supervision; non-nil empty slices intentionally deny access.
+type MerchantScope struct {
+	MerchantIDs []uint
+	RegionIDs   []uint
+}
+
 func NewService(store Store) *Service { return &Service{store: store} }
 
 type PageResult[T any] struct {
@@ -45,8 +50,8 @@ type PageResult[T any] struct {
 	Limit int   `json:"limit"`
 }
 
-func (s *Service) ListMerchants(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) (*PageResult[Merchant], error) {
-	list, total, err := s.store.ListMerchants(ctx, keyword, status, regionIDs, page, limit)
+func (s *Service) ListMerchants(ctx context.Context, keyword string, status *int8, scope MerchantScope, page, limit int) (*PageResult[Merchant], error) {
+	list, total, err := s.store.ListMerchants(ctx, keyword, status, scope, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -59,18 +64,23 @@ func (s *Service) ListMerchants(ctx context.Context, keyword string, status *int
 	return &PageResult[Merchant]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) RequireMerchantScope(ctx context.Context, id uint, regionIDs []uint) error {
-	if regionIDs == nil {
+func (s *Service) RequireMerchantScope(ctx context.Context, id uint, scope MerchantScope) error {
+	if scope.MerchantIDs == nil && scope.RegionIDs == nil {
 		return nil
 	}
-	if len(regionIDs) == 0 {
+	if len(scope.MerchantIDs) == 0 && len(scope.RegionIDs) == 0 {
 		return ErrNotFound
 	}
 	m, err := s.GetMerchant(ctx, id)
 	if err != nil {
 		return err
 	}
-	for _, regionID := range regionIDs {
+	for _, merchantID := range scope.MerchantIDs {
+		if m.MerID == merchantID {
+			return nil
+		}
+	}
+	for _, regionID := range scope.RegionIDs {
 		if m.RegionID == regionID {
 			return nil
 		}
@@ -163,8 +173,8 @@ func (s *Service) UpdateSvipConfig(ctx context.Context, merID uint, merge int8) 
 	return s.GetSvipConfig(ctx, merID)
 }
 
-func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, page, limit int) (*PageResult[Intention], error) {
-	list, total, err := s.store.ListIntentions(ctx, keyword, status, page, limit)
+func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) (*PageResult[Intention], error) {
+	list, total, err := s.store.ListIntentions(ctx, keyword, status, regionIDs, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +187,8 @@ func (s *Service) ListIntentions(ctx context.Context, keyword string, status *in
 	return &PageResult[Intention]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) GetIntention(ctx context.Context, id uint) (*Intention, error) {
-	row, err := s.store.GetIntention(ctx, id)
+func (s *Service) GetIntention(ctx context.Context, id uint, regionIDs []uint) (*Intention, error) {
+	row, err := s.store.GetIntention(ctx, id, regionIDs)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrNotFound
@@ -203,7 +213,65 @@ type AuditIntentionResult struct {
 	Account   string     `json:"account,omitempty"`
 }
 
-func (s *Service) AuditIntention(ctx context.Context, id uint, in AuditIntentionInput) (*AuditIntentionResult, error) {
+func (s *Service) AssignIntentionRegion(ctx context.Context, id, regionID uint) (*Intention, error) {
+	if id == 0 || regionID == 0 {
+		return nil, ErrBadParam
+	}
+	row, err := s.GetIntention(ctx, id, nil)
+	if err != nil {
+		return nil, err
+	}
+	if row.Status != IntentionPending {
+		return nil, ErrAlreadyAudited
+	}
+	updated, err := s.store.AssignIntentionRegion(ctx, id, regionID)
+	if err != nil {
+		return nil, err
+	}
+	if !updated {
+		return nil, ErrAlreadyAudited
+	}
+	row.CircleID = regionID
+	return row, nil
+}
+
+// FinalizeIntentionApproval records a store that has already been created by
+// api-merchant's idempotent onboarding command. Keeping the command outside
+// this transaction preserves the three-database ownership boundary.
+func (s *Service) FinalizeIntentionApproval(ctx context.Context, id uint, in AuditIntentionInput, merchantID uint, regionIDs []uint) (*AuditIntentionResult, error) {
+	if merchantID == 0 || in.RegionID == 0 || strings.TrimSpace(in.Account) == "" {
+		return nil, ErrBadParam
+	}
+	out := AuditIntentionResult{MerID: merchantID, Account: strings.TrimSpace(in.Account)}
+	err := s.store.WithTx(func(tx Store) error {
+		row, err := tx.GetIntention(ctx, id, regionIDs)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+		if row.Status != IntentionPending {
+			return ErrAlreadyAudited
+		}
+		m := &Merchant{MerID: merchantID, CategoryID: row.MerchantCategoryID, RegionID: in.RegionID, MerName: row.MerName, RealName: row.Name, MerPhone: row.Phone, Mark: "入驻审核通过", Status: 1, MerState: 1, IsAudit: 1}
+		if err := tx.UpsertMerchantView(ctx, m); err != nil {
+			return err
+		}
+		row.Status, row.MerID, row.CircleID, row.Mark, row.FailMsg = IntentionApproved, merchantID, in.RegionID, strings.TrimSpace(in.Mark), ""
+		if err := tx.SaveIntention(ctx, row); err != nil {
+			return err
+		}
+		out.Intention = row
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (s *Service) AuditIntention(ctx context.Context, id uint, in AuditIntentionInput, regionIDs []uint) (*AuditIntentionResult, error) {
 	if in.Status != IntentionApproved && in.Status != IntentionRejected {
 		return nil, ErrBadStatus
 	}
@@ -213,7 +281,7 @@ func (s *Service) AuditIntention(ctx context.Context, id uint, in AuditIntention
 
 	var out AuditIntentionResult
 	err := s.store.WithTx(func(tx Store) error {
-		row, err := tx.GetIntention(ctx, id)
+		row, err := tx.GetIntention(ctx, id, regionIDs)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrNotFound
@@ -234,55 +302,7 @@ func (s *Service) AuditIntention(ctx context.Context, id uint, in AuditIntention
 			return nil
 		}
 
-		m := &Merchant{
-			CategoryID: row.MerchantCategoryID,
-			RegionID:   in.RegionID,
-			MerName:    row.MerName,
-			RealName:   row.Name,
-			MerPhone:   row.Phone,
-			Mark:       "入驻审核通过",
-			Status:     1,
-			MerState:   1,
-			IsAudit:    1,
-		}
-		if err := tx.CreateMerchant(ctx, m); err != nil {
-			return err
-		}
-		account := strings.TrimSpace(in.Account)
-		if account == "" {
-			account = fmt.Sprintf("mer%d", m.MerID)
-		}
-		pwd := strings.TrimSpace(in.Password)
-		if pwd == "" {
-			pwd = "admin123"
-		}
-		hash, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		admin := &identity.MerchantAdmin{
-			MerID:    m.MerID,
-			Account:  account,
-			Pwd:      string(hash),
-			RealName: row.Name,
-			Phone:    row.Phone,
-			Roles:    "2",
-			Level:    0,
-			Status:   1,
-		}
-		if err := tx.CreateMerchantAdmin(ctx, admin); err != nil {
-			return err
-		}
-		row.Status = IntentionApproved
-		row.MerID = m.MerID
-		row.FailMsg = ""
-		if err := tx.SaveIntention(ctx, row); err != nil {
-			return err
-		}
-		out.Intention = row
-		out.MerID = m.MerID
-		out.Account = account
-		return nil
+		return ErrProvisionRequired
 	})
 	if err != nil {
 		return nil, err
@@ -296,8 +316,8 @@ func (s *Service) ListCategories(ctx context.Context) ([]Category, error) {
 
 func (s *Service) CreateCategory(ctx context.Context, name string, rate float64) (*Category, error) {
 	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, errors.New("分类名称不能为空")
+	if name == "" || !validCommissionRate(rate) {
+		return nil, ErrBadParam
 	}
 	c := &Category{CategoryName: name, CommissionRate: rate}
 	if err := s.store.CreateCategory(ctx, c); err != nil {
@@ -308,8 +328,8 @@ func (s *Service) CreateCategory(ctx context.Context, name string, rate float64)
 
 func (s *Service) UpdateCategory(ctx context.Context, id uint, name string, rate float64) error {
 	name = strings.TrimSpace(name)
-	if name == "" {
-		return errors.New("分类名称不能为空")
+	if id == 0 || name == "" || !validCommissionRate(rate) {
+		return ErrBadParam
 	}
 	return s.store.UpdateCategory(ctx, &Category{
 		MerchantCategoryID: id,
@@ -319,5 +339,15 @@ func (s *Service) UpdateCategory(ctx context.Context, id uint, name string, rate
 }
 
 func (s *Service) DeleteCategory(ctx context.Context, id uint) error {
+	if id == 0 {
+		return ErrBadParam
+	}
 	return s.store.DeleteCategory(ctx, id)
+}
+
+func validCommissionRate(rate float64) bool {
+	if math.IsNaN(rate) || math.IsInf(rate, 0) || rate < 0 || rate > 100 {
+		return false
+	}
+	return math.Abs(rate-math.Round(rate*100)/100) < 0.000001
 }

@@ -8,24 +8,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type Handler struct {
-	db       *gorm.DB
-	identity *identity.Service
+	db, merchantDB *gorm.DB
 }
 
-func NewHandler(db *gorm.DB, id *identity.Service) *Handler { return &Handler{db: db, identity: id} }
+func NewHandler(db, merchantDB *gorm.DB) *Handler {
+	return &Handler{db: db, merchantDB: merchantDB}
+}
+
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/orders", h.list)
+	r.POST("/orders/proxy", middleware.RequireStorePermission(h.merchantDB, "order.proxy"), h.proxy)
 	r.GET("/orders/:id", h.get)
-	r.POST("/orders/:id/delivery", middleware.RequireMerchantMenu(h.identity, identity.MerPermOrderDeliver), h.deliver)
+	r.POST("/orders/:id/delivery", middleware.RequireStorePermission(h.merchantDB, "order.deliver"), h.deliver)
 }
 
 type order struct {

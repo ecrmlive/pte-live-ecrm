@@ -16,30 +16,38 @@ var (
 // CartLine is the immutable consumption-view snapshot used to prepare an order.
 // Amounts are integer cents: no float is allowed in order calculation.
 type CartLine struct {
-	CartID       uint64
-	ProductID    uint64
-	SKUKey       string
-	MerchantID   uint64
-	MerchantName string
-	StoreID      uint64
-	StoreName    string
-	Title        string
-	CoverURL     string
-	UnitCents    int64
-	Quantity     int
-	Stock        int
-	SaleStatus   int8
-	ProductType  int8 // 0=normal; non-zero is an activity order line.
+	CartID                  uint64
+	ProductID               uint64
+	MerchantSKUID           uint64
+	SKUKey                  string
+	SpecSnapshot            string
+	MerchantID              uint64
+	MerchantName            string
+	StoreID                 uint64
+	StoreName               string
+	IntegralEnabled         bool
+	IntegralPointsPerYuan   int64
+	IntegralMaxDeductionBps int64
+	Title                   string
+	CoverURL                string
+	ListCents               int64
+	UnitCents               int64
+	SVIPApplied             bool
+	Quantity                int
+	Stock                   int
+	SaleStatus              int8
+	ProductType             int8 // 0=normal; non-zero is an activity order line.
 }
 
 type StoreCheckout struct {
-	MerchantID   uint64
-	MerchantName string
-	StoreID      uint64
-	StoreName    string
-	Lines        []CartLine
-	TotalCents   int64
-	TotalQty     int
+	MerchantID     uint64
+	MerchantName   string
+	StoreID        uint64
+	StoreName      string
+	IntegralPolicy IntegralPolicy
+	Lines          []CartLine
+	TotalCents     int64
+	TotalQty       int
 }
 
 type Checkout struct {
@@ -74,7 +82,7 @@ func BuildCheckout(lines []CartLine) (Checkout, error) {
 		}
 		store := byStore[line.StoreID]
 		if store == nil {
-			store = &StoreCheckout{MerchantID: line.MerchantID, MerchantName: line.MerchantName, StoreID: line.StoreID, StoreName: line.StoreName, Lines: []CartLine{}}
+			store = &StoreCheckout{MerchantID: line.MerchantID, MerchantName: line.MerchantName, StoreID: line.StoreID, StoreName: line.StoreName, IntegralPolicy: IntegralPolicy{Enabled: line.IntegralEnabled, PointsPerYuan: line.IntegralPointsPerYuan, MaxDeductionBps: line.IntegralMaxDeductionBps}, Lines: []CartLine{}}
 			byStore[line.StoreID] = store
 		}
 		store.Lines = append(store.Lines, line)

@@ -87,6 +87,27 @@ func TestPriceRange(t *testing.T) {
 	}
 }
 
+func TestPageParamsBounded(t *testing.T) {
+	cases := []struct {
+		query string
+		page  int
+		limit int
+	}{
+		{query: "", page: 1, limit: 20},
+		{query: "page=3&limit=12", page: 3, limit: 12},
+		{query: "page=0&limit=0", page: 1, limit: 20},
+		{query: "page=-1&limit=999", page: 1, limit: 100},
+	}
+	for _, tc := range cases {
+		request := httptest.NewRequest("GET", "/catalog/stores?"+tc.query, nil)
+		ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+		ctx.Request = request
+		if page, limit := pageParams(ctx); page != tc.page || limit != tc.limit {
+			t.Fatalf("pageParams(%q) = (%d,%d), want (%d,%d)", tc.query, page, limit, tc.page, tc.limit)
+		}
+	}
+}
+
 func float64Ptr(value float64) *float64 { return &value }
 
 func assertFloatPtr(t *testing.T, label string, got, want *float64) {

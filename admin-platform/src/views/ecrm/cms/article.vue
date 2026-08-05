@@ -27,6 +27,7 @@ import {
   type ArticleRow,
 } from '#/api/core/ecrm';
 import { getArticleCategoryListApi, type ArticleCategoryOption } from '#/api/core/plus-article';
+import { getAccessCodesApi } from '#/api/core/auth';
 
 const form = reactive({
   title: '',
@@ -39,6 +40,7 @@ const form = reactive({
 });
 const editingId = ref(0);
 const categories = ref<ArticleCategoryOption[]>([]);
+const canManage = ref(false);
 
 async function loadCategories() {
   categories.value = (await getArticleCategoryListApi()).list.filter((item) => item.status === 1);
@@ -116,7 +118,10 @@ function openCreate() {
   formModalApi.open();
 }
 
-onMounted(() => void loadCategories());
+onMounted(async () => {
+  const [permissions] = await Promise.all([getAccessCodesApi(), loadCategories()]);
+  canManage.value = permissions.includes('content.article.manage');
+});
 
 function openEdit(row: ArticleRow) {
   editingId.value = row.article_id;
@@ -151,11 +156,11 @@ async function onDelete(row: ArticleRow) {
   <Page auto-content-height title="文章管理">
     <Grid>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">新建文章</ElButton>
+        <ElButton v-if="canManage" :icon="Plus" type="primary" @click="openCreate">新建文章</ElButton>
       </template>
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-        <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
+        <ElButton v-if="canManage" link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton v-if="canManage" link type="danger" @click="onDelete(row)">删除</ElButton>
       </template>
     </Grid>
     <FormModal class="w-[720px]">

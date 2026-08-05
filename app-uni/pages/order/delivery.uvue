@@ -1,0 +1,19 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Delivery = { delivery_name: string; delivery_id: string; delivery_type: string; delivery_status: string; delivered_at: string }
+const item = ref<Delivery | null>(null)
+function hasDelivery(): boolean { return item.value != null }
+function deliveryStatus(): string { const delivery = item.value; return delivery == null ? '配送处理中' : statusText(delivery.delivery_status) }
+function deliveryType(): string { const delivery = item.value; return delivery == null ? '--' : (delivery.delivery_type == 'express' ? '快递配送' : delivery.delivery_type) }
+function deliveryName(): string { const delivery = item.value; return delivery == null ? '--' : delivery.delivery_name }
+function deliveryID(): string { const delivery = item.value; return delivery == null ? '--' : delivery.delivery_id }
+function deliveredAt(): string { const delivery = item.value; return delivery == null ? '-' : delivery.delivered_at }
+function hasDeliveredAt(): boolean { return deliveredAt().length > 0 }
+function statusText(status: string): string { if (status == "shipped") return "运输中"; if (status == "delivered") return "已签收"; if (status == "pending") return "待发货"; return status || "配送处理中" }
+function load(id: number): void { if (id <= 0) return; appRequest("/order/" + id + "/delivery").then((data) => { item.value = data as Delivery }).catch((error) => uni.showToast({ title: error.message || "暂无配送信息", icon: "none" })) }
+function copy(): void { if (item.value != null && item.value.delivery_id.length > 0) uni.setClipboardData({ data: item.value.delivery_id, success: () => uni.showToast({ title: "物流单号已复制", icon: "success" }) }) }
+onLoad((query) => load(Number(query?.["order_id"] || 0)))
+</script>
+<template><view class="qx-page"><qx-nav title="配送详情"/><view v-if="hasDelivery()" class="qx-card"><text class="status">{{ deliveryStatus() }}</text><text class="line">配送方式：{{ deliveryType() }}</text><text class="line">承运方：{{ deliveryName() }}</text><view class="copy-line"><text class="line">物流单号：{{ deliveryID() }}</text><text class="copy" @click="copy">复制</text></view><text v-if="hasDeliveredAt()" class="line">配送时间：{{ deliveredAt() }}</text><text class="tip">配送状态由商户履约系统同步，实际时效以承运方为准。</text></view></view></template>
+<style>.status,.line,.tip{display:block}.status{color:#d72828;font-size:20px;font-weight:700}.line{margin-top:12px;color:#4e5969;font-size:14px}.tip{margin-top:22px;color:#86909c;font-size:12px;line-height:20px}.copy-line{display:flex;align-items:center;justify-content:space-between}.copy{padding:5px 10px;color:#d72828;border:1px solid #d72828;border-radius:14px;font-size:12px}</style>

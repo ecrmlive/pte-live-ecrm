@@ -17,7 +17,7 @@ function load(): void {
     .catch((error) => uni.showToast({ title: error.message || '页面加载失败', icon: 'none' }))
 }
 
-onLoad((query) => { pageID.value = Number(query['id'] || 0); load() })
+onLoad((query) => { pageID.value = Number(query?.['id'] || 0); load() })
 </script>
 
 <template>

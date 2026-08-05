@@ -88,10 +88,9 @@ func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (storeName, 
 		MerID     uint    `gorm:"column:mer_id"`
 		MerName   string  `gorm:"column:mer_name"`
 	}
-	err = r.db.WithContext(ctx).Table("qixi_m_admin_store_product AS p").
-		Select("p.store_name, p.image, p.price, p.cost, p.mer_id, m.mer_name").
-		Joins("LEFT JOIN qixi_m_admin_merchant m ON m.mer_id = p.mer_id").
-		Where("p.product_id = ? AND p.is_del = 0", productID).
+	err = r.db.WithContext(ctx).Table("qixi_crm_b_product_view AS p").
+		Select("p.store_name, p.cover_url AS image, p.price, 0 AS cost, p.merchant_id AS mer_id, p.merchant_name AS mer_name").
+		Where("p.product_id = ?", productID).
 		Limit(1).Scan(&row).Error
 	if err != nil {
 		return "", "", "", 0, 0, 0, err
@@ -104,7 +103,7 @@ func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (storeName, 
 
 func (r *Repo) LoadNickname(ctx context.Context, uid uint) (string, error) {
 	var nick string
-	err := r.db.WithContext(ctx).Table("qixi_m_app_user").Select("nickname").Where("uid = ?", uid).Scan(&nick).Error
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_user").Select("nickname").Where("id = ?", uid).Scan(&nick).Error
 	if err != nil {
 		return "", err
 	}

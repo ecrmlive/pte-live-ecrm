@@ -6,7 +6,8 @@ info:
     阶段 3 交易主链。pay_type：0=balance，1=wechat，2=alipay，7=mock，8=integral。
     真实路径对齐 FUNCTIONAL-TRUTH：/v2/order/check|create、/order/pay/:id。
     平台自营商品仅使用平台加密配置；入驻商户商品仅使用所属店铺自己的加密配置，二者不共用。不同支付主体商品必须分别结算；客户端先读取支付方式，再发起支付。
-    PC 微信支付使用 Native 下单，返回 code_url 由客户端生成二维码；支付成功必须等待微信 v3 签名回调。
+    PC 微信支付使用 Native 下单，返回 code_url 由客户端生成二维码；小程序登录态使用 JSAPI 下单，
+    返回由服务端签名的 uni.requestPayment 参数。两种支付成功都必须等待微信 v3 签名回调。
     回调同时校验 Wechatpay 签名、AES-256-GCM 资源、商户号、AppID、订单号和服务端实付金额，并以 provider_event_id 幂等落单。
     支付宝仍不开放，未完成前不会伪造支付成功。mock 仅允许显式启用的本地/测试环境。
     积分商城见 app-loyalty.yaml（/order/v3/*、/order/points/pay/:id）。
@@ -29,7 +30,9 @@ paths:
   /cart:
     get:
       summary: 购物车按商户分组
-      description: 仅读取 `qixi_crm_b_cart` 与 `qixi_crm_b_product_view`；响应中的 title 是商品名，store_name 是店铺名。
+      description: >-
+        仅读取 `qixi_crm_b_cart`、商品与店铺消费视图；响应中的 title 是商品名，store_name 是店铺名。
+        入驻商户商品额外返回 merchant_app_id，客户端仅可用该值向服务端换发店铺上下文 JWT 后再改数量或删除。
       security: [{ bearerAuth: [] }]
     post:
       summary: 加购
@@ -65,6 +68,8 @@ paths:
       summary: 发起支付
       description: >-
         pay_type=wechat 且当前为 PC 时创建微信 Native 预下单并返回 payment_mode=native、code_url、expires_at；
+        JWT 的 client_platform=mini_program 时使用该用户已绑定的 openid 创建 JSAPI 预下单，并返回
+        payment_mode=jsapi、timeStamp、nonceStr、package、signType、paySign；客户端不得传入金额或 openid。
         不改变订单已支付状态。只有签名验证通过的微信回调才能将订单置为 paid。
       security: [{ bearerAuth: [] }]
   /order/pay/{id}/channels:
@@ -165,7 +170,7 @@ paths:
   /refund/apply:
     post:
       summary: 用户提交整单售后申请
-      description: 仅允许本人已支付、履约中或已发货的订单；请求使用 idempotency_key 防重，创建后订单状态进入 aftersale。
+      description: 仅允许本人已支付、履约中或已发货的订单；refund_type=1 为仅退款，refund_type=2 为退货退款。退货退款审核通过后，用户必须登记寄回物流，商户确认收货后才进入退款处理阶段；请求使用 idempotency_key 防重，创建后订单状态进入 aftersale。
       security: [{ bearerAuth: [] }]
   /refunds:
     get: { summary: 我的售后单列表, security: [{ bearerAuth: [] }] }
@@ -175,6 +180,11 @@ paths:
     post: { summary: 用户取消待处理售后申请, security: [{ bearerAuth: [] }] }
   /refunds/{id}/platform:
     post: { summary: 用户申请平台介入, security: [{ bearerAuth: [] }] }
+  /refunds/{id}/return-shipment:
+    post:
+      summary: 用户登记退货物流
+      description: 仅退货退款且处于 awaiting_return 时可提交一次承运商、运单号和备注；成功后进入 awaiting_receipt，不变更资金或库存。
+      security: [{ bearerAuth: [] }]
 components:
   securitySchemes:
     bearerAuth:

@@ -5,20 +5,29 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/combination"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-type Handler struct{ svc *combination.Service }
+type Handler struct {
+	svc     *combination.Service
+	adminDB *gorm.DB
+}
 
-func NewHandler(svc *combination.Service) *Handler { return &Handler{svc: svc} }
+func NewHandler(svc *combination.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/combination/groups", h.List)
 	r.GET("/combination/groups/:id", h.Get)
-	r.PUT("/combination/groups/:id", h.Update)
-	r.DELETE("/combination/groups/:id", h.Delete)
+	write := middleware.RequireAdminRoles("platform", "operations")
+	manage := middleware.RequireAdminMenu(h.adminDB, "marketing.combination.manage")
+	r.PUT("/combination/groups/:id", write, manage, h.Update)
+	r.DELETE("/combination/groups/:id", write, manage, h.Delete)
 }
 
 func (h *Handler) List(c *gin.Context) {

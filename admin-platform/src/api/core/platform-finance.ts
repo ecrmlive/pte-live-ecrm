@@ -11,10 +11,14 @@ export interface PlatformWithdraw {
   image?: string;
   mark?: string;
   mer_id: number;
+  user_id: number;
   mer_money: number;
+	paid_at?: string;
+	payout_reference?: string;
   refusal?: string;
   status: number;
   status_time?: string;
+  withdrawal_status?: 'applied' | 'approved' | 'paid' | 'paying' | 'rejected' | 'reviewing';
 }
 
 export interface PlatformWithdrawPage {
@@ -42,4 +46,8 @@ export function approvePlatformWithdrawApi(id: number) {
 
 export function rejectPlatformWithdrawApi(id: number, refusal: string) {
   return requestClient.post(`/finance/withdraws/${id}/reject`, { refusal });
+}
+
+export function markPlatformWithdrawPaidApi(id: number, data: { idempotency_key: string; payout_reference: string }) {
+  return requestClient.post(`/finance/withdraws/${id}/mark-paid`, data);
 }

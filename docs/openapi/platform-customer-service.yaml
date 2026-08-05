@@ -39,10 +39,49 @@ paths:
       responses:
         '200': { description: 领取成功 }
         '409': { description: 会话已关闭或已由其他客服领取 }
+  /customer-service/threads/{id}/transfer:
+    post:
+      summary: 转接会话给同店铺服务范围内的启用客服
+      description: >-
+        仅平台角色或当前领取客服可调用。请求必须包含每次操作唯一的
+        X-Idempotency-Key；相同会话与幂等键重复提交返回同一转接结果，变更目标则返回冲突。
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+        - { in: header, name: X-Idempotency-Key, required: true, schema: { type: string, minLength: 1, maxLength: 128 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_admin_id, reason]
+              properties:
+                target_admin_id: { type: integer, format: int64, minimum: 1 }
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200': { description: 转接成功或同幂等键重试成功 }
+        '400': { description: 目标客服未启用、无同店铺服务范围或参数错误 }
+        '403': { description: 非平台且非当前领取客服，或无会话数据范围 }
+        '409': { description: 会话已关闭、转给当前归属或幂等键被不同目标复用 }
+  /customer-service/threads/{id}/assignment-logs:
+    get:
+      summary: 查询获授权会话的转接审计记录
+      description: >-
+        审计记录仅在会话所属店铺通过 service_queue 数据范围校验后返回；不返回调用方的幂等键。
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200': { description: 转接审计分页，包含原客服、目标客服、操作人、原因和时间 }
+        '403': { description: 无 customer_service 角色或无会话数据范围 }
+        '404': { description: 会话不存在或不在当前数据范围 }
 components:
   securitySchemes:
     authorization:
       type: apiKey
       in: header
-      name: Authori-zation
+      name: Authorization
       description: 唯一 JWT 请求头，格式 Bearer token。

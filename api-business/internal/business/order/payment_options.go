@@ -36,8 +36,11 @@ func availablePaymentChannels(ctx context.Context, db *gorm.DB, configs *payment
 	if err != nil && !errors.Is(err, paymentconfig.ErrNotConfigured) {
 		return nil, err
 	}
-	channels := []PaymentChannelView{{Channel: "wechat"}, {Channel: "alipay"}}
+	channels := []PaymentChannelView{{Channel: "balance", Enabled: true}, {Channel: "wechat"}, {Channel: "alipay"}}
 	for i := range channels {
+		if channels[i].Channel == "balance" {
+			continue
+		}
 		if err != nil {
 			continue
 		}

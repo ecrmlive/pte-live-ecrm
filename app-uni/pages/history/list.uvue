@@ -1,0 +1,37 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type History = { history_id:number; product_id:number; store_id:number; store_name:string; title:string; image:string; price:number; sales:number; viewed_at:string }
+type HistoryPage = { list:History[]; total:number; page:number; limit:number }
+
+const items = ref<History[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+function hasMore():boolean { return items.value.length < total.value }
+function load(reset:boolean = false):void {
+  if (loading.value || (!reset && !hasMore())) return
+  if (reset) { page.value = 1; total.value = 0; items.value = [] }
+  loading.value = true
+  appRequest("/history?page=" + page.value + "&limit=20").then((data) => {
+    const result = data as HistoryPage
+    items.value = items.value.concat(result.list || [])
+    total.value = result.total || 0
+    page.value += 1
+  }).catch((error) => uni.showToast({ title:error.message || "浏览记录加载失败", icon:"none" })).finally(() => { loading.value = false })
+}
+function goProduct(id:number):void { uni.navigateTo({ url:`/pages/goods/detail?id=${id}` }) }
+function remove(id:number):void { appRequest(`/history/delete/${id}`, "POST", {} as UTSJSONObject).then(() => load(true)).catch((error) => uni.showToast({ title:error.message || "删除失败", icon:"none" })) }
+function clearAll():void {
+  if (items.value.length == 0) return
+  uni.showModal({ title:"清空浏览记录", content:"清空后无法恢复，确认继续吗？", success:(result) => {
+    if (!result.confirm) return
+    appRequest("/history/batch/delete", "POST", { history_ids:[] } as UTSJSONObject).then(() => { items.value = []; total.value = 0; page.value = 1; uni.showToast({ title:"已清空", icon:"success" }) }).catch((error) => uni.showToast({ title:error.message || "清空失败", icon:"none" }))
+  } })
+}
+onShow(() => load(true))
+onReachBottom(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="浏览记录"/><view v-if="items.length>0" class="toolbar"><text>最近浏览 {{total}} 条</text><text class="clear" @click="clearAll">清空</text></view><view v-if="!loading&&items.length==0" class="qx-card empty">暂无浏览记录</view><view v-for="item in items" :key="item.history_id" class="qx-card row" @click="goProduct(item.product_id)"><image v-if="item.image" class="cover" :src="item.image" mode="aspectFill"/><view v-else class="cover cover--empty">商品</view><view class="main"><text class="title">{{item.title}}</text><text class="store">{{item.store_name||"平台自营"}} · {{item.viewed_at}}</text><text class="price">¥{{item.price}}</text></view><text class="remove" @click.stop="remove(item.history_id)">删除</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="items.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="items.length>0" class="more" @click="load()">加载更多</text></view></template>
+<style>.toolbar{height:48px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;color:#4e5969;background-color:#ffffff;font-size:14px}.clear{color:#d72828}.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:22px}.more{padding:16px;font-size:12px}.row{display:flex;align-items:center;gap:12px}.cover{width:68px;height:68px;flex-shrink:0;border-radius:8px;background-color:#fff0ee}.cover--empty{display:flex;align-items:center;justify-content:center;color:#d72828}.main{min-width:0;flex:1;display:flex;flex-direction:column}.title{overflow:hidden;color:#1f2329;font-size:15px;white-space:nowrap;text-overflow:ellipsis}.store{overflow:hidden;margin-top:7px;color:#86909c;font-size:12px;white-space:nowrap;text-overflow:ellipsis}.price{margin-top:8px;color:#d72828;font-size:16px;font-weight:700}.remove{color:#86909c;font-size:12px}</style>

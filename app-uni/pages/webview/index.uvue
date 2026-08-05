@@ -1,7 +1,7 @@
 <script setup lang="uts">
 const url = ref('')
 onLoad((query) => {
-  const raw = String(query['url'] || '')
+  const raw = String(query?.['url'] || '')
   if (raw.startsWith('https://') || raw.startsWith('http://')) url.value = decodeURIComponent(raw)
 })
 </script>

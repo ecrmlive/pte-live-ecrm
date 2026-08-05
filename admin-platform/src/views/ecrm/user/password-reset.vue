@@ -1,0 +1,9 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import { Page } from '@vben/common-ui';
+import { ElMessage } from 'element-plus';
+import { resetPlatformUserPassword } from '#/api/core/ecrm';
+const submitting=ref(false);const form=reactive({user_id:undefined as number|undefined,password:'',confirm_password:'',reason:''});
+async function submit(){const reason=form.reason.trim();if(!form.user_id||form.password.length<12||form.password.length>72||form.password!==form.confirm_password||reason.length<2||reason.length>500){ElMessage.warning('请填写用户、两次一致的 12 至 72 位新密码和调整原因');return}submitting.value=true;try{await resetPlatformUserPassword(form.user_id,{password:form.password,reason,idempotency_key:`user-password-${form.user_id}-${crypto.randomUUID()}`});ElMessage.success('密码已重置；该用户所有旧 C 端会话已失效');Object.assign(form,{user_id:undefined,password:'',confirm_password:'',reason:''})}finally{submitting.value=false}}
+</script>
+<template><Page title="用户密码重置" description="仅平台角色可重置本地 PC 登录密码。新密码只用于 bcrypt 哈希，旧令牌会因身份版本递增立即失效。"><el-alert class="mb-4" type="warning" :closable="false" title="不显示、记录或回传密码；请仅使用受控临时密码，并以安全渠道交付给用户。"/><el-card shadow="never" class="max-w-3xl"><el-form label-width="116px" @submit.prevent="submit"><el-form-item label="用户 ID" required><el-input-number v-model="form.user_id" :min="1"/></el-form-item><el-form-item label="新密码" required><el-input v-model="form.password" type="password" show-password autocomplete="new-password"/></el-form-item><el-form-item label="确认新密码" required><el-input v-model="form.confirm_password" type="password" show-password autocomplete="new-password"/></el-form-item><el-form-item label="重置原因" required><el-input v-model="form.reason" type="textarea" :rows="4" maxlength="500" show-word-limit/></el-form-item><el-form-item><el-button type="primary" :loading="submitting" @click="submit">确认重置</el-button></el-form-item></el-form></el-card></Page></template>

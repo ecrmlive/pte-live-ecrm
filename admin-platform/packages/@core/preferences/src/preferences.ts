@@ -40,7 +40,9 @@ class PreferenceManager {
   private state: Preferences;
 
   constructor() {
-    this.cache = new StorageManager();
+    // 初始化阶段尚未读取缓存，仍提供独立前缀，避免本地存储驱动把空前缀
+    // 误认为可操作同域内全部 key。
+    this.cache = new StorageManager({ prefix: 'vben-preferences-bootstrap' });
     // 构造函数不再同步读取缓存，使用默认值初始化
     // 真正的缓存加载在 initPreferences 中完成（已经是 async）
     this.state = reactive<Preferences>({ ...defaultPreferences });

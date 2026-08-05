@@ -10,7 +10,7 @@
 | API | 统一后台 | `pte_live_ecrm_api_platform` | `172.30.0.61` | admin 身份、权限、后台配置与客服入口 |
 | API | C 端业务 | `pte_live_ecrm_api_business` | `172.30.0.62` | C 用户、交易、营销、资产与内容消费 |
 | API | 店铺 | `pte_live_ecrm_api_merchant` | `172.30.0.63` | 店铺、员工、商品经营、库存与履约 |
-| 异步 | job | `pte_live_ecrm_job` | `172.30.0.64` | profile 保留，待旧单库迁移完成后启用 |
+| 异步 | job | `pte_live_ecrm_job` | `172.30.0.64` | 仅连接业务库，负责未支付关单等异步任务 |
 
 Compose project 与前缀固定为 `pte_live_ecrm`，七禧 API 固定加入 `pte_live_net (172.30.0.0/24)`。local/test 仅是不同执行宿主机，矩阵不得变更。
 

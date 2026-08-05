@@ -16,7 +16,7 @@ usage() {
   pack [api-platform|api-business|api-merchant|job|backend-all]
   check-config                     校验三套 API YAML
   compose-config                   校验唯一 docker-compose.yaml
-  up [infra|db-init|backend|all]   校验共享基础设施、初始化数据库或启动 API
+  up [infra|db-init|backend|job|all]   校验共享基础设施、初始化数据库或启动 API
   down                             停止 pte_live_ecrm 容器
   ps                               查看 pte_live_ecrm 容器
 
@@ -103,6 +103,7 @@ check_app_yaml() {
 	api-platform) scope=admin ;;
 	api-business) scope=business ;;
 	api-merchant) scope=merchant ;;
+	job) scope=business ;;
 	*) echo "错误: 未定义 ${service} 的数据库范围" >&2; return 1 ;;
 	esac
 	dsn="$(database_dsn "${scope}" "${file}")"
@@ -115,6 +116,7 @@ check_config() {
 	check_app_yaml api-platform
 	check_app_yaml api-business
 	check_app_yaml api-merchant
+	check_app_yaml job
 	echo "YAML 配置完整：local/test 共用相同配置约定。"
 }
 
@@ -139,15 +141,11 @@ pack_one() {
 pack() {
 	local target="${1:-backend-all}"
 	case "${target}" in
-	api-platform|api-business|api-merchant) pack_one "${target}" ;;
+	api-platform|api-business|api-merchant|job) pack_one "${target}" ;;
 	backend-all)
 		pack_one api-platform
 		pack_one api-business
 		pack_one api-merchant
-		;;
-	job)
-		echo "错误: job 仍依赖旧单库数据访问层，完成迁移前禁止构建进入新运行形态。" >&2
-		exit 1
 		;;
 	*) echo "错误: 未知构建目标 ${target}" >&2; exit 1;;
 	esac
@@ -155,6 +153,13 @@ pack() {
 
 compose() {
 	docker compose --project-name pte_live_ecrm --file "${COMPOSE_FILE}" "$@"
+}
+
+require_job_infra() {
+	docker inspect --format '{{.State.Running}}' pte_live_mysql 2>/dev/null | grep -qx true || {
+		echo "错误: 共享基础设施 pte_live_mysql 未运行；job 的业务库任务无法启动。" >&2
+		exit 1
+	}
 }
 
 require_shared_infra() {
@@ -235,6 +240,7 @@ provision_shared_database_user() {
 	sync_service_dsn api-platform admin qixi_crm_admin
 	sync_service_dsn api-platform business qixi_crm_business
 	sync_service_dsn api-business business qixi_crm_business
+	sync_service_dsn job business qixi_crm_business
 	sync_service_dsn api-merchant merchant qixi_crm_merchant
 	sync_service_dsn api-merchant business qixi_crm_business
 }
@@ -267,8 +273,9 @@ main() {
 		infra) require_shared_infra; echo "已复用 pte_live_net 共享基础设施；七禧不会创建数据库或中间件容器。" ;;
 		db-init) initialize_databases ;;
 		backend) require_shared_infra; compose up -d api-platform api-business api-merchant ;;
+		job) require_job_infra; compose --profile job up -d job ;;
 		all) require_shared_infra; compose up -d api-platform api-business api-merchant ;;
-		*) echo "错误: up 仅支持 infra、db-init、backend、all" >&2; exit 1;;
+		*) echo "错误: up 仅支持 infra、db-init、backend、job、all" >&2; exit 1;;
 		esac
 		;;
 	down) compose down ;;

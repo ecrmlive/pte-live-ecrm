@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/combination"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/trade"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -29,8 +29,6 @@ func (h *Handler) RegisterPublic(r gin.IRoutes) {
 }
 
 func (h *Handler) RegisterAuthed(r gin.IRoutes) {
-	r.POST("/order/group/check", h.Check)
-	r.POST("/order/group/create", h.Create)
 }
 
 func (h *Handler) List(c *gin.Context) {

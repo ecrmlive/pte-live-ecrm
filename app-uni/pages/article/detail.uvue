@@ -1,0 +1,9 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+type Article={title:string;content:string;create_time:string};const item=ref<Article|null>(null)
+function hasArticle(): boolean { return item.value != null }
+function articleTitle(): string { const article = item.value; return article == null ? '资讯加载中' : article.title }
+function articleTime(): string { const article = item.value; return article == null ? '--' : article.create_time }
+function articleContent(): string { const article = item.value; return article == null ? '--' : article.content }
+onLoad((query)=>{const id=Number(query?.["id"]||0);if(id>0)appRequest("/content/articles/"+id,"GET",null,false).then((data)=>item.value=data as Article).catch((error)=>uni.showToast({title:error.message||"资讯加载失败",icon:"none"}))})
+</script><template><view class="qx-page"><qx-nav title="资讯详情"/><view v-if="hasArticle()" class="article"><text class="title">{{articleTitle()}}</text><text class="time">{{articleTime()}}</text><text class="content">{{articleContent()}}</text></view></view></template><style>.article{padding:20px;background:#fff}.title,.time,.content{display:block}.title{font-size:22px;font-weight:700;line-height:30px}.time{margin-top:10px;color:#86909c;font-size:12px}.content{margin-top:22px;color:#1d2129;font-size:15px;line-height:26px;white-space:pre-wrap}</style>

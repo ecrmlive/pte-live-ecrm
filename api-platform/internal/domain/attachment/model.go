@@ -13,7 +13,7 @@ type Category struct {
 	CreateTime               time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Category) TableName() string { return "qixi_m_admin_system_attachment_category" }
+func (Category) TableName() string { return "qixi_crm_a_attachment_category" }
 
 type Attachment struct {
 	AttachmentID         uint      `gorm:"column:attachment_id;primaryKey" json:"attachment_id"`
@@ -27,7 +27,7 @@ type Attachment struct {
 	AttachmentType       int8      `gorm:"column:attachment_type" json:"attachment_type"`
 }
 
-func (Attachment) TableName() string { return "qixi_m_admin_system_attachment" }
+func (Attachment) TableName() string { return "qixi_crm_a_attachment_asset" }
 
 type CategoryInput struct {
 	Name   string `json:"attachment_category_name"`

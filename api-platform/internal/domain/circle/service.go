@@ -11,10 +11,17 @@ import (
 )
 
 var (
-	ErrNotFound       = errors.New("记录不存在")
-	ErrBadParam       = errors.New("参数不合法")
-	ErrHasChildren    = errors.New("存在下级区域，不能删除")
-	ErrAlreadyAudited = errors.New("代理申请已处理")
+	ErrNotFound          = errors.New("记录不存在")
+	ErrBadParam          = errors.New("参数不合法")
+	ErrHasChildren       = errors.New("存在下级区域，不能删除")
+	ErrAlreadyAudited    = errors.New("代理申请已处理")
+	ErrAgentBound        = errors.New("代理已关联区域，不能撤销")
+	ErrAgentBalance      = errors.New("代理仍有佣金余额，不能撤销")
+	ErrAgentAdminBound   = errors.New("代理仍关联统一后台账号，不能撤销")
+	ErrAgentRevoked      = errors.New("代理资格已撤销")
+	ErrAgentNotApproved  = errors.New("仅已审核通过的代理可以重置后台密码")
+	ErrAgentAdminUnbound = errors.New("代理未关联启用的统一后台账号")
+	ErrCommandConflict   = errors.New("幂等键与既有代理命令不一致")
 )
 
 type PageResult[T any] struct {
@@ -37,6 +44,7 @@ type Store interface {
 	CreateAgent(context.Context, *Agent) error
 	UpdateAgent(context.Context, *Agent) error
 	AuditAgent(context.Context, uint, int8, string, uint, time.Time) error
+	RevokeAgent(context.Context, uint, string, string, uint, time.Time) (bool, error)
 }
 
 type Service struct{ store Store }
@@ -168,10 +176,22 @@ func (s *Service) ListAgents(ctx context.Context, keyword string, status *int8, 
 	if err != nil {
 		return nil, err
 	}
+	for i := range rows {
+		scrubAgentPayment(&rows[i])
+	}
 	return &PageResult[Agent]{List: rows, Total: total, Page: page, Limit: limit}, nil
 }
 
 func (s *Service) GetAgent(ctx context.Context, id uint) (*Agent, error) {
+	row, err := s.getAgent(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	scrubAgentPayment(row)
+	return row, nil
+}
+
+func (s *Service) getAgent(ctx context.Context, id uint) (*Agent, error) {
 	if id == 0 {
 		return nil, ErrBadParam
 	}
@@ -197,7 +217,7 @@ func (s *Service) CreateAgent(ctx context.Context, in AgentInput) (*Agent, error
 }
 
 func (s *Service) UpdateAgent(ctx context.Context, id uint, in AgentInput) (*Agent, error) {
-	old, err := s.GetAgent(ctx, id)
+	old, err := s.getAgent(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +229,30 @@ func (s *Service) UpdateAgent(ctx context.Context, id uint, in AgentInput) (*Age
 		return nil, err
 	}
 	row.CircleAgentID = id
+	// 支付账号、开户行、二维码只支持非空覆盖，避免脱敏读模型在编辑时把既有资料清空。
+	if row.PaymentAccount == "" {
+		row.PaymentAccount = old.PaymentAccount
+	}
+	if row.PaymentBank == "" {
+		row.PaymentBank = old.PaymentBank
+	}
+	if row.PaymentQRImg == "" {
+		row.PaymentQRImg = old.PaymentQRImg
+	}
 	if err := s.store.UpdateAgent(ctx, row); err != nil {
 		return nil, err
 	}
 	return s.GetAgent(ctx, id)
+}
+
+func scrubAgentPayment(row *Agent) {
+	if row == nil {
+		return
+	}
+	row.PaymentConfigured = strings.TrimSpace(row.PaymentAccount) != "" || strings.TrimSpace(row.PaymentBank) != "" || strings.TrimSpace(row.PaymentQRImg) != ""
+	row.PaymentAccount = ""
+	row.PaymentBank = ""
+	row.PaymentQRImg = ""
 }
 
 func (s *Service) AuditAgent(ctx context.Context, id uint, in AuditInput, adminID uint) error {
@@ -230,6 +270,14 @@ func (s *Service) AuditAgent(ctx context.Context, id uint, in AuditInput, adminI
 		return ErrAlreadyAudited
 	}
 	return s.store.AuditAgent(ctx, id, in.Status, strings.TrimSpace(in.AuditReason), adminID, time.Now())
+}
+
+func (s *Service) RevokeAgent(ctx context.Context, id uint, reason, idempotencyKey string, adminID uint) (bool, error) {
+	reason, idempotencyKey = strings.TrimSpace(reason), strings.TrimSpace(idempotencyKey)
+	if id == 0 || len([]rune(reason)) < 2 || len([]rune(reason)) > 500 || len([]rune(idempotencyKey)) < 8 || len([]rune(idempotencyKey)) > 128 {
+		return false, ErrBadParam
+	}
+	return s.store.RevokeAgent(ctx, id, reason, idempotencyKey, adminID, time.Now())
 }
 
 func agentFromInput(in AgentInput) (*Agent, error) {

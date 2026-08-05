@@ -1,7 +1,44 @@
 # app-ios — 七禧 iOS 客户端
 
-独立 iOS 工程目录。目标为 iOS 16+、Swift 6、UIKit、MVVM/Clean Architecture；不得以 `app-uni` WebView 替代。
+原生 C 端商城工程，目标为 **iOS 16+ / Swift 6 / UIKit**。与 PC、H5、小程序、Android、鸿蒙共用 `api-business` 的 C 端契约、用户主体和 JWT；认证来源固定标记为 `ios`。
 
-与 `app-pc`、`app-uni`、`app-adnroid`、`app-harmony` 共用 `api-business` 的 C 端业务契约和 JWT；用户登录来源标识为 `ios`。导航栏高度 44px，紧贴状态栏底部。
+## 工程入口
 
-当前仅完成目录收敛，尚未创建 Xcode 工程或宣称功能完成。
+```text
+ECRM.xcworkspace        # 生成后用 Xcode 打开
+ECRM.xcodeproj          # XcodeGen 生成项目
+project.yml             # 项目定义的唯一来源
+ECRM/
+  App/                  # 应用装配、生命周期、DI
+  Core/                 # 配置、网络、日志、持久化、安全存储
+  Domain/                # 领域实体与仓储协议
+  Data/                  # 接口与本地存储实现
+  Features/              # UIKit 页面（MVVM）
+  Resources/             # 图片、颜色等资源
+ECRMTests/              # 基础单元测试
+```
+
+`project.yml` 是 Xcode 工程的可重建来源。更新工程定义后，在本目录执行：
+
+```bash
+xcodegen generate
+```
+
+## 已搭建能力
+
+- UIKit 生命周期与 5 栏用户端导航：首页、分类、购物车、订单、我的；导航栏使用系统标准 44pt 高度并紧贴状态栏。
+- Clean Architecture 基础分层、构造器注入的 `AppContainer`、`async/await` 网络客户端与 `OSLog`。
+- Keychain 令牌存储、Core Data 本地持久化基座、可替换的认证仓储。
+- HTTP 契约：令牌仅写入 `Authori-zation: Bearer <token>`；店铺上下文使用 `X-AppId`；登录来源为 `ios`。
+
+## 配置和安全
+
+- 当前 `ECRMAPIBaseURL` 是不可访问的示例地址。请在本地 Xcode Scheme 或未提交的 `.xcconfig` 中覆写为实际 `api-business` HTTPS 地址。
+- 令牌仅存 Keychain；不得将 JWT、支付参数、IM UserSig、密钥或真实用户数据写入源码、`Info.plist` 或日志。
+- 商户店铺业务必须先调用 `/auth/store-context` 换取上下文令牌；`X-AppId` 不是 IM SDK AppId。
+
+## 后续实现顺序
+
+1. 认证与用户资料；2. 商品/店铺消费视图；3. 多商户购物车；4. 订单与支付；5. 售后、营销、会员与客服。
+
+功能验收以 [`docs/features/03-user-app.md`](../docs/features/03-user-app.md) 为准；交易等高风险域必须先对照 `docs/api/FUNCTIONAL-TRUTH.md`。

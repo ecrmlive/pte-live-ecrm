@@ -1,6 +1,7 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 import { getAccessToken } from '../../common/session'
+import { getCheckoutAddressID } from '../../common/checkout-address'
 
 type ProductGroup = { product_group_id: number; store_name: string; mer_name: string; price: number; buying_count_num: number }
 type Buying = { group_buying_id: number; yet_buying_num: number; buying_count_num: number; remain: number; status: number }
@@ -14,7 +15,12 @@ const id = ref(0)
 const item = ref<ProductGroup | null>(null)
 const buyings = ref<Buying[]>([])
 const submitting = ref(false)
+const createKey = ref("")
 
+function hasGroup(): boolean { return item.value != null }
+function groupName(): string { const group = item.value; return group == null ? '拼团商品加载中' : group.store_name }
+function groupDescription(): string { const group = item.value; return group == null ? '拼团活动加载中' : group.mer_name + ' · ' + group.buying_count_num.toString() + ' 人成团' }
+function groupPrice(): number { const group = item.value; return group == null ? 0 : group.price }
 function load(): void {
   if (id.value <= 0) return
   appRequest(`/combination/groups/${id.value}`, 'GET', null, false).then((data) => { item.value = data as ProductGroup }).catch((error) => uni.showToast({ title: error.message || '拼团活动加载失败', icon: 'none' }))
@@ -23,18 +29,19 @@ function load(): void {
 function submit(groupBuyingID: number): void {
   if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }
   if (id.value <= 0) return
+  if (createKey.value.length == 0) createKey.value = "combination-order-" + Date.now().toString() + "-" + Math.random().toString(36).slice(2)
   submitting.value = true
   let addressID = 0
   appRequest('/address').then((data) => {
     const addresses = (data as AddressData).list || []
-    const address = addresses.find((row) => row.is_default == 1) || (addresses.length > 0 ? addresses[0] : null)
-    if (address == null) { uni.showToast({ title: '请先添加收货地址', icon: 'none' }); uni.navigateTo({ url: '/pages/address/list' }); throw new Error('缺少收货地址') }
+    const address = addresses.find((row) => row.address_id == getCheckoutAddressID()) || addresses.find((row) => row.is_default == 1) || (addresses.length > 0 ? addresses[0] : null)
+    if (address == null) { uni.showToast({ title: '请先添加收货地址', icon: 'none' }); uni.navigateTo({ url: '/pages/address/list?select=1' }); throw new Error('缺少收货地址') }
     addressID = address.address_id
     return appRequest('/order/group/check', 'POST', { product_group_id: id.value, group_buying_id: groupBuyingID, cart_num: 1, address_id: address.address_id } as UTSJSONObject)
   }).then((data) => {
     const checked = data as GroupCheck
     if (checked.pay_price < 0) throw new Error('拼团订单金额异常')
-    return appRequest('/order/group/create', 'POST', { product_group_id: id.value, group_buying_id: groupBuyingID, cart_num: 1, address_id: addressID } as UTSJSONObject)
+    return appRequest('/order/group/create', 'POST', { product_group_id: id.value, group_buying_id: groupBuyingID, cart_num: 1, address_id: addressID, idempotency_key: createKey.value } as UTSJSONObject)
   }).then((data) => {
     const created = data as GroupOrder
     uni.navigateTo({ url: `/pages/order/detail?id=${created.group_order_id}` })
@@ -45,12 +52,12 @@ function submit(groupBuyingID: number): void {
 function open(): void { submit(0) }
 function join(groupBuyingID: number): void { submit(groupBuyingID) }
 
-onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+onLoad((query) => { id.value = Number(query?.['id'] || 0); load() })
 onShow(() => { if (id.value > 0) load() })
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="拼团详情" /><view v-if="item != null" class="hero"><text class="hero__title">{{ item.store_name }}</text><text class="hero__sub">{{ item.mer_name }} · {{ item.buying_count_num }} 人成团</text><text class="hero__price">拼团价 ¥{{ item.price }}</text></view><view class="qx-card"><text class="title">进行中的团</text><view v-if="buyings.length == 0" class="empty">暂无可参团订单，您可以发起新团</view><view v-for="buying in buyings" :key="buying.group_buying_id" class="buying"><text>还差 {{ buying.remain }} 人 · 已有 {{ buying.yet_buying_num }}/{{ buying.buying_count_num }} 人</text><button :loading="submitting" class="join" @click="join(buying.group_buying_id)">参团</button></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="open">发起拼团</button></view></view>
+  <view class="qx-page"><qx-nav title="拼团详情" /><view v-if="hasGroup()" class="hero"><text class="hero__title">{{ groupName() }}</text><text class="hero__sub">{{ groupDescription() }}</text><text class="hero__price">拼团价 ¥{{ groupPrice() }}</text></view><view class="qx-card"><text class="title">进行中的团</text><view v-if="buyings.length == 0" class="empty">暂无可参团订单，您可以发起新团</view><view v-for="buying in buyings" :key="buying.group_buying_id" class="buying"><text>还差 {{ buying.remain }} 人 · 已有 {{ buying.yet_buying_num }}/{{ buying.buying_count_num }} 人</text><button :loading="submitting" class="join" @click="join(buying.group_buying_id)">参团</button></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="open">发起拼团</button></view></view>
 </template>
 
 <style>

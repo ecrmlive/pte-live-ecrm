@@ -49,7 +49,7 @@
 | `merchant-assist.yaml` | 商户助力 CRUD（阶段 6） |
 | `platform-assist.yaml` | 平台助力监管（阶段 6） |
 | `service-desk.yaml` | 客服查单 + 按 mer_id 读快捷回复 `/api/service/v1`（阶段 6b/7） |
-| `platform-customer-service.yaml` | 统一后台客服队列、数据范围与领取；IM 消息仍由 pte-live-im 提供 |
+| `platform-customer-service.yaml` | 统一后台客服队列、数据范围、领取与可追溯转接；IM 消息仍由 pte-live-im 提供 |
 | `merchant-service-reply.yaml` | 商户快捷回复 CRUD（阶段 7；`reply/write`） |
 | `merchant-open.yaml` | 商户开放接口 6 条 `/api/open/v1`（阶段 6c） |
 | `manager-trade.yaml` | 店员端登录/核销/代退/发货 `/api/manager/v1`（阶段 6d） |

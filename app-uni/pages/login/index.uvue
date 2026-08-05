@@ -1,12 +1,18 @@
 <script setup lang="uts">
-import { setAccessToken } from '../../common/session'
-import { appApiURL } from '../../common/api'
+import { clearPendingSpreadUID, getPendingSpreadUID, setAccessToken } from '../../common/session'
+import { appRequest } from "../../common/request"
+import { captchaGatewayURL } from "../../common/api"
 
 const account = ref('')
 const password = ref('')
 const nickname = ref('')
 const registerMode = ref(false)
 const loading = ref(false)
+const captchaID = ref("")
+const captchaImage = ref("")
+const captchaAnswer = ref("")
+const captchaToken = ref("")
+const captchaLoading = ref(false)
 
 function clientChannel(): string {
   // #ifdef MP-WEIXIN
@@ -18,38 +24,123 @@ function clientChannel(): string {
   return 'h5'
 }
 
+// #ifdef MP-WEIXIN
+function silentMiniProgramLogin(): void {
+  if (loading.value) return
+  loading.value = true
+  uni.login({
+    provider: 'weixin',
+    success: (result) => {
+      if (!result.code) {
+        uni.showToast({ title: '微信登录凭证获取失败', icon: 'none' })
+        loading.value = false
+        return
+      }
+      appRequest('/auth/wechat/mini-program', 'POST', { code: result.code } as UTSJSONObject, false).then((data) => {
+        const token = data['token'] as UTSJSONObject
+        setAccessToken(token['access_token'] as string)
+        bindPendingSpread()
+        uni.showToast({ title: '微信登录成功', icon: 'success' })
+        uni.navigateBack()
+      }).catch((error) => {
+        uni.showToast({ title: error.message || '微信登录失败', icon: 'none' })
+      }).finally(() => { loading.value = false })
+    },
+    fail: () => {
+      loading.value = false
+      uni.showToast({ title: '微信登录暂不可用，请使用账号登录', icon: 'none' })
+    }
+  })
+}
+// #endif
+
+function bindPendingSpread(): void {
+  const uid = getPendingSpreadUID()
+  if (uid == 0) return
+  appRequest("/spread/bind", "POST", { spread_uid: uid } as UTSJSONObject).catch(() => {}).finally(() => clearPendingSpreadUID())
+}
+
+function captchaAction(): string { return registerMode.value ? "register" : "login_password" }
+function captchaSignals(): UTSJSONObject { return { fingerprint: "crm-h5-" + Date.now(), event_count: 1, duration_ms: 0, language: "zh-CN" } as UTSJSONObject }
+function captchaRequest(path: string, data: UTSJSONObject): Promise<UTSJSONObject> {
+  return new Promise<UTSJSONObject>((resolve, reject) => {
+    uni.request({ url: captchaGatewayURL(path), method: "POST", data: data, header: { "Content-Type": "application/json" } as UTSJSONObject, success: (res) => {
+      const body = res.data as UTSJSONObject
+      if (res.statusCode >= 200 && res.statusCode < 300) { resolve(body); return }
+      reject(new Error(String(body["error"] || body["message"] || "安全验证服务暂不可用")))
+    }, fail: () => reject(new Error("安全验证服务连接失败")) })
+  })
+}
+function loadCaptcha(): void {
+  if (captchaLoading.value) return
+  captchaLoading.value = true; captchaToken.value = ""; captchaAnswer.value = ""; captchaID.value = ""; captchaImage.value = ""
+  captchaRequest("/challenges", { action: captchaAction(), preferred_mode: "image", locale: "zh-CN", theme: "light", client: captchaSignals() } as UTSJSONObject).then((data) => {
+    const id = String(data["challenge_id"] || "")
+    const image = String(data["image_png_base64"] || "")
+    if (id.length == 0 || image.length == 0) throw new Error("验证码加载失败，请刷新重试")
+    captchaID.value = id; captchaImage.value = "data:image/png;base64," + image
+  }).catch((error) => uni.showToast({ title: error.message || "验证码加载失败", icon: "none" })).finally(() => { captchaLoading.value = false })
+}
+function verifyCaptcha(): void {
+  if (captchaID.value.length == 0) { loadCaptcha(); return }
+  if (captchaAnswer.value.trim().length == 0) { uni.showToast({ title: "请输入图形验证码", icon: "none" }); return }
+  captchaLoading.value = true
+  captchaRequest("/challenges/" + captchaID.value + "/verify", { answer: captchaAnswer.value.trim(), client: captchaSignals() } as UTSJSONObject).then((data) => {
+    const token = String(data["verification_token"] || "")
+    if (String(data["status"] || "") != "verified" || token.length == 0) throw new Error(String(data["message"] || "验证码错误，请刷新重试"))
+    captchaToken.value = token; uni.showToast({ title: "安全验证通过", icon: "success" })
+  }).catch((error) => { captchaToken.value = ""; uni.showToast({ title: error.message || "验证失败", icon: "none" }); loadCaptcha() }).finally(() => { captchaLoading.value = false })
+}
+function toggleRegisterMode(): void { registerMode.value = !registerMode.value; loadCaptcha() }
+
 function submit(): void {
   if (account.value.length == 0 || password.value.length == 0) {
     uni.showToast({ title: '请输入账号和密码', icon: 'none' })
     return
   }
+  if (captchaToken.value.length == 0) { uni.showToast({ title: "请先完成安全验证", icon: "none" }); return }
   loading.value = true
-  uni.request({
-    url: appApiURL(registerMode.value ? '/auth/register' : '/auth/login'),
-    method: 'POST',
-    data: registerMode.value
-      ? { account: account.value, password: password.value, nickname: nickname.value, channel: clientChannel() }
-      : { account: account.value, password: password.value, channel: clientChannel() },
-    success: (res) => {
-      const body = res.data as UTSJSONObject
-      if (res.statusCode == 200 && body['status'] == 200) {
-        const data = body['data'] as UTSJSONObject
-        const token = data['token'] as UTSJSONObject
-        setAccessToken(token['access_token'] as string)
-        uni.showToast({ title: registerMode.value ? '注册成功' : '登录成功', icon: 'success' })
-        uni.navigateBack()
-      } else {
-        uni.showToast({ title: (body['message'] as string) || '登录失败', icon: 'none' })
-      }
-    },
-    fail: () => uni.showToast({ title: '网络连接失败', icon: 'none' }),
-    complete: () => { loading.value = false }
-  })
+  appRequest(registerMode.value ? '/auth/register' : '/auth/login', 'POST', registerMode.value
+    ? { account: account.value, password: password.value, nickname: nickname.value, channel: clientChannel(), captcha_token: captchaToken.value } as UTSJSONObject
+    : { account: account.value, password: password.value, channel: clientChannel(), captcha_token: captchaToken.value } as UTSJSONObject, false).then((data) => {
+    const token = data['token'] as UTSJSONObject
+    setAccessToken(token['access_token'] as string)
+    bindPendingSpread()
+    uni.showToast({ title: registerMode.value ? '注册成功' : '登录成功', icon: 'success' })
+    uni.navigateBack()
+  }).catch((error) => {
+    uni.showToast({ title: error.message || '登录失败', icon: 'none' })
+  }).finally(() => { loading.value = false })
 }
+
+onLoad(() => {
+  // #ifdef H5
+  loadCaptcha()
+  // #endif
+  // #ifdef MP-WEIXIN
+  silentMiniProgramLogin()
+  // #endif
+})
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav :title="registerMode ? '注册七禧商城' : '登录七禧商城'" /><view class="qx-card form"><text class="form-title">{{ registerMode ? '创建新账户' : '欢迎回来' }}</text><input v-model="account" class="input" placeholder="手机号或账号" /><input v-if="registerMode" v-model="nickname" class="input" placeholder="昵称（可选）" /><input v-model="password" class="input" password placeholder="密码" /><button :loading="loading" class="qx-primary" @click="submit">{{ registerMode ? '注册并登录' : '登录' }}</button><text class="switch" @click="registerMode=!registerMode">{{ registerMode ? '已有账号，去登录' : '没有账号，去注册' }}</text></view></view>
+  <view class="qx-page">
+    <qx-nav :title="registerMode ? '注册CRM Live' : '登录CRM Live'" />
+    <view class="qx-card form">
+      <text class="form-title">{{ registerMode ? '创建新账户' : '欢迎回来' }}</text>
+      <!-- #ifdef MP-WEIXIN -->
+      <button class="wechat-login" :loading="loading" @click="silentMiniProgramLogin">微信一键登录</button>
+      <!-- #endif -->
+      <input v-model="account" class="input" placeholder="手机号或账号" />
+      <input v-if="registerMode" v-model="nickname" class="input" placeholder="昵称（可选）" />
+      <input v-model="password" class="input" password placeholder="密码" />
+      <view class="captcha"><view class="captcha-row"><input v-model="captchaAnswer" class="input captcha-input" maxlength="8" placeholder="图形验证码"/><image v-if="captchaImage.length > 0" class="captcha-image" :src="captchaImage" mode="aspectFit" @click="loadCaptcha"/><button v-else class="captcha-refresh" :loading="captchaLoading" @click="loadCaptcha">加载验证码</button></view><view class="captcha-actions"><button class="captcha-verify" :loading="captchaLoading" @click="verifyCaptcha">{{ captchaToken.length > 0 ? "已完成安全验证" : "验证图形码" }}</button><text class="captcha-refresh-text" @click="loadCaptcha">换一张</text></view></view>
+      <button :loading="loading" class="qx-primary" @click="submit">{{ registerMode ? '注册并登录' : '登录' }}</button>
+      <text v-if="!registerMode" class="switch" @click="uni.navigateTo({url:'/pages/login/sms'})">短信验证码登录</text>
+      <text v-if="!registerMode" class="switch" @click="uni.navigateTo({url:'/pages/login/reset-password'})">忘记密码</text>
+      <text class="switch" @click="toggleRegisterMode">{{ registerMode ? '已有账号，去登录' : '没有账号，去注册' }}</text>
+    </view>
+  </view>
 </template>
 
-<style>.form { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }.form-title { margin-bottom: 8px; font-size: 22px; font-weight: 700; }.input { height: 48px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.qx-primary { border-radius: 22px; font-size: 15px; }.switch { color: #d72828; text-align: center; font-size: 14px; }</style>
+<style>.form { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }.form-title { margin-bottom: 8px; font-size: 22px; font-weight: 700; }.input { height: 48px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.wechat-login { color: #ffffff; border-radius: 22px; background-color: #07c160; font-size: 15px; }.qx-primary { border-radius: 22px; font-size: 15px; }.switch { color: #d72828; text-align: center; font-size: 14px; }.captcha { display:flex; flex-direction:column; gap:8px; }.captcha-row { display:flex; gap:8px; align-items:center; }.captcha-input { flex:1; }.captcha-image { width:108px; height:48px; border-radius:8px; background:#f6f7f9; }.captcha-refresh { width:108px; height:48px; margin:0; padding:0; border-radius:8px; font-size:12px; }.captcha-actions { display:flex; align-items:center; gap:12px; }.captcha-verify { flex:1; margin:0; border-radius:20px; color:#07a353; background:#ecfff2; font-size:13px; }.captcha-refresh-text { color:#d72828; font-size:13px; }</style>

@@ -1,8 +1,24 @@
-const TOKEN_KEY = 'qixi_app_access_token'
-const MERCHANT_APP_ID_KEY = 'qixi_app_merchant_app_id'
+const TOKEN_KEY = 'crm_live_app_access_token'
+const MERCHANT_APP_ID_KEY = 'crm_live_app_merchant_app_id'
+const PENDING_SPREAD_UID_KEY = 'crm_live_app_pending_spread_uid'
+
+// 改名后的键保持 CRM Live 命名；首读时迁移旧版本缓存，避免升级后让用户意外退出。
+const LEGACY_TOKEN_KEY = 'qixi_app_access_token'
+const LEGACY_MERCHANT_APP_ID_KEY = 'qixi_app_merchant_app_id'
+const LEGACY_PENDING_SPREAD_UID_KEY = 'qixi_app_pending_spread_uid'
+
+function getStorageString(key: string, legacyKey: string = ''): string {
+  const value = uni.getStorageSync(key)
+  if (value != null && String(value).length > 0) return String(value)
+  if (legacyKey.length == 0) return ''
+  const legacyValue = uni.getStorageSync(legacyKey)
+  const migrated = legacyValue == null ? '' : String(legacyValue)
+  if (migrated.length > 0) uni.setStorageSync(key, migrated)
+  return migrated
+}
 
 export function getAccessToken(): string {
-  return uni.getStorageSync(TOKEN_KEY) as string
+  return getStorageString(TOKEN_KEY, LEGACY_TOKEN_KEY)
 }
 
 export function setAccessToken(token: string): void {
@@ -10,7 +26,7 @@ export function setAccessToken(token: string): void {
 }
 
 export function getMerchantAppID(): string {
-  return uni.getStorageSync(MERCHANT_APP_ID_KEY) as string
+  return getStorageString(MERCHANT_APP_ID_KEY, LEGACY_MERCHANT_APP_ID_KEY)
 }
 
 export function setMerchantAppID(appID: string): void {
@@ -19,9 +35,25 @@ export function setMerchantAppID(appID: string): void {
 
 export function clearMerchantAppID(): void {
   uni.removeStorageSync(MERCHANT_APP_ID_KEY)
+  uni.removeStorageSync(LEGACY_MERCHANT_APP_ID_KEY)
 }
 
 export function clearSession(): void {
   uni.removeStorageSync(TOKEN_KEY)
+  uni.removeStorageSync(LEGACY_TOKEN_KEY)
   clearMerchantAppID()
+}
+
+export function setPendingSpreadUID(uid: number): void {
+  if (uid > 0) uni.setStorageSync(PENDING_SPREAD_UID_KEY, String(uid))
+}
+
+export function getPendingSpreadUID(): number {
+  const value = Number(getStorageString(PENDING_SPREAD_UID_KEY, LEGACY_PENDING_SPREAD_UID_KEY))
+  return value > 0 ? value : 0
+}
+
+export function clearPendingSpreadUID(): void {
+  uni.removeStorageSync(PENDING_SPREAD_UID_KEY)
+  uni.removeStorageSync(LEGACY_PENDING_SPREAD_UID_KEY)
 }

@@ -4,9 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func TestResolveSKUKeyPreservesCRMEBSKUUnique(t *testing.T) {
@@ -21,14 +21,14 @@ func TestResolveSKUKeyPreservesCRMEBSKUUnique(t *testing.T) {
 func TestItemResponseSeparatesProductAndStoreNames(t *testing.T) {
 	item := itemResponse(cartView{
 		CartID: 1, ProductID: 2, SKUKey: "sku-red-l", Quantity: 3,
-		MerchantID: 4, MerchantName: "七禧商户", StoreName: "七禧旗舰店",
+		MerchantID: 4, MerchantAppID: "qixi.store.4", MerchantName: "七禧商户", StoreName: "七禧旗舰店",
 		Title: "夏季短袖", CoverURL: "https://cdn.example.invalid/p.png",
 		Price: 99.5, Stock: 3, SaleStatus: 1,
 	})
 	if item["title"] != "夏季短袖" || item["store_name"] != "七禧旗舰店" {
 		t.Fatalf("product/store names are mixed: %#v", item)
 	}
-	if item["product_attr_unique"] != "sku-red-l" || item["is_fail"] != 0 {
+	if item["product_attr_unique"] != "sku-red-l" || item["merchant_app_id"] != "qixi.store.4" || item["is_fail"] != 0 {
 		t.Fatalf("unexpected cart item: %#v", item)
 	}
 
@@ -69,5 +69,12 @@ func TestVerifyMerchantContextRequiresSignedStoreBinding(t *testing.T) {
 	}
 	if err := verifyMerchantContext(newContext("", nil), productRow{}); err != nil {
 		t.Fatalf("platform product must not require a merchant context: %v", err)
+	}
+}
+
+func TestItemResponseKeepsChineseSKUText(t *testing.T) {
+	item := itemResponse(cartView{SKUKey: "61003", SpecSnapshot: []byte(`{"颜色":"晨雾灰","尺码":"40"}`)})
+	if got := item["spec_text"]; got != "尺码：40；颜色：晨雾灰" {
+		t.Fatalf("cart spec text = %q", got)
 	}
 }

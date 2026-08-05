@@ -68,26 +68,32 @@ function nodeIcon(node: MergersMenuNode, path: string) {
   return normalizePlatformMenuIcon(MENU_ICON_FALLBACK[code] || MENU_ICON_FALLBACK[segment]);
 }
 
-function mapNode(node: MergersMenuNode): PlatformAccessMenuItem {
+function mapNode(node: MergersMenuNode): null | PlatformAccessMenuItem {
   const path = nodePath(node);
-  const children = (node.children || []).map(mapNode);
+  const children = (node.children || [])
+    .map(mapNode)
+    .filter((item): item is PlatformAccessMenuItem => Boolean(item));
   const component = resolveMergersComponent(path);
   const isLeaf = children.length === 0;
   // qixi_crm_a_menu 的 directory 仅用于组织侧栏，不应注册成路由。
   // 否则父目录若碰巧与子页路径同名（例如 /region）会被 Vben 当作
   // 叶子页注册，造成子菜单脱离父级、落到侧栏底部。
   const isDirectory = node.kind === 'directory' || !isLeaf;
+  // 服务端菜单不是前端代码生成器。未注册真实组件的叶子不能降级到
+  // placeholder，否则会把“菜单可见”误报成“功能已实现”。目录在所有
+  // 子项都被过滤后同样隐藏，避免产生空的侧栏分组。
+  if ((isLeaf && !component) || (isDirectory && children.length === 0)) {
+    return null;
+  }
   return {
     access_id: nodeID(node),
     name: nodeTitle(node),
     path,
     icon: nodeIcon(node, path),
     is_menu: 1,
-    is_route: !isDirectory && (component || isLeaf) ? 1 : 0,
+    is_route: !isDirectory && component ? 1 : 0,
     is_show: 1,
-    component: !isDirectory
-      ? component || (isLeaf ? 'ecrm/placeholder/index' : undefined)
-      : undefined,
+    component: !isDirectory ? component : undefined,
     children: children.length ? children : undefined,
   };
 }
@@ -117,5 +123,7 @@ export function mapMergersMenusToAccess(
     }
   }
   roots.sort((left, right) => Number(left.sort || 0) - Number(right.sort || 0));
-  return roots.map(mapNode);
+  return roots
+    .map(mapNode)
+    .filter((item): item is PlatformAccessMenuItem => Boolean(item));
 }

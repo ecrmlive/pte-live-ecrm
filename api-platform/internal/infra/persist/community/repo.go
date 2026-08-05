@@ -110,6 +110,26 @@ func (r *Repo) IncReplyCount(ctx context.Context, id uint, delta int) error {
 		Update("count_reply", expr).Error
 }
 
+func (r *Repo) ListAllReplies(ctx context.Context, keyword string, page, limit int) ([]community.Reply, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	q := r.db.WithContext(ctx).Model(&community.Reply{}).Where("is_del = 0 AND status = 1")
+	if keyword != "" {
+		q = q.Where("content LIKE ?", "%"+keyword+"%")
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var rows []community.Reply
+	err := q.Order("reply_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	return rows, total, err
+}
+
 func (r *Repo) ListReplies(ctx context.Context, communityID uint, page, limit int) ([]community.Reply, int64, error) {
 	q := r.db.WithContext(ctx).Model(&community.Reply{}).
 		Where("community_id = ? AND is_del = 0 AND status = 1", communityID)
@@ -142,7 +162,7 @@ func (r *Repo) GetReply(ctx context.Context, id uint) (*community.Reply, error) 
 
 func (r *Repo) LoadUserNickname(ctx context.Context, uid uint) (string, error) {
 	var nick string
-	err := r.db.WithContext(ctx).Table("qixi_m_app_user").Select("nickname").Where("uid = ?", uid).Scan(&nick).Error
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_user").Select("nickname").Where("id = ?", uid).Scan(&nick).Error
 	if err != nil {
 		return "", err
 	}
@@ -157,7 +177,7 @@ func (r *Repo) LoadTopicName(ctx context.Context, id uint) (string, error) {
 		return "", nil
 	}
 	var name string
-	err := r.db.WithContext(ctx).Table("qixi_m_app_community_topic").Select("topic_name").
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_social_topic").Select("topic_name").
 		Where("topic_id = ? AND is_del = 0", id).Scan(&name).Error
 	return name, err
 }
@@ -167,7 +187,7 @@ func (r *Repo) LoadCateName(ctx context.Context, id uint) (string, error) {
 		return "", nil
 	}
 	var name string
-	err := r.db.WithContext(ctx).Table("qixi_m_app_community_category").Select("cate_name").
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_social_category").Select("cate_name").
 		Where("category_id = ?", id).Scan(&name).Error
 	return name, err
 }
@@ -178,8 +198,8 @@ func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (name string
 		Price     float64 `gorm:"column:price"`
 		MerID     uint    `gorm:"column:mer_id"`
 	}
-	err = r.db.WithContext(ctx).Table("qixi_m_admin_store_product").
-		Select("store_name, price, mer_id").
+	err = r.db.WithContext(ctx).Table("qixi_crm_b_product_view").
+		Select("store_name, price, merchant_id AS mer_id").
 		Where("product_id = ? AND is_del = 0", productID).
 		Limit(1).Scan(&row).Error
 	if err != nil {

@@ -1,0 +1,55 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Store = { store_id: number; mer_id: number; name: string; product_count: number; sales_count: number; cover_url: string }
+type StorePage = { list: Store[]; total: number; page: number; limit: number }
+
+const keyword = ref("")
+const items = ref<Store[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+
+const fallbackStores: Store[] = [
+  { store_id: 9301, mer_id: 9101, name: "云裳品质店", product_count: 3, sales_count: 1248, cover_url: "/static/demo/product-knit-v1.png" },
+  { store_id: 9302, mer_id: 9102, name: "森氧生活馆", product_count: 4, sales_count: 1836, cover_url: "/static/demo/product-fragrance-v1.png" },
+  { store_id: 9303, mer_id: 9103, name: "好物研究所", product_count: 5, sales_count: 956, cover_url: "/static/demo/product-tumbler-v1.png" },
+  { store_id: 9304, mer_id: 9104, name: "行走装备库", product_count: 4, sales_count: 1116, cover_url: "/static/demo/product-shoes-v1.png" },
+  { store_id: 9305, mer_id: 9105, name: "绒感衣橱", product_count: 4, sales_count: 682, cover_url: "/static/demo/product-scarf-v1.png" },
+  { store_id: 9306, mer_id: 9106, name: "包袋美学社", product_count: 4, sales_count: 875, cover_url: "/static/demo/product-bag-v1.png" }
+]
+function offlineStores(): Store[] { const text = keyword.value.trim().toLowerCase(); return fallbackStores.filter((store) => text.length == 0 || store.name.toLowerCase().includes(text)) }
+
+function load(reset: boolean): void {
+  if (loading.value) return
+  const next = reset ? 1 : page.value + 1
+  if (!reset && items.value.length >= total.value) return
+  loading.value = true
+  const params = [`page=${next}`, "limit=20"]
+  const text = keyword.value.trim()
+  if (text.length > 0) params.push(`keyword=${encodeURIComponent(text)}`)
+  appRequest(`/catalog/stores?${params.join("&")}`, "GET", null, false).then((data) => {
+    const result = data as StorePage
+    items.value = reset ? (result.list || []) : items.value.concat(result.list || [])
+    page.value = result.page || next
+    total.value = result.total || 0
+  }).catch(() => { const fallback = offlineStores(); items.value = reset ? fallback : items.value; page.value = 1; total.value = fallback.length }).finally(() => { loading.value = false })
+}
+function search(): void { load(true) }
+function clear(): void { if (keyword.value.length == 0) return; keyword.value = ""; load(true) }
+function open(item: Store): void { uni.navigateTo({ url: `/pages/store/home?mer_id=${item.mer_id}` }) }
+onShow(() => { if (items.value.length == 0) load(true) })
+</script>
+<template>
+  <view class="qx-page">
+    <qx-nav title="店铺街" />
+    <view class="search"><input v-model="keyword" confirm-type="search" class="search__input" placeholder="搜索店铺名称" @confirm="search" /><text v-if="keyword.length > 0" class="search__clear" @click="clear">清除</text><button class="search__button" @click="search">搜索</button></view>
+    <text class="hint">已入驻店铺 {{ total }} 家，商品与销量均来自已发布消费投影</text>
+    <view v-if="!loading && items.length == 0" class="qx-card empty"><text>暂无匹配的店铺</text><button class="qx-primary" @click="clear">查看全部店铺</button></view>
+    <view v-for="item in items" :key="item.store_id" class="qx-card store" @click="open(item)"><view class="store__cover"><image v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" /><text v-else>{{ item.name.slice(0, 1) || "店" }}</text></view><view class="store__body"><text class="store__name">{{ item.name }}</text><text class="store__meta">在售商品 {{ item.product_count }} · 累计销量 {{ item.sales_count }}</text><text class="store__link">进入店铺 ›</text></view></view>
+    <view v-if="items.length > 0" class="more"><text v-if="items.length >= total">已加载全部店铺</text><button v-else :loading="loading" @click="load(false)">加载更多</button></view>
+  </view>
+</template>
+<style>
+.search{height:44px;margin:12px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:9px;background:#fff}.search__input{height:36px;flex:1;font-size:14px}.search__clear{color:#86909c;font-size:12px}.search__button{width:56px;height:32px;margin:0;padding:0;color:#fff;border-radius:16px;background:#d72828;font-size:13px;line-height:32px}.hint{display:block;margin:0 14px 8px;color:#86909c;font-size:12px}.store{display:flex;gap:12px;align-items:center}.store__cover{width:64px;height:64px;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:8px;color:#d72828;background:#fff0ee;font-size:24px;font-weight:700}.store__cover image{width:64px;height:64px}.store__body{flex:1;min-width:0}.store__name,.store__meta,.store__link{display:block}.store__name{overflow:hidden;color:#1d2129;font-size:16px;font-weight:600;white-space:nowrap;text-overflow:ellipsis}.store__meta{margin-top:7px;color:#86909c;font-size:12px}.store__link{margin-top:7px;color:#d72828;font-size:13px}.empty{margin-top:20px;color:#86909c;text-align:center}.empty .qx-primary{margin-top:14px;border-radius:20px}.more{padding:14px 0 26px;color:#86909c;text-align:center;font-size:12px}.more button{height:34px;margin:0;padding:0 18px;color:#d72828;border:1px solid #d72828;border-radius:17px;background:#fff;font-size:13px;line-height:32px}
+</style>

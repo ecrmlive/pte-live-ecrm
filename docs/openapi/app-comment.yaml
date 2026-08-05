@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: crm-live app comment
+  version: 1.0.0
+paths:
+  /comments:
+    post:
+      summary: 对已完成订单项提交评价
+  /comments/mine:
+    get:
+      summary: 我的评价
+  /products/{id}/comments:
+    get:
+      summary: 商品已审核评价

@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -18,39 +19,46 @@ import (
 // RegisterSettings 提供统一后台自身的账号、角色和菜单管理。路由保持与 Vben 现有
 // 页面一致，但所有读写仅作用于 qixi_crm_a_* 表。
 func (h *Handler) RegisterSettings(authed gin.IRoutes) {
-	authed.GET("/setting/admins", h.ListAdmins)
-	authed.POST("/setting/admins", h.CreateAdmin)
-	authed.PUT("/setting/admins/:id", h.UpdateAdmin)
-	authed.GET("/setting/roles", h.ListRoles)
-	authed.POST("/setting/roles", h.CreateRole)
-	authed.PUT("/setting/roles/:id", h.UpdateRole)
-	authed.GET("/setting/menus/tree", h.MenuTree)
+	platformOnly := middleware.RequireAdminRoles("platform")
+	authed.GET("/setting/admins", platformOnly, h.ListAdmins)
+	authed.POST("/setting/admins", platformOnly, h.CreateAdmin)
+	authed.PUT("/setting/admins/:id", platformOnly, h.UpdateAdmin)
+	authed.DELETE("/setting/admins/:id", platformOnly, h.DeleteAdmin)
+	authed.GET("/setting/roles", platformOnly, h.ListRoles)
+	authed.POST("/setting/roles", platformOnly, h.CreateRole)
+	authed.PUT("/setting/roles/:id", platformOnly, h.UpdateRole)
+	authed.GET("/setting/menus/tree", platformOnly, h.MenuTree)
 }
 
 type adminListRow struct {
-	ID          uint64    `gorm:"column:id" json:"admin_id"`
-	Username    string    `gorm:"column:username" json:"account"`
-	DisplayName string    `gorm:"column:display_name" json:"real_name"`
-	Phone       string    `gorm:"column:phone" json:"phone"`
-	Status      int8      `gorm:"column:status" json:"status"`
-	CreatedAt   time.Time `gorm:"column:created_at" json:"created_at"`
-	Roles       string    `json:"roles"`
-	RegionIDs   string    `json:"region_ids"`
-	IsAgent     int8      `json:"is_agent"`
-	Level       int8      `json:"level"`
-	CircleID    uint64    `json:"circle_agent_id"`
+	ID              uint64    `gorm:"column:id" json:"admin_id"`
+	Username        string    `gorm:"column:username" json:"account"`
+	DisplayName     string    `gorm:"column:display_name" json:"real_name"`
+	Phone           string    `gorm:"column:phone" json:"phone"`
+	Status          int8      `gorm:"column:status" json:"status"`
+	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
+	Roles           string    `json:"roles"`
+	MerchantIDs     string    `json:"merchant_ids"`
+	RegionIDs       string    `json:"region_ids"`
+	ServiceStoreIDs string    `json:"service_store_ids"`
+	IsAgent         int8      `json:"is_agent"`
+	Level           int8      `json:"level"`
+	CircleID        uint64    `json:"circle_agent_id"`
 }
 
 type adminSaveRequest struct {
-	Account   string   `json:"account"`
-	Username  string   `json:"username"`
-	Password  string   `json:"password"`
-	RealName  string   `json:"real_name"`
-	Phone     string   `json:"phone"`
-	Roles     string   `json:"roles"`
-	RoleCodes []string `json:"role_codes"`
-	Status    int8     `json:"status"`
-	RegionIDs string   `json:"region_ids"`
+	Account         string   `json:"account"`
+	Username        string   `json:"username"`
+	Password        string   `json:"password"`
+	RealName        string   `json:"real_name"`
+	Phone           string   `json:"phone"`
+	Roles           string   `json:"roles"`
+	RoleCodes       []string `json:"role_codes"`
+	Status          int8     `json:"status"`
+	MerchantIDs     string   `json:"merchant_ids"`
+	RegionIDs       string   `json:"region_ids"`
+	ServiceStoreIDs string   `json:"service_store_ids"`
+	CircleAgentID   uint64   `json:"circle_agent_id"`
 }
 
 func (h *Handler) ListAdmins(c *gin.Context) {
@@ -62,7 +70,8 @@ func (h *Handler) ListAdmins(c *gin.Context) {
 	}
 	rows := make([]adminListRow, 0)
 	if err := h.db.WithContext(c.Request.Context()).Table((adminUser{}).TableName()).
-		Select("id,username,display_name,phone,status,created_at").Order("id DESC").
+		Select("id,username,display_name,phone,status,created_at,COALESCE(circle_agent_id, 0) AS circle_agent_id").Order("id DESC").
+		Where("deleted_at IS NULL").
 		Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		writeError(c, err)
 		return
@@ -75,7 +84,17 @@ func (h *Handler) ListAdmins(c *gin.Context) {
 		}
 		rows[i].Roles = strings.Join(roles, ",")
 		rows[i].IsAgent = boolToInt8(hasRole(roles, "region"))
+		rows[i].MerchantIDs, err = h.merchantIDs(c, rows[i].ID)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
 		rows[i].RegionIDs, err = h.regionIDs(c, rows[i].ID)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		rows[i].ServiceStoreIDs, err = h.serviceStoreIDs(c, rows[i].ID)
 		if err != nil {
 			writeError(c, err)
 			return
@@ -109,10 +128,16 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		user.Status = 1
 	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := validateCircleAgentBinding(c, tx, req.CircleAgentID, 0, roles); err != nil {
+			return err
+		}
+		if req.CircleAgentID != 0 {
+			user.CircleAgentID = &req.CircleAgentID
+		}
 		if err := tx.Create(&user).Error; err != nil {
 			return err
 		}
-		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.RegionIDs)
+		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.MerchantIDs, req.RegionIDs, req.ServiceStoreIDs)
 	}); err != nil {
 		if isDuplicate(err) {
 			response.Fail(c, http.StatusConflict, "账号已存在")
@@ -150,18 +175,22 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 		return
 	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		updates := map[string]any{"display_name": strings.TrimSpace(req.RealName), "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1")}
+		if err := validateCircleAgentBinding(c, tx, req.CircleAgentID, user.ID, roles); err != nil {
+			return err
+		}
+		updates := map[string]any{"display_name": strings.TrimSpace(req.RealName), "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1"), "circle_agent_id": nullableCircleAgentID(req.CircleAgentID)}
 		if req.Password != "" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 			if err != nil {
 				return err
 			}
 			updates["password_hash"] = string(hash)
+			updates["auth_version"] = gorm.Expr("auth_version + 1")
 		}
 		if err := tx.Model(&adminUser{}).Where("id = ?", user.ID).Updates(updates).Error; err != nil {
 			return err
 		}
-		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.RegionIDs)
+		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.MerchantIDs, req.RegionIDs, req.ServiceStoreIDs)
 	}); err != nil {
 		writeError(c, err)
 		return
@@ -174,13 +203,132 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 	response.OK(c, h.adminRow(c, *updated))
 }
 
-func (h *Handler) adminRow(c *gin.Context, user adminUser) adminListRow {
-	roles, _ := h.roles(c, user.ID)
-	regionIDs, _ := h.regionIDs(c, user.ID)
-	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), RegionIDs: regionIDs, IsAgent: boolToInt8(hasRole(roles, "region"))}
+// DeleteAdmin is an audited logical deletion. Historical order, review and
+// customer-service assignment records deliberately keep their operator ID.
+// A deleted account is disabled, cannot pass the per-request session check,
+// and is hidden from administrator and service-agent lists.
+func (h *Handler) DeleteAdmin(c *gin.Context) {
+	id, err := parseID(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "管理员 ID 错误")
+		return
+	}
+	operatorID := uint64(middleware.AdminID(c))
+	if err := allowsAdminDeletion(operatorID, id, nil, 1); err != nil {
+		response.Fail(c, http.StatusConflict, "不能删除当前登录账号")
+		return
+	}
+	user, err := h.findUserByID(c, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	roles, err := h.roles(c, user.ID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	otherActivePlatforms := int64(1)
+	if hasRole(roles, "platform") {
+		err = h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user AS u").
+			Joins("JOIN qixi_crm_a_admin_user_role AS ur ON ur.admin_user_id = u.id").
+			Joins("JOIN qixi_crm_a_role AS r ON r.id = ur.role_id").
+			Where("u.id <> ? AND u.status = 1 AND u.deleted_at IS NULL AND r.code = ? AND r.status = 1", id, "platform").
+			Count(&otherActivePlatforms).Error
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+	}
+	if err := allowsAdminDeletion(operatorID, id, roles, otherActivePlatforms); err != nil {
+		response.Fail(c, http.StatusConflict, err.Error())
+		return
+	}
+	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&adminUser{}).Where("id = ?", id).Updates(map[string]any{
+			"status":             0,
+			"auth_version":       gorm.Expr("auth_version + 1"),
+			"data_scope_version": gorm.Expr("data_scope_version + 1"),
+		}).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ?", id).Delete(&adminUser{}).Error
+	}); err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
-func (h *Handler) replaceAdminRolesAndScope(c *gin.Context, tx *gorm.DB, userID uint64, codes []string, regionIDs string) error {
+func allowsAdminDeletion(operatorID, targetID uint64, targetRoles []string, otherActivePlatforms int64) error {
+	if operatorID == 0 || operatorID == targetID {
+		return errors.New("不能删除当前登录账号")
+	}
+	if hasRole(targetRoles, "platform") && otherActivePlatforms == 0 {
+		return errors.New("至少保留一个启用的平台管理员")
+	}
+	return nil
+}
+
+func (h *Handler) adminRow(c *gin.Context, user adminUser) adminListRow {
+	roles, _ := h.roles(c, user.ID)
+	merchantIDs, _ := h.merchantIDs(c, user.ID)
+	regionIDs, _ := h.regionIDs(c, user.ID)
+	serviceStoreIDs, _ := h.serviceStoreIDs(c, user.ID)
+	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), MerchantIDs: merchantIDs, RegionIDs: regionIDs, ServiceStoreIDs: serviceStoreIDs, IsAgent: boolToInt8(hasRole(roles, "region")), CircleID: derefCircleAgentID(user.CircleAgentID)}
+}
+
+func nullableCircleAgentID(id uint64) any {
+	if id == 0 {
+		return nil
+	}
+	return id
+}
+
+func derefCircleAgentID(id *uint64) uint64 {
+	if id == nil {
+		return 0
+	}
+	return *id
+}
+
+// validateCircleAgentBinding 使区域代理和统一后台账号形成一对一、可撤销的归属关系。
+// 仅审核通过的代理能绑定区域角色；其他角色不能借此字段获得区域身份。
+func validateCircleAgentBinding(c *gin.Context, tx *gorm.DB, circleAgentID, excludingAdminID uint64, roles []string) error {
+	isRegion := hasRole(roles, "region") && !hasRole(roles, "platform")
+	if isRegion && circleAgentID == 0 {
+		return errors.New("区域管理员必须关联已通过审核的区域代理")
+	}
+	if !isRegion && circleAgentID != 0 {
+		return errors.New("仅区域管理员可以关联区域代理")
+	}
+	if circleAgentID == 0 {
+		return nil
+	}
+	var agent struct {
+		Status int8 `gorm:"column:status"`
+	}
+	if err := tx.WithContext(c.Request.Context()).Table("qixi_crm_a_business_zone_agent").Select("status").Where("circle_agent_id = ?", circleAgentID).Take(&agent).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("关联代理不存在")
+		}
+		return err
+	}
+	if agent.Status != 1 {
+		return errors.New("仅已审核通过的代理可以关联区域管理员")
+	}
+	var existing uint64
+	err := tx.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").Select("id").Where("circle_agent_id = ?", circleAgentID).Where("id <> ?", excludingAdminID).Limit(1).Scan(&existing).Error
+	if err != nil {
+		return err
+	}
+	if existing != 0 {
+		return errors.New("该代理已关联其他后台账号")
+	}
+	return nil
+}
+
+func (h *Handler) replaceAdminRolesAndScope(c *gin.Context, tx *gorm.DB, userID uint64, codes []string, merchantIDs, regionIDs, serviceStoreIDs string) error {
 	var roleRows []struct {
 		ID   uint64
 		Code string
@@ -201,21 +349,47 @@ func (h *Handler) replaceAdminRolesAndScope(c *gin.Context, tx *gorm.DB, userID 
 	if err := tx.WithContext(c.Request.Context()).Create(&bindings).Error; err != nil {
 		return err
 	}
-	if err := tx.WithContext(c.Request.Context()).Where("admin_user_id = ? AND scope_type = ?", userID, "region").Delete(&adminDataScope{}).Error; err != nil {
+	if err := tx.WithContext(c.Request.Context()).Where("admin_user_id = ? AND scope_type IN ?", userID, []string{"merchant", "region", "service_queue"}).Delete(&adminDataScope{}).Error; err != nil {
 		return err
 	}
-	if !hasRole(codes, "region") {
+	if hasRole(codes, "merchant") {
+		values, err := parseIDs(merchantIDs, "授权商户 ID")
+		if err != nil || len(values) == 0 {
+			return errors.New("商户角色必须配置至少一个授权商户 ID")
+		}
+		payload, err := json.Marshal(merchantDataScope{MerchantIDs: values})
+		if err != nil {
+			return err
+		}
+		if err := tx.WithContext(c.Request.Context()).Create(&adminDataScope{AdminUserID: userID, ScopeType: "merchant", ScopeValue: payload, Version: 1}).Error; err != nil {
+			return err
+		}
+	}
+	if hasRole(codes, "region") {
+		values, err := parseIDs(regionIDs, "区域 ID")
+		if err != nil || len(values) == 0 {
+			return errors.New("区域角色必须配置区域 ID")
+		}
+		payload, err := json.Marshal(values)
+		if err != nil {
+			return err
+		}
+		if err := tx.WithContext(c.Request.Context()).Create(&adminDataScope{AdminUserID: userID, ScopeType: "region", ScopeValue: payload, Version: 1}).Error; err != nil {
+			return err
+		}
+	}
+	if !hasRole(codes, "customer_service") {
 		return nil
 	}
-	values, err := parseIDs(regionIDs)
-	if err != nil || len(values) == 0 {
-		return errors.New("区域角色必须配置区域 ID")
+	storeIDs, err := parseIDs(serviceStoreIDs, "客服授权店铺 ID")
+	if err != nil || len(storeIDs) == 0 {
+		return errors.New("客服角色必须配置至少一个授权店铺 ID")
 	}
-	payload, err := json.Marshal(values)
+	payload, err := json.Marshal(serviceQueueScope{StoreIDs: storeIDs})
 	if err != nil {
 		return err
 	}
-	return tx.WithContext(c.Request.Context()).Create(&adminDataScope{AdminUserID: userID, ScopeType: "region", ScopeValue: payload, Version: 1}).Error
+	return tx.WithContext(c.Request.Context()).Create(&adminDataScope{AdminUserID: userID, ScopeType: "service_queue", ScopeValue: payload, Version: 1}).Error
 }
 
 type adminUserRole struct{ AdminUserID, RoleID uint64 }
@@ -240,8 +414,8 @@ func (h *Handler) regionIDs(c *gin.Context, userID uint64) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var values []uint64
-	if err := json.Unmarshal(row.ScopeValue, &values); err != nil {
+	values, err := parseScopeIDs(row.ScopeValue, false)
+	if err != nil {
 		return "", err
 	}
 	parts := make([]string, 0, len(values))
@@ -249,6 +423,61 @@ func (h *Handler) regionIDs(c *gin.Context, userID uint64) (string, error) {
 		parts = append(parts, strconv.FormatUint(value, 10))
 	}
 	return strings.Join(parts, ","), nil
+}
+
+type serviceQueueScope struct {
+	StoreIDs []uint64 `json:"store_ids"`
+}
+
+type merchantDataScope struct {
+	MerchantIDs []uint64 `json:"merchant_ids"`
+}
+
+func (h *Handler) merchantIDs(c *gin.Context, userID uint64) (string, error) {
+	var row adminDataScope
+	err := h.db.WithContext(c.Request.Context()).Where("admin_user_id = ? AND scope_type = ?", userID, "merchant").First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	var scope merchantDataScope
+	if err := json.Unmarshal(row.ScopeValue, &scope); err != nil {
+		return "", err
+	}
+	return idsToCSV(scope.MerchantIDs), nil
+}
+
+func (h *Handler) serviceStoreIDs(c *gin.Context, userID uint64) (string, error) {
+	var row adminDataScope
+	err := h.db.WithContext(c.Request.Context()).Where("admin_user_id = ? AND scope_type = ?", userID, "service_queue").First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	values, err := parseScopeIDs(row.ScopeValue, true)
+	if err != nil {
+		return "", err
+	}
+	return idsToCSV(values), nil
+}
+
+func parseScopeIDs(raw json.RawMessage, serviceQueue bool) ([]uint64, error) {
+	if serviceQueue {
+		var scope serviceQueueScope
+		if err := json.Unmarshal(raw, &scope); err != nil {
+			return nil, err
+		}
+		return scope.StoreIDs, nil
+	}
+	var values []uint64
+	if err := json.Unmarshal(raw, &values); err != nil {
+		return nil, err
+	}
+	return values, nil
 }
 
 type roleListRow struct {
@@ -437,7 +666,7 @@ func uniqueStrings(values []string) []string {
 	sort.Strings(result)
 	return result
 }
-func parseIDs(raw string) ([]uint64, error) {
+func parseIDs(raw, label string) ([]uint64, error) {
 	parts := strings.Split(raw, ",")
 	result := make([]uint64, 0, len(parts))
 	seen := map[uint64]struct{}{}
@@ -448,7 +677,7 @@ func parseIDs(raw string) ([]uint64, error) {
 		}
 		value, err := strconv.ParseUint(part, 10, 64)
 		if err != nil || value == 0 {
-			return nil, errors.New("区域 ID 格式错误")
+			return nil, errors.New(label + "格式错误")
 		}
 		if _, ok := seen[value]; !ok {
 			seen[value] = struct{}{}

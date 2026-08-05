@@ -1,0 +1,95 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+import { captchaGatewayURL } from '../../common/api'
+
+const oldMobile = ref('')
+const oldCode = ref('')
+const newMobile = ref('')
+const newCode = ref('')
+const phase = ref(1)
+const answer = ref('')
+const image = ref('')
+const challengeID = ref('')
+const captchaToken = ref('')
+const captchaLoading = ref(false)
+const oldSeconds = ref(0)
+const newSeconds = ref(0)
+const sending = ref(false)
+const saving = ref(false)
+
+function validMobile(value: string): boolean { return /^1[3-9]\d{9}$/.test(value.trim()) }
+function signal(): UTSJSONObject { return { fingerprint: 'crm-mobile-change-' + Date.now(), event_count: 1, duration_ms: 0, language: 'zh-CN' } as UTSJSONObject }
+function captchaRequest(path: string, data: UTSJSONObject): Promise<UTSJSONObject> {
+  return new Promise<UTSJSONObject>((resolve, reject) => {
+    uni.request({ url: captchaGatewayURL(path), method: 'POST', data: data, header: { 'Content-Type': 'application/json' } as UTSJSONObject,
+      success: (response) => { const body = response.data as UTSJSONObject; if (response.statusCode >= 200 && response.statusCode < 300) { resolve(body); return }; reject(new Error(String(body['error'] || body['message'] || '安全验证失败'))) },
+      fail: () => reject(new Error('安全验证服务连接失败')) })
+  })
+}
+function loadCaptcha(): void {
+  if (captchaLoading.value) return
+  captchaLoading.value = true; captchaToken.value = ''; answer.value = ''; image.value = ''
+  captchaRequest('/challenges', { action: 'login_sms', preferred_mode: 'image', locale: 'zh-CN', theme: 'light', client: signal() } as UTSJSONObject).then((data) => {
+    challengeID.value = String(data['challenge_id'] || '')
+    const encoded = String(data['image_png_base64'] || '')
+    if (challengeID.value.length == 0 || encoded.length == 0) throw new Error('验证码加载失败')
+    image.value = 'data:image/png;base64,' + encoded
+  }).catch((error) => uni.showToast({ title: error.message || '验证码加载失败', icon: 'none' })).finally(() => { captchaLoading.value = false })
+}
+function verifyCaptcha(): void {
+  if (challengeID.value.length == 0) { loadCaptcha(); return }
+  if (answer.value.trim().length == 0) { uni.showToast({ title: '请输入图形验证码', icon: 'none' }); return }
+  captchaLoading.value = true
+  captchaRequest('/challenges/' + challengeID.value + '/verify', { answer: answer.value.trim(), client: signal() } as UTSJSONObject).then((data) => {
+    captchaToken.value = String(data['verification_token'] || '')
+    if (captchaToken.value.length == 0) throw new Error('验证失败')
+    uni.showToast({ title: '安全验证通过', icon: 'success' })
+  }).catch((error) => { captchaToken.value = ''; uni.showToast({ title: error.message || '验证失败', icon: 'none' }); loadCaptcha() }).finally(() => { captchaLoading.value = false })
+}
+function startOldCountdown(): void { oldSeconds.value = 60; const timer = setInterval(() => { oldSeconds.value--; if (oldSeconds.value <= 0) clearInterval(timer) }, 1000) }
+function startNewCountdown(): void { newSeconds.value = 60; const timer = setInterval(() => { newSeconds.value--; if (newSeconds.value <= 0) clearInterval(timer) }, 1000) }
+function sendCode(): void {
+  const target = phase.value == 1 ? oldMobile.value : newMobile.value.trim()
+  if (!validMobile(target)) { uni.showToast({ title: phase.value == 1 ? '未找到已绑定手机号' : '请输入正确的新手机号', icon: 'none' }); return }
+  if (phase.value == 2 && newMobile.value.trim() == oldMobile.value) { uni.showToast({ title: '新手机号不能与当前手机号相同', icon: 'none' }); return }
+  if (captchaToken.value.length == 0) { uni.showToast({ title: '请先完成安全验证', icon: 'none' }); return }
+  sending.value = true
+  appRequest('/auth/sms/send', 'POST', { mobile: target, purpose: 'change_mobile', captcha_token: captchaToken.value } as UTSJSONObject, false).then(() => {
+    if (phase.value == 1) { startOldCountdown(); phase.value = 2 } else { startNewCountdown(); phase.value = 3 }
+    uni.showToast({ title: '验证码已发送', icon: 'success' }); loadCaptcha()
+  }).catch((error) => { captchaToken.value = ''; uni.showToast({ title: error.message || '发送失败', icon: 'none' }); loadCaptcha() }).finally(() => { sending.value = false })
+}
+function changeMobile(): void {
+  if (oldCode.value.trim().length != 6 || newCode.value.trim().length != 6 || !validMobile(newMobile.value) || newMobile.value.trim() == oldMobile.value) { uni.showToast({ title: '请完整填写两组验证码和新手机号', icon: 'none' }); return }
+  saving.value = true
+  appRequest('/auth/mobile/change', 'POST', { old_mobile: oldMobile.value, old_code: oldCode.value.trim(), new_mobile: newMobile.value.trim(), new_code: newCode.value.trim() } as UTSJSONObject).then(() => {
+    uni.showToast({ title: '手机号已更换', icon: 'success' }); setTimeout(() => uni.navigateBack(), 500)
+  }).catch((error) => uni.showToast({ title: error.message || '换绑失败', icon: 'none' })).finally(() => { saving.value = false })
+}
+function loadProfile(): void {
+  appRequest('/auth/me').then((data) => {
+    oldMobile.value = String((data as UTSJSONObject)['mobile'] || '')
+    if (!validMobile(oldMobile.value)) { uni.showToast({ title: '请先绑定手机号', icon: 'none' }); setTimeout(() => uni.navigateBack(), 400) }
+  }).catch((error) => uni.showToast({ title: error.message || '资料加载失败', icon: 'none' }))
+}
+onLoad(() => { loadProfile(); loadCaptcha() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="更换手机号"/><view class="qx-card form">
+    <text class="title">安全更换手机号</text><text class="hint">需验证当前手机号和新手机号，验证成功后立即生效。</text>
+    <text class="step">1. 验证当前手机号</text><view class="mobile-box"><text>{{ oldMobile || '加载中…' }}</text><text class="current">当前绑定</text></view>
+    <view v-if="phase >= 2" class="row"><input v-model="oldCode" class="input grow" type="number" maxlength="6" placeholder="当前手机号验证码"/><button class="send muted" :disabled="oldSeconds > 0 || sending" @click="phase=1">{{ oldSeconds > 0 ? oldSeconds + ' 秒' : '重发' }}</button></view>
+    <text class="step">{{ phase == 1 ? '完成安全验证后发送当前手机号验证码' : '2. 验证新手机号' }}</text>
+    <input v-if="phase >= 2" v-model="newMobile" class="input" type="number" maxlength="11" placeholder="请输入新手机号"/>
+    <view v-if="phase < 3" class="row"><input v-model="answer" class="input grow" placeholder="图形验证码"/><image class="image" :src="image" mode="aspectFit" @click="loadCaptcha"/></view>
+    <button v-if="phase < 3" class="verify" :loading="captchaLoading" @click="verifyCaptcha">{{ captchaToken.length > 0 ? '已完成安全验证' : '验证图形码' }}</button>
+    <button v-if="phase < 3" class="qx-primary" :disabled="sending || (phase == 1 ? oldSeconds > 0 : newSeconds > 0)" :loading="sending" @click="sendCode">{{ phase == 1 ? (oldSeconds > 0 ? oldSeconds + ' 秒后重发' : '发送当前手机号验证码') : (newSeconds > 0 ? newSeconds + ' 秒后重发' : '发送新手机号验证码') }}</button>
+    <view v-else class="row"><input v-model="newCode" class="input grow" type="number" maxlength="6" placeholder="新手机号验证码"/><text class="sent">已发送</text></view>
+    <button v-if="phase == 3" class="qx-primary" :loading="saving" @click="changeMobile">确认更换</button>
+  </view></view>
+</template>
+
+<style>
+.form{margin-top:18px;display:flex;flex-direction:column;gap:13px}.title{font-size:19px;font-weight:700}.hint{color:#86909c;font-size:12px;line-height:18px}.step{margin-top:5px;color:#4e5969;font-size:14px;font-weight:600}.mobile-box{height:46px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;background:#f6f7f9;border-radius:8px}.current,.sent{color:#86909c;font-size:12px}.row{display:flex;align-items:center;gap:9px}.grow{min-width:0;flex:1}.input{height:46px;padding:0 12px;box-sizing:border-box;background:#f6f7f9;border-radius:8px}.image{width:110px;height:46px;border-radius:8px;background:#f6f7f9}.verify{height:36px;margin:0;color:#07a353;background:#ecfff2;border-radius:18px;font-size:13px}.send{width:104px;height:42px;margin:0;padding:0;border-radius:21px;font-size:12px;line-height:42px}.muted{color:#4e5969;background:#f2f3f5}.qx-primary{margin-top:4px;border-radius:22px}
+</style>

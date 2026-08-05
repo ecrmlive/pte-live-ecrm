@@ -1,7 +1,11 @@
 package marketing
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 	"time"
 )
 
@@ -33,5 +37,17 @@ func TestActivityActiveRequiresDateAndSlot(t *testing.T) {
 	activity.EndsAt = &past
 	if activityActive(activity, seckillRules{TimeSlots: []string{"14:00"}}, now) {
 		t.Fatal("过期活动不应激活")
+	}
+}
+
+func TestSeckillGetRejectsInvalidID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewSeckillHandler(nil).Register(router)
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/seckill/actives/0", nil))
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("invalid seckill activity ID status=%d, want %d", recorder.Code, http.StatusBadRequest)
 	}
 }

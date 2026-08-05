@@ -1,26 +1,72 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 
-type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; total_num: number; create_time: string }
-type OrderPage = { list: GroupOrder[] }
+type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; pay_status: string; fulfillment_status: string; has_uncommented_item: boolean; total_num: number; create_time: string; activity_type: number; points_amount: number }
+type OrderPage = { list: GroupOrder[]; total: number; page: number; limit: number }
 
 const items = ref<GroupOrder[]>([])
 const loading = ref(false)
+const activeStatus = ref('')
+const activeFulfillmentStatus = ref('')
+const keyword = ref('')
+const page = ref(0)
+const hasMore = ref(true)
 
-function load(): void {
+function load(reset: boolean = true): void {
+  if (loading.value || (!reset && !hasMore.value)) return
+  const nextPage = reset ? 1 : page.value + 1
   loading.value = true
-  appRequest('/orders?page=1&limit=30').then((data) => {
-    items.value = (data as OrderPage).list || []
+  let path = '/orders?page=' + nextPage.toString() + '&limit=20'
+  if (activeStatus.value != '') path += '&pay_status=' + activeStatus.value
+  if (activeFulfillmentStatus.value != '') path += '&fulfillment_status=' + activeFulfillmentStatus.value
+  const search = keyword.value.trim()
+  if (search.length > 0) path += '&keyword=' + encodeURIComponent(search)
+  appRequest(path).then((data) => {
+    const result = data as OrderPage
+    const nextItems = result.list || []
+    items.value = reset ? nextItems : items.value.concat(nextItems)
+    page.value = nextPage
+    hasMore.value = items.value.length < result.total
   }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
 }
 
+function selectFilter(payStatus: string, fulfillmentStatus: string): void {
+  if (activeStatus.value == payStatus && activeFulfillmentStatus.value == fulfillmentStatus) return
+  activeStatus.value = payStatus
+  activeFulfillmentStatus.value = fulfillmentStatus
+  hasMore.value = true
+  load(true)
+}
+
+function loadMore(): void { load(false) }
+
+function applyKeyword(): void {
+  hasMore.value = true
+  load(true)
+}
+
+function orderStatusText(item: GroupOrder): string {
+  if (item.pay_status == 'closed') return '已取消'
+  if (item.pay_status != 'paid') return '待付款'
+  if (item.fulfillment_status == 'fulfilling') return '待发货/核销'
+  if (item.fulfillment_status == 'shipped') return '待收货'
+  if (item.fulfillment_status == 'awaiting_final') return '待付尾款'
+  if (item.fulfillment_status == 'final_timeout') return '尾款逾期'
+  if (item.fulfillment_status == 'aftersale') return '售后处理中'
+  if (item.fulfillment_status == 'completed' && item.has_uncommented_item) return '待评价'
+  if (item.fulfillment_status == 'completed') return '已完成'
+  return '已支付'
+}
+function orderStatusClass(item: GroupOrder): string { if (item.pay_status == 'closed') return 'closed'; if (item.pay_status != 'paid') return 'unpaid'; return 'paid' }
+function amountText(item: GroupOrder): string { return item.activity_type == 20 ? item.points_amount.toString() + " 积分" : "¥" + item.pay_price.toString() }
 function goDetail(id: number): void { uni.navigateTo({ url: `/pages/order/detail?id=${id}` }) }
 
-onShow(() => load())
+onShow(() => load(true))
+onReachBottom(() => loadMore())
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="我的订单" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无订单</view><view v-for="item in items" :key="item.group_order_id" class="qx-card card" @click="goDetail(item.group_order_id)"><text class="sn">{{ item.group_order_sn }}</text><view class="line"><text>¥{{ item.pay_price }}</text><text :class="item.paid == 1 ? 'paid' : 'unpaid'">{{ item.paid == 1 ? '已支付' : '待付款' }}</text></view><text class="meta">{{ item.total_num }} 件商品 · {{ item.create_time }}</text></view></view>
+  <view class="qx-page"><qx-nav title="我的订单" /><view class="search"><input v-model="keyword" class="search-input" placeholder="搜索订单号或商品名称" /><button class="search-button" @click="applyKeyword">搜索</button></view><view class="tabs"><text :class="activeStatus == '' && activeFulfillmentStatus == '' ? 'active' : ''" @click="selectFilter('', '')">全部</text><text :class="activeStatus == 'pending' ? 'active' : ''" @click="selectFilter('pending', '')">待付款</text><text :class="activeFulfillmentStatus == 'awaiting_fulfillment' ? 'active' : ''" @click="selectFilter('', 'awaiting_fulfillment')">待发货</text><text :class="activeFulfillmentStatus == 'awaiting_receipt' ? 'active' : ''" @click="selectFilter('', 'awaiting_receipt')">待收货</text><text :class="activeFulfillmentStatus == 'awaiting_comment' ? 'active' : ''" @click="selectFilter('', 'awaiting_comment')">待评价</text></view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无订单</view><view v-for="item in items" :key="item.group_order_id" class="qx-card card" @click="goDetail(item.group_order_id)"><text class="sn">{{ item.group_order_sn }}</text><view class="line"><text>{{ amountText(item) }}</text><text :class="orderStatusClass(item)">{{ orderStatusText(item) }}</text></view><text class="meta">{{ item.activity_type == 20 ? '积分兑换 · ' + item.points_amount + ' 积分' : '¥' + item.pay_price }} · {{ item.total_num }} 件商品 · {{ item.create_time }}</text></view><view v-if="items.length > 0" class="more" @click="loadMore">{{ loading ? '加载中…' : (hasMore ? '点击加载更多' : '没有更多订单了') }}</view></view>
 </template>
 
-<style>.empty { color: #86909c; text-align: center; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-size: 15px; font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 18px; }.paid { color: #00b42a; font-size: 14px; }.unpaid { color: #d72828; font-size: 14px; }.meta { color: #86909c; font-size: 12px; }</style>
+<style>.search { display: flex; gap: 8px; padding: 10px 16px; background: #ffffff; }.search-input { flex: 1; height: 36px; padding: 0 12px; background: #f2f3f5; border-radius: 18px; font-size: 14px; }.search-button { height: 36px; min-width: 64px; margin: 0; padding: 0 12px; border-radius: 18px; background: #d72828; color: #ffffff; font-size: 14px; line-height: 36px; }.tabs { display: flex; gap: 18px; padding: 12px 16px; background: #ffffff; color: #4e5969; font-size: 14px; }.tabs .active { color: #d72828; font-weight: 600; } .empty { color: #86909c; text-align: center; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-size: 15px; font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 18px; }.paid { color: #00b42a; font-size: 14px; }.unpaid { color: #d72828; font-size: 14px; }.closed { color: #86909c; font-size: 14px; }.meta { color: #86909c; font-size: 12px; }.more { color: #86909c; font-size: 13px; padding: 16px; text-align: center; }</style>

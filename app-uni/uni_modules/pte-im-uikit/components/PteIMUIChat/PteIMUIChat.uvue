@@ -41,7 +41,7 @@
 </template>
 
 <script lang="uts">
-import { PteIMIncomingMessage, PteIMLocation, PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
+import type { PteIMIncomingMessage, PteIMLocation, PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
 import { PteIMUIAction, PteIMUICustomAction, PteIMUIEmoji, PteIMUIInputAction, PteIMUIChatController, PteIMUIKit, PteIMUIMapNavigationHandler, PteIMUIReaction, PteIMUIReactionProvider, PteIMUIReadReceiptProvider, PteIMUITheme, PteIMUIThemePalette } from '../../utssdk/PteIMUIKitFacade.uts'
 import PteIMUIInputBar from '../PteIMUIInputBar/PteIMUIInputBar.uvue'
 import PteIMUIImagePreview from '../PteIMUIImagePreview/PteIMUIImagePreview.uvue'

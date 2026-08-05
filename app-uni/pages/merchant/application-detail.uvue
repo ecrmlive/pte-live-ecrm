@@ -1,0 +1,34 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type ApplicationDetail = {
+  id: number; merchant_name: string; contact_name: string; contact_mobile: string; category_name: string;
+  merchant_type: string; status: string; review_note: string; license_uploaded: boolean; created_at: string
+}
+
+const id = ref(0)
+const item = ref<ApplicationDetail | null>(null)
+const loading = ref(false)
+function statusText(value: string): string { return value == 'approved' ? '审核通过' : value == 'rejected' ? '审核驳回' : '审核中' }
+function statusClass(value: string): string { return value == 'approved' ? 'approved' : value == 'rejected' ? 'rejected' : 'pending' }
+function valueOf(key: string): string { const row = item.value; return row == null ? '' : String((row as UTSJSONObject)[key] || '') }
+function licenseUploaded(): boolean { const row = item.value; return row != null && row.license_uploaded }
+function load(): void {
+  if (id.value <= 0) { uni.showToast({ title: '申请编号错误', icon: 'none' }); return }
+  loading.value = true
+  appRequest('/merchant-applications/mine/' + id.value).then((data) => { item.value = data as ApplicationDetail }).catch((error) => uni.showToast({ title: error.message || '详情加载失败', icon: 'none' })).finally(() => { loading.value = false })
+}
+onLoad((query) => { id.value = Number(query?.['id'] || 0); load() })
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="入驻申请详情"/><view v-if="item != null" class="qx-card detail">
+    <view class="head"><text class="title">{{ valueOf('merchant_name') }}</text><text class="badge" :class="statusClass(valueOf('status'))">{{ statusText(valueOf('status')) }}</text></view>
+    <view class="row"><text>联系人</text><text>{{ valueOf('contact_name') }}</text></view><view class="row"><text>联系电话</text><text>{{ valueOf('contact_mobile') }}</text></view><view class="row"><text>经营类目</text><text>{{ valueOf('category_name') }}</text></view><view class="row"><text>商户类型</text><text>{{ valueOf('merchant_type') }}</text></view><view class="row"><text>营业执照</text><text>{{ licenseUploaded() ? '已提交' : '未提交' }}</text></view><view class="row"><text>提交时间</text><text>{{ valueOf('created_at') }}</text></view>
+    <view v-if="valueOf('review_note').length > 0" class="note"><text class="note-title">审核说明</text><text>{{ valueOf('review_note') }}</text></view><text v-else class="hint">审核结果将通过本页同步展示。</text>
+  </view><view v-else-if="loading" class="loading">正在加载申请详情…</view></view>
+</template>
+
+<style>
+.detail{margin-top:16px;display:flex;flex-direction:column;gap:14px}.head{display:flex;align-items:center;justify-content:space-between}.title{font-size:19px;font-weight:700}.badge{padding:4px 9px;border-radius:12px;font-size:12px}.pending{color:#ad6800;background:#fff7e6}.approved{color:#16803c;background:#ecfff2}.rejected{color:#d72828;background:#fff3f1}.row{display:flex;justify-content:space-between;gap:20px;color:#4e5969;font-size:14px}.row text:last-child{text-align:right;color:#1f2329}.note{padding:12px;display:flex;flex-direction:column;gap:6px;color:#d72828;background:#fff3f1;border-radius:8px;font-size:13px;line-height:20px}.note-title{font-weight:600}.hint,.loading{color:#86909c;font-size:13px}.loading{padding:32px;text-align:center}
+</style>

@@ -10,3 +10,14 @@ export function appApiURL(path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`
   return `${base}${APP_API_PREFIX}${normalized}`
 }
+
+
+/** 验证码 BFF 不属于 C 端 JWT 路由，仍由同一 api-business 服务代理。 */
+export function captchaGatewayURL(path: string): string {
+  let base = MP_DEV_BASE
+  // #ifdef H5
+  base = ""
+  // #endif
+  const normalized = path.startsWith("/") ? path : "/" + path
+  return base + "/api/v1" + normalized
+}

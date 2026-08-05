@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"time"
 
+	merchantstock "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantstock"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
+const pointsOrderActivityType = 20
+
 var (
-	ErrOrderOwnership  = errors.New("订单不存在或无权访问")
-	ErrPayChannel      = errors.New("暂不支持该支付方式")
-	ErrOrderNotPayable = errors.New("当前订单不可支付")
+	ErrOrderOwnership     = errors.New("订单不存在或无权访问")
+	ErrPayChannel         = errors.New("暂不支持该支付方式")
+	ErrOrderNotPayable    = errors.New("当前订单不可支付")
+	ErrOrderNotReceivable = errors.New("订单当前状态不可确认收货")
 )
 
 // PayMock is deliberately limited to local/test mock payment. Real channels
@@ -32,8 +36,14 @@ func PayMock(ctx context.Context, db *gorm.DB, userID, groupOrderID uint64) (Cre
 		if groupPayStatus(group) == "paid" {
 			return nil
 		}
+		if group.ActivityType == pointsOrderActivityType {
+			return ErrOrderNotPayable
+		}
 		if groupPayStatus(group) != "pending" {
 			return ErrOrderNotPayable
+		}
+		if err := merchantstock.ReservationsReady(tx, group.ID); err != nil {
+			return err
 		}
 		if err := tx.Where("group_order_id = ? AND channel = ?", group.ID, "mock").FirstOrCreate(&paymentRow{GroupOrderID: group.ID, Channel: "mock", TransactionNo: orderNo("P"), Amount: group.PayAmount, Status: "created"}).Error; err != nil {
 			return err
@@ -47,6 +57,12 @@ func PayMock(ctx context.Context, db *gorm.DB, userID, groupOrderID uint64) (Cre
 			return ErrOrderNotPayable
 		}
 		if err := tx.Model(&orderRow{}).Where("group_order_id = ? AND status = ?", group.ID, "pending_pay").Updates(map[string]any{"status": "paid", "paid_at": now}).Error; err != nil {
+			return err
+		}
+		if err := enqueueStockActionForGroup(tx, "confirm", group.ID); err != nil {
+			return err
+		}
+		if err := settleOrderActivity(tx, group); err != nil {
 			return err
 		}
 		if err := tx.Table("qixi_crm_b_coupon_user").Where("user_id = ? AND used_order_id = ? AND status = ?", userID, group.ID, "locked").Update("status", "used").Error; err != nil {

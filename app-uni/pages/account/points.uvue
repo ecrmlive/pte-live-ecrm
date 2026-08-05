@@ -1,0 +1,32 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Summary = { points:number; total_income:number; total_expense:number; frozen_points:number }
+type Row = { id:number; amount:number; reference_type:string; reference_id:string; created_at:string }
+type Page = { summary:Summary; list:Row[]; total:number; page:number; limit:number }
+
+const summary = ref<Summary>({ points:0, total_income:0, total_expense:0, frozen_points:0 })
+const items = ref<Row[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+function amount(value:number):string { return value >= 0 ? "+" + value : String(value) }
+function hasMore():boolean { return items.value.length < total.value }
+function load(reset:boolean = false):void {
+  if (loading.value || (!reset && !hasMore())) return
+  if (reset) { page.value = 1; total.value = 0; items.value = [] }
+  loading.value = true
+  appRequest("/account/points?page=" + page.value + "&limit=20").then((data) => {
+    const result = data as Page
+    summary.value = result.summary || summary.value
+    items.value = items.value.concat(result.list || [])
+    total.value = result.total || 0
+    page.value += 1
+  }).catch((error) => uni.showToast({ title:error.message || "积分加载失败", icon:"none" })).finally(() => { loading.value = false })
+}
+onShow(() => load(true))
+onReachBottom(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="我的积分"/><view class="points"><text class="caption">可用积分</text><text class="value">{{summary.points}}</text><view class="stat"><text>累计获得 {{summary.total_income}}</text><text>累计使用 {{summary.total_expense}}</text></view></view><view class="section">积分流水</view><view v-if="!loading&&items.length==0" class="qx-card empty">暂无积分流水</view><view v-for="item in items" :key="item.id" class="qx-card row"><view><text class="title">{{item.reference_type||"积分变动"}}</text><text class="time">{{item.created_at}}</text></view><text :class="item.amount>=0 ? `income` : `expense`">{{amount(item.amount)}}</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="items.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="items.length>0" class="more" @click="load()">加载更多</text></view></template>
+<style>.points{padding:24px 18px;color:#fff;background:linear-gradient(135deg,#5a3922,#a36531)}.caption,.value,.stat{display:block}.caption{font-size:13px}.value{margin-top:8px;font-size:34px;font-weight:700}.stat{display:flex;justify-content:space-between;margin-top:18px;font-size:12px}.section{padding:14px;color:#4e5969;font-size:14px;font-weight:600}.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:20px}.more{padding:16px;font-size:12px}.row{display:flex;align-items:center;justify-content:space-between}.title,.time{display:block}.title{color:#1f2329}.time{margin-top:7px;color:#86909c;font-size:12px}.income{color:#00b42a;font-weight:600}.expense{color:#d72828;font-weight:600}</style>

@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -142,7 +143,10 @@ func (s *Service) Register(ctx context.Context, subject, password, nickname stri
 		if err := tx.Create(&created).Error; err != nil {
 			return err
 		}
-		return tx.Create(&Identity{UserID: created.ID, Channel: channel, Subject: subject, CredentialHash: string(hash)}).Error
+		if err := tx.Create(&Identity{UserID: created.ID, Channel: channel, Subject: subject, CredentialHash: string(hash)}).Error; err != nil {
+			return err
+		}
+		return grantOnboardingCoupons(tx, created.ID)
 	})
 	if err != nil {
 		return nil, err
@@ -171,6 +175,54 @@ func (s *Service) Login(ctx context.Context, subject, password string, channel L
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(identity.CredentialHash), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
+	}
+	return &Profile{ID: user.ID, UID: user.ID, Nickname: user.Nickname, Mobile: mobileText(user.Mobile), Channel: channel, Subject: subject, AuthVersion: user.AuthVersion}, nil
+}
+
+// LoginOrRegisterExternal binds a provider-issued immutable subject (such as
+// WeChat openid) to one C-end user. The caller cannot provide a user ID,
+// password, or mobile number.
+func (s *Service) LoginOrRegisterExternal(ctx context.Context, subject, nickname string, channel LoginChannel) (*Profile, error) {
+	subject = strings.TrimSpace(subject)
+	if subject == "" || (channel != ChannelMiniProgram && channel != ChannelWechat) {
+		return nil, ErrBadParam
+	}
+	nickname = strings.TrimSpace(nickname)
+	if nickname == "" {
+		nickname = "微信用户"
+	}
+	runes := []rune(nickname)
+	if len(runes) > 64 {
+		nickname = string(runes[:64])
+	}
+
+	var user User
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var identity Identity
+		err := tx.Where("channel = ? AND subject = ?", channel, subject).First(&identity).Error
+		if err == nil {
+			if err := tx.First(&user, identity.UserID).Error; err != nil {
+				return err
+			}
+			if user.Status != 1 {
+				return ErrAccountDisabled
+			}
+			return nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		user = User{Nickname: nickname, Status: 1, AuthVersion: 1}
+		if err := tx.Create(&user).Error; err != nil {
+			return err
+		}
+		if err := tx.Create(&Identity{UserID: user.ID, Channel: channel, Subject: subject}).Error; err != nil {
+			return err
+		}
+		return grantOnboardingCoupons(tx, user.ID)
+	})
+	if err != nil {
+		return nil, err
 	}
 	return &Profile{ID: user.ID, UID: user.ID, Nickname: user.Nickname, Mobile: mobileText(user.Mobile), Channel: channel, Subject: subject, AuthVersion: user.AuthVersion}, nil
 }
@@ -205,6 +257,134 @@ func (s *Service) ConsumeCaptchaToken(ctx context.Context, token, action string)
 		return ErrCaptchaUnavailable
 	}
 	return nil
+}
+
+func normalizeNickname(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	if len([]rune(value)) == 0 || len([]rune(value)) > 64 {
+		return "", ErrBadParam
+	}
+	return value, nil
+}
+
+func (s *Service) UpdateNickname(ctx context.Context, userID uint64, nickname string) error {
+	value, err := normalizeNickname(nickname)
+	if err != nil {
+		return err
+	}
+	result := s.db.WithContext(ctx).Model(&User{}).Where("id=? AND status=1", userID).Update("nickname", value)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Service) ResetPasswordByMobile(ctx context.Context, mobile, newPassword string) error {
+	mobile = strings.TrimSpace(mobile)
+	if !validMobile(mobile) || !validNewPassword(newPassword) {
+		return ErrBadParam
+	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var user User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("mobile = ?", mobile).First(&user).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+		if user.Status != 1 {
+			return ErrAccountDisabled
+		}
+		var identity Identity
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ? AND channel = ?", user.ID, ChannelH5).First(&identity).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			identity = Identity{UserID: user.ID, Channel: ChannelH5, Subject: "mobile:" + mobile}
+			if err = tx.Create(&identity).Error; err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		if err = tx.Model(&Identity{}).Where("id=?", identity.ID).Update("credential_hash", string(hash)).Error; err != nil {
+			return err
+		}
+		result := tx.Model(&User{}).Where("id=? AND auth_version=?", user.ID, user.AuthVersion).Update("auth_version", user.AuthVersion+1)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+func (s *Service) LoginOrRegisterMobile(ctx context.Context, mobile string, channel LoginChannel) (*Profile, error) {
+	mobile = strings.TrimSpace(mobile)
+	if !validMobile(mobile) || channel != ChannelH5 {
+		return nil, ErrBadParam
+	}
+	var user User
+	var identity Identity
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("mobile = ?", mobile).First(&user).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			value := mobile
+			user = User{Nickname: "用户" + mobile[len(mobile)-4:], Mobile: &value, Status: 1, AuthVersion: 1}
+			if err = tx.Create(&user).Error; err != nil {
+				return err
+			}
+			if err = grantOnboardingCoupons(tx, user.ID); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else if user.Status != 1 {
+			return ErrAccountDisabled
+		}
+		err = tx.Where("user_id = ? AND channel = ?", user.ID, channel).First(&identity).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			identity = Identity{UserID: user.ID, Channel: channel, Subject: "mobile:" + mobile}
+			return tx.Create(&identity).Error
+		}
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &Profile{ID: user.ID, UID: user.ID, Nickname: user.Nickname, Mobile: mobileText(user.Mobile), Channel: identity.Channel, Subject: identity.Subject, AuthVersion: user.AuthVersion}, nil
+}
+
+func (s *Service) BindMobile(ctx context.Context, userID uint64, mobile string) error {
+	mobile = strings.TrimSpace(mobile)
+	if userID == 0 || !validMobile(mobile) {
+		return ErrBadParam
+	}
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var other User
+		err := tx.Where("mobile = ?", mobile).First(&other).Error
+		if err == nil && other.ID != userID {
+			return ErrAccountExists
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		result := tx.Model(&User{}).Where("id = ? AND status = ?", userID, 1).Update("mobile", mobile)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return ErrNotFound
+		}
+		return nil
+	})
 }
 
 func (s *Service) Profile(ctx context.Context, userID uint64, channel LoginChannel) (*Profile, error) {

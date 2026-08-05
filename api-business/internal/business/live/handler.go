@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -25,6 +25,7 @@ func (h *Handler) RegisterPublic(r gin.IRoutes) {
 }
 
 func (h *Handler) RegisterAuthed(r gin.IRoutes) {
+	r.GET("/live/rooms/:id/reservation", h.ReservationStatus)
 	r.POST("/live/rooms/:id/reservation", h.Reserve)
 	r.DELETE("/live/rooms/:id/reservation", h.CancelReservation)
 }
@@ -104,8 +105,11 @@ func (h *Handler) Reserve(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if _, err := h.findPublicRoom(c, id); err != nil {
+	if room, err := h.findPublicRoom(c, id); err != nil {
 		writeRoomError(c, err)
+		return
+	} else if room.Status == "ended" {
+		response.Fail(c, http.StatusBadRequest, "直播已结束，不能预约")
 		return
 	}
 	row := reservationRow{LiveRoomID: id, UserID: uint64(middleware.UID(c))}
@@ -214,4 +218,22 @@ func writeRoomError(c *gin.Context, err error) {
 		return
 	}
 	response.Fail(c, http.StatusInternalServerError, "直播间加载失败")
+}
+
+// ReservationStatus exposes only the current users reservation state.
+func (h *Handler) ReservationStatus(c *gin.Context) {
+	id, ok := roomID(c)
+	if !ok {
+		return
+	}
+	if _, err := h.findPublicRoom(c, id); err != nil {
+		writeRoomError(c, err)
+		return
+	}
+	var count int64
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_live_reservation").Where("live_room_id = ? AND user_id = ?", id, uint64(middleware.UID(c))).Count(&count).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询预约状态失败")
+		return
+	}
+	response.OK(c, gin.H{"live_room_id": id, "reserved": count > 0})
 }

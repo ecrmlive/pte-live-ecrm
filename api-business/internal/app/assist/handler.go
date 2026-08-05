@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/assist"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/trade"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -32,8 +32,6 @@ func (h *Handler) RegisterAuthed(r gin.IRoutes) {
 	r.GET("/assist/actives/:id/mine", h.Mine)
 	r.POST("/assist/actives/:id/start", h.Start)
 	r.POST("/assist/sets/:id/help", h.Help)
-	r.POST("/order/assist/check", h.Check)
-	r.POST("/order/assist/create", h.Create)
 }
 
 func (h *Handler) List(c *gin.Context) {

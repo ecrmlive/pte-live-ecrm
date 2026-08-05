@@ -6,8 +6,8 @@ ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 QX := /bin/bash $(ROOT_DIR)/scripts/qixi-crm.sh
 
 .PHONY: help init-env-local init-env-test check-config pack pack-backend local-admin-init \
-	local local-infra local-db-init local-db-reset local-backend local-down local-ps local-compose-check \
-	test test-infra test-db-init test-backend test-down test-ps test-compose-check
+	local local-infra local-db-init local-db-reset local-backend local-job local-down local-ps local-compose-check \
+	test test-infra test-db-init test-backend test-job test-down test-ps test-compose-check
 
 help:
 	@$(QX) help
@@ -41,6 +41,8 @@ local-db-reset:
 	@QX_RELEASE_ENV=local /bin/bash $(ROOT_DIR)/scripts/release/db-reset.sh
 local-backend:
 	@$(QX) up backend
+local-job:
+	@$(QX) up job
 local-down:
 	@$(QX) down
 local-ps:
@@ -56,6 +58,8 @@ test-db-init:
 	@$(QX) up db-init
 test-backend:
 	@$(QX) up backend
+test-job:
+	@$(QX) up job
 test-down:
 	@$(QX) down
 test-ps:

@@ -94,7 +94,7 @@ const { Form } = useDiyCurItemForm(
 );
 
 function gotoArticle() {
-  void router.push('/plus/article/index');
+  void router.push('/cms/article');
 }
 
 onMounted(async () => {

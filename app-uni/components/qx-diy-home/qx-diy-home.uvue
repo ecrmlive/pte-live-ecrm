@@ -30,7 +30,26 @@ function titleOf(item: any): string {
 }
 function imageOf(data: any): string { return valueOf(data, 'imgUrl', valueOf(data, 'image')) }
 function productImage(product: Product): string { return String(product.image || '').trim() }
-function productName(product: Product): string { return String(product.title || product.store_name || '商品') }
+function productName(product: Product): string { return String(product.title || product.store_name || "商品") }
+function productRows(): Product[][] {
+  const rows: Product[][] = []
+  let start = 0
+  while (start < products.value.length) {
+    rows.push(products.value.slice(start, start + 2))
+    start += 2
+  }
+  return rows
+}
+function navRows(item: any): any[][] {
+  const rows: any[][] = []
+  const entries = itemData(item)
+  let start = 0
+  while (start < entries.length) {
+    rows.push(entries.slice(start, start + 4))
+    start += 4
+  }
+  return rows
+}
 function linkOf(data: any): string { return valueOf(data, 'linkUrl', valueOf(data, 'url')) }
 function videoOf(item: any): string { return valueOf(item['params'] || {}, 'videoUrl', valueOf(item['params'] || {}, 'url')) }
 function videoPosterOf(item: any): string { return valueOf(item['params'] || {}, 'poster') }
@@ -48,8 +67,16 @@ function hotspotStyle(entry: any): any {
   }
 }
 
-function go(link: string): void {
+function normalizeLink(link: string): string {
   const path = String(link || '').trim()
+  if (path == '/goods' || path.startsWith('/goods?')) return '/pages/goods/list' + path.slice(6)
+  if (path == '/pages/order_addcart/order_addcart') return '/pages/cart/index'
+  if (path == '/pages/store/index') return '/pages/store/list'
+  return path
+}
+
+function go(link: string): void {
+  const path = normalizeLink(link)
   if (path.length == 0) return
   if (path == '/pages/index/index' || path == '/pages/category/index' || path == '/pages/cart/index' || path == '/pages/user/index') {
     uni.switchTab({ url: path })
@@ -74,6 +101,11 @@ function go(link: string): void {
 function productDetail(id: number): void { uni.navigateTo({ url: `/pages/goods/detail?id=${id}` }) }
 function liveDetail(id: number): void { uni.navigateTo({ url: `/pages/live/detail?id=${id}` }) }
 
+function merchantIDForService(params: any): number {
+  const direct = valueOf(params, 'merchant_id', valueOf(params, 'mer_id', valueOf(props.page || {}, 'merchant_id', valueOf(props.page || {}, 'mer_id', ''))))
+  return Number(direct)
+}
+
 function openService(item: any): void {
   const params = item['params'] || {}
   if (valueOf(params, 'type') == 'phone') {
@@ -85,7 +117,12 @@ function openService(item: any): void {
     uni.makePhoneCall({ phoneNumber: phone })
     return
   }
-  go('/pages/cs/chat')
+  const merchantID = merchantIDForService(params)
+  if (merchantID <= 0) {
+    uni.showToast({ title: '该客服组件尚未绑定商户', icon: 'none' })
+    return
+  }
+  go('/pages/cs/chat?mer_id=' + String(merchantID))
 }
 
 function openSurface(item: any): void {
@@ -114,7 +151,7 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
 
 <template>
   <view class="diy-page" :style="{ backgroundColor: valueOf(itemStyle({ style: props.page ? props.page['style'] : {} }), 'background', '#f6f7f9') }">
-    <view v-for="(item, index) in props.items" :key="`${typeOf(item)}-${index}`" class="diy-block">
+    <view v-for="(item, index) in props.items" :key="`${typeOf(item)}-${String(index)}`" class="diy-block">
       <swiper v-if="typeOf(item) == 'banner' || typeOf(item) == 'topMerge'" class="diy-banner" circular autoplay indicator-dots>
         <swiper-item v-for="(entry, entryIndex) in visualData(item)" :key="entryIndex" @click="go(linkOf(entry))">
           <image v-if="imageOf(entry).length > 0" class="diy-banner__image" :src="imageOf(entry)" mode="aspectFill" />
@@ -124,10 +161,12 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
       </swiper>
 
       <view v-else-if="typeOf(item) == 'navBar' || typeOf(item) == 'option'" class="diy-card diy-nav-grid">
-        <view v-for="(entry, entryIndex) in itemData(item)" :key="entryIndex" class="diy-nav-grid__item" @click="go(linkOf(entry))">
-          <image v-if="imageOf(entry).length > 0" class="diy-nav-grid__icon" :src="imageOf(entry)" mode="aspectFill" />
-          <view v-else class="diy-nav-grid__icon diy-nav-grid__icon--empty" />
-          <text>{{ valueOf(entry, 'text', valueOf(entry, 'title', '快捷入口')) }}</text>
+        <view v-for="(row, rowIndex) in navRows(item)" :key="rowIndex" class="diy-nav-grid__row">
+          <view v-for="(entry, entryIndex) in row" :key="entryIndex" class="diy-nav-grid__item" @click="go(linkOf(entry))">
+            <image v-if="imageOf(entry).length > 0" class="diy-nav-grid__icon" :src="imageOf(entry)" mode="aspectFill" />
+            <view v-else class="diy-nav-grid__icon diy-nav-grid__icon--empty" />
+            <text>{{ valueOf(entry, 'text', valueOf(entry, 'title', '快捷入口')) }}</text>
+          </view>
         </view>
       </view>
 
@@ -137,7 +176,7 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
       </view>
 
       <view v-else-if="typeOf(item) == 'notice'" class="diy-notice">
-        <text class="diy-notice__label">公告</text><text>{{ valueOf(item['params'] || {}, 'content', valueOf(item['params'] || {}, 'title', '欢迎来到七禧商城')) }}</text>
+        <text class="diy-notice__label">公告</text><text>{{ valueOf(item['params'] || {}, 'content', valueOf(item['params'] || {}, 'title', '欢迎来到CRM Live')) }}</text>
       </view>
 
       <view v-else-if="typeOf(item) == 'imageSingle' || typeOf(item) == 'window'" class="diy-image-list">
@@ -154,11 +193,13 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
       <view v-else-if="typeOf(item) == 'product' || typeOf(item) == 'seckill' || typeOf(item) == 'seckillProduct' || typeOf(item) == 'assembleProduct' || typeOf(item) == 'bargainProduct' || typeOf(item) == 'previewProduct' || typeOf(item) == 'newActivity'" class="diy-card">
         <view class="diy-section-head"><text>{{ titleOf(item) || '精选商品' }}</text><text @click="go(moreLinkOf(item))">更多 ›</text></view>
         <view class="diy-product-grid">
-          <view v-for="product in products" :key="product.id" class="diy-product" @click="productDetail(product.id)">
-            <image v-if="productImage(product).length > 0" class="diy-product__cover" :src="productImage(product)" mode="aspectFill" />
-            <view v-else class="diy-product__cover diy-product__cover--empty"><text>暂无商品图片</text></view>
-            <text class="diy-product__name">{{ productName(product) }}</text>
-            <view class="diy-product__price-row"><text class="diy-product__price">¥{{ product.price }}</text><text class="diy-product__sales">已售 {{ product.sales }}</text></view>
+          <view v-for="(row, rowIndex) in productRows()" :key="rowIndex" class="diy-product-row">
+            <view v-for="product in row" :key="product.id" class="diy-product" @click="productDetail(product.id)">
+              <image v-if="productImage(product).length > 0" class="diy-product__cover" :src="productImage(product)" mode="aspectFill" />
+              <view v-else class="diy-product__cover diy-product__cover--empty"><text>暂无商品图片</text></view>
+              <text class="diy-product__name">{{ productName(product) }}</text>
+              <view class="diy-product__price-row"><text class="diy-product__price">¥{{ product.price }}</text><text class="diy-product__sales">已售 {{ product.sales }}</text></view>
+            </view>
           </view>
         </view>
       </view>
@@ -178,7 +219,7 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
         <view v-for="(entry, entryIndex) in (itemData(item).length > 0 ? itemData(item) : item['defaultData'] || [])" :key="entryIndex" class="diy-store__row"><text>{{ valueOf(entry, 'shop_name', '门店') }}</text><text>{{ valueOf(entry, 'address', '') }}</text></view>
       </view>
 
-      <view v-else-if="typeOf(item) == 'qixiLive'" class="diy-card">
+      <view v-else-if="typeOf(item) == 'qixiLive' || typeOf(item) == 'crmLive'" class="diy-card">
         <view class="diy-section-head"><text>{{ titleOf(item) || '热门直播' }}</text><text @click="go('/pages/live/list')">更多 ›</text></view>
         <view v-if="liveRooms.length == 0" class="diy-empty">暂无直播间</view>
         <view v-for="room in liveRooms.slice(0, Number(valueOf(item['params'] || {}, 'showNum', '2')))" :key="room.broadcast_room_id" class="diy-live__row" @click="liveDetail(room.broadcast_room_id)"><text>{{ room.name }}</text><text>{{ room.mer_name || '店铺' }} · {{ room.live_status == 101 ? '直播中' : '预告' }}</text></view>
@@ -200,5 +241,5 @@ onMounted(() => { loadProducts(); loadLiveRooms() })
 </template>
 
 <style>
-.diy-page { min-height: 100vh; padding-bottom: 18px; }.diy-block { margin-top: 10px; }.diy-card { margin: 0 12px; padding: 14px; border-radius: 12px; background-color: #ffffff; }.diy-banner { height: 180px; overflow: hidden; background-color: #f2f3f5; }.diy-banner__image, .diy-banner__placeholder { width: 100%; height: 180px; }.diy-banner__placeholder { display: flex; align-items: center; justify-content: center; color: #777777; background-color: #f2f3f5; font-size: 15px; }.diy-nav-grid { display: flex; flex-wrap: wrap; gap: 14px 0; }.diy-nav-grid__item { width: 25%; display: flex; flex-direction: column; align-items: center; color: #4e5969; font-size: 12px; }.diy-nav-grid__icon { width: 42px; height: 42px; margin-bottom: 6px; border-radius: 21px; }.diy-nav-grid__icon--empty { background-color: #fff0f0; }.diy-title, .diy-section-head { display: flex; align-items: center; justify-content: space-between; margin: 0 12px; color: #1f2329; font-size: 17px; font-weight: 600; }.diy-title__more, .diy-section-head text:last-child { color: #86909c; font-size: 12px; font-weight: 400; }.diy-notice { display: flex; gap: 8px; margin: 0 12px; padding: 11px 14px; overflow: hidden; border-radius: 8px; color: #4e5969; background-color: #fff7e8; font-size: 13px; }.diy-notice__label { color: #d72828; font-weight: 600; }.diy-image-list { margin: 0 12px; overflow: hidden; border-radius: 12px; }.diy-image-list__image { display: block; width: 100%; }.diy-video { overflow: hidden; padding: 0; }.diy-video__player, .diy-video__empty { display: block; width: 100%; height: 220px; }.diy-video__empty { display: flex; align-items: center; justify-content: center; color: #86909c; background-color: #f2f3f5; }.diy-section-head { margin: 0 0 12px; }.diy-product-grid { display: flex; flex-wrap: wrap; gap: 10px; }.diy-product { width: calc(50% - 5px); overflow: hidden; border-radius: 8px; background-color: #f7f8fa; }.diy-product__cover { display: block; width: 100%; height: 128px; background-color: #f2f3f5; }.diy-product__cover--empty { display: flex; align-items: center; justify-content: center; color: #86909c; font-size: 12px; }.diy-product__name, .diy-product__price { display: block; padding: 0 9px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.diy-product__name { margin-top: 8px; color: #1f2329; font-size: 13px; }.diy-product__price-row { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 9px 9px; }.diy-product__price { padding: 0; color: #d72828; font-size: 15px; font-weight: 600; }.diy-product__sales { color: #86909c; font-size: 10px; }.diy-search { display: flex; justify-content: space-between; margin: 0 12px; padding: 11px 14px; border-radius: 20px; color: #86909c; background-color: #ffffff; }.diy-coupon__list { display:flex; gap:8px; }.diy-coupon__item { flex:1; padding:10px; border-radius:8px; color:#d72828; background:#fff0f0; }.diy-coupon__item text { display:block; }.diy-coupon__item text:last-child { margin-top:4px; font-size:18px; font-weight:700; }.diy-coupon__empty,.diy-empty { color:#86909c; font-size:13px; }.diy-article__row,.diy-store__row,.diy-live__row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #f2f3f5; color:#4e5969; font-size:13px; }.diy-article__row text:first-child,.diy-store__row text:first-child,.diy-live__row text:first-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }.diy-store__row text:last-child,.diy-live__row text:last-child { color:#86909c; font-size:12px; }.diy-blank { margin:0 12px; }.diy-guide { margin:0 12px; border-top-style:solid; }.diy-hotspot { position:relative; margin:0 12px; }.diy-hotspot image { display:block; width:100%; }.diy-hotspot__zone { position:absolute; }.diy-service { position: fixed; right: 18px; bottom: 86px; z-index: 8; display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding: 0; overflow:hidden; border-radius: 22px; color: #ffffff; background-color: #d72828; box-shadow: 0 4px 12px rgba(215,40,40,.28); font-size: 13px; }.diy-service__image { width:44px; height:44px; }
+.diy-page { min-height: 100vh; padding-bottom: 18px; }.diy-block { margin-top: 10px; }.diy-card { margin: 0 12px; padding: 14px; border-radius: 12px; background-color: #ffffff; }.diy-banner { height: 180px; overflow: hidden; background-color: #f2f3f5; }.diy-banner__image, .diy-banner__placeholder { width: 100%; height: 180px; }.diy-banner__placeholder { display: flex; align-items: center; justify-content: center; color: #777777; background-color: #f2f3f5; font-size: 15px; }.diy-nav-grid { }.diy-nav-grid__row { width: 100%; display: flex; flex-direction: row; margin-bottom: 14px; }.diy-nav-grid__row:last-child { margin-bottom: 0; }.diy-nav-grid__item { width: 0; flex: 1; display: flex; flex-direction: column; align-items: center; color: #4e5969; font-size: 12px; }.diy-nav-grid__icon { width: 42px; height: 42px; margin-bottom: 6px; border-radius: 21px; }.diy-nav-grid__icon--empty { background-color: #fff0f0; }.diy-title, .diy-section-head { display: flex; align-items: center; justify-content: space-between; margin: 0 12px; color: #1f2329; font-size: 17px; font-weight: 600; }.diy-title__more, .diy-section-head text:last-child { color: #86909c; font-size: 12px; font-weight: 400; }.diy-notice { display: flex; gap: 8px; margin: 0 12px; padding: 11px 14px; overflow: hidden; border-radius: 8px; color: #4e5969; background-color: #fff7e8; font-size: 13px; }.diy-notice__label { color: #d72828; font-weight: 600; }.diy-image-list { margin: 0 12px; overflow: hidden; border-radius: 12px; }.diy-image-list__image { display: block; width: 100%; }.diy-video { overflow: hidden; padding: 0; }.diy-video__player, .diy-video__empty { display: block; width: 100%; height: 220px; }.diy-video__empty { display: flex; align-items: center; justify-content: center; color: #86909c; background-color: #f2f3f5; }.diy-section-head { margin: 0 0 12px; }.diy-product-grid { }.diy-product-row { width: 100%; display: flex; flex-direction: row; gap: 10px; margin-bottom: 10px; }.diy-product-row:last-child { margin-bottom: 0; }.diy-product { width: 0; flex: 1; overflow: hidden; border-radius: 8px; background-color: #f7f8fa; }.diy-product__cover { display: block; width: 100%; height: 128px; background-color: #f2f3f5; }.diy-product__cover--empty { display: flex; align-items: center; justify-content: center; color: #86909c; font-size: 12px; }.diy-product__name, .diy-product__price { display: block; padding: 0 9px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.diy-product__name { margin-top: 8px; color: #1f2329; font-size: 13px; }.diy-product__price-row { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 9px 9px; }.diy-product__price { padding: 0; color: #d72828; font-size: 15px; font-weight: 600; }.diy-product__sales { color: #86909c; font-size: 10px; }.diy-search { display: flex; justify-content: space-between; margin: 0 12px; padding: 11px 14px; border-radius: 20px; color: #86909c; background-color: #ffffff; }.diy-coupon__list { display:flex; gap:8px; }.diy-coupon__item { flex:1; padding:10px; border-radius:8px; color:#d72828; background:#fff0f0; }.diy-coupon__item text { display:block; }.diy-coupon__item text:last-child { margin-top:4px; font-size:18px; font-weight:700; }.diy-coupon__empty,.diy-empty { color:#86909c; font-size:13px; }.diy-article__row,.diy-store__row,.diy-live__row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #f2f3f5; color:#4e5969; font-size:13px; }.diy-article__row text:first-child,.diy-store__row text:first-child,.diy-live__row text:first-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }.diy-store__row text:last-child,.diy-live__row text:last-child { color:#86909c; font-size:12px; }.diy-blank { margin:0 12px; }.diy-guide { margin:0 12px; border-top-style:solid; }.diy-hotspot { position:relative; margin:0 12px; }.diy-hotspot image { display:block; width:100%; }.diy-hotspot__zone { position:absolute; }.diy-service { position: fixed; right: 18px; bottom: 86px; z-index: 8; display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding: 0; overflow:hidden; border-radius: 22px; color: #ffffff; background-color: #d72828; box-shadow: 0 4px 12px rgba(215,40,40,.28); font-size: 13px; }.diy-service__image { width:44px; height:44px; }
 </style>

@@ -1,0 +1,38 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Product = { id:number; title:string; image:string; price:number; sales:number }
+type Store = { store_id:number; mer_id:number; store_name:string; follower_count:number }
+type FavoritePage = { list:UTSJSONObject[]; total:number; page:number; limit:number }
+
+const type = ref("product")
+const products = ref<Product[]>([])
+const stores = ref<Store[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+function displayedCount():number { return type.value == "product" ? products.value.length : stores.value.length }
+function hasMore():boolean { return displayedCount() < total.value }
+function load(reset:boolean = false):void {
+  if (loading.value || (!reset && !hasMore())) return
+  if (reset) { page.value = 1; total.value = 0; if (type.value == "product") products.value = []; else stores.value = [] }
+  loading.value = true
+  appRequest("/favorites?type=" + type.value + "&page=" + page.value + "&limit=20").then((data) => {
+    const result = data as FavoritePage
+    if (type.value == "product") products.value = products.value.concat((result.list || []) as Product[])
+    else stores.value = stores.value.concat((result.list || []) as Store[])
+    total.value = result.total || 0
+    page.value += 1
+  }).catch((error) => uni.showToast({ title:error.message || "收藏加载失败", icon:"none" })).finally(() => { loading.value = false })
+}
+function switchType(next:string):void { if (type.value == next) return; type.value = next; load(true) }
+function removeProduct(id:number):void { appRequest(`/favorites/products/${id}`, "DELETE").then(() => load(true)).catch((error) => uni.showToast({ title:error.message || "取消收藏失败", icon:"none" })) }
+function removeStore(id:number):void { appRequest(`/favorites/stores/${id}`, "DELETE").then(() => load(true)).catch((error) => uni.showToast({ title:error.message || "取消关注失败", icon:"none" })) }
+function goProduct(id:number):void { uni.navigateTo({ url:`/pages/goods/detail?id=${id}` }) }
+function goStore(id:number):void { uni.navigateTo({ url:`/pages/store/home?mer_id=${id}` }) }
+onShow(() => load(true))
+onReachBottom(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="我的收藏"/><view class="tabs"><text :class="type=='product'?'tab tab--active':'tab'" @click="switchType('product')">商品</text><text :class="type=='store'?'tab tab--active':'tab'" @click="switchType('store')">店铺</text></view><view v-if="!loading&&type=='product'&&products.length==0" class="qx-card empty">暂无收藏商品</view><view v-if="!loading&&type=='store'&&stores.length==0" class="qx-card empty">暂无关注店铺</view><view v-for="item in products" v-if="type=='product'" :key="item.id" class="qx-card product" @click="goProduct(item.id)"><image v-if="item.image" class="cover" :src="item.image" mode="aspectFill"/><view v-else class="cover cover--empty">商品</view><view class="product-main"><text class="product-title">{{item.title}}</text><text class="sales">已售 {{item.sales}}</text><text class="price">¥{{item.price}}</text></view><text class="remove" @click.stop="removeProduct(item.id)">取消</text></view><view v-for="item in stores" v-if="type=='store'" :key="item.store_id" class="qx-card store" @click="goStore(item.mer_id)"><view class="store-mark">店</view><view class="store-main"><text>{{item.store_name}}</text><text>关注 {{item.follower_count}} 人</text></view><text class="remove" @click.stop="removeStore(item.store_id)">取消</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="displayedCount()>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="displayedCount()>0" class="more" @click="load()">加载更多</text></view></template>
+<style>.tabs{height:48px;display:flex;align-items:center;justify-content:center;gap:54px;background-color:#ffffff}.tab{position:relative;height:48px;display:flex;align-items:center;color:#86909c;font-size:15px}.tab--active{color:#d72828;font-weight:700}.tab--active::after{position:absolute;right:0;bottom:5px;left:0;height:3px;border-radius:2px;background-color:#d72828;content:''}.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:22px}.more{padding:16px;font-size:12px}.product,.store{display:flex;align-items:center;gap:12px}.cover{width:68px;height:68px;flex-shrink:0;border-radius:8px;background-color:#fff0ee}.cover--empty,.store-mark{display:flex;align-items:center;justify-content:center;color:#d72828}.product-main,.store-main{min-width:0;flex:1;display:flex;flex-direction:column}.product-title{overflow:hidden;color:#1f2329;font-size:15px;white-space:nowrap;text-overflow:ellipsis}.sales,.store-main text:last-child{margin-top:6px;color:#86909c;font-size:12px}.price{margin-top:8px;color:#d72828;font-size:16px;font-weight:700}.remove{color:#86909c;font-size:12px}.store-mark{width:48px;height:48px;flex-shrink:0;border-radius:8px;background-color:#fff0ee;font-size:18px;font-weight:700}.store-main text:first-child{color:#1f2329;font-size:15px;font-weight:600}</style>

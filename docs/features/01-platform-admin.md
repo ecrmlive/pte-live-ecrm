@@ -1210,6 +1210,8 @@
 | 设置店铺分组模板 | `U` | `systemStoreGroupSetTemplate` | 菜单权限 |
 | 关联店铺列表 | `R` | `systemStoreGroupStores` | 菜单权限 |
 
+实现闭环（统一后台）：平台角色的 `merchant.group.manage` 按钮权限覆盖列表、详情、新增、编辑、删除、启停、模板绑定和关联店铺查看；数据存入 `qixi_crm_a_store_group` 与 `qixi_crm_a_store_group_merchant`。服务端在同一事务内校验商户投影存在性、父子循环、最多三级、移动子树层级与路径、删除非叶节点和状态向子分组级联。`sql/admin/05_test_data.sql` 提供不含真实个人信息的中文树与店铺关联夹具；运行态验收须在隔离数据库应用夹具后执行。
+
 #### 店铺 / 店铺管理 / 店铺分账申请
 
 - 页面路由：`/merchant/applyments`
@@ -1278,6 +1280,8 @@
 | 备注 | `U` | `systemMerchantTypeMark` | 菜单权限 |
 | 备注 | `RU` | `systemMerchantTypeDetail` | 菜单权限 |
 
+实现闭环（统一后台）：平台角色以 `merchant.type.manage` 管理类型、保证金规则、类型说明、备注、状态及店铺菜单代码授权。数据使用 `qixi_crm_a_merchant_type` 与 `qixi_crm_a_merchant_type_menu`，保证金启用时必须大于零，未启用时金额归零；中文夹具仅用于隔离本地验收。
+
 #### 店铺 / 店铺设置
 
 - 页面路由：`/mer/store`
@@ -1332,6 +1336,8 @@
 | 操作 | CRUD | 标识 | 来源 |
 | --- | --- | --- | --- |
 | 店铺类型说明  | `C` | `systemAgreeSave` | 菜单权限 |
+
+统一后台等价入口：`/merchant/type/description` 映射至协议设置页中的保证金说明键 `sys_deposit_agree`；`/merchant/deposit_list` 映射至店铺保证金工作台，避免旧路径落入空白页。
 
 ### 用户
 

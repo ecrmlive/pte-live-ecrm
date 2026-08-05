@@ -1,0 +1,21 @@
+const CHECKOUT_ADDRESS_ID_KEY = 'crm_live_app_checkout_address_id'
+const LEGACY_CHECKOUT_ADDRESS_ID_KEY = 'qixi_app_checkout_address_id'
+
+// The selected address is scoped to the currently open checkout flow. It is
+// only an address ID; ownership is always rechecked by api-business.
+export function getCheckoutAddressID(): number {
+  const current = Number(uni.getStorageSync(CHECKOUT_ADDRESS_ID_KEY) || 0)
+  if (current > 0) return current
+  const legacy = Number(uni.getStorageSync(LEGACY_CHECKOUT_ADDRESS_ID_KEY) || 0)
+  if (legacy > 0) uni.setStorageSync(CHECKOUT_ADDRESS_ID_KEY, legacy)
+  return legacy
+}
+
+export function setCheckoutAddressID(id: number): void {
+  if (id > 0) uni.setStorageSync(CHECKOUT_ADDRESS_ID_KEY, id)
+}
+
+export function clearCheckoutAddressID(): void {
+  uni.removeStorageSync(CHECKOUT_ADDRESS_ID_KEY)
+  uni.removeStorageSync(LEGACY_CHECKOUT_ADDRESS_ID_KEY)
+}

@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/authjwt"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -21,14 +21,16 @@ var (
 )
 
 type adminUser struct {
-	ID               uint64 `gorm:"column:id;primaryKey"`
-	Username         string `gorm:"column:username"`
-	PasswordHash     string `gorm:"column:password_hash"`
-	DisplayName      string `gorm:"column:display_name"`
-	Phone            string `gorm:"column:phone"`
-	Status           int8   `gorm:"column:status"`
-	DataScopeVersion uint64 `gorm:"column:data_scope_version"`
-	AuthVersion      uint64 `gorm:"column:auth_version"`
+	ID               uint64         `gorm:"column:id;primaryKey"`
+	Username         string         `gorm:"column:username"`
+	PasswordHash     string         `gorm:"column:password_hash"`
+	DisplayName      string         `gorm:"column:display_name"`
+	Phone            string         `gorm:"column:phone"`
+	Status           int8           `gorm:"column:status"`
+	DataScopeVersion uint64         `gorm:"column:data_scope_version"`
+	AuthVersion      uint64         `gorm:"column:auth_version"`
+	CircleAgentID    *uint64        `gorm:"column:circle_agent_id"`
+	DeletedAt        gorm.DeletedAt `gorm:"column:deleted_at"`
 }
 
 func (adminUser) TableName() string { return "qixi_crm_a_admin_user" }
@@ -115,23 +117,63 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 	user, err := h.findUserByUsername(c, username)
 	if err != nil {
+		h.writeLoginLog(c, 0, username, "", false)
 		writeError(c, err)
 		return
 	}
 	if user.Status != 1 {
+		h.writeLoginLog(c, user.ID, username, "", false)
 		response.Fail(c, http.StatusForbidden, "账号已禁用")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		h.writeLoginLog(c, user.ID, username, "", false)
 		response.Fail(c, http.StatusUnauthorized, "账号或密码错误")
 		return
 	}
 	result, err := h.issue(c, user)
 	if err != nil {
+		h.writeLoginLog(c, user.ID, username, "", false)
 		writeError(c, err)
 		return
 	}
+	roles := ""
+	if current, ok := result["user"].(profile); ok {
+		roles = strings.Join(current.Roles, ",")
+	}
+	h.writeLoginLog(c, user.ID, username, roles, true)
 	response.OK(c, result)
+}
+
+// writeLoginLog deliberately never writes a password, bearer token or request
+// body. Audit failure must not turn a successful login into a lockout.
+func (h *Handler) writeLoginLog(c *gin.Context, userID uint64, username, roleCode string, success bool) {
+	if h.db == nil {
+		return
+	}
+	_ = h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_login_log").Create(map[string]any{
+		"admin_user_id": nullableAdminID(userID),
+		"username":      boundedAuditValue(strings.TrimSpace(username), 64),
+		"role_code":     boundedAuditValue(strings.TrimSpace(roleCode), 32),
+		"success":       success,
+		"ip":            boundedAuditValue(c.ClientIP(), 64),
+		"user_agent":    boundedAuditValue(c.GetHeader("User-Agent"), 512),
+	}).Error
+}
+
+func nullableAdminID(id uint64) any {
+	if id == 0 {
+		return nil
+	}
+	return id
+}
+
+func boundedAuditValue(value string, max int) string {
+	value = strings.TrimSpace(value)
+	if len(value) <= max {
+		return value
+	}
+	return value[:max]
 }
 
 func (h *Handler) Refresh(c *gin.Context) {

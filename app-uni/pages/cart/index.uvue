@@ -1,31 +1,104 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 import { getAccessToken } from '../../common/session'
+import { activateMerchantContext } from '../../common/store-context'
 
 const loggedIn = ref(getAccessToken().length > 0)
-type CartItem = { cart_id: number; store_name: string; cart_num: number; price: number }
+type CartItem = { cart_id: number; spec_text: string; title: string; store_name: string; image: string; cart_num: number; price: number; stock: number; is_fail: number; merchant_app_id: string }
 type CartBucket = { mer_id: number; mer_name: string; items: CartItem[] }
 type CartData = { list: CartBucket[]; total_num: number; total_price: number }
 const buckets = ref<CartBucket[]>([])
-const totalPrice = ref(0)
 const loading = ref(false)
+const selectedCartIDs = ref<number[]>([])
+const selectedOnce = ref(false)
+const updatingCartID = ref(0)
+const clearing = ref(false)
 
-function goLogin(): void {
+function goLoginOrExplore(): void {
+  if (loggedIn.value) { uni.switchTab({ url: '/pages/index/index' }); return }
   uni.navigateTo({ url: '/pages/login/index' })
 }
 
 function load(): void {
   const token = getAccessToken()
   loggedIn.value = token.length > 0
-  if (!loggedIn.value) { buckets.value = []; totalPrice.value = 0; return }
+  if (!loggedIn.value) { buckets.value = []; selectedCartIDs.value = []; selectedOnce.value = false; return }
   loading.value = true
-  appRequest('/cart').then((data) => { const cart = data as CartData; buckets.value = cart.list || []; totalPrice.value = cart.total_price || 0 }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
+  appRequest('/cart').then((data) => {
+    const cart = data as CartData
+    buckets.value = cart.list || []
+    const available = allItems().filter((item) => itemAvailable(item)).map((item) => item.cart_id)
+    if (!selectedOnce.value) {
+      const firstBucket = cart.list.find((bucket) => bucket.items.some((item) => itemAvailable(item)))
+      selectedCartIDs.value = firstBucket == null ? [] : firstBucket.items.filter((item) => itemAvailable(item)).map((item) => item.cart_id)
+      selectedOnce.value = true
+    } else {
+      selectedCartIDs.value = selectedCartIDs.value.filter((id) => available.includes(id))
+    }
+  }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
 }
 
+function allItems(): CartItem[] {
+  const items: CartItem[] = []
+  buckets.value.forEach((bucket) => bucket.items.forEach((item) => items.push(item)))
+  return items
+}
+function itemAvailable(item: CartItem): boolean { return item.is_fail != 1 && item.stock >= item.cart_num }
+function isSelected(item: CartItem): boolean { return selectedCartIDs.value.includes(item.cart_id) }
+function toggle(item: CartItem): void {
+  if (!itemAvailable(item)) return
+  if (isSelected(item)) selectedCartIDs.value = selectedCartIDs.value.filter((id) => id != item.cart_id)
+  else selectedCartIDs.value = [...selectedCartIDs.value, item.cart_id]
+}
+function allSelected(): boolean {
+  const available = allItems().filter((item) => itemAvailable(item))
+  return available.length > 0 && available.every((item) => isSelected(item))
+}
+function toggleAll(): void {
+  const available = allItems().filter((item) => itemAvailable(item)).map((item) => item.cart_id)
+  selectedCartIDs.value = allSelected() ? [] : available
+}
+function bucketItems(bucket: CartBucket): CartItem[] { return bucket.items.filter((item) => itemAvailable(item)) }
+function bucketSelected(bucket: CartBucket): boolean { const available = bucketItems(bucket); return available.length > 0 && available.every((item) => isSelected(item)) }
+function toggleBucket(bucket: CartBucket): void {
+  const available = bucketItems(bucket).map((item) => item.cart_id)
+  if (available.length == 0) return
+  selectedCartIDs.value = bucketSelected(bucket) ? selectedCartIDs.value.filter((id) => !available.includes(id)) : [...selectedCartIDs.value.filter((id) => !available.includes(id)), ...available]
+}
+function selectedTotal(): number {
+  return allItems().filter((item) => isSelected(item) && itemAvailable(item)).reduce((total, item) => total + item.price * item.cart_num, 0)
+}
+function selectedCount(): number { return allItems().filter((item) => isSelected(item) && itemAvailable(item)).reduce((total, item) => total + item.cart_num, 0) }
+
+function withStoreContext(item: CartItem, action: () => Promise<UTSJSONObject>): Promise<UTSJSONObject> {
+  if (item.merchant_app_id.length == 0) return action()
+  return activateMerchantContext(item.merchant_app_id).then(() => action())
+}
+function changeQuantity(item: CartItem, delta: number): void {
+  if (updatingCartID.value != 0) return
+  const next = item.cart_num + delta
+  if (next < 1) { remove(item); return }
+  if (next > item.stock) { uni.showToast({ title: '库存不足', icon: 'none' }); return }
+  updatingCartID.value = item.cart_id
+  withStoreContext(item, () => appRequest(`/cart/${item.cart_id}`, 'PUT', { cart_num: next } as UTSJSONObject)).then(() => load()).catch((error) => uni.showToast({ title: error.message || '数量修改失败', icon: 'none' })).finally(() => { updatingCartID.value = 0 })
+}
+function remove(item: CartItem): void {
+  if (updatingCartID.value != 0) return
+  uni.showModal({ title: '删除商品', content: '确定从购物车移除该商品？', success: (result) => {
+    if (!result.confirm) return
+    updatingCartID.value = item.cart_id
+    withStoreContext(item, () => appRequest(`/cart/${item.cart_id}`, 'DELETE')).then(() => {
+      selectedCartIDs.value = selectedCartIDs.value.filter((id) => id != item.cart_id)
+      load()
+    }).catch((error) => uni.showToast({ title: error.message || '删除失败', icon: 'none' })).finally(() => { updatingCartID.value = 0 })
+  }})
+}
+function clearCart(): void { if (clearing.value || buckets.value.length == 0) return; uni.showModal({ title: "清空购物车", content: "确定移除购物车内全部商品吗？", success: (result) => { if (!result.confirm) return; clearing.value = true; appRequest("/cart", "DELETE").then(() => { buckets.value = []; selectedCartIDs.value = []; uni.showToast({ title: "购物车已清空", icon: "success" }) }).catch((error) => uni.showToast({ title: error.message || "清空失败", icon: "none" })).finally(() => { clearing.value = false }) } }) }
 function checkout(): void {
-  const ids: number[] = []
-  buckets.value.forEach((bucket) => bucket.items.forEach((item) => ids.push(item.cart_id)))
+  const ids = selectedCartIDs.value
   if (ids.length == 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
+  const selectedStores = buckets.value.filter((bucket) => bucket.items.some((item) => isSelected(item) && itemAvailable(item)))
+  if (selectedStores.length != 1) { uni.showToast({ title: '不同店铺请分别结算', icon: 'none' }); return }
   uni.navigateTo({ url: `/pages/order/checkout?cart_ids=${ids.join(',')}` })
 }
 
@@ -33,7 +106,20 @@ onShow(() => load())
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="购物车" /><view v-if="buckets.length == 0" class="qx-card empty"><text>{{ loggedIn ? '购物车暂无商品' : '登录后可同步购物车' }}</text><button class="qx-primary" @click="goLogin">{{ loggedIn ? '去逛逛' : '去登录' }}</button></view><view v-for="bucket in buckets" :key="bucket.mer_id" class="qx-card"><text class="merchant">{{ bucket.mer_name }}</text><view v-for="item in bucket.items" :key="item.cart_id" class="item"><view class="cover">七</view><view class="item-meta"><text>{{ item.store_name }}</text><view class="item-price"><text class="price">¥{{ item.price }}</text><text>×{{ item.cart_num }}</text></view></view></view></view><view v-if="buckets.length > 0" class="total"><text>合计：<text class="price">¥{{ totalPrice }}</text></text><button class="qx-primary" :loading="loading" @click="checkout">去结算</button></view></view>
+  <view class="qx-page">
+    <qx-nav title="购物车" />
+    <view v-if="buckets.length == 0" class="qx-card empty"><text>{{ loggedIn ? '购物车暂无商品' : '登录后可同步购物车' }}</text><button class="qx-primary" @click="goLoginOrExplore">{{ loggedIn ? '去逛逛' : '去登录' }}</button></view>
+    <view v-if="buckets.length > 0" class="cart-actions"><text :class="clearing ? 'disabled' : ''" @click="clearCart">{{ clearing ? '正在清空' : '清空购物车' }}</text></view>
+    <view v-for="bucket in buckets" :key="bucket.mer_id" class="qx-card">
+      <view class="merchant-line"><text class="merchant">{{ bucket.mer_name || '平台自营' }}</text><text class="merchant-select" :class="bucketSelected(bucket) ? 'merchant-select--on' : ''" @click="toggleBucket(bucket)">{{ bucketSelected(bucket) ? '✓ 已选本店' : '全选本店' }}</text></view>
+      <view v-for="item in bucket.items" :key="item.cart_id" class="item" :class="itemAvailable(item) ? '' : 'item--invalid'">
+        <text class="select" :class="isSelected(item) ? 'select--on' : ''" @click="toggle(item)">{{ isSelected(item) ? '✓' : '' }}</text>
+        <image v-if="item.image" class="cover" :src="item.image" mode="aspectFill" /><view v-else class="cover cover--empty">C</view>
+        <view class="item-meta"><text class="item-name">{{ item.title || item.store_name }}</text><text class="item-spec">{{ item.spec_text || '默认规格' }}</text><text v-if="!itemAvailable(item)" class="invalid">商品已失效或库存不足</text><view class="item-bottom"><text class="price">¥{{ item.price }}</text><view class="stepper"><text class="stepper__button" @click="itemAvailable(item) ? changeQuantity(item, -1) : null">−</text><text class="stepper__num">{{ item.cart_num }}</text><text class="stepper__button" @click="itemAvailable(item) ? changeQuantity(item, 1) : null">＋</text></view></view><text class="remove" @click="remove(item)">删除</text></view>
+      </view>
+    </view>
+    <view v-if="buckets.length > 0" class="total"><text class="select" :class="allSelected() ? 'select--on' : ''" @click="toggleAll">{{ allSelected() ? '✓' : '' }}</text><text class="all-label" @click="toggleAll">全选</text><view class="total-price"><text>合计：</text><text class="price">¥{{ selectedTotal().toFixed(2) }}</text><text class="total-count">（{{ selectedCount() }} 件）</text></view><button class="qx-primary" :loading="loading" @click="checkout">去结算</button></view>
+  </view>
 </template>
 
-<style>.empty { min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: #86909c; }.qx-primary { width: 160px; border-radius: 22px; font-size: 15px; }.merchant { display: block; margin-bottom: 12px; font-size: 15px; font-weight: 600; }.item { padding: 12px 0; border-top: 1px solid #f0f0f0; display: flex; gap: 12px; }.cover { width: 52px; height: 52px; color: #d72828; background-color: #fff0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }.item-meta { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }.item-price { display: flex; justify-content: space-between; color: #86909c; font-size: 13px; }.price { color: #d72828; font-weight: 700; }.total { padding: 12px; background-color: #ffffff; display: flex; align-items: center; justify-content: space-between; }.total .qx-primary { width: 108px; margin: 0; }</style>
+<style>.cart-actions{padding:4px 16px 8px;text-align:right;color:#86909c;font-size:13px}.disabled{opacity:.5}.qx-page { padding-bottom: 72px; }.empty { min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: #86909c; }.qx-primary { width: 160px; border-radius: 22px; font-size: 15px; }.merchant-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }.merchant-select { color: #86909c; font-size: 12px; }.merchant-select--on { color: #d72828; }.merchant { display: block; margin-bottom: 0; font-size: 15px; font-weight: 600; }.item { min-height: 76px; padding: 12px 0; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 9px; }.item--invalid { opacity: .55; }.select { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid #c9cdd4; border-radius: 10px; box-sizing: border-box; color: #ffffff; font-size: 13px; }.select--on { border-color: #d72828; background-color: #d72828; }.cover { width: 64px; height: 64px; flex-shrink: 0; border-radius: 8px; background-color: #fff0f0; }.cover--empty { display: flex; align-items: center; justify-content: center; color: #d72828; }.item-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; }.item-name { overflow: hidden; color: #1f2329; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }.item-spec { display: block; margin-top: 4px; color: #86909c; font-size: 11px; }.invalid { margin-top: 4px; color: #f53f3f; font-size: 11px; }.item-bottom { margin-top: 9px; display: flex; align-items: center; justify-content: space-between; }.price { color: #d72828; font-weight: 700; }.stepper { display: flex; align-items: center; border: 1px solid #e5e6eb; border-radius: 4px; }.stepper__button, .stepper__num { width: 26px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 14px; }.stepper__button { color: #4e5969; }.stepper__num { border-right: 1px solid #e5e6eb; border-left: 1px solid #e5e6eb; font-size: 12px; }.remove { align-self: flex-end; margin-top: 5px; color: #86909c; font-size: 11px; }.total { position: fixed; right: 0; bottom: 0; left: 0; z-index: 10; min-height: 58px; padding: 8px 12px; display: flex; align-items: center; background-color: #ffffff; box-sizing: border-box; box-shadow: 0 -1px 6px rgba(0,0,0,.06); }.all-label { margin-left: 6px; color: #4e5969; font-size: 13px; }.total-price { min-width: 0; flex: 1; margin-left: 8px; text-align: right; font-size: 12px; }.total-count { color: #86909c; font-size: 10px; }.total .qx-primary { width: 94px; margin: 0 0 0 8px; }</style>

@@ -55,6 +55,9 @@ func (r *Repo) ListPosts(ctx context.Context, f community.ListFilter) ([]communi
 	if f.TopicID > 0 {
 		q = q.Where("topic_id = ?", f.TopicID)
 	}
+	if f.CategoryID > 0 {
+		q = q.Where("category_id = ?", f.CategoryID)
+	}
 	if f.OnlyPublic {
 		q = q.Where("status = ? AND is_show = 1", community.StatusApproved)
 	}

@@ -1,5 +1,5 @@
 import { appRequest } from './request'
-import { PteIMBaseConfig, PteIMLoginConfig, PteIMSDKClient, PteIMUserSigProvider, PteIMUserSigRefreshResult } from '../uni_modules/pte-im-sdk/utssdk/interface.uts'
+import type { PteIMBaseConfig, PteIMLoginConfig, PteIMSDKClient, PteIMUserSigProvider, PteIMUserSigRefreshResult } from '../uni_modules/pte-im-sdk/utssdk/interface.uts'
 // #ifdef WEB
 import { createPteIMSDK } from '../uni_modules/pte-im-sdk/utssdk/web/index.uts'
 // #endif

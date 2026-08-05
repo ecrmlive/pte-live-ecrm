@@ -10,7 +10,7 @@ type Label struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Label) TableName() string { return "qixi_m_app_user_label" }
+func (Label) TableName() string { return "qixi_crm_b_user_label" }
 
 type Group struct {
 	GroupID    uint      `gorm:"column:group_id;primaryKey" json:"group_id"`
@@ -20,7 +20,7 @@ type Group struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Group) TableName() string { return "qixi_m_app_user_group" }
+func (Group) TableName() string { return "qixi_crm_b_user_group" }
 
 type Relation struct {
 	ID      uint `gorm:"column:id;primaryKey" json:"id"`
@@ -28,7 +28,7 @@ type Relation struct {
 	LabelID uint `gorm:"column:label_id" json:"label_id"`
 }
 
-func (Relation) TableName() string { return "qixi_m_app_user_label_relation" }
+func (Relation) TableName() string { return "qixi_crm_b_user_label_relation" }
 
 type LabelInput struct {
 	LabelName string `json:"label_name"`

@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +23,7 @@ func NewSeckillHandler(db *gorm.DB) *SeckillHandler { return &SeckillHandler{db:
 func (h *SeckillHandler) Register(r gin.IRoutes) {
 	r.GET("/seckill/times", h.Times)
 	r.GET("/seckill/actives", h.List)
+	r.GET("/seckill/actives/:id", h.Get)
 }
 
 type seckillActivityView struct {
@@ -76,39 +78,52 @@ func (h *SeckillHandler) Times(c *gin.Context) {
 }
 
 func (h *SeckillHandler) List(c *gin.Context) {
+	page, limit := seckillPageParams(c)
 	items, err := h.load(c)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "秒杀活动查询失败")
 		return
 	}
-	rows := make([]gin.H, 0, len(items))
-	now := time.Now()
-	for _, item := range items {
-		product := item.product
-		rows = append(rows, gin.H{
-			"seckill_active_id": item.activity.ActivityID,
-			"name":              item.activity.Name,
-			"product_id":        product.ProductID,
-			"seckill_price":     item.rules.SeckillPrice,
-			"price":             product.Price,
-			"image":             product.CoverURL,
-			"store_name":        product.Title,
-			"shop_name":         product.StoreName,
-			"mer_name":          product.MerchantName,
-			"sales":             product.Sales,
-			"time_slots":        item.rules.TimeSlots,
-			"in_window":         activityActive(item.activity, item.rules, now),
-			"start_day":         formatDay(item.activity.StartsAt),
-			"end_day":           formatDay(item.activity.EndsAt),
-		})
+	total := len(items)
+	start := (page - 1) * limit
+	if start > total {
+		start = total
 	}
-	response.OK(c, gin.H{"list": rows, "total": len(rows), "page": 1, "limit": len(rows)})
+	end := start + limit
+	if end > total {
+		end = total
+	}
+	rows := make([]gin.H, 0, end-start)
+	now := time.Now()
+	for _, item := range items[start:end] {
+		rows = append(rows, item.response(now))
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
+}
+
+func seckillPageParams(c *gin.Context) (int, int) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	return page, limit
 }
 
 type seckillItem struct {
 	activity seckillActivityView
 	rules    seckillRules
 	product  seckillProductView
+}
+
+func (item seckillItem) response(now time.Time) gin.H {
+	product := item.product
+	return gin.H{
+		"seckill_active_id": item.activity.ActivityID, "name": item.activity.Name, "product_id": product.ProductID, "seckill_price": item.rules.SeckillPrice, "price": product.Price, "image": product.CoverURL, "store_name": product.Title, "shop_name": product.StoreName, "mer_name": product.MerchantName, "sales": product.Sales, "time_slots": item.rules.TimeSlots, "in_window": activityActive(item.activity, item.rules, now), "start_day": formatDay(item.activity.StartsAt), "end_day": formatDay(item.activity.EndsAt),
+	}
 }
 
 func (h *SeckillHandler) load(c *gin.Context) ([]seckillItem, error) {
@@ -186,4 +201,24 @@ func formatDay(value *time.Time) string {
 		return ""
 	}
 	return value.Format("2006-01-02")
+}
+
+func (h *SeckillHandler) Get(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, "秒杀活动 ID 错误")
+		return
+	}
+	items, err := h.load(c)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "秒杀活动查询失败")
+		return
+	}
+	for _, item := range items {
+		if item.activity.ActivityID == id {
+			response.OK(c, item.response(time.Now()))
+			return
+		}
+	}
+	response.Fail(c, http.StatusNotFound, "秒杀活动不存在")
 }

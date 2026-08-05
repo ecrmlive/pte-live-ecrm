@@ -30,7 +30,7 @@ paths:
               properties:
                 values:
                   type: object
-                  description: 微信使用 app_id/mch_id/api_v3_key/serial_no/private_key/notify_url；支付宝使用 app_id/private_key/public_key/notify_url；均包含 enabled=true|false。
+                  description: 微信使用 app_id/mch_id/api_v3_key/serial_no/private_key/notify_url/refund_notify_url；退款回调地址必须独立于支付回调且为 HTTPS。支付宝使用 app_id/private_key/public_key/notify_url；均包含 enabled=true|false。
       responses:
         '200':
           description: 已保存

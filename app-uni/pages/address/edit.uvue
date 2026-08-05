@@ -1,21 +1,42 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { takeCityPickerResult } from '../../common/city'
 
 const realName = ref('')
 const phone = ref('')
 const province = ref('')
 const city = ref('')
 const district = ref('')
+const regionCode = ref('')
 const detail = ref('')
+const isDefault = ref(true)
+const addressID = ref(0)
 const submitting = ref(false)
 
 function submit(): void {
   if (realName.value.trim().length == 0 || phone.value.trim().length == 0 || province.value.trim().length == 0 || city.value.trim().length == 0 || district.value.trim().length == 0 || detail.value.trim().length == 0) { uni.showToast({ title: '请完整填写地址信息', icon: 'none' }); return }
   submitting.value = true
-  appRequest('/address', 'POST', { real_name: realName.value.trim(), phone: phone.value.trim(), province: province.value.trim(), city: city.value.trim(), district: district.value.trim(), detail: detail.value.trim(), post_code: 0, is_default: 1 } as UTSJSONObject).then(() => { uni.showToast({ title: '保存成功', icon: 'success' }); uni.navigateBack() }).catch((error) => uni.showToast({ title: error.message || '保存失败', icon: 'none' })).finally(() => { submitting.value = false })
+  const payload = { real_name: realName.value.trim(), phone: phone.value.trim(), province: province.value.trim(), city: city.value.trim(), district: district.value.trim(), region_code: regionCode.value.trim(), detail: detail.value.trim(), post_code: 0, is_default: isDefault.value ? 1 : 0 } as UTSJSONObject
+  const path = addressID.value > 0 ? `/address/${addressID.value}` : '/address'
+  const method = addressID.value > 0 ? 'PUT' : 'POST'
+  appRequest(path, method, payload).then(() => { uni.showToast({ title: '保存成功', icon: 'success' }); uni.navigateBack() }).catch((error) => uni.showToast({ title: error.message || '保存失败', icon: 'none' })).finally(() => { submitting.value = false })
 }
+function chooseRegion(): void { uni.navigateTo({ url: '/pages/city/select?mode=address' }) }
+function applyCityPicker(): void { const result = takeCityPickerResult(); if (result.regionCode.length == 0) return; province.value = result.province; city.value = result.city; district.value = result.district; regionCode.value = result.regionCode }
+
+function load(id: number): void {
+  appRequest(`/address/${id}`).then((data) => {
+    const item = data as UTSJSONObject
+    realName.value = item['real_name'] as string; phone.value = item['phone'] as string
+    province.value = item['province'] as string; city.value = item['city'] as string
+    district.value = item['district'] as string; regionCode.value = String(item['region_code'] || ''); detail.value = item['detail'] as string
+    isDefault.value = (item['is_default'] as number) == 1
+  }).catch((error) => uni.showToast({ title: error.message || '地址加载失败', icon: 'none' }))
+}
+onLoad((query) => { addressID.value = Number(query?.['id'] || 0); if (addressID.value > 0) load(addressID.value) })
+onShow(() => applyCityPicker())
 </script>
 
-<template><view class="qx-page"><qx-nav title="新增收货地址" /><view class="qx-card form"><input v-model="realName" class="input" placeholder="收货人姓名" /><input v-model="phone" class="input" type="number" placeholder="手机号码" /><input v-model="province" class="input" placeholder="省份" /><input v-model="city" class="input" placeholder="城市" /><input v-model="district" class="input" placeholder="区县" /><textarea v-model="detail" class="textarea" placeholder="详细地址" /></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">保存地址</button></view></view></template>
+<template><view class="qx-page"><qx-nav :title="addressID > 0 ? '编辑收货地址' : '新增收货地址'" /><view class="qx-card form"><input v-model="realName" class="input" placeholder="收货人姓名" /><input v-model="phone" class="input" type="number" placeholder="手机号码" /><input v-model="province" class="input" placeholder="省份" /><input v-model="city" class="input" placeholder="城市" /><input v-model="district" class="input" placeholder="区县" /><view class="city-picker" @click="chooseRegion"><text>从城市数据选择</text><text>›</text></view><textarea v-model="detail" class="textarea" placeholder="详细地址" /><view class="default-row" @click="isDefault=!isDefault"><text>设为默认地址</text><text :class="isDefault ? 'default-on' : 'default-off'">{{ isDefault ? '✓' : '○' }}</text></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">保存地址</button></view></view></template>
 
-<style>.form { display: flex; flex-direction: column; gap: 12px; }.input { height: 46px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.textarea { height: 100px; padding: 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>
+<style>.qx-page { padding-bottom: 68px; }.form { display: flex; flex-direction: column; gap: 12px; }.input { height: 46px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.textarea { height: 100px; padding: 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.city-picker { height: 42px; display: flex; align-items: center; justify-content: space-between; color: #d72828; font-size: 14px; }.default-row { height: 42px; display: flex; align-items: center; justify-content: space-between; color: #4e5969; font-size: 14px; }.default-on { color: #d72828; font-size: 20px; }.default-off { color: #c9cdd4; font-size: 20px; }.footer { position: fixed; right: 0; bottom: 0; left: 0; padding: 12px; background-color: #ffffff; box-sizing: border-box; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

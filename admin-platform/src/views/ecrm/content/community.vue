@@ -176,9 +176,9 @@ async function deleteReply(row: CommunityReply) {
 
 onMounted(async () => {
   const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
-  const isPlatformOperator = profile.is_agent !== 1;
-  canAudit.value = isPlatformOperator && permissions.includes('community/audit');
-  canDelete.value = isPlatformOperator && permissions.includes('community/delete');
+  const isContentOperator = profile.roles.includes('platform') || profile.roles.includes('operations');
+  canAudit.value = isContentOperator && permissions.includes('content.community.audit');
+  canDelete.value = isContentOperator && permissions.includes('content.community.delete');
   await load();
 });
 </script>

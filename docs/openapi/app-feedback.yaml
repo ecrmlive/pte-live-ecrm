@@ -1,0 +1,20 @@
+openapi: 3.0.3
+info:
+  title: pte-live-ecrm app feedback
+  version: 1.0.0
+  description: 用户意见反馈。所有记录仅允许创建者通过 C 端 JWT 查询。
+servers:
+  - url: /api/app/v1
+paths:
+  /feedback:
+    post:
+      summary: 提交反馈
+      security: [{ bearerAuth: [] }]
+  /feedback/list:
+    get:
+      summary: 我的反馈列表
+      security: [{ bearerAuth: [] }]
+  /feedback/detail/{id}:
+    get:
+      summary: 我的反馈详情
+      security: [{ bearerAuth: [] }]

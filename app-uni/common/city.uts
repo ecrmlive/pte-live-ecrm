@@ -1,0 +1,44 @@
+export type CitySelection = {
+  province: string
+  city: string
+  district: string
+  regionCode: string
+}
+
+const HOME_CITY_KEY = 'crm_home_city_selection'
+const CITY_PICKER_RESULT_KEY = 'crm_city_picker_result'
+const DEFAULT_SHANGHAI_CITY: CitySelection = {
+  province: '上海市',
+  city: '上海市区',
+  district: '黄浦区',
+  regionCode: '310101'
+}
+
+function normalize(value: any): CitySelection {
+  return {
+    province: String(value?.['province'] ?? '').trim(),
+    city: String(value?.['city'] ?? '').trim(),
+    district: String(value?.['district'] ?? '').trim(),
+    regionCode: String(value?.['regionCode'] ?? '').trim()
+  }
+}
+
+export function getHomeCitySelection(): CitySelection {
+  const saved = normalize(uni.getStorageSync(HOME_CITY_KEY))
+  // 首次进入或历史空值时，统一从上海市区开始；用户主动选择后不覆盖。
+  return saved.city == '' && saved.province == '' ? DEFAULT_SHANGHAI_CITY : saved
+}
+
+export function setHomeCitySelection(value: CitySelection): void {
+  uni.setStorageSync(HOME_CITY_KEY, value)
+}
+
+export function setCityPickerResult(value: CitySelection): void {
+  uni.setStorageSync(CITY_PICKER_RESULT_KEY, value)
+}
+
+export function takeCityPickerResult(): CitySelection {
+  const result = normalize(uni.getStorageSync(CITY_PICKER_RESULT_KEY))
+  uni.removeStorageSync(CITY_PICKER_RESULT_KEY)
+  return result
+}

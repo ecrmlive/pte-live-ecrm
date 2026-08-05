@@ -10,7 +10,7 @@ type Category struct {
 	IsDel  int8   `gorm:"column:is_del" json:"-"`
 }
 
-func (Category) TableName() string { return "qixi_m_admin_article_category" }
+func (Category) TableName() string { return "qixi_crm_a_article_category" }
 
 type Article struct {
 	ArticleID  uint      `gorm:"column:article_id;primaryKey" json:"article_id"`
@@ -27,7 +27,7 @@ type Article struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Article) TableName() string { return "qixi_m_admin_article" }
+func (Article) TableName() string { return "qixi_crm_a_article" }
 
 type CategoryInput struct {
 	Title  string `json:"title"`

@@ -13,7 +13,7 @@ const saving = ref(false);
 const dialogOpen = ref(false);
 const editing = ref<MerchantPaymentChannelCode>('wechat');
 const channels = ref<MerchantPaymentChannel[]>([]);
-const form = reactive<PaymentForm>({ enabled: 'false', app_id: '', mch_id: '', api_v3_key: '', serial_no: '', private_key: '', public_key: '', notify_url: '' });
+const form = reactive<PaymentForm>({ enabled: 'false', app_id: '', h5_app_id: '', h5_site_url: '', mch_id: '', api_v3_key: '', serial_no: '', private_key: '', public_key: '', notify_url: '' });
 const paymentItems = computed(() => [
   { channel: 'wechat' as const, name: '微信支付', description: '使用本店自己的微信商户号、APIv3 密钥和商户私钥。' },
   { channel: 'alipay' as const, name: '支付宝支付', description: '使用本店自己的支付宝 AppID、应用私钥和支付宝公钥。' },
@@ -24,7 +24,7 @@ function configured(channel: MerchantPaymentChannelCode) { return item(channel)?
 async function load() { loading.value = true; try { channels.value = (await getMerchantPaymentChannelsApi()).list ?? []; } finally { loading.value = false; } }
 function openConfig(channel: MerchantPaymentChannelCode) {
   editing.value = channel;
-  Object.assign(form, { enabled: enabled(channel) ? 'true' : 'false', app_id: '', mch_id: '', api_v3_key: '', serial_no: '', private_key: '', public_key: '', notify_url: '' });
+  Object.assign(form, { enabled: enabled(channel) ? 'true' : 'false', app_id: '', h5_app_id: '', h5_site_url: '', mch_id: '', api_v3_key: '', serial_no: '', private_key: '', public_key: '', notify_url: '' });
   dialogOpen.value = true;
 }
 async function save() {
@@ -51,7 +51,7 @@ onMounted(load);
       </ElCard>
     </div>
     <ElDialog v-model="dialogOpen" :title="editing === 'wechat' ? '配置本店微信支付' : '配置本店支付宝支付'" width="640px" destroy-on-close>
-      <ElForm label-position="top"><ElFormItem label="启用本店渠道"><ElSwitch v-model="form.enabled" active-value="true" inactive-value="false" /></ElFormItem><ElFormItem label="AppID" required><ElInput v-model="form.app_id" /></ElFormItem><template v-if="editing === 'wechat'"><ElFormItem label="微信商户号" required><ElInput v-model="form.mch_id" /></ElFormItem><ElFormItem label="APIv3 密钥" required><ElInput v-model="form.api_v3_key" type="password" show-password /></ElFormItem><ElFormItem label="商户证书序列号" required><ElInput v-model="form.serial_no" /></ElFormItem></template><ElFormItem :label="editing === 'wechat' ? '微信商户私钥' : '支付宝应用私钥'" required><ElInput v-model="form.private_key" type="textarea" :rows="4" /></ElFormItem><ElFormItem v-if="editing === 'alipay'" label="支付宝公钥" required><ElInput v-model="form.public_key" type="textarea" :rows="4" /></ElFormItem><ElFormItem label="支付回调地址" required><ElInput v-model="form.notify_url" placeholder="https://业务域名/api/callback/v1/pay/..." /></ElFormItem></ElForm>
+      <ElForm label-position="top"><ElFormItem label="启用本店渠道"><ElSwitch v-model="form.enabled" active-value="true" inactive-value="false" /></ElFormItem><ElFormItem label="AppID" required><ElInput v-model="form.app_id" /></ElFormItem><template v-if="editing === 'wechat'"><ElFormItem label="微信 H5 支付 AppID"><ElInput v-model="form.h5_app_id" placeholder="用于 H5 MWEB 支付；不与小程序 AppID 混用" /></ElFormItem><ElFormItem label="微信 H5 授权站点（HTTPS）"><ElInput v-model="form.h5_site_url" placeholder="https://mall.example.com" /></ElFormItem><ElFormItem label="微信商户号" required><ElInput v-model="form.mch_id" /></ElFormItem><ElFormItem label="APIv3 密钥" required><ElInput v-model="form.api_v3_key" type="password" show-password /></ElFormItem><ElFormItem label="商户证书序列号" required><ElInput v-model="form.serial_no" /></ElFormItem></template><ElFormItem :label="editing === 'wechat' ? '微信商户私钥' : '支付宝应用私钥'" required><ElInput v-model="form.private_key" type="textarea" :rows="4" /></ElFormItem><ElFormItem v-if="editing === 'alipay'" label="支付宝公钥" required><ElInput v-model="form.public_key" type="textarea" :rows="4" /></ElFormItem><ElFormItem label="支付回调地址" required><ElInput v-model="form.notify_url" placeholder="https://业务域名/api/callback/v1/pay/..." /></ElFormItem></ElForm>
       <template #footer><ElButton @click="dialogOpen = false">取消</ElButton><ElButton type="primary" :loading="saving" @click="save">加密保存</ElButton></template>
     </ElDialog>
   </Page>

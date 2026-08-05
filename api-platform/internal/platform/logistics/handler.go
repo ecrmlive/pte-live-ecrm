@@ -1,26 +1,37 @@
 package logistics
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/logistics"
+	platformcityevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/platformcity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-// 菜单：快递公司/城市可挂 CRMEB 导入节点（sql/043）；本刀 JWT 即可。
-type Handler struct{ svc *logistics.Service }
+type Handler struct {
+	svc     *logistics.Service
+	adminDB *gorm.DB
+}
 
-func NewHandler(svc *logistics.Service) *Handler { return &Handler{svc: svc} }
+func NewHandler(svc *logistics.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/express", h.ListExpress)
-	r.POST("/express", h.CreateExpress)
-	r.PUT("/express/:id", h.UpdateExpress)
-	r.DELETE("/express/:id", h.DeleteExpress)
-	r.GET("/city", h.ListCity)
+	manage := middleware.RequireAdminMenu(h.adminDB, "freight.express.manage")
+	platform := middleware.RequireAdminRoles("platform")
+	r.GET("/express", platform, manage, h.ListExpress)
+	r.POST("/express", platform, manage, h.CreateExpress)
+	r.PUT("/express/:id", platform, manage, h.UpdateExpress)
+	r.DELETE("/express/:id", platform, manage, h.DeleteExpress)
+	r.GET("/city", platform, manage, h.ListCity)
+	r.POST("/city/resync", platform, manage, h.ResyncCity)
 }
 
 func (h *Handler) ListExpress(c *gin.Context) {
@@ -87,6 +98,31 @@ func (h *Handler) ListCity(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"list": list})
+}
+
+func (h *Handler) ResyncCity(c *gin.Context) {
+	list, err := h.svc.ListCity(c.Request.Context(), nil)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "读取城市数据失败")
+		return
+	}
+	err = h.adminDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		for _, city := range list {
+			payload, err := json.Marshal(city)
+			if err != nil {
+				return err
+			}
+			if err = tx.Table("qixi_crm_a_outbox").Create(map[string]any{"event_type": platformcityevent.Upserted, "aggregate_type": "city", "aggregate_id": strconv.FormatUint(uint64(city.CityID), 10), "payload": payload, "status": "pending"}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "发布城市投影失败")
+		return
+	}
+	response.OK(c, gin.H{"queued": len(list)})
 }
 
 func writeErr(c *gin.Context, err error) {

@@ -15,6 +15,7 @@ import { $t } from '#/locales';
 import {
   clearEncryptedToken,
   clearLegacyUserSession,
+  setEncryptedRefreshToken,
   setEncryptedToken,
   syncLegacyUserSession,
 } from '#/utils/pte-live-token';
@@ -52,12 +53,14 @@ export const useAuthStore = defineStore('auth', () => {
         codeKey: params.codeKey,
       });
       const accessToken = loginData?.token?.access_token;
-      if (!accessToken) {
-        throw new Error('登录失败：未返回 token');
+      const refreshToken = loginData?.token?.refresh_token;
+      if (!accessToken || !refreshToken) {
+        throw new Error('登录失败：未返回完整 token');
       }
 
       accessStore.setAccessToken(accessToken);
       setEncryptedToken(accessToken);
+      setEncryptedRefreshToken(refreshToken);
       usePlatformUserStore().setToken(accessToken);
       clearPlatformMenuCache();
       syncLegacyUserSession(loginData.user?.account || params.username);

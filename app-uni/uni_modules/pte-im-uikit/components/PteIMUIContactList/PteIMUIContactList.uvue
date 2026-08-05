@@ -14,7 +14,7 @@
 </template>
 
 <script lang="uts">
-import { PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
+import type { PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
 import { PteIMUIContactListController, PteIMUIContactListMode, PteIMUIContactPresentation, PteIMUIKit, PteIMUITheme } from '../../utssdk/PteIMUIKitFacade.uts'
 import PteIMUIAvatar from '../PteIMUIAvatar/PteIMUIAvatar.uvue'
 

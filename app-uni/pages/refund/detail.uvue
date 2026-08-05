@@ -1,17 +1,34 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 
-type Refund = { refund_order_id: number; refund_order_sn: string; refund_price: number; refund_message: string; fail_message: string; status: number }
+type Refund = { refund_order_id: number; refund_order_sn: string; refund_price: number; refund_message: string; fail_message: string; refund_type: number; status: number; status_code: string }
 const item = ref<Refund | null>(null)
 const id = ref(0)
 const submitting = ref(false)
 
-function statusText(status: number): string { if (status == 0) return '待审核'; if (status == 1) return '待退货'; if (status == 2) return '待收货'; if (status == 3) return '已退款'; if (status == 4) return '平台介入'; if (status == -1) return '已拒绝'; if (status == -2) return '已取消'; return `状态 ${status}` }
+function hasRefund(): boolean { return item.value != null }
+function refundStatus(): string { const refund = item.value; return refund == null ? '售后信息加载中' : statusText(refund.status, refund.status_code) }
+function refundSN(): string { const refund = item.value; return refund == null ? '--' : refund.refund_order_sn }
+function refundTypeText(): string { const refund = item.value; return refund != null && refund.refund_type == 2 ? '退货退款' : '仅退款' }
+function refundPrice(): number { const refund = item.value; return refund == null ? 0 : refund.refund_price }
+function refundMessage(): string { const refund = item.value; return refund == null ? '--' : refund.refund_message }
+function refundFailMessage(): string { const refund = item.value; return refund == null ? '-' : refund.fail_message }
+function hasRefundFailMessage(): boolean { return refundFailMessage().length > 0 }
+function awaitingReturn(): boolean { const refund = item.value; return refund != null && refund.status_code == 'awaiting_return' }
+function canAskPlatformCurrent(): boolean { const refund = item.value; return refund != null && canAskPlatform(refund) }
+function canCancelCurrent(): boolean { const refund = item.value; return refund != null && canCancel(refund) }
+function canShowActions(): boolean { return canAskPlatformCurrent() || canCancelCurrent() }
+function goShipmentCurrent(): void { const refund = item.value; if (refund != null) goShipment(refund) }
+function actionCurrent(suffix: string, success: string): void { const refund = item.value; if (refund != null) action('/refunds/' + refund.refund_order_id.toString() + suffix, success) }
+function statusText(status: number, statusCode: string): string { if (statusCode == 'applied') return '待审核'; if (statusCode == 'awaiting_return') return '待退货'; if (statusCode == 'awaiting_receipt') return '待收货'; if (statusCode == 'merchant_handling') return '商家处理中'; if (statusCode == 'refunding') return '退款处理中'; if (statusCode == 'platform_intervene') return '平台介入'; if (statusCode == 'refunded') return '已退款'; if (statusCode == 'rejected') return '已拒绝'; if (statusCode == 'cancelled') return '已取消'; if (status == 0) return '待审核'; if (status == 1) return '待退货'; if (status == 2) return '待收货'; if (status == 3) return '已退款'; if (status == 4) return '平台介入'; if (status == -1) return '已拒绝'; if (status == -2) return '已取消'; return '状态 ' + status }
+function canAskPlatform(value: Refund): boolean { return value.status_code == 'applied' || value.status_code == 'merchant_handling' || value.status_code == 'awaiting_return' || value.status_code == 'awaiting_receipt' || value.status == 0 || value.status == 1 || value.status == 2 }
+function canCancel(value: Refund): boolean { return value.status_code == 'applied' || value.status_code == 'awaiting_return' || value.status_code == 'merchant_handling' || value.status == 0 || value.status == 1 }
+function goShipment(value: Refund): void { uni.navigateTo({ url: `/pages/refund/logistics?id=${value.refund_order_id}` }) }
 function load(): void { if (id.value == 0) return; appRequest(`/refunds/${id.value}`).then((data) => { item.value = data as Refund }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })) }
 function action(path: string, success: string): void { submitting.value = true; appRequest(path, 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: success, icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '操作失败', icon: 'none' })).finally(() => { submitting.value = false }) }
-onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+onLoad((query) => { id.value = Number(query?.['id'] || 0); load() })
 </script>
 
-<template><view v-if="item != null" class="qx-page"><qx-nav title="售后详情" /><view class="qx-card"><text class="status">{{ statusText(item.status) }}</text><text class="line">售后单号：{{ item.refund_order_sn }}</text><text class="line">退款金额：¥{{ item.refund_price }}</text><text class="line">申请原因：{{ item.refund_message }}</text><text v-if="item.fail_message" class="reject">拒绝原因：{{ item.fail_message }}</text></view><view v-if="item.status == 0" class="footer"><button :loading="submitting" class="plain" @click="action(`/refunds/${item.refund_order_id}/platform`, '已申请平台介入')">申请平台介入</button><button :loading="submitting" class="qx-primary" @click="action(`/refunds/${item.refund_order_id}/cancel`, '已取消申请')">取消申请</button></view></view></template>
+<template><view v-if="hasRefund()" class="qx-page"><qx-nav title="售后详情" /><view class="qx-card"><text class="status">{{ refundStatus() }}</text><text class="line">售后单号：{{ refundSN() }}</text><text class="line">售后类型：{{ refundTypeText() }}</text><text class="line">退款金额：¥{{ refundPrice() }}</text><text class="line">申请原因：{{ refundMessage() }}</text><text v-if="hasRefundFailMessage()" class="reject">拒绝原因：{{ refundFailMessage() }}</text></view><view v-if="awaitingReturn()" class="footer"><button class="qx-primary" @click="goShipmentCurrent">登记退货物流</button></view><view v-else-if="canShowActions()" class="footer"><button v-if="canAskPlatformCurrent()" :loading="submitting" class="plain" @click="actionCurrent('/platform', '已申请平台介入')">申请平台介入</button><button v-if="canCancelCurrent()" :loading="submitting" class="qx-primary" @click="actionCurrent('/cancel', '已取消申请')">取消申请</button></view></view></template>
 
 <style>.status { display: block; color: #d72828; font-size: 20px; font-weight: 700; }.line { display: block; margin-top: 12px; font-size: 14px; }.reject { display: block; margin-top: 12px; color: #f53f3f; font-size: 14px; }.footer { padding: 12px; background-color: #ffffff; display: flex; gap: 10px; }.footer button { flex: 1; border-radius: 22px; font-size: 14px; }.plain { color: #d72828; background-color: #ffffff; border: 1px solid #d72828; }</style>

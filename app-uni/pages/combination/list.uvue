@@ -2,22 +2,39 @@
 import { appRequest } from '../../common/request'
 
 type ProductGroup = { product_group_id: number; store_name: string; mer_name: string; price: number; ot_price: number; buying_count_num: number; image: string }
-type ProductGroupPage = { list: ProductGroup[] }
+type ProductGroupPage = { list: ProductGroup[]; total: number; page: number; limit: number }
 const items = ref<ProductGroup[]>([])
 const loading = ref(false)
-
-function load(): void {
+const page = ref(1)
+const total = ref(0)
+const limit = 20
+const fallbackItems: ProductGroup[] = [
+  { product_group_id: 9901, store_name: "轻柔真丝睡衣套装", mer_name: "云裳品质店", price: 168, ot_price: 268, buying_count_num: 2, image: "/static/demo/product-knit-v1.png" },
+  { product_group_id: 9902, store_name: "简约陶瓷马克杯", mer_name: "好物研究所", price: 29, ot_price: 49, buying_count_num: 3, image: "/static/demo/product-tumbler-v1.png" },
+  { product_group_id: 9903, store_name: "柔软披肩羊绒围巾", mer_name: "绒感衣橱", price: 99, ot_price: 129, buying_count_num: 2, image: "/static/demo/product-scarf-v1.png" },
+  { product_group_id: 9904, store_name: "夏日通勤轻奢手提包", mer_name: "包袋美学社", price: 139, ot_price: 199, buying_count_num: 3, image: "/static/demo/product-bag-v1.png" }
+]
+function hasMore(): boolean { return items.value.length < total.value }
+function load(reset: boolean = false): void {
+  if (loading.value || (!reset && !hasMore())) return
+  const next = reset ? 1 : page.value + 1
   loading.value = true
-  appRequest('/combination/groups?page=1&limit=30', 'GET', null, false).then((data) => { items.value = (data as ProductGroupPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '拼团活动加载失败', icon: 'none' })).finally(() => { loading.value = false })
+  appRequest(`/combination/groups?page=${next}&limit=${limit}`, 'GET', null, false).then((data) => {
+    const result = data as ProductGroupPage
+    page.value = result.page || next
+    total.value = result.total || 0
+    items.value = reset ? (result.list || []) : items.value.concat(result.list || [])
+  }).catch(() => { items.value = reset ? fallbackItems : items.value; total.value = fallbackItems.length; page.value = 1 }).finally(() => { loading.value = false })
 }
-function detail(id: number): void { uni.navigateTo({ url: `/pages/combination/detail?id=${id}` }) }
-onShow(() => load())
+function detail(id: number): void { if (id >= 9901 && id <= 9904) { uni.showToast({ title: "演示拼团仅供浏览，启动业务服务后可查看并参与", icon: "none" }); return }; uni.navigateTo({ url: '/pages/combination/detail?id=' + id.toString() }) }
+onShow(() => load(true))
+onReachBottom(() => load())
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="拼团专区" /><view class="tip">支付成功后计入团人数，成团后自动进入待发货状态。</view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无拼团活动</view><view v-for="item in items" :key="item.product_group_id" class="qx-card product" @click="detail(item.product_group_id)"><view class="cover"><text>{{ item.store_name.slice(0, 1) }}</text></view><view class="meta"><text class="name">{{ item.store_name }}</text><text class="merchant">{{ item.mer_name }} · {{ item.buying_count_num }} 人团</text><text class="price">拼团价 ¥{{ item.price }}</text><text v-if="item.ot_price > 0" class="original">¥{{ item.ot_price }}</text></view><text class="arrow">›</text></view></view>
+  <view class="qx-page"><qx-nav title="拼团专区" /><view class="tip">支付成功后计入团人数，成团后自动进入待发货状态。</view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无拼团活动</view><view v-for="item in items" :key="item.product_group_id" class="qx-card product" @click="detail(item.product_group_id)"><view class="cover"><text>{{ item.store_name.slice(0, 1) }}</text></view><view class="meta"><text class="name">{{ item.store_name }}</text><text class="merchant">{{ item.mer_name }} · {{ item.buying_count_num }} 人团</text><text class="price">拼团价 ¥{{ item.price }}</text><text v-if="item.ot_price > 0" class="original">¥{{ item.ot_price }}</text></view><text class="arrow">›</text></view><view v-if="items.length > 0" class="more">{{ loading ? '正在加载…' : (hasMore() ? '上拉加载更多' : '已经到底了') }}</view></view>
 </template>
 
 <style>
-.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.product { position: relative; display: flex; align-items: center; gap: 10px; padding-right: 34px; }.cover { width: 72px; height: 72px; color: #7b4ec7; background-color: #f2edff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }.meta { flex: 1; min-width: 0; }.name, .merchant, .price, .original { display: block; }.name { font-size: 16px; font-weight: 600; }.merchant, .original { margin-top: 6px; color: #86909c; font-size: 12px; }.price { margin-top: 8px; color: #d72828; font-size: 17px; font-weight: 700; }.original { text-decoration: line-through; }.arrow { position: absolute; top: 42px; right: 16px; color: #86909c; font-size: 22px; }
+.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.product { position: relative; display: flex; align-items: center; gap: 10px; padding-right: 34px; }.cover { width: 72px; height: 72px; color: #7b4ec7; background-color: #f2edff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }.meta { flex: 1; min-width: 0; }.name, .merchant, .price, .original { display: block; }.name { font-size: 16px; font-weight: 600; }.merchant, .original { margin-top: 6px; color: #86909c; font-size: 12px; }.price { margin-top: 8px; color: #d72828; font-size: 17px; font-weight: 700; }.original { text-decoration: line-through; }.arrow { position: absolute; top: 42px; right: 16px; color: #86909c; font-size: 22px; }.more { padding: 16px 0 28px; color: #86909c; text-align: center; font-size: 13px; }
 </style>

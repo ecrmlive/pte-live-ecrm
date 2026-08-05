@@ -9,8 +9,13 @@ const order = ref<GroupOrder | null>(null)
 const channels = ref<PaymentChannel[]>([])
 const submitting = ref(false)
 
+function hasOrder(): boolean { return order.value != null }
+function orderPrice(): number { const current = order.value; return current == null ? 0 : current.pay_price }
+function orderSN(): string { const current = order.value; return current == null ? '--' : current.group_order_sn }
+function orderCount(): number { const current = order.value; return current == null ? 0 : current.total_num }
 function channelName(channel: string): string {
   if (channel == 'wechat') return '微信支付'
+  if (channel == 'balance') return '余额支付'
   if (channel == 'alipay') return '支付宝支付'
   return channel
 }
@@ -24,15 +29,60 @@ function pay(channel: string): void {
   submitting.value = true
   appRequest(`/order/pay/${orderID.value}`, 'POST', { pay_type: channel } as UTSJSONObject).then((data) => {
     const result = data as UTSJSONObject
+    if (channel == 'wechat' && result['payment_mode'] == 'jsapi') {
+      requestWechatPayment(result)
+      return
+    }
+    if (channel == 'wechat' && result['payment_mode'] == 'mweb') {
+      requestWechatH5Payment(result)
+      return
+    }
     uni.redirectTo({ url: `/pages/order/result?id=${orderID.value}&paid=${result['paid'] as number || 0}` })
   }).catch((error) => uni.showToast({ title: error.message || '支付发起失败', icon: 'none' })).finally(() => { submitting.value = false })
 }
 
-onLoad((query) => { orderID.value = Number(query['id'] || 0); load() })
+function requestWechatH5Payment(result: UTSJSONObject): void {
+  const raw = String(result['mweb_url'] || '')
+  if (raw.length == 0) { uni.showToast({ title: '微信 H5 支付链接无效', icon: 'none' }); return }
+  // #ifdef H5
+  const browser: any = globalThis as any
+  const location = browser.location
+  if (location == null || typeof location.assign != 'function') { uni.showToast({ title: '当前浏览器无法发起微信 H5 支付', icon: 'none' }); return }
+  const redirect = String(location.origin || '') + '/#/pages/order/result?id=' + orderID.value.toString() + '&paid=0'
+  const delimiter = raw.indexOf('?') >= 0 ? '&' : '?'
+  location.assign(raw + delimiter + 'redirect_url=' + encodeURIComponent(redirect))
+  // #endif
+  // #ifndef H5
+  uni.showToast({ title: '当前端不支持微信 H5 支付', icon: 'none' })
+  // #endif
+}
+
+function requestWechatPayment(result: UTSJSONObject): void {
+  // #ifdef MP-WEIXIN
+  uni.requestPayment({
+    provider: 'wxpay',
+    timeStamp: result['timeStamp'] as string,
+    nonceStr: result['nonceStr'] as string,
+    package: result['package'] as string,
+    signType: result['signType'] as string,
+    paySign: result['paySign'] as string,
+    success: () => { uni.redirectTo({ url: `/pages/order/result?id=${orderID.value}&paid=0` }) },
+    fail: (error) => {
+      const message = error.errMsg || '已取消微信支付'
+      uni.showToast({ title: message, icon: 'none' })
+    },
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '当前端不支持微信小程序支付', icon: 'none' })
+  // #endif
+}
+
+onLoad((query) => { orderID.value = Number(query?.['id'] || 0); load() })
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="收银台" /><view v-if="order != null" class="pay-card"><text class="label">订单金额</text><text class="price">¥{{ order.pay_price }}</text><text class="meta">订单号：{{ order.group_order_sn }}</text><text class="meta">共 {{ order.total_num }} 件商品</text></view><view class="qx-card"><text class="section-title">选择支付方式</text><view v-for="item in channels" :key="item.channel" class="channel" :class="item.enabled ? '' : 'channel--disabled'" @click="item.enabled ? pay(item.channel) : null"><view><text class="channel-name">{{ channelName(item.channel) }}</text><text class="channel-hint">{{ item.enabled ? '安全支付' : '当前店铺暂未启用' }}</text></view><text class="channel-arrow">›</text></view><text v-if="channels.length == 0" class="empty">暂无可用支付方式，请联系店铺客服。</text></view></view>
+  <view class="qx-page"><qx-nav title="收银台" /><view v-if="hasOrder()" class="pay-card"><text class="label">订单金额</text><text class="price">¥{{ orderPrice() }}</text><text class="meta">订单号：{{ orderSN() }}</text><text class="meta">共 {{ orderCount() }} 件商品</text></view><view class="qx-card"><text class="section-title">选择支付方式</text><view v-for="item in channels" :key="item.channel" class="channel" :class="item.enabled ? '' : 'channel--disabled'" @click="item.enabled ? pay(item.channel) : null"><view><text class="channel-name">{{ channelName(item.channel) }}</text><text class="channel-hint">{{ item.enabled ? '安全支付' : '当前店铺暂未启用' }}</text></view><text class="channel-arrow">›</text></view><text v-if="channels.length == 0" class="empty">暂无可用支付方式，请联系店铺客服。</text></view></view>
 </template>
 
 <style>

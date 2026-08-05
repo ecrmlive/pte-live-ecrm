@@ -28,7 +28,7 @@ type ProductGroup struct {
 	MerName   string  `gorm:"-" json:"mer_name,omitempty"`
 }
 
-func (ProductGroup) TableName() string { return "qixi_m_admin_store_product_group" }
+func (ProductGroup) TableName() string { return "qixi_crm_b_combination_group" }
 
 type Buying struct {
 	GroupBuyingID  uint      `gorm:"column:group_buying_id;primaryKey" json:"group_buying_id"`
@@ -46,7 +46,7 @@ type Buying struct {
 	Remain  int      `gorm:"-" json:"remain"`
 }
 
-func (Buying) TableName() string { return "qixi_m_app_store_product_group_buying" }
+func (Buying) TableName() string { return "qixi_crm_b_combination_buying" }
 
 type Member struct {
 	ID             uint      `gorm:"column:id;primaryKey" json:"id"`
@@ -63,7 +63,7 @@ type Member struct {
 	IsLeader       int8      `gorm:"column:is_leader" json:"is_leader"`
 }
 
-func (Member) TableName() string { return "qixi_m_app_store_product_group_user" }
+func (Member) TableName() string { return "qixi_crm_b_combination_member" }
 
 type SaveInput struct {
 	ProductID      uint    `json:"product_id"`

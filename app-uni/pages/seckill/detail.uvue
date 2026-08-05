@@ -1,0 +1,31 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Active = { name: string; product_id: number; mer_name: string; seckill_price: number; price: number; in_window: boolean; start_day: string; end_day: string }
+const item = ref<Active | null>(null)
+
+function hasActive(): boolean { return item.value != null }
+function activeName(): string { const active = item.value; return active == null ? '秒杀活动加载中' : active.name }
+function activeMeta(): string { const active = item.value; return active == null ? '--' : active.mer_name + ' · ' + (active.in_window ? '抢购中' : '未开场') }
+function activePrice(): string { const active = item.value; return active == null ? '¥0.00' : '秒杀价 ¥' + active.seckill_price.toString() + ' · 原价 ¥' + active.price.toString() }
+function activeDate(): string { const active = item.value; return active == null ? '--' : active.start_day + ' 至 ' + active.end_day }
+function load(id: number): void {
+  appRequest("/seckill/actives/" + id, "GET", null, false).then((data) => {
+    item.value = data as Active
+  }).catch((error) => uni.showToast({ title: error.message || "秒杀活动加载失败", icon: "none" }))
+}
+function goods(): void {
+  if (item.value != null) uni.navigateTo({ url: "/pages/goods/detail?id=" + item.value.product_id })
+}
+onLoad((query) => load(Number(query?.["id"] || 0)))
+</script>
+<template>
+  <view class="qx-page"><qx-nav title="秒杀详情"/>
+    <view v-if="hasActive()" class="qx-card">
+      <text class="title">{{ activeName() }}</text><text class="sub">{{ activeMeta() }}</text>
+      <text class="price">{{ activePrice() }}</text><text class="sub">{{ activeDate() }}</text>
+      <button class="qx-primary" @click="goods">查看商品</button>
+    </view>
+  </view>
+</template>
+<style>.title,.sub,.price{display:block}.title{font-size:18px;font-weight:600}.sub{margin-top:8px;color:#86909c;font-size:13px}.price{margin-top:12px;color:#d72828;font-size:19px;font-weight:700}.qx-primary{margin-top:18px}</style>

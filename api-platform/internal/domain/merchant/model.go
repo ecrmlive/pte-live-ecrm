@@ -25,7 +25,10 @@ type SvipConfig struct {
 	SvipCouponMerge int8 `json:"svip_coupon_merge"`
 }
 
-func (Merchant) TableName() string { return "qixi_m_admin_merchant" }
+// Merchant is the platform-owned, event-fed merchant supervision projection.
+// It must never point at the legacy qixi_m_* namespace or a merchant-owned
+// qixi_crm_m_* table.
+func (Merchant) TableName() string { return "qixi_crm_a_merchant_view" }
 
 type Category struct {
 	MerchantCategoryID uint    `gorm:"column:merchant_category_id;primaryKey" json:"merchant_category_id"`
@@ -33,27 +36,29 @@ type Category struct {
 	CategoryName       string  `gorm:"column:category_name" json:"category_name"`
 }
 
-func (Category) TableName() string { return "qixi_m_admin_merchant_category" }
+func (Category) TableName() string { return "qixi_crm_a_merchant_category" }
 
 type Intention struct {
-	MerIntentionID     uint       `gorm:"column:mer_intention_id;primaryKey" json:"mer_intention_id"`
-	UID                uint       `gorm:"column:uid" json:"uid"`
-	Phone              string     `gorm:"column:phone" json:"phone"`
-	MerName            string     `gorm:"column:mer_name" json:"mer_name"`
-	Name               string     `gorm:"column:name" json:"name"`
-	CreateTime         *time.Time `gorm:"column:create_time" json:"create_time"`
-	Status             int8       `gorm:"column:status" json:"status"`
-	FailMsg            string     `gorm:"column:fail_msg" json:"fail_msg"`
-	IsDel              int8       `gorm:"column:is_del" json:"-"`
-	Mark               string     `gorm:"column:mark" json:"mark"`
-	MerID              uint       `gorm:"column:mer_id" json:"mer_id"`
-	Images             string     `gorm:"column:images" json:"images"`
-	MerchantCategoryID uint       `gorm:"column:merchant_category_id" json:"merchant_category_id"`
-	MerTypeID          uint       `gorm:"column:mer_type_id" json:"mer_type_id"`
-	CircleID           uint       `gorm:"column:circle_id" json:"circle_id"`
+	MerIntentionID      uint       `gorm:"column:mer_intention_id;primaryKey" json:"mer_intention_id"`
+	SourceApplicationID uint       `gorm:"column:source_application_id" json:"-"`
+	UID                 uint       `gorm:"column:uid" json:"uid"`
+	Phone               string     `gorm:"column:phone" json:"phone"`
+	MerName             string     `gorm:"column:mer_name" json:"mer_name"`
+	Name                string     `gorm:"column:name" json:"name"`
+	CreateTime          *time.Time `gorm:"column:create_time" json:"create_time"`
+	Status              int8       `gorm:"column:status" json:"status"`
+	FailMsg             string     `gorm:"column:fail_msg" json:"fail_msg"`
+	IsDel               int8       `gorm:"column:is_del" json:"-"`
+	Mark                string     `gorm:"column:mark" json:"mark"`
+	MerID               uint       `gorm:"column:mer_id" json:"mer_id"`
+	Images              string     `gorm:"column:images" json:"images"`
+	MerchantCategoryID  uint       `gorm:"column:merchant_category_id" json:"merchant_category_id"`
+	MerTypeID           uint       `gorm:"column:mer_type_id" json:"mer_type_id"`
+	CircleID            uint       `gorm:"column:circle_id" json:"circle_id"`
 }
 
-func (Intention) TableName() string { return "qixi_m_admin_merchant_intention" }
+// Intention is the platform projection of a business-side merchant application.
+func (Intention) TableName() string { return "qixi_crm_a_merchant_application" }
 
 const (
 	IntentionPending  int8 = 0

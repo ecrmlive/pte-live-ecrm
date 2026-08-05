@@ -19,7 +19,6 @@ const total = ref(0);
 const detailOpen = ref(false);
 const rejectOpen = ref(false);
 const current = ref<Room>();
-const isPlatformOperator = ref(false);
 const canManageBroadcast = ref(false);
 const query = reactive({ limit: 20, page: 1 });
 const rejectForm = reactive({ refusal: '' });
@@ -115,14 +114,13 @@ async function setVisibility(row: Room, isShow: 0 | 1) {
 
 onMounted(async () => {
   const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
-  isPlatformOperator.value = profile.is_agent !== 1;
-  canManageBroadcast.value = isPlatformOperator.value && permissions.includes('broadcast/audit');
+  canManageBroadcast.value = (profile.roles.includes('platform') || profile.roles.includes('operations')) && permissions.includes('marketing.broadcast.audit');
   await load();
 });
 </script>
 
 <template>
-  <Page title="直播监管" description="有“直播审房”按钮权限的平台账号可审核、驳回及显示/隐藏直播间；无权限账号仅查看。">
+  <Page title="直播监管" description="拥有统一后台直播审核权限的账号可审核、驳回及显示/隐藏直播间；无权限账号仅查看。">
     <el-card shadow="never">
       <el-table v-loading="loading" :data="rows" row-key="broadcast_room_id">
         <el-table-column label="房间" min-width="180" prop="name" show-overflow-tooltip />

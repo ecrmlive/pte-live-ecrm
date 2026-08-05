@@ -1,0 +1,5 @@
+# 本地或 CI 在构建期注入；不要提交真实 Token、私钥、证书或带凭据的 URL。
+application:
+  api_base_url: https://api.example.invalid/api/app/v1
+  login_channel: harmony
+  request_timeout_ms: 10000

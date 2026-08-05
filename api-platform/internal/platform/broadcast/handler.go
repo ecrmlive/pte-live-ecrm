@@ -5,26 +5,26 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/broadcast"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc *broadcast.Service
-	id  *identity.Service
+	svc     *broadcast.Service
+	adminDB *gorm.DB
 }
 
-func NewHandler(svc *broadcast.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *broadcast.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/broadcast/rooms", h.List)
 	r.GET("/broadcast/rooms/:id", h.Get)
-	r.PUT("/broadcast/rooms/:id/status", middleware.RequirePlatformMenu(h.id, identity.PlatPermBroadcastAudit), h.UpdateStatus)
+	r.PUT("/broadcast/rooms/:id/status", middleware.RequireAdminRoles("platform", "operations"), middleware.RequireAdminMenu(h.adminDB, "marketing.broadcast.audit"), h.UpdateStatus)
 }
 
 func (h *Handler) List(c *gin.Context) {

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	adminauth "github.com/crmlive/pte-live-ecrm/api-platform/internal/admin/auth"
 	admincustomerservice "github.com/crmlive/pte-live-ecrm/api-platform/internal/admin/customerservice"
 	admindashboard "github.com/crmlive/pte-live-ecrm/api-platform/internal/admin/dashboard"
@@ -23,18 +22,21 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/content"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/cs"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/diy"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/finance"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/logistics"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/merchant"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/presell"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/productmeta"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/reservation"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/seckill"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/trade"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/usertag"
+	commentmoderationevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/commentmoderation"
+	feedbackmoderationevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/feedbackmoderation"
 	merchantapplicationevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantapplication"
+	merchantonboardingevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantonboarding"
+	merchantsettlementevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantsettlement"
+	platformcityevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/platformcity"
 	platformdiyevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/platformdiy"
 	articlepersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/article"
 	assistpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/assist"
@@ -49,12 +51,10 @@ import (
 	contentpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/content"
 	cspersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/cs"
 	diypersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/diy"
-	financepersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/finance"
 	identitypersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/identity"
 	logisticspersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/logistics"
 	merchantpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/merchant"
 	presellpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/presell"
-	productmetapersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/productmeta"
 	promotionpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/promotion"
 	reservationpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/reservation"
 	seckillpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/seckill"
@@ -74,22 +74,40 @@ import (
 	platformcircle "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/circle"
 	platformcloudconfig "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/cloudconfig"
 	platformcombination "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/combination"
+	platformcomment "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/comment"
 	platformcommunity "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/community"
 	platformcontent "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/content"
 	platformcoupon "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/coupon"
 	platformdiy "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/diy"
-	platformfinance "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/finance"
+	platformfeedback "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/feedback"
+	platforminvoice "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/invoice"
 	platformlogistics "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/logistics"
+	platformmemberlevel "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/memberlevel"
 	platformmerchant "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchant"
+	platformmerchantdeposit "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchantdeposit"
+	platformmerchanttype "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchanttype"
 	nativecatalog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativecatalog"
+	platformnativedistribution "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativedistribution"
+	platformnativeledger "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeledger"
 	platformnativeorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeorder"
 	platformnativerefund "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativerefund"
+	platformnativesettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativesettlement"
+	platformnativewithdraw "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativewithdraw"
+	platformoperationlog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/operationlog"
+	platformpoints "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/points"
 	platformpresell "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/presell"
 	platformproductmeta "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/productmeta"
+	platformprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/profitsharing"
+	platformrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/recharge"
 	platformseckill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/seckill"
+	platformstoregroup "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storegroup"
 	platformsvip "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svip"
+	platformsvipinterest "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svipinterest"
+	platformuserlist "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userlist"
+	platformusersearch "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/usersearch"
 	platformusertag "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/usertag"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/serviceportal"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -110,12 +128,49 @@ func main() {
 		log.Fatalf("mysql: %v", err)
 	}
 	platformdiyevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	platformcityevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	merchantapplicationevent.StartReviewOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
 	merchantApplicationProjection, err := merchantapplicationevent.Start(context.Background(), gdb, cfg.NATS.URL)
 	if err != nil {
 		log.Printf("merchant application projection subscriber unavailable: %v", err)
 	}
 	if merchantApplicationProjection != nil {
 		defer merchantApplicationProjection.Close()
+	}
+	merchantSettlementProjection, err := merchantsettlementevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant settlement projection subscriber unavailable: %v", err)
+	}
+	if merchantSettlementProjection != nil {
+		defer merchantSettlementProjection.Close()
+	}
+	merchantSettlementCommands, err := merchantsettlementevent.NewCommandClient(cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant settlement command client unavailable: %v", err)
+	}
+	if merchantSettlementCommands != nil {
+		defer merchantSettlementCommands.Close()
+	}
+	productCommentCommands, err := commentmoderationevent.New(cfg.NATS.URL)
+	if err != nil {
+		log.Printf("product comment moderation command client unavailable: %v", err)
+	}
+	if productCommentCommands != nil {
+		defer productCommentCommands.Close()
+	}
+	feedbackCommands, err := feedbackmoderationevent.New(cfg.NATS.URL)
+	if err != nil {
+		log.Printf("feedback moderation command client unavailable: %v", err)
+	}
+	if feedbackCommands != nil {
+		defer feedbackCommands.Close()
+	}
+	merchantOnboarding, err := merchantonboardingevent.New(cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant onboarding command client unavailable: %v", err)
+	}
+	if merchantOnboarding != nil {
+		defer merchantOnboarding.Close()
 	}
 	businessDSN, err := cfg.DSNFor(config.DatabaseBusiness)
 	if err != nil {
@@ -141,7 +196,6 @@ func main() {
 	circleSvc := circle.NewService(circlepersist.NewRepo(gdb))
 	promoSvc := promotion.NewService(promotionpersist.NewStoreAdapter(promotionpersist.NewRepo(gdb)))
 	tradeSvc := trade.NewService(tradepersist.NewStoreAdapter(tradepersist.NewRepo(gdb)), cartSvc, promoSvc)
-	financeSvc := finance.NewService(financepersist.NewStoreAdapter(financepersist.NewRepo(gdb)))
 	contentSvc := content.NewService(contentpersist.NewRepo(gdb))
 	cloudConfigSvc, err := cloudconfig.NewService(cloudconfigpersist.NewRepo(gdb), cfg.JWT.Secret)
 	if err != nil {
@@ -152,13 +206,13 @@ func main() {
 		log.Fatalf("payment config projection crypto: %v", err)
 	}
 	diySvc := diy.NewService(diypersist.NewRepo(gdb))
-	seckillSvc := seckill.NewService(seckillpersist.NewRepo(gdb))
-	comboSvc := combination.NewService(combinationpersist.NewRepo(gdb))
-	presellSvc := presell.NewService(presellpersist.NewRepo(gdb))
+	seckillSvc := seckill.NewService(seckillpersist.NewRepo(businessDB))
+	comboSvc := combination.NewService(combinationpersist.NewRepo(businessDB))
+	presellSvc := presell.NewService(presellpersist.NewRepo(businessDB))
 	reserveSvc := reservation.NewService(reservationpersist.NewRepo(gdb))
-	broadcastSvc := broadcast.NewService(broadcastpersist.NewRepo(gdb))
-	communitySvc := community.NewService(communitypersist.NewRepo(gdb))
-	assistSvc := assist.NewService(assistpersist.NewRepo(gdb))
+	broadcastSvc := broadcast.NewService(broadcastpersist.NewRepo(businessDB))
+	communitySvc := community.NewService(communitypersist.NewRepo(businessDB))
+	assistSvc := assist.NewService(assistpersist.NewRepo(businessDB))
 	attachSvc := attachment.NewService(attachmentpersist.NewRepo(gdb))
 	csSvc := cs.NewService(cspersist.NewRepo(gdb))
 	chatSvc := chat.NewService(chatpersist.NewRepo(gdb), chat.IMSettings{
@@ -166,9 +220,8 @@ func main() {
 		AppID: cfg.IM.AppID, Token: cfg.IM.IntegrationToken, Secret: cfg.JWT.Secret,
 	}, cloudConfigSvc)
 	logisticsSvc := logistics.NewService(logisticspersist.NewRepo(gdb))
-	productMetaSvc := productmeta.NewService(productmetapersist.NewRepo(gdb))
 	articleSvc := article.NewService(articlepersist.NewRepo(gdb))
-	userTagSvc := usertag.NewService(usertagpersist.NewRepo(gdb))
+	userTagSvc := usertag.NewService(usertagpersist.NewRepo(businessDB))
 	// 上传只使用后台加密配置；未启用或未补齐密钥时明确拒绝上传。
 	fileUp := upload.DatabaseCOS{Resolver: cloudConfigSvc}
 	tradeSvc.SetSeckill(seckillSvc)
@@ -179,29 +232,48 @@ func main() {
 
 	platformAuthH := adminauth.NewHandler(gdb, jwtMgr)
 	platformCustomerServiceH := admincustomerservice.NewHandler(gdb, businessDB)
-	platformDashboardH := admindashboard.NewHandler(gdb, businessDB)
-	platformMerH := platformmerchant.NewHandler(merSvc, idSvc)
-	platformCircleH := platformcircle.NewHandler(circleSvc, idSvc)
-	platformCatH := nativecatalog.NewHandler(gdb, merchantDB, businessDB, idSvc)
-	platformOrderH := platformnativeorder.NewHandler(businessDB, merchantDB, idSvc)
-	platformRefundH := platformnativerefund.NewHandler(businessDB, merchantDB, idSvc)
-	platformFinanceH := platformfinance.NewHandler(financeSvc, idSvc)
-	platformCouponH := platformcoupon.NewHandler(promoSvc, idSvc)
-	platformContentH := platformcontent.NewHandler(contentSvc, idSvc)
-	platformDiyH := platformdiy.NewHandler(diySvc, idSvc)
-	platformSeckillH := platformseckill.NewHandler(seckillSvc)
-	platformComboH := platformcombination.NewHandler(comboSvc)
-	platformPresellH := platformpresell.NewHandler(presellSvc)
-	platformBroadcastH := platformbroadcast.NewHandler(broadcastSvc, idSvc)
-	platformCommunityH := platformcommunity.NewHandler(communitySvc, idSvc)
-	platformAssistH := platformassist.NewHandler(assistSvc)
-	platformAttachH := platformattachment.NewHandler(attachSvc, idSvc, fileUp)
-	platformSvipH := platformsvip.NewHandler(idSvc)
+	platformDashboardH := admindashboard.NewHandler(gdb, businessDB, merchantDB)
+	platformMerH := platformmerchant.NewHandler(merSvc, idSvc, gdb, merchantOnboarding)
+	platformMemberLevelH := platformmemberlevel.New(businessDB, gdb)
+	platformMerchantTypeH := platformmerchanttype.NewHandler(gdb)
+	platformMerchantDepositH := platformmerchantdeposit.NewHandler(gdb)
+	platformProfitsharingH := platformprofitsharing.NewHandler(gdb)
+	platformStoreGroupH := platformstoregroup.NewHandler(gdb)
+	platformCircleH := platformcircle.NewHandler(circleSvc, gdb)
+	platformCatH := nativecatalog.NewHandler(gdb, merchantDB, businessDB)
+	platformCatH.StartAuditOutboxDispatcher(context.Background())
+	platformCatH.StartProjectionDispatcher(context.Background())
+	platformOrderH := platformnativeorder.NewHandler(businessDB, merchantDB, gdb)
+	platformRefundH := platformnativerefund.NewHandler(businessDB, merchantDB, gdb)
+	platformFinanceH := platformnativewithdraw.NewHandler(businessDB, gdb)
+	platformLedgerH := platformnativeledger.NewHandler(businessDB, gdb)
+	platformDistributionH := platformnativedistribution.NewHandler(businessDB, gdb)
+	platformSettlementH := platformnativesettlement.NewHandler(gdb, merchantSettlementCommands)
+	platformCouponH := platformcoupon.NewHandler(promoSvc, gdb)
+	platformContentH := platformcontent.NewHandler(contentSvc, gdb)
+	platformDiyH := platformdiy.NewHandler(diySvc, gdb)
+	platformSeckillH := platformseckill.NewHandler(seckillSvc, gdb)
+	platformComboH := platformcombination.NewHandler(comboSvc, gdb)
+	platformPresellH := platformpresell.NewHandler(presellSvc, gdb)
+	platformBroadcastH := platformbroadcast.NewHandler(broadcastSvc, gdb)
+	platformCommunityH := platformcommunity.NewHandler(communitySvc, gdb)
+	platformAssistH := platformassist.NewHandler(assistSvc, gdb)
+	platformAttachH := platformattachment.NewHandler(attachSvc, gdb, fileUp)
+	platformSvipH := platformsvip.NewHandler(idSvc, gdb, businessDB)
+	platformSvipInterestH := platformsvipinterest.New(businessDB, gdb)
 	platformCloudConfigH := platformcloudconfig.NewHandler(cloudConfigSvc, idSvc, paymentConfigStore)
-	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc)
-	platformProductMetaH := platformproductmeta.NewHandler(productMetaSvc)
-	platformArticleH := platformarticle.NewHandler(articleSvc)
+	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc, gdb)
+	platformProductMetaH := platformproductmeta.NewHandler(gdb)
+	platformCommentH := platformcomment.NewHandler(businessDB, gdb, productCommentCommands)
+	platformFeedbackH := platformfeedback.New(businessDB, gdb, feedbackCommands)
+	platformInvoiceH := platforminvoice.New(businessDB, gdb)
+	platformArticleH := platformarticle.NewHandler(articleSvc, gdb)
 	platformUserTagH := platformusertag.NewHandler(userTagSvc, idSvc)
+	platformUserListH := platformuserlist.New(businessDB, gdb)
+	platformUserSearchH := platformusersearch.New(businessDB, gdb)
+	platformOperationLogH := platformoperationlog.New(gdb)
+	platformPointsH := platformpoints.NewHandler(businessDB, gdb)
+	platformRechargeH := platformrecharge.NewHandler(businessDB, gdb)
 	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 
 	gin.SetMode(cfg.Server.Mode)
@@ -219,17 +291,28 @@ func main() {
 	platformAuthed.Use(
 		middleware.JWTRequired(jwtMgr, authjwt.PortalPlatform),
 		middleware.RequireAdminConsole(),
+		middleware.RequireAdminSession(gdb),
+		middleware.RestrictRoleConsole(),
 		middleware.RestrictRegionConsole(),
+		middleware.AuditAdminMutation(gdb),
 	)
 	platformAuthH.Register(platformPublic, platformAuthed)
 	platformAuthH.RegisterSettings(platformAuthed)
 	platformDashboardH.Register(platformAuthed)
 	platformMerH.Register(platformAuthed)
+	platformMemberLevelH.Register(platformAuthed)
+	platformMerchantTypeH.Register(platformAuthed)
+	platformMerchantDepositH.Register(platformAuthed)
+	platformProfitsharingH.Register(platformAuthed)
+	platformStoreGroupH.Register(platformAuthed)
 	platformCircleH.Register(platformAuthed)
 	platformCatH.Register(platformAuthed)
 	platformOrderH.Register(platformAuthed)
 	platformRefundH.Register(platformAuthed)
 	platformFinanceH.Register(platformAuthed)
+	platformLedgerH.Register(platformAuthed)
+	platformDistributionH.Register(platformAuthed)
+	platformSettlementH.Register(platformAuthed)
 	platformCouponH.Register(platformAuthed)
 	platformContentH.Register(platformAuthed)
 	platformDiyH.Register(platformAuthed)
@@ -241,11 +324,20 @@ func main() {
 	platformAssistH.Register(platformAuthed)
 	platformAttachH.Register(platformAuthed)
 	platformSvipH.Register(platformAuthed)
+	platformSvipInterestH.Register(platformAuthed)
 	platformCloudConfigH.Register(platformAuthed)
 	platformLogisticsH.Register(platformAuthed)
 	platformProductMetaH.Register(platformAuthed)
+	platformCommentH.Register(platformAuthed)
+	platformFeedbackH.Register(platformAuthed)
+	platformInvoiceH.Register(platformAuthed)
 	platformArticleH.Register(platformAuthed)
 	platformUserTagH.Register(platformAuthed)
+	platformUserListH.Register(platformAuthed)
+	platformUserSearchH.Register(platformAuthed)
+	platformOperationLogH.Register(platformAuthed)
+	platformPointsH.Register(platformAuthed)
+	platformRechargeH.Register(platformAuthed)
 	platformCustomerServiceH.Register(platformAuthed)
 
 	servicePublic := r.Group("/api/service/v1")

@@ -49,6 +49,37 @@ func TestNativePrepaySignsAndReturnsCodeURL(t *testing.T) {
 	}
 }
 
+func TestJSAPIPrepayReturnsMiniProgramParameters(t *testing.T) {
+	_, privatePEM, _ := testKeys(t)
+	now := time.Date(2026, 8, 1, 8, 0, 0, 0, time.UTC)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v3/pay/transactions/jsapi" || r.Method != http.MethodPost {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body struct {
+			Payer struct {
+				OpenID string `json:"openid"`
+			} `json:"payer"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		if body.Payer.OpenID != "openid-test" {
+			t.Fatalf("openid=%q", body.Payer.OpenID)
+		}
+		_, _ = w.Write([]byte(`{"prepay_id":"wx-prepay-id"}`))
+	}))
+	defer server.Close()
+	client := &Client{BaseURL: server.URL, Now: func() time.Time { return now }, Nonce: func() (string, error) { return "nonce-for-test", nil }}
+	result, err := client.JSAPIPrepay(t.Context(), Config{AppID: "wx-test", MchID: "1900000001", MerchantSerialNo: "merchant-serial", MerchantPrivateKey: privatePEM, NotifyURL: "https://callback.example/pay/wechat"}, JSAPIRequest{Description: "七禧商城订单", OutTradeNo: "G202608010002", AmountCents: 199, OpenID: "openid-test", ExpireAt: now.Add(15 * time.Minute)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.AppID != "wx-test" || result.Package != "prepay_id=wx-prepay-id" || result.SignType != "RSA" || result.PaySign == "" {
+		t.Fatalf("unexpected result %#v", result)
+	}
+}
+
 func TestVerifyAndDecryptCallback(t *testing.T) {
 	privateKey, _, publicPEM := testKeys(t)
 	now := time.Date(2026, 8, 1, 8, 0, 0, 0, time.UTC)

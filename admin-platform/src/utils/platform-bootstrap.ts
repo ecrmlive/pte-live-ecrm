@@ -3,6 +3,7 @@ import type { UserInfo } from '@vben/types';
 import { fetchPlatformSessionApi } from '#/api/core/platform-session';
 import type { PlatformAccessMenuItem } from '#/utils/platform-menu';
 import { formatUserFacingApiError } from '#/utils/api-error';
+import { isApiUnauthorized } from '#/utils/jwt-session';
 
 /** 进后台时 session 接口超时（毫秒） */
 export const PLATFORM_STARTUP_TIMEOUT_MS = 12_000;
@@ -23,7 +24,7 @@ type ApiErrorLike = {
   code?: number;
   data?: { code?: number; msg?: string };
   message?: string;
-  response?: { data?: { code?: number; msg?: string } };
+  response?: { data?: { code?: number; msg?: string }; status?: number };
 };
 
 export function withTimeout<T>(
@@ -60,7 +61,9 @@ function classifyBootstrapError(error: unknown): PlatformBootstrapError {
 
   const err = error as ApiErrorLike;
   const code = err?.response?.data?.code ?? err?.data?.code ?? err?.code;
-  if (code === -1) {
+  // JWT 失效既可能是历史 JSON code=-1，也可能是标准 HTTP 401。两者都
+  // 必须回到登录页；若误判为网络错误，会把用户困在不可恢复的服务错误页。
+  if (isApiUnauthorized(err?.response?.status, code)) {
     return new PlatformBootstrapError('登录已失效，请重新登录', 'auth');
   }
 

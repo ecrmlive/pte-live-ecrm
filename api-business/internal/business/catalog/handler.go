@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/catalog/home", h.Home)
 	r.GET("/catalog/categories", h.Categories)
+	r.GET("/catalog/brands", h.Brands)
 	r.GET("/catalog/stores", h.Stores)
 	r.GET("/catalog/products", h.Products)
 	r.GET("/catalog/products/:id", h.ProductDetail)
@@ -32,18 +34,31 @@ type productView struct {
 	MerchantID    uint64   `gorm:"column:merchant_id"`
 	StoreID       uint64   `gorm:"column:store_id"`
 	CategoryID    uint64   `gorm:"column:category_id"`
+	BrandName     string   `gorm:"column:brand_name"`
 	MerchantName  string   `gorm:"column:merchant_name"`
 	StoreName     string   `gorm:"column:store_name"`
 	Title         string   `gorm:"column:title"`
 	CoverURL      string   `gorm:"column:cover_url"`
 	Price         float64  `gorm:"column:price"`
 	OriginalPrice *float64 `gorm:"column:original_price"`
+	SVIPPriceType int8     `gorm:"column:svip_price_type"`
+	SVIPPrice     float64  `gorm:"column:svip_price"`
 	Sales         int      `gorm:"column:sales"`
 	Stock         int      `gorm:"column:stock"`
 	SaleStatus    int8     `gorm:"column:sale_status"`
 }
 
 func (productView) TableName() string { return "qixi_crm_b_product_view" }
+
+type skuView struct {
+	MerchantSKUID uint64          `gorm:"column:merchant_sku_id"`
+	SKUKey        string          `gorm:"column:sku_key"`
+	SpecSnapshot  json.RawMessage `gorm:"column:spec_snapshot"`
+	Price         float64         `gorm:"column:price"`
+	Stock         int             `gorm:"column:stock"`
+}
+
+func (skuView) TableName() string { return "qixi_crm_b_product_sku_view" }
 
 type storeView struct {
 	StoreID       uint64 `gorm:"column:store_id"`
@@ -79,7 +94,7 @@ func (h *Handler) Home(c *gin.Context) {
 		writeScopeError(c, err)
 		return
 	}
-	rows, err := h.list(c, scope.MerchantID, 0, "", 1, 12, "default", "desc")
+	rows, err := h.list(c, scope.MerchantID, 0, "", "", 1, 12, "default", "desc")
 	if err != nil {
 		fail(c, err)
 		return
@@ -236,6 +251,8 @@ func (h *Handler) Categories(c *gin.Context) {
 // reads only business projections, so a public user never traverses into the
 // merchant database to render the directory.
 func (h *Handler) Stores(c *gin.Context) {
+	page, limit := pageParams(c)
+	keyword := strings.TrimSpace(c.Query("keyword"))
 	scope, err := h.resolveStoreScope(c)
 	if err != nil {
 		writeScopeError(c, err)
@@ -253,11 +270,29 @@ func (h *Handler) Stores(c *gin.Context) {
 	if scope.MerchantID != 0 {
 		query = query.Where("s.merchant_id = ?", scope.MerchantID)
 	}
+	if keyword != "" {
+		query = query.Where("s.store_name LIKE ?", "%"+keyword+"%")
+	}
+
+	countQuery := h.db.WithContext(c.Request.Context()).
+		Table("qixi_crm_b_store_view AS s").
+		Where("s.status = 1")
+	if scope.MerchantID != 0 {
+		countQuery = countQuery.Where("s.merchant_id = ?", scope.MerchantID)
+	}
+	if keyword != "" {
+		countQuery = countQuery.Where("s.store_name LIKE ?", "%"+keyword+"%")
+	}
+	var total int64
+	if err := countQuery.Count(&total).Error; err != nil {
+		fail(c, err)
+		return
+	}
 
 	rows := make([]storeDirectoryItem, 0)
 	if err := query.Group("s.store_id,s.merchant_id,s.store_name").
 		Order("sales_count DESC,s.store_id DESC").
-		Find(&rows).Error; err != nil {
+		Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
 		fail(c, err)
 		return
 	}
@@ -272,7 +307,7 @@ func (h *Handler) Stores(c *gin.Context) {
 			"cover_url":     row.CoverURL,
 		})
 	}
-	response.OK(c, gin.H{"list": items, "total": len(items)})
+	response.OK(c, gin.H{"list": items, "total": total, "page": page, "limit": limit})
 }
 
 func (h *Handler) Products(c *gin.Context) {
@@ -295,13 +330,17 @@ func (h *Handler) Products(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "分类 ID 错误")
 		return
 	}
+	brand, err := brandFilter(c.Query("brand"))
+	if writeBrandError(c, err) {
+		return
+	}
 	minPrice, maxPrice, err := priceRange(c)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "价格范围错误")
 		return
 	}
 	sort, order := productSort(c.Query("sort"), c.Query("order"))
-	rows, total, err := h.listPage(c, merchantID, categoryID, strings.TrimSpace(c.Query("keyword")), minPrice, maxPrice, page, limit, sort, order)
+	rows, total, err := h.listPage(c, merchantID, categoryID, strings.TrimSpace(c.Query("keyword")), brand, minPrice, maxPrice, page, limit, sort, order)
 	if err != nil {
 		fail(c, err)
 		return
@@ -324,7 +363,7 @@ func (h *Handler) ProductDetail(c *gin.Context) {
 		writeScopeError(c, scopeErr)
 		return
 	}
-	query := h.db.WithContext(c.Request.Context()).Where("product_id = ? AND sale_status = 1", id)
+	query := sellableProductQuery(h.db.WithContext(c.Request.Context()).Where("product_id = ? AND sale_status = 1", id))
 	if scope.MerchantID != 0 {
 		query = query.Where("merchant_id = ?", scope.MerchantID)
 	}
@@ -348,6 +387,15 @@ func (h *Handler) ProductDetail(c *gin.Context) {
 	}
 	item["spec_type"] = 0
 	item["delivery_way"] = "express"
+	var skus []skuView
+	if err := h.db.WithContext(c.Request.Context()).Where("product_id = ? AND sale_status = ?", id, 1).Order("merchant_sku_id ASC").Find(&skus).Error; err != nil {
+		fail(c, err)
+		return
+	}
+	item["sku_list"] = responseSKUs(skus)
+	if len(skus) > 1 {
+		item["spec_type"] = 1
+	}
 	store, err := h.findStoreView(c, row.MerchantID)
 	if err != nil {
 		fail(c, err)
@@ -374,11 +422,9 @@ func (h *Handler) StoreHome(c *gin.Context) {
 		response.Fail(c, http.StatusForbidden, "X-AppId 与商户范围不一致")
 		return
 	}
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if page < 1 {
-		page = 1
-	}
-	rows, total, err := h.listPage(c, merchantID, 0, "", nil, nil, page, 20, "default", "desc")
+	page, limit := pageParams(c)
+	keyword := strings.TrimSpace(c.Query("keyword"))
+	rows, total, err := h.listPage(c, merchantID, 0, keyword, "", nil, nil, page, limit, "default", "desc")
 	if err != nil {
 		fail(c, err)
 		return
@@ -408,7 +454,7 @@ func (h *Handler) StoreHome(c *gin.Context) {
 	response.OK(c, gin.H{
 		"mer_id": merchantID, "mer_name": merchantName,
 		"store_id": storeID, "merchant_app_id": merchantAppID,
-		"products": items, "total": total,
+		"products": items, "total": total, "page": page, "limit": limit,
 	})
 }
 
@@ -431,12 +477,21 @@ func (h *Handler) findStoreView(c *gin.Context, merchantID uint64) (*storeView, 
 	return &store, nil
 }
 
-func (h *Handler) list(c *gin.Context, merchantID, categoryID uint64, keyword string, page, limit int, sort, order string) ([]productView, error) {
-	rows, _, err := h.listPage(c, merchantID, categoryID, keyword, nil, nil, page, limit, sort, order)
+// sellableProductQuery keeps listings and detail reads aligned with cart and order: a
+// product without a business-owned sellable SKU projection is not purchasable and must
+// not be exposed as a C-end product.
+const sellableSKUCondition = "EXISTS (SELECT 1 FROM qixi_crm_b_product_sku_view AS ps WHERE ps.product_id = qixi_crm_b_product_view.product_id AND ps.sale_status = 1)"
+
+func sellableProductQuery(query *gorm.DB) *gorm.DB {
+	return query.Where(sellableSKUCondition)
+}
+
+func (h *Handler) list(c *gin.Context, merchantID, categoryID uint64, keyword, brand string, page, limit int, sort, order string) ([]productView, error) {
+	rows, _, err := h.listPage(c, merchantID, categoryID, keyword, brand, nil, nil, page, limit, sort, order)
 	return rows, err
 }
-func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keyword string, minPrice, maxPrice *float64, page, limit int, sort, order string) ([]productView, int64, error) {
-	query := h.db.WithContext(c.Request.Context()).Model(&productView{}).Where("sale_status = 1")
+func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keyword, brand string, minPrice, maxPrice *float64, page, limit int, sort, order string) ([]productView, int64, error) {
+	query := sellableProductQuery(h.db.WithContext(c.Request.Context()).Model(&productView{}).Where("sale_status = 1"))
 	if merchantID != 0 {
 		query = query.Where("merchant_id = ?", merchantID)
 	}
@@ -449,6 +504,9 @@ func (h *Handler) listPage(c *gin.Context, merchantID, categoryID uint64, keywor
 	}
 	if keyword != "" {
 		query = query.Where("title LIKE ?", "%"+keyword+"%")
+	}
+	if brand != "" {
+		query = query.Where("brand_name = ?", brand)
 	}
 	if minPrice != nil {
 		query = query.Where("price >= ?", *minPrice)
@@ -591,6 +649,31 @@ func productOrder(sort, order string) string {
 		return "sales DESC,updated_at DESC,product_id DESC"
 	}
 }
+func responseSKUs(rows []skuView) []gin.H {
+	items := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		specs := map[string]string{}
+		_ = json.Unmarshal(row.SpecSnapshot, &specs)
+		keys := make([]string, 0, len(specs))
+		for key := range specs {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		parts := make([]string, 0, len(keys))
+		for _, key := range keys {
+			if value := strings.TrimSpace(specs[key]); value != "" {
+				parts = append(parts, key+"："+value)
+			}
+		}
+		label := strings.Join(parts, "；")
+		if label == "" {
+			label = "默认规格"
+		}
+		items = append(items, gin.H{"sku_key": row.SKUKey, "specs": specs, "spec_text": label, "price": fmt.Sprintf("%.2f", row.Price), "stock": row.Stock})
+	}
+	return items
+}
+
 func responseProduct(row productView) gin.H {
 	original := ""
 	if row.OriginalPrice != nil {
@@ -598,7 +681,7 @@ func responseProduct(row productView) gin.H {
 	}
 	// store_name 是旧 C 端契约中实际承载商品标题的字段；保留其兼容值，
 	// 新页面使用 title，真实店铺名称使用 shop_name。
-	return gin.H{"id": row.ProductID, "title": row.Title, "mer_id": row.MerchantID, "mer_name": row.MerchantName, "store_id": row.StoreID, "store_name": row.Title, "shop_name": row.StoreName, "category_id": row.CategoryID, "image": row.CoverURL, "price": fmt.Sprintf("%.2f", row.Price), "ot_price": original, "sales": row.Sales, "stock": row.Stock}
+	return gin.H{"id": row.ProductID, "title": row.Title, "mer_id": row.MerchantID, "mer_name": row.MerchantName, "store_id": row.StoreID, "store_name": row.Title, "shop_name": row.StoreName, "category_id": row.CategoryID, "brand_name": row.BrandName, "image": row.CoverURL, "price": fmt.Sprintf("%.2f", row.Price), "ot_price": original, "svip_price_type": row.SVIPPriceType, "svip_price": fmt.Sprintf("%.2f", row.SVIPPrice), "sales": row.Sales, "stock": row.Stock}
 }
 func pageParams(c *gin.Context) (int, int) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

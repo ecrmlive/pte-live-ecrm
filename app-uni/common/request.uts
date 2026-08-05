@@ -1,6 +1,18 @@
 import { appApiURL } from './api'
 import { clearSession, getAccessToken, getMerchantAppID } from './session'
 
+function parseResponseBody(value: any): UTSJSONObject {
+  if (value != null && typeof value == "object") return value as UTSJSONObject
+  const raw = String(value || "").trim()
+  if (raw.length == 0) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed != null && typeof parsed == "object" ? parsed as UTSJSONObject : {}
+  } catch (_) {
+    return {}
+  }
+}
+
 /** 所有 C 端页面共用的 JWT 请求入口。 */
 export function appRequest(path: string, method: string = 'GET', data: UTSJSONObject | null = null, auth: boolean = true): Promise<UTSJSONObject> {
   const header = { 'Content-Type': 'application/json' } as UTSJSONObject
@@ -13,23 +25,27 @@ export function appRequest(path: string, method: string = 'GET', data: UTSJSONOb
   return new Promise<UTSJSONObject>((resolve, reject) => {
     uni.request({
       url: appApiURL(path),
-      method: method,
+      // uni-app x H5 supports the application API method set, including PATCH.
+      // UTS 5.01 exposes an incomplete literal union, so retain the runtime method.
+      method: method as any,
       data: data,
       header: header,
+      dataType: "text",
       success: (res) => {
-        const body = res.data as UTSJSONObject
-        if (res.statusCode == 401 || body['status'] == 401) {
+        const body = parseResponseBody(res.data)
+        const message = String(body["message"] || "")
+        if (res.statusCode == 401 || body["status"] == 401) {
           clearSession()
-          reject(new Error((body['message'] as string) || '登录已失效'))
+          reject(new Error(message || "登录已失效"))
           return
         }
-        if (res.statusCode >= 200 && res.statusCode < 300 && body['status'] == 200) {
-          resolve(body['data'] as UTSJSONObject)
+        if (res.statusCode >= 200 && res.statusCode < 300 && body["status"] == 200) {
+          resolve(body["data"] as UTSJSONObject)
           return
         }
-        reject(new Error((body['message'] as string) || '请求失败'))
+        reject(new Error(message || "服务暂不可用"))
       },
-      fail: () => reject(new Error('网络连接失败'))
+      fail: () => reject(new Error("网络连接失败"))
     })
   })
 }

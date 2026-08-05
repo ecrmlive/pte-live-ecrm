@@ -17,7 +17,7 @@ type Category struct {
 	Sort       int    `gorm:"column:sort" json:"sort"`
 }
 
-func (Category) TableName() string { return "qixi_m_app_community_category" }
+func (Category) TableName() string { return "qixi_crm_b_social_category" }
 
 type Topic struct {
 	TopicID    uint      `gorm:"column:topic_id;primaryKey" json:"topic_id"`
@@ -31,7 +31,7 @@ type Topic struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Topic) TableName() string { return "qixi_m_app_community_topic" }
+func (Topic) TableName() string { return "qixi_crm_b_social_topic" }
 
 type Post struct {
 	CommunityID uint       `gorm:"column:community_id;primaryKey" json:"community_id"`
@@ -62,7 +62,7 @@ type Post struct {
 	ProductPrice float64 `gorm:"-" json:"product_price,omitempty"`
 }
 
-func (Post) TableName() string { return "qixi_m_app_community" }
+func (Post) TableName() string { return "qixi_crm_b_social_post" }
 
 type Reply struct {
 	ReplyID     uint      `gorm:"column:reply_id;primaryKey" json:"reply_id"`
@@ -74,10 +74,11 @@ type Reply struct {
 	IsDel       int8      `gorm:"column:is_del" json:"-"`
 	CreateTime  time.Time `gorm:"column:create_time" json:"create_time"`
 
-	Nickname string `gorm:"-" json:"nickname,omitempty"`
+	Nickname  string `gorm:"-" json:"nickname,omitempty"`
+	PostTitle string `gorm:"-" json:"post_title,omitempty"`
 }
 
-func (Reply) TableName() string { return "qixi_m_app_community_reply" }
+func (Reply) TableName() string { return "qixi_crm_b_social_reply" }
 
 type CreatePostInput struct {
 	Title      string `json:"title"`

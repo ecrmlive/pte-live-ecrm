@@ -1,0 +1,13 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+type Profile = { id:number; type:string; title:string; tax_no:string; email:string; is_default:boolean }
+type ProfilePage = { list: Profile[] }
+const orderID=ref(0); const items=ref<Profile[]>([]); const selectedID=ref(0); const submitting=ref(false)
+function load():void{appRequest('/invoice-profiles').then((data)=>{items.value=(data as ProfilePage).list||[];for(const item of items.value){if(selectedID.value==0||item.is_default)selectedID.value=item.id}}).catch((error)=>uni.showToast({title:error.message||'抬头加载失败',icon:'none'}))}
+function profiles():void{uni.navigateTo({url:'/pages/invoice/profiles'})}
+function submit():void{if(orderID.value==0){uni.showToast({title:'订单信息错误',icon:'none'});return};if(selectedID.value==0){uni.showToast({title:'请先新增开票抬头',icon:'none'});return};submitting.value=true;appRequest('/invoices','POST',{order_id:orderID.value,invoice_profile_id:selectedID.value} as UTSJSONObject).then(()=>{uni.showToast({title:'已提交开票申请',icon:'success'});setTimeout(()=>uni.navigateBack(),700)}).catch((error)=>uni.showToast({title:error.message||'提交失败',icon:'none'})).finally(()=>{submitting.value=false})}
+onLoad((query)=>{orderID.value=Number(query?.['order_id']||0);load()})
+onShow(()=>{if(orderID.value>0)load()})
+</script>
+<template><view class="qx-page"><qx-nav title="申请发票"/><view class="qx-card"><text class="order">订单编号：{{orderID}}</text><text class="hint">仅已支付且未进入售后的订单可申请发票。</text></view><view v-if="items.length==0" class="qx-card empty"><text>暂无开票抬头</text><button class="qx-primary" @click="profiles">去新增抬头</button></view><view v-for="item in items" :key="item.id" class="qx-card profile" @click="selectedID=item.id"><text>{{selectedID==item.id?'●':'○'}} {{item.title}}</text><text class="meta">{{item.type=='enterprise'?'企业抬头':'个人抬头'}}{{item.is_default?' · 默认':''}}</text><text v-if="item.tax_no" class="meta">税号：{{item.tax_no}}</text><text v-if="item.email" class="meta">邮箱：{{item.email}}</text></view><view v-if="items.length>0" class="footer"><button :loading="submitting" class="qx-primary" @click="submit">提交开票申请</button><button class="secondary" @click="profiles">管理开票抬头</button></view></view></template>
+<style>.order{display:block;font-size:16px;font-weight:600}.hint,.meta{display:block;margin-top:9px;color:#86909c;font-size:13px}.empty{color:#86909c;text-align:center}.empty .qx-primary{margin-top:12px}.profile{color:#1f2329}.footer{padding:0 12px 16px}.qx-primary{border-radius:22px}.secondary{margin-top:10px;color:#4e5969;background:#ffffff;border:1px solid #dcdfe6;border-radius:22px}</style>

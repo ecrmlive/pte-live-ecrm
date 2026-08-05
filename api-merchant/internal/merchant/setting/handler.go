@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/merchant"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -24,9 +24,6 @@ func NewHandler(id *identity.Service, mer *merchant.Service) *Handler {
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/setting/shop", h.GetShop)
 	r.PUT("/setting/shop", middleware.RequireMerchantMenu(h.id, identity.MerPermShopUpdate), h.UpdateShop)
-	r.GET("/setting/staff", h.ListStaff)
-	r.POST("/setting/staff", middleware.RequireMerchantMenu(h.id, identity.MerPermStaffWrite), h.CreateStaff)
-	r.PUT("/setting/staff/:id", middleware.RequireMerchantMenu(h.id, identity.MerPermStaffWrite), h.UpdateStaff)
 	r.GET("/setting/admins", h.ListAdmins)
 	r.POST("/setting/admins", middleware.RequireMerchantMenu(h.id, identity.MerPermAdminsWrite), h.CreateAdmin)
 	r.PUT("/setting/admins/:id", middleware.RequireMerchantMenu(h.id, identity.MerPermAdminsWrite), h.UpdateAdmin)
@@ -54,46 +51,6 @@ func (h *Handler) UpdateShop(c *gin.Context) {
 	row, err := h.mer.UpdateShopProfile(c.Request.Context(), middleware.MerID(c), in)
 	if err != nil {
 		writeMerErr(c, err)
-		return
-	}
-	response.OK(c, row)
-}
-
-func (h *Handler) ListStaff(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.id.ListStaff(c.Request.Context(), middleware.MerID(c), page, limit)
-	if err != nil {
-		writeIDErr(c, err)
-		return
-	}
-	response.OK(c, res)
-}
-
-func (h *Handler) CreateStaff(c *gin.Context) {
-	var in identity.StaffSaveInput
-	if err := c.ShouldBindJSON(&in); err != nil {
-		response.Fail(c, http.StatusBadRequest, "参数错误")
-		return
-	}
-	row, err := h.id.CreateStaff(c.Request.Context(), middleware.MerID(c), in)
-	if err != nil {
-		writeIDErr(c, err)
-		return
-	}
-	response.OK(c, row)
-}
-
-func (h *Handler) UpdateStaff(c *gin.Context) {
-	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	var in identity.StaffSaveInput
-	if err := c.ShouldBindJSON(&in); err != nil {
-		response.Fail(c, http.StatusBadRequest, "参数错误")
-		return
-	}
-	row, err := h.id.UpdateStaff(c.Request.Context(), middleware.MerID(c), uint(id), in)
-	if err != nil {
-		writeIDErr(c, err)
 		return
 	}
 	response.OK(c, row)

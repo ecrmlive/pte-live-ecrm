@@ -53,7 +53,7 @@ func Catalog() []GroupMeta {
 	return []GroupMeta{
 		{Key: "payment", Label: "微信支付 / 支付宝", Fields: []FieldMeta{
 			{Key: "wechat_enabled", Label: "启用微信支付"}, {Key: "alipay_enabled", Label: "启用支付宝支付"},
-			{Key: "wechat_app_id", Label: "微信 AppID"}, {Key: "wechat_mch_id", Label: "微信商户号"},
+			{Key: "wechat_app_id", Label: "微信小程序 / Native AppID"}, {Key: "wechat_h5_app_id", Label: "微信 H5 支付 AppID"}, {Key: "wechat_h5_site_url", Label: "微信 H5 授权站点（HTTPS）"}, {Key: "wechat_mch_id", Label: "微信商户号"},
 			{Key: "wechat_api_v3_key", Label: "微信 APIv3 密钥", Secret: true}, {Key: "wechat_serial_no", Label: "微信商户证书序列号"},
 			{Key: "wechat_private_key", Label: "微信商户私钥", Secret: true}, {Key: "wechat_merchant_cert", Label: "微信商户证书", Secret: true},
 			{Key: "wechat_public_key_id", Label: "微信支付公钥 ID"}, {Key: "wechat_public_key", Label: "微信支付公钥", Secret: true},
@@ -66,6 +66,11 @@ func Catalog() []GroupMeta {
 		{Key: "wechat_mini_program", Label: "微信小程序", Fields: []FieldMeta{
 			{Key: "enabled", Label: "启用微信小程序"}, {Key: "app_id", Label: "小程序 AppID", Required: true},
 			{Key: "app_secret", Label: "小程序 AppSecret", Secret: true, Required: true},
+		}},
+		{Key: "sms", Label: "短信验证码网关", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用短信网关"}, {Key: "endpoint", Label: "短信网关 HTTPS 地址", Required: true},
+			{Key: "authorization", Label: "短信网关授权令牌", Secret: true, Required: true}, {Key: "template", Label: "验证码模板标识", Required: true},
+			{Key: "timeout_seconds", Label: "请求超时秒数", Hint: "默认 5"},
 		}},
 		{Key: "tencent_account", Label: "腾讯云账号", Fields: []FieldMeta{
 			{Key: "secret_id", Label: "SecretId", Secret: true, Required: true}, {Key: "secret_key", Label: "SecretKey", Secret: true, Required: true},

@@ -13,21 +13,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/adminscope"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
 	businessDB *gorm.DB
 	merchantDB *gorm.DB
-	identity   *identity.Service
+	adminDB    *gorm.DB
 }
 
-func NewHandler(businessDB, merchantDB *gorm.DB, identity *identity.Service) *Handler {
-	return &Handler{businessDB: businessDB, merchantDB: merchantDB, identity: identity}
+func NewHandler(businessDB, merchantDB, adminDB *gorm.DB) *Handler {
+	return &Handler{businessDB: businessDB, merchantDB: merchantDB, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
@@ -93,7 +93,7 @@ func (h *Handler) list(c *gin.Context) {
 	page, limit := normalizePage(c)
 	merchantIDs, err := h.merchantScope(c)
 	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, "登录已失效")
+		response.Fail(c, http.StatusForbidden, "未配置订单监管数据范围")
 		return
 	}
 	if merchantIDs != nil && len(merchantIDs) == 0 {
@@ -106,6 +106,11 @@ func (h *Handler) list(c *gin.Context) {
 		q = q.Where("o.status = 'pending_pay'")
 	} else if paid == "1" {
 		q = q.Where("o.status <> 'pending_pay'")
+	}
+	if statusStr := c.Query("status"); statusStr != "" {
+		if status, err := strconv.Atoi(statusStr); err == nil && status == -1 {
+			q = q.Where("o.status = ?", "cancelled")
+		}
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -133,7 +138,7 @@ func (h *Handler) get(c *gin.Context) {
 	}
 	merchantIDs, err := h.merchantScope(c)
 	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, "登录已失效")
+		response.Fail(c, http.StatusForbidden, "未配置订单监管数据范围")
 		return
 	}
 	if merchantIDs != nil && len(merchantIDs) == 0 {
@@ -168,27 +173,40 @@ func (h *Handler) base(c *gin.Context, merchantIDs []uint64) *gorm.DB {
 	return q
 }
 
-// merchantScope maps the unified-admin region assignment to current merchant
-// records. nil means the platform account has full access; an empty slice means
-// a region account is intentionally denied until it receives an assignment.
+// merchantScope maps unified-admin merchant and region assignments to the
+// current merchant projection. nil means platform-wide supervision.
 func (h *Handler) merchantScope(c *gin.Context) ([]uint64, error) {
-	regionIDs, err := h.identity.PlatformRegionScope(c.Request.Context(), middleware.AdminID(c))
-	if err != nil || regionIDs == nil {
+	scope, err := adminscope.ResolveMerchantScope(c.Request.Context(), h.adminDB, middleware.ClaimsFrom(c))
+	if err != nil {
 		return nil, err
 	}
-	if len(regionIDs) == 0 {
-		return []uint64{}, nil
+	if scope.Full {
+		return nil, nil
+	}
+	ids := append([]uint64{}, scope.MerchantIDs...)
+	if len(scope.RegionIDs) == 0 {
+		return ids, nil
 	}
 	var rows []merchant
 	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_merchant").
-		Select("id,name,region_id").Where("region_id IN ?", regionIDs).Find(&rows).Error; err != nil {
+		Select("id,name,region_id").Where("region_id IN ?", scope.RegionIDs).Find(&rows).Error; err != nil {
 		return nil, err
 	}
-	ids := make([]uint64, 0, len(rows))
 	for _, row := range rows {
-		ids = append(ids, row.ID)
+		if !containsID(ids, row.ID) {
+			ids = append(ids, row.ID)
+		}
 	}
 	return ids, nil
+}
+
+func containsID(values []uint64, expected uint64) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handler) responses(c *gin.Context, rows []order, includeItems bool) ([]gin.H, error) {

@@ -49,6 +49,20 @@ export interface MerchantProductPage {
   total: number;
 }
 
+export interface MerchantRecycleProduct {
+  deleted_at: string;
+  product_id: number;
+  restore_until: string;
+  store_name: string;
+}
+
+export interface MerchantRecycleProductPage {
+  limit: number;
+  list: MerchantRecycleProduct[];
+  page: number;
+  total: number;
+}
+
 export function listMerchantProductsApi(params: { keyword?: string; limit: number; page: number; status?: number }) {
   return requestClient.get<MerchantProductPage>('/products', { params });
 }
@@ -69,10 +83,18 @@ export function deleteMerchantProductApi(id: number) {
   return requestClient.delete(`/products/${id}`);
 }
 
+export function listMerchantProductRecycleBinApi(params: { limit: number; page: number }) {
+  return requestClient.get<MerchantRecycleProductPage>('/products/recycle-bin', { params });
+}
+
+export function restoreMerchantProductApi(id: number) {
+  return requestClient.post(`/products/${id}/restore`);
+}
+
 export function setMerchantProductShowApi(id: number, isShow: number) {
   return requestClient.put(`/products/${id}/show`, { is_show: isShow });
 }
 
 export function setMerchantProductStockApi(id: number, stock: number) {
-  return requestClient.put(`/products/${id}/stock`, { stock });
+  return requestClient.put(`/products/${id}/stock`, { stock }, { headers: { 'X-Idempotency-Key': crypto.randomUUID() } });
 }

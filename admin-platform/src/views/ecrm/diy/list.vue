@@ -15,6 +15,7 @@ import {
   recoveryDiyPageApi,
   type DiyPageRow,
 } from '#/api/core/diy';
+import { getAccessCodesApi } from '#/api/core/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -22,6 +23,7 @@ const editorPath = '/setting/diy/index';
 const pageKind = ref<'home' | 'micro'>(
   route.path.includes('/micro/') || route.query.kind === 'micro' ? 'micro' : 'home',
 );
+const canManage = ref(false);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
@@ -108,13 +110,15 @@ async function onDelete(row: DiyPageRow) {
 function onKindChange() {
   gridApi.reload();
 }
+
+getAccessCodesApi().then((permissions) => { canManage.value = permissions.includes('operations.diy.manage'); });
 </script>
 
 <template>
   <Page :title="pageKind === 'home' ? '页面装修' : '微页面'" :description="pageKind === 'home' ? '平台首页 DIY 可视化装修' : '可被首页组件链接引用的独立 H5 / 小程序页面'">
     <template #extra>
       <ElRadioGroup v-model="pageKind" class="mr-3" @change="onKindChange"><ElRadioButton value="home">首页</ElRadioButton><ElRadioButton value="micro">微页面</ElRadioButton></ElRadioGroup>
-      <ElButton type="primary" @click="openEditor()">{{ pageKind === 'home' ? '新建首页' : '新建微页面' }}</ElButton>
+      <ElButton v-if="canManage" type="primary" @click="openEditor()">{{ pageKind === 'home' ? '新建首页' : '新建微页面' }}</ElButton>
     </template>
     <Grid>
       <template #status="{ row }">
@@ -123,18 +127,18 @@ function onKindChange() {
         </ElTag>
       </template>
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openEditor(row.id)">装修</ElButton>
+        <ElButton v-if="canManage" link type="primary" @click="openEditor(row.id)">装修</ElButton>
         <ElButton
-          v-if="pageKind === 'home' && row.status !== 1"
+          v-if="canManage && pageKind === 'home' && row.status !== 1"
           link
           type="success"
           @click="onActive(row)"
         >
           设为首页
         </ElButton>
-        <ElButton link @click="onCopy(row)">复制</ElButton>
-        <ElButton link type="warning" @click="onRecovery(row)">恢复</ElButton>
-        <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
+        <ElButton v-if="canManage" link @click="onCopy(row)">复制</ElButton>
+        <ElButton v-if="canManage" link type="warning" @click="onRecovery(row)">恢复</ElButton>
+        <ElButton v-if="canManage" link type="danger" @click="onDelete(row)">删除</ElButton>
       </template>
     </Grid>
   </Page>

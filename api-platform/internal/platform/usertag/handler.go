@@ -5,30 +5,37 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/usertag"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/usertag"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
-type Handler struct{ svc *usertag.Service; id *identity.Service }
+type Handler struct {
+	svc *usertag.Service
+	id  *identity.Service
+}
 
-func NewHandler(svc *usertag.Service, id *identity.Service) *Handler { return &Handler{svc: svc, id: id} }
+func NewHandler(svc *usertag.Service, id *identity.Service) *Handler {
+	return &Handler{svc: svc, id: id}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/user/labels", h.ListLabels)
-	r.POST("/user/labels", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage), h.CreateLabel)
-	r.PUT("/user/labels/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage), h.UpdateLabel)
-	r.DELETE("/user/labels/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage), h.DeleteLabel)
+	labelManage := middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage)
+	groupManage := middleware.RequirePlatformMenu(h.id, identity.PlatPermUserGroupManage)
+	r.GET("/user/labels", labelManage, h.ListLabels)
+	r.POST("/user/labels", labelManage, h.CreateLabel)
+	r.PUT("/user/labels/:id", labelManage, h.UpdateLabel)
+	r.DELETE("/user/labels/:id", labelManage, h.DeleteLabel)
 
-	r.GET("/user/groups", h.ListGroups)
-	r.POST("/user/groups", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserGroupManage), h.CreateGroup)
-	r.PUT("/user/groups/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserGroupManage), h.UpdateGroup)
-	r.DELETE("/user/groups/:id", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserGroupManage), h.DeleteGroup)
+	r.GET("/user/groups", groupManage, h.ListGroups)
+	r.POST("/user/groups", groupManage, h.CreateGroup)
+	r.PUT("/user/groups/:id", groupManage, h.UpdateGroup)
+	r.DELETE("/user/groups/:id", groupManage, h.DeleteGroup)
 
-	r.GET("/user/:uid/labels", h.ListUserLabels)
-	r.PUT("/user/:uid/labels", middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage), h.MarkUser)
+	r.GET("/user/:uid/labels", labelManage, h.ListUserLabels)
+	r.PUT("/user/:uid/labels", labelManage, h.MarkUser)
 }
 
 func (h *Handler) ListLabels(c *gin.Context) {

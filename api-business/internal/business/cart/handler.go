@@ -6,16 +6,17 @@
 package cart
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -31,9 +32,11 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/cart", h.List)
+	r.DELETE("/cart", h.Clear)
 	r.POST("/cart", h.Add)
 	r.PUT("/cart/:id", h.Update)
 	r.DELETE("/cart/:id", h.Delete)
+	r.POST("/cart/again/:order_id", h.Again)
 }
 
 type cartRow struct {
@@ -62,26 +65,39 @@ type productRow struct {
 
 func (productRow) TableName() string { return "qixi_crm_b_product_view" }
 
+// skuProjectionRow is the business-owned consumption projection of a merchant
+// SKU. The cart never reaches into qixi_crm_m_product_sku directly.
+type skuProjectionRow struct {
+	MerchantSKUID uint64 `gorm:"column:merchant_sku_id"`
+	SKUKey        string `gorm:"column:sku_key"`
+	Stock         int    `gorm:"column:stock"`
+	SaleStatus    int8   `gorm:"column:sale_status"`
+}
+
+func (skuProjectionRow) TableName() string { return "qixi_crm_b_product_sku_view" }
+
 type cartView struct {
-	CartID       uint64  `gorm:"column:cart_id"`
-	ProductID    uint64  `gorm:"column:product_id"`
-	SKUKey       string  `gorm:"column:sku_key"`
-	Quantity     int     `gorm:"column:quantity"`
-	MerchantID   uint64  `gorm:"column:merchant_id"`
-	MerchantName string  `gorm:"column:merchant_name"`
-	StoreName    string  `gorm:"column:store_name"`
-	Title        string  `gorm:"column:title"`
-	CoverURL     string  `gorm:"column:cover_url"`
-	Price        float64 `gorm:"column:price"`
-	Stock        int     `gorm:"column:stock"`
-	SaleStatus   int8    `gorm:"column:sale_status"`
+	CartID        uint64          `gorm:"column:cart_id"`
+	ProductID     uint64          `gorm:"column:product_id"`
+	SKUKey        string          `gorm:"column:sku_key"`
+	SpecSnapshot  json.RawMessage `gorm:"column:spec_snapshot"`
+	Quantity      int             `gorm:"column:quantity"`
+	MerchantID    uint64          `gorm:"column:merchant_id"`
+	MerchantAppID string          `gorm:"column:merchant_app_id"`
+	MerchantName  string          `gorm:"column:merchant_name"`
+	StoreName     string          `gorm:"column:store_name"`
+	Title         string          `gorm:"column:title"`
+	CoverURL      string          `gorm:"column:cover_url"`
+	Price         float64         `gorm:"column:price"`
+	Stock         int             `gorm:"column:stock"`
+	SaleStatus    int8            `gorm:"column:sale_status"`
 }
 
 type addRequest struct {
 	ProductID uint64 `json:"product_id" binding:"required"`
 	CartNum   int    `json:"cart_num"`
-	// ProductAttrUnique is kept for app compatibility. A SKU consumption
-	// projection will replace this numeric fallback when SKU migration lands.
+	// ProductAttrUnique is the stable business SKU projection key. Empty input
+	// deliberately resolves to the first sellable SKU only for legacy clients.
 	ProductAttrUnique string `json:"product_attr_unique"`
 }
 
@@ -149,7 +165,6 @@ func (h *Handler) Add(c *gin.Context) {
 	}
 
 	uid := uint64(middleware.UID(c))
-	skuKey := resolveSKUKey(req.ProductID, req.ProductAttrUnique)
 
 	var cartID uint64
 	err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
@@ -162,12 +177,17 @@ func (h *Handler) Add(c *gin.Context) {
 		if err := verifyMerchantContext(c, product); err != nil {
 			return err
 		}
-		if product.Stock < req.CartNum {
+		sku, err := loadSellableSKU(tx, req.ProductID, req.ProductAttrUnique)
+		if err != nil {
+			return err
+		}
+		if sku.Stock < req.CartNum {
 			return errStock
 		}
+		skuKey := sku.SKUKey
 
 		var row cartRow
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("user_id = ? AND product_id = ? AND sku_key = ?", uid, req.ProductID, skuKey).
 			First(&row).Error
 		switch {
@@ -182,7 +202,7 @@ func (h *Handler) Add(c *gin.Context) {
 		case err != nil:
 			return err
 		default:
-			if row.Quantity+req.CartNum > product.Stock {
+			if row.Quantity+req.CartNum > sku.Stock {
 				return errStock
 			}
 			if err := tx.Model(&cartRow{}).
@@ -234,7 +254,11 @@ func (h *Handler) Update(c *gin.Context) {
 		if err := verifyMerchantContext(c, product); err != nil {
 			return err
 		}
-		if product.Stock < *req.CartNum {
+		sku, err := loadSellableSKU(tx, row.ProductID, row.SKUKey)
+		if err != nil {
+			return err
+		}
+		if sku.Stock < *req.CartNum {
 			return errStock
 		}
 		return tx.Model(&cartRow{}).Where("id = ? AND user_id = ?", id, uid).
@@ -288,6 +312,8 @@ func (h *Handler) list(c *gin.Context, uid uint64) ([]cartView, error) {
 	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_cart AS c").
 		Select(cartViewColumns).
 		Joins("LEFT JOIN qixi_crm_b_product_view AS p ON p.product_id = c.product_id").
+		Joins("LEFT JOIN qixi_crm_b_product_sku_view AS ps ON ps.product_id = c.product_id AND ps.sku_key = c.sku_key").
+		Joins("LEFT JOIN qixi_crm_b_store_view AS s ON s.store_id = p.store_id AND s.merchant_id = p.merchant_id").
 		Where("c.user_id = ?", uid).Order("c.id DESC").Scan(&rows).Error
 	return rows, err
 }
@@ -297,6 +323,8 @@ func (h *Handler) findView(c *gin.Context, uid, id uint64) (cartView, error) {
 	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_cart AS c").
 		Select(cartViewColumns).
 		Joins("INNER JOIN qixi_crm_b_product_view AS p ON p.product_id = c.product_id").
+		Joins("LEFT JOIN qixi_crm_b_product_sku_view AS ps ON ps.product_id = c.product_id AND ps.sku_key = c.sku_key").
+		Joins("LEFT JOIN qixi_crm_b_store_view AS s ON s.store_id = p.store_id AND s.merchant_id = p.merchant_id").
 		// cart_id is a response alias, not a column on qixi_crm_b_cart. Using
 		// First(&cartView) makes GORM append ORDER BY c.cart_id and breaks the
 		// post-create readback on MySQL.
@@ -305,15 +333,42 @@ func (h *Handler) findView(c *gin.Context, uid, id uint64) (cartView, error) {
 }
 
 const cartViewColumns = "c.id AS cart_id, c.product_id, c.sku_key, c.quantity, " +
-	"p.merchant_id, p.merchant_name, p.store_name, p.title, p.cover_url, " +
-	"p.price, p.stock, p.sale_status"
+	"p.merchant_id, COALESCE(s.store_app_id, '') AS merchant_app_id, p.merchant_name, p.store_name, p.title, p.cover_url, " +
+	"ps.spec_snapshot, COALESCE(ps.price, p.price) AS price, COALESCE(ps.stock, 0) AS stock, COALESCE(ps.sale_status, 0) AS sale_status"
 
-func resolveSKUKey(productID uint64, unique string) string {
-	unique = strings.TrimSpace(unique)
-	if unique == "" {
-		return strconv.FormatUint(productID, 10)
+// loadSellableSKU canonicalizes client input to a projection key. A legacy
+// client without product_attr_unique receives the deterministic first SKU;
+// arbitrary display text is never converted into a stock identity.
+func loadSellableSKU(tx *gorm.DB, productID uint64, requested string) (skuProjectionRow, error) {
+	var row skuProjectionRow
+	requested = strings.TrimSpace(requested)
+	query := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("product_id = ? AND sale_status = ?", productID, 1)
+	if requested != "" && requested != strconv.FormatUint(productID, 10) {
+		query = query.Where("sku_key = ?", requested)
+	} else {
+		query = query.Order("merchant_sku_id ASC")
 	}
-	return unique
+	err := query.First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return row, errStock
+	}
+	if err != nil {
+		return row, err
+	}
+	if row.MerchantSKUID == 0 || strings.TrimSpace(row.SKUKey) == "" || row.SaleStatus != 1 {
+		return row, errStock
+	}
+	return row, nil
+}
+
+// resolveSKUKey remains as a compatibility normalizer for stored legacy cart
+// and reorder data. New writes replace it with the canonical key from
+// loadSellableSKU before persistence.
+func resolveSKUKey(productID uint64, unique string) string {
+	if unique = strings.TrimSpace(unique); unique != "" {
+		return unique
+	}
+	return strconv.FormatUint(productID, 10)
 }
 
 func isAvailable(row cartView) bool {
@@ -339,6 +394,26 @@ func verifyMerchantContext(c *gin.Context, product productRow) error {
 	return nil
 }
 
+func cartSpecText(snapshot json.RawMessage) string {
+	specs := map[string]string{}
+	_ = json.Unmarshal(snapshot, &specs)
+	keys := make([]string, 0, len(specs))
+	for key := range specs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if value := strings.TrimSpace(specs[key]); value != "" {
+			parts = append(parts, key+"："+value)
+		}
+	}
+	if len(parts) == 0 {
+		return "默认规格"
+	}
+	return strings.Join(parts, "；")
+}
+
 func itemResponse(row cartView) gin.H {
 	failed := 0
 	if !isAvailable(row) {
@@ -348,8 +423,10 @@ func itemResponse(row cartView) gin.H {
 		"cart_id":             row.CartID,
 		"product_id":          row.ProductID,
 		"product_attr_unique": row.SKUKey,
+		"spec_text":           cartSpecText(row.SpecSnapshot),
 		"cart_num":            row.Quantity,
 		"mer_id":              row.MerchantID,
+		"merchant_app_id":     row.MerchantAppID,
 		"mer_name":            row.MerchantName,
 		"store_name":          row.StoreName,
 		"title":               row.Title,
@@ -378,4 +455,88 @@ func writeError(c *gin.Context, err error) {
 
 func fail(c *gin.Context, _ error) {
 	response.Fail(c, http.StatusInternalServerError, "购物车服务异常")
+}
+
+type reorderItem struct {
+	ProductID uint64 `gorm:"column:product_id"`
+	SKUKey    string `gorm:"column:sku_key"`
+	Quantity  int    `gorm:"column:quantity"`
+}
+
+// Again atomically returns all sellable items from one owned, paid store order
+// to the cart. It never trusts client-provided product IDs or quantities.
+func (h *Handler) Again(c *gin.Context) {
+	orderID, err := strconv.ParseUint(c.Param("order_id"), 10, 64)
+	if err != nil || orderID == 0 {
+		response.Fail(c, http.StatusBadRequest, "订单 ID 错误")
+		return
+	}
+	uid := uint64(middleware.UID(c))
+	added := 0
+	err = h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		var order struct{ ID uint64 }
+		if err := tx.Table("qixi_crm_b_order").Select("id").Where("id = ? AND user_id = ? AND status IN ?", orderID, uid, []string{"paid", "fulfilling", "shipped", "completed", "aftersale"}).Take(&order).Error; err != nil {
+			return err
+		}
+		var items []reorderItem
+		if err := tx.Table("qixi_crm_b_order_item").Select("product_id, sku_key, quantity").Where("order_id = ?", orderID).Order("product_id ASC, id ASC").Find(&items).Error; err != nil {
+			return err
+		}
+		if len(items) == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		for _, item := range items {
+			var product productRow
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("product_id = ? AND sale_status = 1", item.ProductID).First(&product).Error; err != nil {
+				return err
+			}
+			if err := verifyMerchantContext(c, product); err != nil {
+				return err
+			}
+			key := resolveSKUKey(item.ProductID, item.SKUKey)
+			sku, err := loadSellableSKU(tx, item.ProductID, key)
+			if err != nil {
+				return err
+			}
+			key = sku.SKUKey
+			var cart cartRow
+			err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ? AND product_id = ? AND sku_key = ?", uid, item.ProductID, key).First(&cart).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if sku.Stock < item.Quantity {
+					return errStock
+				}
+				if err := tx.Create(&cartRow{UserID: uid, StoreID: product.StoreID, ProductID: item.ProductID, SKUKey: key, Quantity: item.Quantity}).Error; err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			} else {
+				if sku.Stock < cart.Quantity+item.Quantity {
+					return errStock
+				}
+				if err := tx.Model(&cartRow{}).Where("id = ? AND user_id = ?", cart.ID, uid).Update("quantity", cart.Quantity+item.Quantity).Error; err != nil {
+					return err
+				}
+			}
+			added++
+		}
+		return nil
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"added_count": added})
+}
+
+// Clear removes only the current user cart. It intentionally does not depend
+// on a merchant context because the user is clearing their own cross-store cart.
+func (h *Handler) Clear(c *gin.Context) {
+	uid := uint64(middleware.UID(c))
+	result := h.db.WithContext(c.Request.Context()).Where("user_id = ?", uid).Delete(&cartRow{})
+	if result.Error != nil {
+		fail(c, result.Error)
+		return
+	}
+	response.OK(c, gin.H{"removed_count": result.RowsAffected})
 }

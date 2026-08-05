@@ -104,8 +104,8 @@ func (r *Repo) ListGoods(ctx context.Context, roomID uint) ([]broadcast.RoomGood
 
 func (r *Repo) LoadMerName(ctx context.Context, merID uint) (string, error) {
 	var name string
-	err := r.db.WithContext(ctx).Table("qixi_m_admin_merchant").
-		Select("mer_name").Where("mer_id = ?", merID).Scan(&name).Error
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_product_view").
+		Select("merchant_name").Where("merchant_id = ?", merID).Order("product_id ASC").Limit(1).Scan(&name).Error
 	return name, err
 }
 
@@ -116,9 +116,9 @@ func (r *Repo) LoadProductMeta(ctx context.Context, productID uint) (storeName, 
 		Price     float64 `gorm:"column:price"`
 		MerID     uint    `gorm:"column:mer_id"`
 	}
-	err = r.db.WithContext(ctx).Table("qixi_m_admin_store_product").
-		Select("store_name, image, price, mer_id").
-		Where("product_id = ? AND is_del = 0", productID).
+	err = r.db.WithContext(ctx).Table("qixi_crm_b_product_view").
+		Select("store_name, cover_url AS image, price, merchant_id AS mer_id").
+		Where("product_id = ?", productID).
 		Scan(&row).Error
 	if err != nil {
 		return "", "", 0, 0, err

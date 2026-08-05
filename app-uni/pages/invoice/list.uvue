@@ -1,0 +1,20 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Invoice = { id:number; order_id:number; profile_type:string; title:string; tax_no:string; email:string; status:string; invoice_no:string; file_url:string; rejection_reason:string; requested_at:string }
+type Page = { list: Invoice[]; total: number; page: number; limit: number }
+const items = ref<Invoice[]>([])
+const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const limit = 20
+function statusText(value:string):string{ if(value=='issued')return '已开具';if(value=='rejected')return '已驳回';if(value=='voided')return '已作废';return '申请中' }
+function hasMore():boolean{return items.value.length<total.value}
+function load(reset:boolean=false):void{if(loading.value||(!reset&&!hasMore()))return;const next=reset?1:page.value+1;loading.value=true;appRequest(`/invoices?page=${next}&limit=${limit}`).then((data)=>{const result=data as Page;page.value=result.page||next;total.value=result.total||0;items.value=reset?(result.list||[]):items.value.concat(result.list||[])}).catch((error)=>uni.showToast({title:error.message||'发票加载失败',icon:'none'})).finally(()=>loading.value=false)}
+function profiles():void{uni.navigateTo({url:'/pages/invoice/profiles'})}
+function openFile(url:string):void{uni.navigateTo({url:'/pages/webview/index?url='+encodeURIComponent(url)})}
+onShow(()=>load(true))
+onReachBottom(()=>load())
+</script>
+<template><view class="qx-page"><qx-nav title="我的发票"/><view class="qx-card tools"><text>开票抬头</text><button class="plain" @click="profiles">管理 ›</button></view><view v-if="items.length==0&&!loading" class="qx-card empty">暂无发票申请记录</view><view v-for="item in items" :key="item.id" class="qx-card record"><text class="status">{{statusText(item.status)}}</text><text class="line">订单：{{item.order_id}}</text><text class="line">{{item.profile_type=='enterprise'?'企业':'个人'}}抬头：{{item.title}}</text><text v-if="item.tax_no" class="line">税号：{{item.tax_no}}</text><text v-if="item.invoice_no" class="line">发票号码：{{item.invoice_no}}</text><text v-if="item.rejection_reason" class="reason">驳回原因：{{item.rejection_reason}}</text><button v-if="item.file_url" class="file" @click="openFile(item.file_url)">查看电子发票</button><text class="time">申请于 {{item.requested_at}}</text></view><view v-if="items.length>0" class="more">{{loading?'正在加载…':(hasMore()?'上拉加载更多':'已经到底了')}}</view></view></template>
+<style>.tools{display:flex;align-items:center;justify-content:space-between}.plain{margin:0;padding:0;background:transparent;color:#d72828;font-size:14px}.empty{color:#86909c;text-align:center}.record text{display:block}.status{color:#d72828;font-size:17px;font-weight:600}.line{margin-top:9px;color:#4e5969;font-size:14px}.reason{margin-top:10px;color:#f53f3f;font-size:13px}.file{margin-top:10px;color:#00b42a;font-size:13px}.time{margin-top:12px;color:#86909c;font-size:12px}.more{padding:16px 0 28px;text-align:center;color:#86909c;font-size:13px}</style>

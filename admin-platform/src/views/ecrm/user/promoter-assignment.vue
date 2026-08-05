@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import { Page } from '@vben/common-ui';
+import { ElMessage } from 'element-plus';
+import { assignPlatformUserPromoters } from '#/api/core/ecrm';
+const submitting=ref(false);const form=reactive({user_ids_text:'',status:1 as 0|1,reason:''});
+function parseUserIDs(){const values=[...new Set(form.user_ids_text.split(/[，,\s]+/).filter(Boolean).map(Number))];return values.length>0&&values.length<=100&&values.every((id)=>Number.isSafeInteger(id)&&id>0)?values:undefined}
+async function submit(){const userIDs=parseUserIDs(),reason=form.reason.trim();if(!userIDs||reason.length<2||reason.length>500){ElMessage.warning('请填写 1 至 100 个用户 ID 与调整原因');return}submitting.value=true;try{await assignPlatformUserPromoters({user_ids:userIDs,status:form.status,reason,idempotency_key:`promoter-${crypto.randomUUID()}`});ElMessage.success(form.status?'推广员资格已启用并写入审计记录':'推广员资格已停用；既有佣金和订单不受影响');Object.assign(form,{user_ids_text:'',status:1,reason:''})}finally{submitting.value=false}}
+</script>
+<template><Page title="批量设置推广员" description="仅平台角色可执行。一次设置 1 至 100 位用户的未来分销资格；不重算、不删除或结算既有佣金，也不修改订单和推荐关系。"><el-alert class="mb-4" type="warning" :closable="false" title="资格变更只影响后续分销准入。请根据虚构中文工单核验；已产生的佣金流水必须按原状态机处理。"/><el-card shadow="never" class="max-w-3xl"><el-form label-width="116px" @submit.prevent="submit"><el-form-item label="用户 ID" required><el-input v-model="form.user_ids_text" type="textarea" :rows="3" maxlength="1500" placeholder="使用逗号、中文逗号或换行分隔；最多 100 个"/></el-form-item><el-form-item label="资格状态" required><el-radio-group v-model="form.status"><el-radio :value="1">启用推广员</el-radio><el-radio :value="0">停用推广员</el-radio></el-radio-group></el-form-item><el-form-item label="调整原因" required><el-input v-model="form.reason" type="textarea" :rows="4" maxlength="500" show-word-limit placeholder="例如：虚构中文工单演示，开通推广资格。"/></el-form-item><el-form-item><el-button type="primary" :loading="submitting" @click="submit">确认设置</el-button></el-form-item></el-form></el-card></Page></template>

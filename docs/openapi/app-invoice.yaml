@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: crm-live ecrm app invoice
+  version: 1.0.0
+  description: C 端开票抬头和订单发票申请。订单归属、已支付状态及每订单一次申请均在服务端校验。
+servers:
+  - url: /api/app/v1
+paths:
+  /invoice-profiles:
+    get:
+      summary: 获取我的开票抬头
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 新增开票抬头
+      security: [{ bearerAuth: [] }]
+  /invoice-profiles/{id}:
+    put:
+      summary: 修改我的开票抬头
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: 删除我的开票抬头
+      security: [{ bearerAuth: [] }]
+  /invoice-profiles/{id}/default:
+    post:
+      summary: 设为默认开票抬头
+      security: [{ bearerAuth: [] }]
+  /invoices:
+    get:
+      summary: 获取我的发票申请
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: 对已支付订单提交发票申请
+      security: [{ bearerAuth: [] }]
+  /invoices/{id}:
+    get:
+      summary: 获取我的单个发票申请
+      security: [{ bearerAuth: [] }]

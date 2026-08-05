@@ -3,8 +3,9 @@ server:
   addr: ":8080"
   mode: debug
 
-mysql:
-  dsn: "qixi:qixi_local@tcp(pte_live_mysql:3306)/pte_live_ecrm?charset=utf8mb4&parseTime=True&loc=Local"
+databases:
+  business:
+    dsn: ""
 
 redis:
   addr: "pte_live_redis:6379"

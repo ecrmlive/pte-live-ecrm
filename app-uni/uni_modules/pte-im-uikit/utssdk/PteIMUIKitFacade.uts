@@ -1,4 +1,4 @@
-import { PteIMContact, PteIMContactPage, PteIMConversation, PteIMGroupPage, PteIMIncomingMessage, PteIMListener, PteIMLocation, PteIMMapConfig, PteIMRemoteConversation, PteIMSDKClient } from '../../pte-im-sdk/utssdk/interface.uts'
+import type { PteIMContact, PteIMContactPage, PteIMConversation, PteIMGroupPage, PteIMIncomingMessage, PteIMListener, PteIMLocation, PteIMMapConfig, PteIMRemoteConversation, PteIMSDKClient } from '../../pte-im-sdk/utssdk/interface.uts'
 
 /** Actions that require host application permissions, pickers, or business data. */
 /** Built-in actions whose permissions and media selection are completed by UIKit. */

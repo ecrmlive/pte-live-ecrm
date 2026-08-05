@@ -17,32 +17,35 @@ const (
 )
 
 type Room struct {
-	BroadcastRoomID uint       `gorm:"column:broadcast_room_id;primaryKey" json:"broadcast_room_id"`
-	MerID           uint       `gorm:"column:mer_id" json:"mer_id"`
-	Name            string     `gorm:"column:name" json:"name"`
-	CoverImg        string     `gorm:"column:cover_img" json:"cover_img"`
-	FeedsImg        string     `gorm:"column:feeds_img" json:"feeds_img"`
-	PlayURL         string     `gorm:"column:play_url" json:"play_url"`
-	PushURL         string     `gorm:"column:push_url" json:"push_url"`
-	StartTime       *time.Time `gorm:"column:start_time" json:"start_time"`
-	EndTime         *time.Time `gorm:"column:end_time" json:"end_time"`
-	AnchorName      string     `gorm:"column:anchor_name" json:"anchor_name"`
-	Phone           string     `gorm:"column:phone" json:"phone"`
-	Status          int8       `gorm:"column:status" json:"status"`
-	LiveStatus      int16      `gorm:"column:live_status" json:"live_status"`
-	IsShow          int8       `gorm:"column:is_show" json:"is_show"`
-	IsDel           int8       `gorm:"column:is_del" json:"-"`
-	CreateTime      time.Time  `gorm:"column:create_time" json:"create_time"`
-	Sort            int        `gorm:"column:sort" json:"sort"`
-	Star            int        `gorm:"column:star" json:"star"`
-	Mark            string     `gorm:"column:mark" json:"mark"`
-	Refusal         string     `gorm:"column:refusal" json:"refusal"`
+	BroadcastRoomID uint   `gorm:"column:broadcast_room_id;primaryKey" json:"broadcast_room_id"`
+	MerID           uint   `gorm:"column:mer_id" json:"mer_id"`
+	Name            string `gorm:"column:name" json:"name"`
+	CoverImg        string `gorm:"column:cover_img" json:"cover_img"`
+	FeedsImg        string `gorm:"column:feeds_img" json:"feeds_img"`
+	PlayURL         string `gorm:"column:play_url" json:"play_url"`
+	// PushURL and Phone remain persistence fields for merchant-side live
+	// provisioning, but must never be serialized by unified-admin supervision
+	// APIs because they can expose stream credentials or personal information.
+	PushURL    string     `gorm:"column:push_url" json:"-"`
+	StartTime  *time.Time `gorm:"column:start_time" json:"start_time"`
+	EndTime    *time.Time `gorm:"column:end_time" json:"end_time"`
+	AnchorName string     `gorm:"column:anchor_name" json:"anchor_name"`
+	Phone      string     `gorm:"column:phone" json:"-"`
+	Status     int8       `gorm:"column:status" json:"status"`
+	LiveStatus int16      `gorm:"column:live_status" json:"live_status"`
+	IsShow     int8       `gorm:"column:is_show" json:"is_show"`
+	IsDel      int8       `gorm:"column:is_del" json:"-"`
+	CreateTime time.Time  `gorm:"column:create_time" json:"create_time"`
+	Sort       int        `gorm:"column:sort" json:"sort"`
+	Star       int        `gorm:"column:star" json:"star"`
+	Mark       string     `gorm:"column:mark" json:"mark"`
+	Refusal    string     `gorm:"column:refusal" json:"refusal"`
 
 	MerName string      `gorm:"-" json:"mer_name,omitempty"`
 	Goods   []RoomGoods `gorm:"-" json:"goods,omitempty"`
 }
 
-func (Room) TableName() string { return "qixi_m_admin_broadcast_room" }
+func (Room) TableName() string { return "qixi_crm_b_broadcast_room" }
 
 type RoomGoods struct {
 	ID              uint `gorm:"column:id;primaryKey" json:"id"`
@@ -56,7 +59,7 @@ type RoomGoods struct {
 	Price     float64 `gorm:"-" json:"price,omitempty"`
 }
 
-func (RoomGoods) TableName() string { return "qixi_m_admin_broadcast_room_goods" }
+func (RoomGoods) TableName() string { return "qixi_crm_b_broadcast_room_goods" }
 
 type SaveInput struct {
 	Name       string `json:"name"`

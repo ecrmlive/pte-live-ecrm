@@ -1,9 +1,30 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
-type Post={title:string;content:string;nickname:string;topic_name:string;count_reply:number};type Reply={reply_id:number;nickname:string;content:string};type ReplyData={list:Reply[]}
-const id=ref(0);const post=ref<Post|null>(null);const replies=ref<Reply[]>([]);const draft=ref('')
-function load():void{appRequest(`/community/posts/${id.value}`,'GET',null,false).then((data)=>{post.value=data as Post});appRequest(`/community/posts/${id.value}/replies?page=1&limit=50`,'GET',null,false).then((data)=>{replies.value=(data as ReplyData).list||[]})}
-function send():void{const content=draft.value.trim();if(content.length==0)return;appRequest(`/community/posts/${id.value}/replies`,'POST',{content:content} as UTSJSONObject).then(()=>{draft.value='';load()}).catch((error)=>uni.showToast({title:error.message||'评论失败',icon:'none'}))} onLoad((query)=>{id.value=Number(query['id']||0);if(id.value>0)load()})
+import { getAccessToken } from '../../common/session'
+
+type Post={title:string;content:string;nickname:string;topic_name:string;count_reply:number}
+type Reply={reply_id:number;nickname:string;content:string;create_time:string}
+type ReplyData={list:Reply[];total:number;page:number;limit:number}
+const id=ref(0)
+const post=ref<Post|null>(null)
+const replies=ref<Reply[]>([])
+const draft=ref('')
+const page=ref(1)
+const total=ref(0)
+const loading=ref(false)
+const submitting=ref(false)
+const limit=20
+function hasPost(): boolean { return post.value != null }
+function postTitle(): string { const current = post.value; return current == null ? '内容加载中' : current.title }
+function postMeta(): string { const current = post.value; return current == null ? '--' : current.nickname + ' · ' + current.topic_name }
+function postContent(): string { const current = post.value; return current == null ? '--' : current.content }
+function hasMore():boolean{return replies.value.length<total.value}
+function loadPost():void{appRequest(`/community/posts/${id.value}`,'GET',null,false).then((data)=>{post.value=data as Post}).catch((error)=>uni.showToast({title:error.message||'内容不存在或已下架',icon:'none'}))}
+function loadReplies(reset:boolean=false):void{if(loading.value||(!reset&&!hasMore()))return;const next=reset?1:page.value+1;loading.value=true;appRequest(`/community/posts/${id.value}/replies?page=${next}&limit=${limit}`,'GET',null,false).then((data)=>{const result=data as ReplyData;page.value=result.page||next;total.value=result.total||0;replies.value=reset?(result.list||[]):replies.value.concat(result.list||[])}).catch((error)=>uni.showToast({title:error.message||'评论加载失败',icon:'none'})).finally(()=>loading.value=false)}
+function load(reset:boolean=true):void{if(id.value<=0)return;loadPost();loadReplies(reset)}
+function send():void{if(getAccessToken().length==0){uni.navigateTo({url:'/pages/login/index'});return};const content=draft.value.trim();if(content.length==0){uni.showToast({title:'请输入评论内容',icon:'none'});return};if(submitting.value)return;submitting.value=true;appRequest(`/community/posts/${id.value}/replies`,'POST',{content:content} as UTSJSONObject).then(()=>{draft.value='';load(true)}).catch((error)=>uni.showToast({title:error.message||'评论失败',icon:'none'})).finally(()=>submitting.value=false)}
+onLoad((query)=>{id.value=Number(query?.['id']||0);if(id.value>0)load(true)})
+onReachBottom(()=>loadReplies())
 </script>
-<template><view class="qx-page"><qx-nav title="社区详情"/><view v-if="post!=null" class="qx-card"><text class="title">{{post.title}}</text><text class="sub">{{post.nickname}} · {{post.topic_name}}</text><text class="body">{{post.content}}</text></view><view class="qx-card"><text class="title">评论</text><view v-for="reply in replies" :key="reply.reply_id" class="reply"><text>{{reply.nickname||'用户'}}</text><text class="body">{{reply.content}}</text></view><input v-model="draft" class="input" placeholder="说点什么…"/><button class="qx-primary" @click="send">发送评论</button></view></view></template>
-<style>.title,.sub,.body{display:block}.title{font-size:17px;font-weight:600}.sub{margin-top:8px;color:#86909c;font-size:12px}.body{margin-top:12px;color:#4e5969;line-height:22px}.reply{padding:12px 0;border-top:1px solid #f0f0f0}.input{height:42px;margin-top:12px;padding:0 10px;background:#f6f7f9;border-radius:8px}.qx-primary{margin-top:10px;border-radius:20px}</style>
+<template><view class="qx-page"><qx-nav title="社区详情"/><view v-if="hasPost()" class="qx-card"><text class="title">{{postTitle()}}</text><text class="sub">{{postMeta()}}</text><text class="body">{{postContent()}}</text></view><view class="qx-card"><text class="title">评论 {{total>0?'('+total+')':''}}</text><view v-if="replies.length==0&&!loading" class="empty">暂无评论，来抢沙发吧</view><view v-for="reply in replies" :key="reply.reply_id" class="reply"><text>{{reply.nickname||'用户'}}</text><text class="body">{{reply.content}}</text><text v-if="reply.create_time" class="sub">{{reply.create_time}}</text></view><view v-if="replies.length>0" class="more">{{loading?'正在加载…':(hasMore()?'上拉加载更多':'已经到底了')}}</view><input v-model="draft" class="input" maxlength="1000" placeholder="说点什么…"/><button class="qx-primary" :disabled="submitting" @click="send">{{submitting?'发送中…':'发送评论'}}</button></view></view></template>
+<style>.title,.sub,.body{display:block}.title{font-size:17px;font-weight:600}.sub{margin-top:8px;color:#86909c;font-size:12px}.body{margin-top:12px;color:#4e5969;line-height:22px}.reply{padding:12px 0;border-top:1px solid #f0f0f0}.empty,.more{padding:14px 0;text-align:center;color:#86909c;font-size:13px}.input{height:42px;margin-top:12px;padding:0 10px;background:#f6f7f9;border-radius:8px}.qx-primary{margin-top:10px;border-radius:20px}</style>

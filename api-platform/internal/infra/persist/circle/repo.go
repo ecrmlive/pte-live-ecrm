@@ -2,10 +2,12 @@ package circlepersist
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/circle"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Repo struct{ db *gorm.DB }
@@ -104,4 +106,55 @@ func (r *Repo) AuditAgent(ctx context.Context, id uint, status int8, reason stri
 	return r.db.WithContext(ctx).Model(&circle.Agent{}).Where("circle_agent_id = ? AND status = ?", id, circle.AgentPending).Updates(map[string]any{
 		"status": status, "audit_reason": reason, "audit_admin_id": adminID, "audit_time": auditTime, "update_time": auditTime,
 	}).Error
+}
+
+func (r *Repo) RevokeAgent(ctx context.Context, id uint, reason, idempotencyKey string, adminID uint, now time.Time) (bool, error) {
+	replayed := false
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var agent circle.Agent
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("circle_agent_id=?", id).Take(&agent).Error; err != nil {
+			return err
+		}
+		var previous struct {
+			Reason     string `gorm:"column:reason"`
+			OperatorID uint   `gorm:"column:operator_admin_id"`
+		}
+		if err := tx.Table("qixi_crm_a_business_zone_agent_command_audit").Where("circle_agent_id=? AND action='revoke' AND idempotency_key=?", id, idempotencyKey).Take(&previous).Error; err == nil {
+			if previous.Reason != reason || previous.OperatorID != adminID {
+				return circle.ErrCommandConflict
+			}
+			replayed = true
+			return nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if agent.Status == circle.AgentRevoked {
+			return circle.ErrAgentRevoked
+		}
+		if agent.Status != circle.AgentApproved {
+			return circle.ErrAgentNotApproved
+		}
+		if agent.Balance != 0 {
+			return circle.ErrAgentBalance
+		}
+		var bound int64
+		if err := tx.Table("qixi_crm_a_business_zone").Where("circle_agent_id=?", id).Count(&bound).Error; err != nil {
+			return err
+		}
+		if bound > 0 {
+			return circle.ErrAgentBound
+		}
+		var adminBound int64
+		if err := tx.Table("qixi_crm_a_admin_user").Where("circle_agent_id=?", id).Count(&adminBound).Error; err != nil {
+			return err
+		}
+		if adminBound > 0 {
+			return circle.ErrAgentAdminBound
+		}
+		if err := tx.Model(&circle.Agent{}).Where("circle_agent_id=? AND status<>?", id, circle.AgentRevoked).Updates(map[string]any{"status": circle.AgentRevoked, "update_time": now}).Error; err != nil {
+			return err
+		}
+		return tx.Table("qixi_crm_a_business_zone_agent_command_audit").Create(map[string]any{"circle_agent_id": id, "action": "revoke", "from_status": agent.Status, "to_status": circle.AgentRevoked, "reason": reason, "operator_admin_id": adminID, "idempotency_key": idempotencyKey}).Error
+	})
+	return replayed, err
 }

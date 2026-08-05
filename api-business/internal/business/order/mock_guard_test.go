@@ -40,3 +40,37 @@ func TestProductionCallbackDoesNotExposeMockPayment(t *testing.T) {
 		t.Fatalf("mock callback status = %d, want %d", resp.Code, http.StatusNotFound)
 	}
 }
+
+func TestRefundCallbackRouteRejectsUnsignedPayloadBeforeDatabaseAccess(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	NewCallbackHandler(nil, nil, false).Register(r)
+	resp := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/refund/wechat", strings.NewReader(`{"id":"forged","event_type":"REFUND.SUCCESS"}`))
+	r.ServeHTTP(resp, req)
+	if resp.Code != http.StatusBadRequest && resp.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d, want rejected callback", resp.Code)
+	}
+}
+
+func TestProductionCallbackDoesNotExposeMockRefund(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	NewCallbackHandler(nil, nil, false).Register(r)
+	resp := httptest.NewRecorder()
+	r.ServeHTTP(resp, httptest.NewRequest(http.MethodPost, "/refund/mock", strings.NewReader(`{"refund_id":1}`)))
+	if resp.Code != http.StatusNotFound {
+		t.Fatalf("mock refund route status=%d, want %d", resp.Code, http.StatusNotFound)
+	}
+}
+
+func TestSandboxMockRefundRejectsMissingIDBeforeDatabaseAccess(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	NewCallbackHandler(nil, nil, true).Register(r)
+	resp := httptest.NewRecorder()
+	r.ServeHTTP(resp, httptest.NewRequest(http.MethodPost, "/refund/mock", strings.NewReader(`{}`)))
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("sandbox mock refund status=%d, want %d", resp.Code, http.StatusBadRequest)
+	}
+}

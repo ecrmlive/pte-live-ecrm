@@ -1,5 +1,4 @@
 import axios from 'axios';
-import qs from 'qs';
 
 import { resolveLiveApiBaseUrl } from '#/utils/pte-live-api';
 import { attachAPIEncryption, decryptAPIResponse } from '#/utils/api-crypto';
@@ -14,35 +13,29 @@ export type LoginPlatform =
   | 'harmonyos';
 
 export interface RefreshTokenOptions {
-  loginPlatform: LoginPlatform;
-  token: string;
-  appId?: number;
+  refreshToken: string;
 }
 
 export interface RefreshTokenResult {
   ok: boolean;
   token?: string;
-  expiresAt?: number;
+  refreshToken?: string;
   clearToken?: boolean;
 }
 
-/** 向 api-live 刷新 JWT，延长有效期；账号无效时返回 clearToken */
-export async function refreshLiveJwtToken(
+/** 统一后台只使用 refresh token 调用自己的刷新接口，不能以 access token 代替。 */
+export async function refreshPlatformJwtToken(
   options: RefreshTokenOptions,
 ): Promise<RefreshTokenResult> {
-  const token = options.token?.trim();
-  if (!token) {
+  const refreshToken = options.refreshToken?.trim();
+  if (!refreshToken) {
     return { ok: false };
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-    'authori-zation': `Bearer ${token}`,
-    'X-Login-Platform': options.loginPlatform,
+    'Content-Type': 'application/json;charset=UTF-8',
+    'Authori-zation': `Bearer ${refreshToken}`,
   };
-  if (options.appId && options.appId > 0) {
-    headers.AppID = String(options.appId);
-  }
 
   try {
     const baseURL = resolveLiveApiBaseUrl();
@@ -52,40 +45,32 @@ export async function refreshLiveJwtToken(
       validateStatus: () => true,
     });
     const res = await axios.post(
-      `${baseURL}/api/v1/auth/refresh`,
-      qs.stringify({ login_platform: options.loginPlatform }),
+      `${baseURL}/api/platform/v1/auth/refresh`,
+      {},
       config,
     );
     await decryptAPIResponse(res);
 
-    const authHeader = res.headers['authori-zation'];
-    const headerToken =
-      typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7).trim()
-        : '';
-
     const body = res.data as {
-      code?: number;
-      data?: { token?: string; expires_at?: number };
-      msg?: string;
+      status?: number;
+      data?: { token?: { access_token?: string; refresh_token?: string } };
     };
 
-    if (body.code === 1) {
-      const newToken = headerToken || body.data?.token || '';
-      if (!newToken) {
+    if (res.status === 401 || body.status === 401) {
+      return { ok: false, clearToken: true };
+    }
+    if (res.status >= 200 && res.status < 300 && body.status === 200) {
+      const nextAccessToken = body.data?.token?.access_token || '';
+      const nextRefreshToken = body.data?.token?.refresh_token || '';
+      if (!nextAccessToken || !nextRefreshToken) {
         return { ok: false };
       }
       return {
         ok: true,
-        token: newToken,
-        expiresAt: body.data?.expires_at,
+        token: nextAccessToken,
+        refreshToken: nextRefreshToken,
       };
     }
-
-    if (body.code === -1) {
-      return { ok: false, clearToken: true };
-    }
-
     return { ok: false };
   } catch {
     return { ok: false };

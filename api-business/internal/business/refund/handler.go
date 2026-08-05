@@ -11,15 +11,22 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type Handler struct{ db *gorm.DB }
+
+const refundMessageMaxRunes = 500
+
+func exceedsRefundMessageLimit(value string) bool {
+	return utf8.RuneCountInString(value) > refundMessageMaxRunes
+}
 
 func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
@@ -28,6 +35,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/refunds/:id", h.get)
 	r.POST("/refunds/:id/cancel", h.cancel)
 	r.POST("/refunds/:id/platform", h.requestPlatform)
+	r.POST("/refunds/:id/return-shipment", h.submitReturnShipment)
 }
 
 type applyRequest struct {
@@ -54,11 +62,18 @@ type refund struct {
 	RefundNo   string    `gorm:"column:refund_no"`
 	Reason     string    `gorm:"column:reason"`
 	Amount     float64   `gorm:"column:amount"`
+	RefundType string    `gorm:"column:refund_type"`
 	Status     string    `gorm:"column:status"`
 	CreatedAt  time.Time `gorm:"column:created_at"`
 	UpdatedAt  time.Time `gorm:"column:updated_at"`
 	MerchantID uint64    `gorm:"column:merchant_id"`
 	UserID     uint64    `gorm:"column:user_id"`
+}
+type returnShipment struct {
+	CarrierName string    `gorm:"column:carrier_name"`
+	TrackingNo  string    `gorm:"column:tracking_no"`
+	Remark      string    `gorm:"column:remark"`
+	SubmittedAt time.Time `gorm:"column:submitted_at"`
 }
 type refundItem struct {
 	ID          uint64  `gorm:"column:id"`
@@ -70,13 +85,13 @@ type refundItem struct {
 
 func (h *Handler) apply(c *gin.Context) {
 	var req applyRequest
-	if err := c.ShouldBindJSON(&req); err != nil || req.OrderID == 0 || req.RefundType != 1 || strings.TrimSpace(req.RefundMessage) == "" {
+	if err := c.ShouldBindJSON(&req); err != nil || req.OrderID == 0 || (req.RefundType != 1 && req.RefundType != 2) || strings.TrimSpace(req.RefundMessage) == "" {
 		bad(c, "售后申请参数不合法")
 		return
 	}
 	uid := uint64(middleware.UID(c))
 	req.RefundMessage = strings.TrimSpace(req.RefundMessage)
-	if len(req.RefundMessage) > 500 {
+	if exceedsRefundMessageLimit(req.RefundMessage) {
 		bad(c, "退款原因不能超过 500 字")
 		return
 	}
@@ -104,7 +119,7 @@ func (h *Handler) apply(c *gin.Context) {
 			return nil
 		}
 		var active int64
-		if err := tx.Table("qixi_crm_b_refund").Where("order_id = ? AND status IN ?", req.OrderID, []string{"applied", "merchant_handling", "platform_intervene", "refunding"}).Count(&active).Error; err != nil {
+		if err := tx.Table("qixi_crm_b_refund").Where("order_id = ? AND status IN ?", req.OrderID, []string{"applied", "merchant_handling", "awaiting_return", "awaiting_receipt", "platform_intervene", "refunding"}).Count(&active).Error; err != nil {
 			return err
 		}
 		if active > 0 {
@@ -117,17 +132,18 @@ func (h *Handler) apply(c *gin.Context) {
 		if len(items) == 0 {
 			return errBadStatus
 		}
-		amount := 0.0
-		for _, item := range items {
-			amount += item.Price * float64(item.Quantity)
-		}
-		if amount <= 0 || amount > o.PayAmount {
+		// 当前售后申请是整单模型。商品行快照记录的是商品原价，而订单
+		// pay_amount 已包含服务端优惠分摊；用行原价相加会让使用优惠券
+		// 的订单出现“退款额大于实付额”并被错误拒绝。退款金额必须以
+		// 已锁定的订单实付金额为准，客户端没有金额输入权。
+		amount := fullOrderRefundAmount(o.PayAmount)
+		if amount <= 0 {
 			return errBadStatus
 		}
-		created = refund{OrderID: req.OrderID, RefundNo: refundNo(req.OrderID), Reason: req.RefundMessage, Amount: amount, Status: "applied"}
+		created = refund{OrderID: req.OrderID, RefundNo: refundNo(req.OrderID), Reason: req.RefundMessage, Amount: amount, RefundType: refundType(req.RefundType), Status: "applied"}
 		if err := tx.Table("qixi_crm_b_refund").Create(map[string]any{
 			"order_id": created.OrderID, "refund_no": created.RefundNo, "reason": created.Reason, "amount": created.Amount,
-			"order_status_before": o.Status, "status": created.Status, "idempotency_key": req.IdempotencyKey,
+			"refund_type": created.RefundType, "order_status_before": o.Status, "status": created.Status, "idempotency_key": req.IdempotencyKey,
 		}).Error; err != nil {
 			return err
 		}
@@ -136,6 +152,9 @@ func (h *Handler) apply(c *gin.Context) {
 		}
 		for _, item := range items {
 			if err := tx.Table("qixi_crm_b_aftersale_item").Create(map[string]any{"refund_id": created.ID, "order_item_id": item.ID, "quantity": item.Quantity, "amount": item.Price * float64(item.Quantity)}).Error; err != nil {
+				return err
+			}
+			if err := tx.Table("qixi_crm_b_order_item").Where("id = ? AND refund_quantity = 0", item.ID).Update("refund_quantity", item.Quantity).Error; err != nil {
 				return err
 			}
 		}
@@ -195,10 +214,72 @@ func (h *Handler) get(c *gin.Context) {
 }
 
 func (h *Handler) cancel(c *gin.Context) {
-	h.transition(c, "cancelled", "取消售后申请", func(current string) bool { return current == "applied" || current == "merchant_handling" })
+	h.transition(c, "cancelled", "取消售后申请", func(current string) bool {
+		return current == "applied" || current == "awaiting_return" || current == "merchant_handling"
+	})
 }
 func (h *Handler) requestPlatform(c *gin.Context) {
-	h.transition(c, "platform_intervene", "用户申请平台介入", func(current string) bool { return current == "applied" || current == "merchant_handling" })
+	h.transition(c, "platform_intervene", "用户申请平台介入", func(current string) bool {
+		return current == "applied" || current == "awaiting_return" || current == "awaiting_receipt" || current == "merchant_handling"
+	})
+}
+
+// submitReturnShipment records the buyer's return logistics exactly once. It
+// does not change funds or inventory; only the merchant's receipt confirmation
+// can advance the after-sale to the provider-refund stage.
+func (h *Handler) submitReturnShipment(c *gin.Context) {
+	refundID, uid := id(c), uint64(middleware.UID(c))
+	var req struct {
+		CarrierName string `json:"carrier_name"`
+		TrackingNo  string `json:"tracking_no"`
+		Remark      string `json:"remark"`
+	}
+	if refundID == 0 || c.ShouldBindJSON(&req) != nil {
+		bad(c, "退货物流参数不合法")
+		return
+	}
+	req.CarrierName, req.TrackingNo, req.Remark = strings.TrimSpace(req.CarrierName), strings.TrimSpace(req.TrackingNo), strings.TrimSpace(req.Remark)
+	if req.CarrierName == "" || len([]rune(req.CarrierName)) > 128 || len([]rune(req.TrackingNo)) < 3 || len([]rune(req.TrackingNo)) > 128 || len([]rune(req.Remark)) > 500 {
+		bad(c, "退货物流参数不合法")
+		return
+	}
+	err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		var row refund
+		if err := tx.Table("qixi_crm_b_refund AS r").Select("r.id,r.order_id,r.status,r.refund_type,o.user_id").Joins("JOIN qixi_crm_b_order AS o ON o.id = r.order_id").Where("r.id = ? AND o.user_id = ?", refundID, uid).Clauses(clause.Locking{Strength: "UPDATE"}).Scan(&row).Error; err != nil {
+			return err
+		}
+		if row.ID == 0 {
+			return errNotFound
+		}
+		if row.RefundType != "return_and_refund" {
+			return errBadStatus
+		}
+		var existing returnShipment
+		if err := tx.Table("qixi_crm_b_refund_return_shipment").Where("refund_id = ?", row.ID).Scan(&existing).Error; err != nil {
+			return err
+		}
+		if row.Status == "awaiting_receipt" {
+			if existing.CarrierName == req.CarrierName && existing.TrackingNo == req.TrackingNo && existing.Remark == req.Remark {
+				return nil
+			}
+			return errBadStatus
+		}
+		if row.Status != "awaiting_return" || existing.TrackingNo != "" {
+			return errBadStatus
+		}
+		if err := tx.Table("qixi_crm_b_refund_return_shipment").Create(map[string]any{"refund_id": row.ID, "carrier_name": req.CarrierName, "tracking_no": req.TrackingNo, "remark": req.Remark, "submitted_by": uid}).Error; err != nil {
+			return err
+		}
+		if err := tx.Table("qixi_crm_b_refund").Where("id = ? AND status = ?", row.ID, "awaiting_return").Update("status", "awaiting_receipt").Error; err != nil {
+			return err
+		}
+		return event(tx, row.ID, "awaiting_return", "awaiting_receipt", "user", uid, "用户已登记退货物流", key("return-shipment", uid, row.ID))
+	})
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) transition(c *gin.Context, target, reason string, allowed func(string) bool) {
@@ -247,7 +328,7 @@ func (h *Handler) transition(c *gin.Context, target, reason string, allowed func
 
 func (h *Handler) base(c *gin.Context) *gorm.DB {
 	return h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_refund AS r").
-		Select("r.id,r.order_id,r.refund_no,r.reason,r.amount,r.status,r.created_at,r.updated_at,o.merchant_id,o.user_id").
+		Select("r.id,r.order_id,r.refund_no,r.reason,r.amount,r.refund_type,r.status,r.created_at,r.updated_at,o.merchant_id,o.user_id").
 		Joins("JOIN qixi_crm_b_order AS o ON o.id = r.order_id")
 }
 func (h *Handler) view(c *gin.Context, row refund) gin.H {
@@ -260,7 +341,9 @@ func (h *Handler) view(c *gin.Context, row refund) gin.H {
 			items = append(items, gin.H{"refund_product_id": line.ID, "order_product_id": line.OrderItemID, "refund_price": line.Amount, "refund_num": line.Quantity})
 		}
 	}
-	return gin.H{"refund_order_id": row.ID, "refund_order_sn": row.RefundNo, "order_id": row.OrderID, "mer_id": row.MerchantID, "uid": row.UserID, "refund_type": 1, "refund_message": row.Reason, "refund_price": row.Amount, "refund_num": refundNum, "status": legacyStatus(row.Status), "status_code": row.Status, "create_time": row.CreatedAt.Format("2006-01-02 15:04:05"), "status_time": row.UpdatedAt.Format("2006-01-02 15:04:05"), "products": items}
+	shipment := returnShipment{}
+	_ = h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_refund_return_shipment").Where("refund_id = ?", row.ID).Scan(&shipment).Error
+	return gin.H{"refund_order_id": row.ID, "refund_order_sn": row.RefundNo, "order_id": row.OrderID, "mer_id": row.MerchantID, "uid": row.UserID, "refund_type": legacyRefundType(row.RefundType), "refund_message": row.Reason, "refund_price": row.Amount, "refund_num": refundNum, "status": legacyStatus(row.Status), "status_code": row.Status, "create_time": row.CreatedAt.Format("2006-01-02 15:04:05"), "status_time": row.UpdatedAt.Format("2006-01-02 15:04:05"), "products": items, "return_shipment": shipmentView(shipment)}
 }
 
 func event(tx *gorm.DB, refundID uint64, from, to, actor string, actorID uint64, reason, idem string) error {
@@ -271,6 +354,10 @@ func canApply(status string) bool {
 }
 func legacyStatus(status string) int {
 	switch status {
+	case "awaiting_return":
+		return 1
+	case "awaiting_receipt":
+		return 2
 	case "platform_intervene":
 		return 4
 	case "refunded":
@@ -282,6 +369,31 @@ func legacyStatus(status string) int {
 	default:
 		return 0
 	}
+}
+func refundType(value int) string {
+	if value == 2 {
+		return "return_and_refund"
+	}
+	return "money_only"
+}
+
+func fullOrderRefundAmount(payAmount float64) float64 {
+	if payAmount <= 0 {
+		return 0
+	}
+	return payAmount
+}
+func legacyRefundType(value string) int {
+	if value == "return_and_refund" {
+		return 2
+	}
+	return 1
+}
+func shipmentView(row returnShipment) any {
+	if row.TrackingNo == "" {
+		return nil
+	}
+	return gin.H{"carrier_name": row.CarrierName, "tracking_no": row.TrackingNo, "remark": row.Remark, "submitted_at": row.SubmittedAt.Format("2006-01-02 15:04:05")}
 }
 func page(c *gin.Context) (int, int) {
 	p, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

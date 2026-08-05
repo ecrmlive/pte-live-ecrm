@@ -92,6 +92,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Produc
 		g.Time = 24
 	}
 	g.StartTime, g.EndTime = parseRange(in.StartTime, in.EndTime)
+	if !validActivityRange(in.StartTime, in.EndTime, g.StartTime, g.EndTime) {
+		return nil, ErrBadParam
+	}
 	if in.IsShow != nil {
 		g.IsShow = *in.IsShow
 	}
@@ -105,6 +108,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Produc
 }
 
 func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*ProductGroup, error) {
+	if in.Status != nil && *in.Status != 0 && *in.Status != 1 {
+		return nil, ErrBadParam
+	}
 	g, err := s.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -122,6 +128,9 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 		g.Time = in.Time
 	}
 	if in.StartTime != "" || in.EndTime != "" {
+		if (in.StartTime != "" && !validActivityTime(in.StartTime)) || (in.EndTime != "" && !validActivityTime(in.EndTime)) {
+			return nil, ErrBadParam
+		}
 		st, et := parseRange(in.StartTime, in.EndTime)
 		if in.StartTime != "" {
 			g.StartTime = st
@@ -129,6 +138,9 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 		if in.EndTime != "" {
 			g.EndTime = et
 		}
+	}
+	if g.EndTime.Before(g.StartTime) {
+		return nil, ErrBadParam
 	}
 	if in.IsShow != nil {
 		g.IsShow = *in.IsShow
@@ -436,6 +448,18 @@ func parseRange(start, end string) (time.Time, time.Time) {
 		}
 	}
 	return st, et
+}
+
+func validActivityRange(start, end string, startTime, endTime time.Time) bool {
+	return (start == "" || validActivityTime(start)) && (end == "" || validActivityTime(end)) && !endTime.Before(startTime)
+}
+
+func validActivityTime(raw string) bool {
+	if _, err := time.ParseInLocation("2006-01-02 15:04:05", raw, time.Local); err == nil {
+		return true
+	}
+	_, err := time.ParseInLocation("2006-01-02", raw, time.Local)
+	return err == nil
 }
 
 func normalize(page, limit int) (int, int) {

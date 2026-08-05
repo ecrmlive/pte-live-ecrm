@@ -14,7 +14,12 @@ export function resolveNavigationAfterAccess(
     defaultHomePath: string;
     homePath?: string;
   },
-): RouteLocationRaw {
+): RouteLocationRaw | true {
+  // 动态路由已注册且当前目标已经被正常匹配时无需再导航；返回同一路径会
+  // 触发 Vue Router 的无限重定向保护。仅对注册前命中的 404 回退重试匹配。
+  if (to.name !== 'FallbackNotFound') {
+    return true;
+  }
   const redirectPath = (from.query.redirect ??
     (to.path === options.defaultHomePath
       ? options.homePath || options.defaultHomePath

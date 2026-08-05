@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/community"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct{ svc *community.Service }
@@ -26,6 +26,7 @@ func (h *Handler) RegisterPublic(r gin.IRoutes) {
 
 func (h *Handler) RegisterAuthed(r gin.IRoutes) {
 	r.GET("/community/my-posts", h.ListMyPosts)
+	r.DELETE("/community/my-posts/:id", h.DeleteMyPost)
 	r.POST("/community/posts", h.CreatePost)
 	r.POST("/community/posts/:id/replies", h.CreateReply)
 }
@@ -39,6 +40,19 @@ func (h *Handler) ListMyPosts(c *gin.Context) {
 		return
 	}
 	response.OK(c, res)
+}
+
+func (h *Handler) DeleteMyPost(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, "社区内容 ID 错误")
+		return
+	}
+	if err := h.svc.DeleteUserPost(c.Request.Context(), middleware.UID(c), uint(id)); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {
@@ -73,7 +87,8 @@ func (h *Handler) ListPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	topicID, _ := strconv.ParseUint(c.DefaultQuery("topic_id", "0"), 10, 64)
-	res, err := h.svc.ListApp(c.Request.Context(), uint(topicID), page, limit)
+	categoryID, _ := strconv.ParseUint(c.DefaultQuery("category_id", "0"), 10, 64)
+	res, err := h.svc.ListApp(c.Request.Context(), uint(topicID), uint(categoryID), page, limit)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

@@ -6,36 +6,47 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	apparticle "github.com/crmlive/pte-live-ecrm/api-business/internal/app/article"
 	appassist "github.com/crmlive/pte-live-ecrm/api-business/internal/app/assist"
 	appchat "github.com/crmlive/pte-live-ecrm/api-business/internal/app/chat"
 	appcombination "github.com/crmlive/pte-live-ecrm/api-business/internal/app/combination"
 	appcommunity "github.com/crmlive/pte-live-ecrm/api-business/internal/app/community"
-	appcoupon "github.com/crmlive/pte-live-ecrm/api-business/internal/app/coupon"
 	appinvoice "github.com/crmlive/pte-live-ecrm/api-business/internal/app/invoice"
-	apppoints "github.com/crmlive/pte-live-ecrm/api-business/internal/app/points"
 	apppresell "github.com/crmlive/pte-live-ecrm/api-business/internal/app/presell"
 	appreservation "github.com/crmlive/pte-live-ecrm/api-business/internal/app/reservation"
 	businessaccount "github.com/crmlive/pte-live-ecrm/api-business/internal/business/account"
 	businessaddress "github.com/crmlive/pte-live-ecrm/api-business/internal/business/address"
+	businessassistorder "github.com/crmlive/pte-live-ecrm/api-business/internal/business/assistorder"
 	businessauth "github.com/crmlive/pte-live-ecrm/api-business/internal/business/auth"
 	businesscart "github.com/crmlive/pte-live-ecrm/api-business/internal/business/cart"
 	businesscatalog "github.com/crmlive/pte-live-ecrm/api-business/internal/business/catalog"
+	businesscity "github.com/crmlive/pte-live-ecrm/api-business/internal/business/city"
+	businesscombinationorder "github.com/crmlive/pte-live-ecrm/api-business/internal/business/combinationorder"
+	businesscomment "github.com/crmlive/pte-live-ecrm/api-business/internal/business/comment"
 	businesscontent "github.com/crmlive/pte-live-ecrm/api-business/internal/business/contentview"
 	businesscoupon "github.com/crmlive/pte-live-ecrm/api-business/internal/business/coupon"
+	businessdistribution "github.com/crmlive/pte-live-ecrm/api-business/internal/business/distribution"
 	businessdiyview "github.com/crmlive/pte-live-ecrm/api-business/internal/business/diyview"
 	businessfavorite "github.com/crmlive/pte-live-ecrm/api-business/internal/business/favorite"
+	businessfeedback "github.com/crmlive/pte-live-ecrm/api-business/internal/business/feedback"
+	businessfunding "github.com/crmlive/pte-live-ecrm/api-business/internal/business/funding"
+	businesshistory "github.com/crmlive/pte-live-ecrm/api-business/internal/business/history"
 	businesslive "github.com/crmlive/pte-live-ecrm/api-business/internal/business/live"
 	businessmarketing "github.com/crmlive/pte-live-ecrm/api-business/internal/business/marketing"
 	businessmerchantapply "github.com/crmlive/pte-live-ecrm/api-business/internal/business/merchantapply"
+	businessnotification "github.com/crmlive/pte-live-ecrm/api-business/internal/business/notification"
+	businessopenscreen "github.com/crmlive/pte-live-ecrm/api-business/internal/business/openscreen"
 	businessorder "github.com/crmlive/pte-live-ecrm/api-business/internal/business/order"
+	businesspoints "github.com/crmlive/pte-live-ecrm/api-business/internal/business/points"
+	businesspresellorder "github.com/crmlive/pte-live-ecrm/api-business/internal/business/presellorder"
 	businessrefund "github.com/crmlive/pte-live-ecrm/api-business/internal/business/refund"
+	businessrefundprocessor "github.com/crmlive/pte-live-ecrm/api-business/internal/business/refundprocessor"
+	businessreservation "github.com/crmlive/pte-live-ecrm/api-business/internal/business/reservation"
+	businesssearchhistory "github.com/crmlive/pte-live-ecrm/api-business/internal/business/searchhistory"
 	businessupload "github.com/crmlive/pte-live-ecrm/api-business/internal/business/upload"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/article"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/assist"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/cart"
-	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/catalog"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/chat"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/cloudconfig"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/combination"
@@ -46,14 +57,19 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/reservation"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/seckill"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/trade"
+	commentmoderationevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/commentmoderation"
+	feedbackmoderationevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/feedbackmoderation"
 	merchantapplicationevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantapplication"
 	merchantdiyevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantdiy"
 	merchantimevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantim"
+	merchantintegralpolicyevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantintegralpolicy"
+	merchantledgerevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantledger"
+	merchantstockevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/merchantstock"
+	platformcityevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/platformcity"
 	platformdiyevent "github.com/crmlive/pte-live-ecrm/api-business/internal/event/platformdiy"
 	articlepersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/article"
 	assistpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/assist"
 	cartpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/cart"
-	catalogpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/catalog"
 	chatpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/chat"
 	cloudconfigpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/cloudconfig"
 	combinationpersist "github.com/crmlive/pte-live-ecrm/api-business/internal/infra/persist/combination"
@@ -72,6 +88,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/upload"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -98,6 +115,13 @@ func main() {
 	if imProjection != nil {
 		defer imProjection.Close()
 	}
+	integralPolicyProjection, err := merchantintegralpolicyevent.StartBusinessProjection(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant integral policy projection subscriber unavailable: %v", err)
+	}
+	if integralPolicyProjection != nil {
+		defer integralPolicyProjection.Close()
+	}
 	diyProjection, err := merchantdiyevent.StartBusinessProjection(context.Background(), gdb, cfg.NATS.URL)
 	if err != nil {
 		log.Printf("merchant DIY projection subscriber unavailable: %v", err)
@@ -105,6 +129,14 @@ func main() {
 	if diyProjection != nil {
 		defer diyProjection.Close()
 	}
+	platformCityProjection, err := platformcityevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("platform city projection subscriber unavailable: %v", err)
+	}
+	if platformCityProjection != nil {
+		defer platformCityProjection.Close()
+	}
+
 	platformDIYProjection, err := platformdiyevent.Start(context.Background(), gdb, cfg.NATS.URL)
 	if err != nil {
 		log.Printf("platform DIY projection subscriber unavailable: %v", err)
@@ -112,7 +144,30 @@ func main() {
 	if platformDIYProjection != nil {
 		defer platformDIYProjection.Close()
 	}
+	merchantApplicationReviewProjection, err := merchantapplicationevent.StartReviewProjection(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("merchant application review projection subscriber unavailable: %v", err)
+	}
+	if merchantApplicationReviewProjection != nil {
+		defer merchantApplicationReviewProjection.Close()
+	}
 	merchantapplicationevent.StartOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantstockevent.StartOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	merchantledgerevent.StartOutboxDispatcher(context.Background(), gdb, cfg.NATS.URL)
+	productCommentCommands, err := commentmoderationevent.StartCommandSubscriber(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("product comment moderation command subscriber unavailable: %v", err)
+	}
+	if productCommentCommands != nil {
+		defer productCommentCommands.Close()
+	}
+	feedbackCommands, err := feedbackmoderationevent.Start(context.Background(), gdb, cfg.NATS.URL)
+	if err != nil {
+		log.Printf("feedback moderation command subscriber unavailable: %v", err)
+	}
+	if feedbackCommands != nil {
+		defer feedbackCommands.Close()
+	}
 
 	jwtMgr := authjwt.NewManager(cfg.JWT.Secret, cfg.JWT.AccessTTL(), cfg.JWT.RefreshTTL())
 	paymentConfigStore, err := paymentconfig.NewStore(gdb, cfg.JWT.Secret)
@@ -123,7 +178,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("cloud config crypto: %v", err)
 	}
-	catSvc := catalog.NewService(catalogpersist.NewStoreAdapter(catalogpersist.NewRepo(gdb)))
+	businessrefundprocessor.New(gdb, paymentConfigStore, cloudConfigSvc).Start(context.Background())
 	cartSvc := cart.NewService(cartpersist.NewStoreAdapter(cartpersist.NewRepo(gdb)))
 	promoSvc := promotion.NewService(promotionpersist.NewStoreAdapter(promotionpersist.NewRepo(gdb)))
 	tradeSvc := trade.NewService(tradepersist.NewStoreAdapter(tradepersist.NewRepo(gdb)), cartSvc, promoSvc)
@@ -155,22 +210,34 @@ func main() {
 	if captchaErr != nil {
 		log.Printf("pte-tools-captcha is unavailable: %v", captchaErr)
 	}
-	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr, captchaClient)
+	appH := businessauth.NewHandler(businessauth.NewService(gdb), jwtMgr, captchaClient, cloudConfigSvc)
 	appCatH := businesscatalog.NewHandler(gdb)
+	appCityH := businesscity.NewHandler(gdb)
 	appMerchantApplyH := businessmerchantapply.NewHandler(gdb)
 	appUploadH := businessupload.NewHandler(gdb, upload.DatabaseCOS{Resolver: cloudConfigSvc})
 	appAddrH := businessaddress.NewHandler(gdb)
 	appAccountH := businessaccount.NewHandler(gdb)
+	appFundingH := businessfunding.NewHandler(gdb, cloudConfigSvc)
 	appCartH := businesscart.NewHandler(gdb)
+	appCommentH := businesscomment.NewHandler(gdb)
 	appOrderH := businessorder.NewHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox, cloudConfigSvc)
 	appOrderCallbackH := businessorder.NewCallbackHandler(gdb, paymentConfigStore, cfg.Payment.Sandbox, cloudConfigSvc)
-	appPointsH := apppoints.NewHandler(tradeSvc, catSvc)
+	appPointsH := businesspoints.NewHandler(gdb)
+	appAssistOrderH := businessassistorder.NewHandler(gdb)
+	appCombinationOrderH := businesscombinationorder.NewHandler(gdb)
+	appPresellOrderH := businesspresellorder.NewHandler(gdb)
+	appReservationOrderH := businessreservation.NewHandler(gdb)
 	appRefundH := businessrefund.NewHandler(gdb)
-	appCouponH := appcoupon.NewHandler(promoSvc, cartSvc)
 	appBusinessCouponH := businesscoupon.NewHandler(gdb)
 	appContentH := businesscontent.NewHandler(gdb)
 	appDiyH := businessdiyview.NewHandler(gdb)
+	appDistributionH := businessdistribution.NewHandler(gdb)
 	appFavoriteH := businessfavorite.NewHandler(gdb)
+	appFeedbackH := businessfeedback.NewHandler(gdb)
+	appHistoryH := businesshistory.NewHandler(gdb)
+	appSearchHistoryH := businesssearchhistory.NewHandler(gdb)
+	appNotificationH := businessnotification.NewHandler(gdb)
+	appOpenScreenH := businessopenscreen.NewHandler(gdb)
 	appSeckillH := businessmarketing.NewSeckillHandler(gdb)
 	appComboH := appcombination.NewHandler(comboSvc, tradeSvc)
 	appPresellH := apppresell.NewHandler(presellSvc, tradeSvc)
@@ -194,10 +261,15 @@ func main() {
 	appOptional := r.Group("/api/app/v1")
 	appOptional.Use(middleware.JWTOptional(jwtMgr, authjwt.PortalApp))
 	appAuthed := r.Group("/api/app/v1")
-	appAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalApp))
+	appAuthed.Use(middleware.JWTRequired(jwtMgr, authjwt.PortalApp), middleware.CUserSessionRequired(gdb))
 	appH.Register(appPublic, appAuthed)
+	appH.RegisterPassword(appAuthed)
+	appH.RegisterCancellation(appAuthed)
 	appH.RegisterCaptchaGateway(r)
 	appCatH.Register(appPublic)
+	appCityH.Register(appPublic)
+	appOpenScreenH.Register(appPublic)
+	appCommentH.RegisterPublic(appPublic)
 	appContentH.Register(appPublic)
 	appArticleH.Register(appPublic)
 	appDiyH.Register(appPublic)
@@ -212,15 +284,19 @@ func main() {
 	appBusinessCouponH.RegisterPublic(appOptional)
 	appAddrH.Register(appAuthed)
 	appAccountH.Register(appAuthed)
+	appFundingH.Register(appAuthed)
 	appCartH.Register(appAuthed)
 	appOrderH.Register(appAuthed)
 	appComboH.RegisterAuthed(appAuthed)
+	appCombinationOrderH.Register(appAuthed)
 	appPresellH.RegisterAuthed(appAuthed)
-	appReserveH.RegisterAuthed(appAuthed)
+	appPresellOrderH.Register(appAuthed)
+	appReservationOrderH.Register(appAuthed)
 	appAssistH.RegisterAuthed(appAuthed)
+	appAssistOrderH.Register(appAuthed)
 	appPointsH.RegisterAuthed(appAuthed)
 	appRefundH.Register(appAuthed)
-	appCouponH.RegisterSpread(appAuthed)
+	appDistributionH.Register(appAuthed)
 	appBusinessCouponH.Register(appAuthed)
 	appCommunityH.RegisterAuthed(appAuthed)
 	appChatH.Register(appAuthed)
@@ -229,6 +305,11 @@ func main() {
 	appMerchantApplyH.Register(appAuthed)
 	appUploadH.Register(appAuthed)
 	appFavoriteH.Register(appAuthed)
+	appFeedbackH.Register(appAuthed)
+	appHistoryH.Register(appAuthed)
+	appSearchHistoryH.Register(appAuthed)
+	appNotificationH.Register(appAuthed)
+	appCommentH.Register(appAuthed)
 
 	cb := r.Group("/api/callback/v1")
 	cb.GET("/ping", func(c *gin.Context) {

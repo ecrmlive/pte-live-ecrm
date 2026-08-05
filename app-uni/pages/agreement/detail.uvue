@@ -4,15 +4,18 @@ import { appRequest } from '../../common/request'
 type Agreement = { key: string; label: string; content: string }
 const item = ref<Agreement | null>(null)
 
+function hasAgreement(): boolean { return item.value != null }
+function agreementLabel(): string { const agreement = item.value; return agreement == null ? '平台协议' : agreement.label }
+function agreementContent(): string { const agreement = item.value; return agreement == null ? '--' : agreement.content }
 function load(key: string): void {
   const safeKey = key.length > 0 ? key : 'sys_user_agree'
   appRequest(`/agreements/${encodeURIComponent(safeKey)}`, 'GET', null, false).then((data) => { item.value = data as Agreement }).catch((error) => uni.showToast({ title: error.message || '协议加载失败', icon: 'none' }))
 }
-onLoad((query) => load(String(query['key'] || 'sys_user_agree')))
+onLoad((query) => load(String(query?.['key'] || 'sys_user_agree')))
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav :title="item != null ? item.label : '平台协议'" /><view v-if="item != null" class="article"><text class="title">{{ item.label }}</text><text class="content">{{ item.content }}</text></view></view>
+  <view class="qx-page"><qx-nav :title="agreementLabel()" /><view v-if="hasAgreement()" class="article"><text class="title">{{ agreementLabel() }}</text><text class="content">{{ agreementContent() }}</text></view></view>
 </template>
 
 <style>

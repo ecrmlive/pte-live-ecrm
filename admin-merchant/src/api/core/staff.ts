@@ -8,6 +8,7 @@ export interface MerchantStaff {
   is_verify: number;
   nickname: string;
   phone: string;
+	role_code: 'clerk' | 'delivery' | 'manager' | 'service';
   service_id: number;
   status: number;
 }
@@ -35,4 +36,8 @@ export function createMerchantStaffApi(data: MerchantStaffSaveInput) {
 
 export function updateMerchantStaffApi(id: number, data: MerchantStaffSaveInput) {
   return requestClient.put<MerchantStaff>(`/setting/staff/${id}`, data);
+}
+
+export function removeMerchantStaffApi(id: number) {
+  return requestClient.delete<{ removed: boolean; service_id: number }>(`/setting/staff/${id}`);
 }

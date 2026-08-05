@@ -1,4 +1,4 @@
-import { PteIMAppearance, PteIMBaseConfig, PteIMLoginConfig, PteIMMedia, PteIMVoice, PteIMLocation, PteIMBusinessContent, PteIMIncomingMessage, PteIMMessageStateChange, PteIMConversation, PteIMRemoteConversation, PteIMConversationPage, PteIMMessagePage, PteIMSDKBootstrap, PteIMSDKClient, PteIMGender, PteIMUserProfile, PteIMUserProfileUpdate, PteIMContactPage, PteIMMemberPage, PteIMGroupPage, PteIMStateChange, PteIMStateChangePage, PteIMDefaultSetting, PteIMPushDevice, PteIMPushPlatform, PteIMListener, PteIMCommerce, PteIMMapConfig, PteIMUserSigRefreshResult } from './interface.uts'
+import type { PteIMAppearance, PteIMBaseConfig, PteIMLoginConfig, PteIMMedia, PteIMVoice, PteIMLocation, PteIMBusinessContent, PteIMIncomingMessage, PteIMMessageStateChange, PteIMConversation, PteIMRemoteConversation, PteIMConversationPage, PteIMMessagePage, PteIMSDKBootstrap, PteIMSDKClient, PteIMGender, PteIMUserProfile, PteIMUserProfileUpdate, PteIMContactPage, PteIMMemberPage, PteIMGroupPage, PteIMStateChange, PteIMStateChangePage, PteIMDefaultSetting, PteIMPushDevice, PteIMPushPlatform, PteIMListener, PteIMCommerce, PteIMMapConfig, PteIMUserSigRefreshResult } from './interface.uts'
 import { PteIME2EE } from './e2ee.uts'
 import { CrossPlatformPteIMCommerce } from './commerce.uts'
 
@@ -408,7 +408,7 @@ export class CrossPlatformPteIMSDKClient implements PteIMSDKClient {
 
   private connect(): void {
     if (this.stopped || this.socket != null) return
-    const socket = uni.connectSocket({ url: this.webSocketURL() })
+    const socket: any = uni.connectSocket({ url: this.webSocketURL() })
     this.socket = socket
     socket.onOpen(() => {
       if (this.socket != socket || this.stopped) return
@@ -442,7 +442,7 @@ export class CrossPlatformPteIMSDKClient implements PteIMSDKClient {
    * method. Prefer task close where available, then use the platform-wide API.
    */
   private closeSocket(socket: any | null, reason: string): void {
-    const options = { code: 1000, reason } as CloseSocketOptions
+    const options = { code: 1000, reason } as any
     if (socket != null && typeof socket.close === 'function') {
       try { socket.close(options); return } catch (_) {}
     }
@@ -490,7 +490,7 @@ export class CrossPlatformPteIMSDKClient implements PteIMSDKClient {
     const attempt = Math.min(this.reconnectAttempt, 5)
     this.reconnectAttempt = attempt + 1
     const delay = Math.min(1000 * Math.pow(2, attempt), 30000)
-    this.reconnectTimer = setTimeout(() => { this.reconnectTimer = null; this.connect() }, delay)
+    this.reconnectTimer = setTimeout(() => { this.reconnectTimer = null; this.connect() }, delay) as any as number
   }
 
   private flushOutbox(): void {
@@ -520,7 +520,7 @@ export class CrossPlatformPteIMSDKClient implements PteIMSDKClient {
     let nextRetryAt = this.outbox[0].nextRetryAt
     for (let index = 1; index < this.outbox.length; index++) nextRetryAt = Math.min(nextRetryAt, this.outbox[index].nextRetryAt)
     const delay = Math.min(Math.max(nextRetryAt - Date.now(), 100), 30000)
-    this.outboxRetryTimer = setTimeout(() => { this.outboxRetryTimer = null; this.flushOutbox() }, delay)
+    this.outboxRetryTimer = setTimeout(() => { this.outboxRetryTimer = null; this.flushOutbox() }, delay) as any as number
   }
 
   private loadOutbox(): void {
@@ -696,7 +696,7 @@ export class CrossPlatformPteIMSDKClient implements PteIMSDKClient {
     const expireAt = this.loginConfig.userSigExpireAt ?? 0
     if (this.stopped || this.loginConfig.userSigProvider == null || expireAt <= 0) return
     const delay = Math.max(1000, expireAt * 1000 - Date.now() - 5 * 60 * 1000)
-    this.userSigRefreshTimer = setTimeout(() => { this.userSigRefreshTimer = null; void this.refreshUserSig(true) }, delay)
+    this.userSigRefreshTimer = setTimeout(() => { this.userSigRefreshTimer = null; void this.refreshUserSig(true) }, delay) as any as number
   }
   private notifyConnection(connected: boolean): void {
     this.listeners.forEach((listener: PteIMListener) => listener.onConnectionChanged?.(connected))

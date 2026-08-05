@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +22,8 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/notices", h.ListNotices)
 	r.GET("/notices/:id", h.GetNotice)
+	r.GET("/content/articles", h.ListArticles)
+	r.GET("/content/articles/:id", h.GetArticle)
 	r.GET("/agreements/:key", h.GetAgreement)
 }
 
@@ -154,4 +156,51 @@ func agreementLabel(key string) (string, bool) {
 
 func internalError(c *gin.Context) {
 	response.Fail(c, http.StatusInternalServerError, "内容消费视图查询失败")
+}
+
+func (h *Handler) ListArticles(c *gin.Context) { h.listContent(c, "article") }
+func (h *Handler) GetArticle(c *gin.Context)   { h.getContent(c, "article", "资讯") }
+func (h *Handler) listContent(c *gin.Context, kind string) {
+	page, limit := pageParams(c)
+	query := h.db.WithContext(c.Request.Context()).Model(&contentView{}).Where("content_type = ? AND status = ?", kind, 1)
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		internalError(c)
+		return
+	}
+	rows := make([]contentView, 0)
+	if err := query.Order("published_at DESC, content_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
+		internalError(c)
+		return
+	}
+	list := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		list = append(list, contentResponse(row, kind))
+	}
+	response.OK(c, gin.H{"list": list, "total": total, "page": page, "limit": limit})
+}
+func (h *Handler) getContent(c *gin.Context, kind, label string) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, label+" ID 错误")
+		return
+	}
+	var row contentView
+	err = h.db.WithContext(c.Request.Context()).Where("content_id = ? AND content_type = ? AND status = ?", id, kind, 1).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		response.Fail(c, http.StatusNotFound, label+"不存在")
+		return
+	}
+	if err != nil {
+		internalError(c)
+		return
+	}
+	response.OK(c, contentResponse(row, kind))
+}
+func contentResponse(row contentView, kind string) gin.H {
+	out := noticeResponse(row)
+	if kind == "article" {
+		out["article_id"] = row.ContentID
+	}
+	return out
 }

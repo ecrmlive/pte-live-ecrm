@@ -1,0 +1,15 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Comment = { comment_id:number; title:string; score:number; content:string; reply_content:string; status:string; create_time:string }
+type Page = { list:Comment[]; total:number; page:number; limit:number }
+const items = ref<Comment[]>([])
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+function hasMore():boolean { return items.value.length < total.value }
+function load(reset:boolean = false):void { if (loading.value || (!reset && !hasMore())) return; if (reset) { items.value=[]; page.value=1; total.value=0 }; loading.value=true; appRequest("/comments/mine?page="+page.value+"&limit=20").then((data)=>{const result=data as Page;items.value=items.value.concat(result.list||[]);total.value=result.total||0;page.value+=1}).catch((error)=>uni.showToast({title:error.message||"评价加载失败",icon:"none"})).finally(()=>loading.value=false) }
+function status(value:string):string { return value=="published"?"已展示":value=="hidden"?"未通过":"审核中" }
+onShow(()=>load(true))
+onReachBottom(()=>load())
+</script><template><view class="qx-page"><qx-nav title="我的评价"/><view v-if="!loading&&items.length==0" class="qx-card empty">暂无评价记录</view><view v-for="item in items" :key="item.comment_id" class="qx-card"><text>{{item.title||"商品评价"}} · {{status(item.status)}}</text><text class="line">{{item.score}} 星：{{item.content}}</text><text v-if="item.reply_content" class="reply">商家回复：{{item.reply_content}}</text><text class="time">{{item.create_time}}</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="items.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="items.length>0" class="more" @click="load()">加载更多</text></view></template><style>.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:22px}.more{padding:16px;font-size:12px}.line,.reply,.time{display:block;margin-top:8px}.line{color:#4e5969}.reply{color:#00b42a}.time{color:#86909c;font-size:12px}</style>

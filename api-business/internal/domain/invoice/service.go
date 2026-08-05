@@ -3,6 +3,7 @@ package invoice
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -10,63 +11,140 @@ import (
 )
 
 type OrderMeta struct {
-	OrderID  uint
-	UID      uint
-	MerID    uint
-	Paid     bool
-	Status   int8
+	OrderID uint64
+	UserID  uint64
+	Status  string
 }
 
 type Store interface {
-	ListByUID(ctx context.Context, uid uint, page, limit int) ([]Invoice, int64, error)
-	ListByMer(ctx context.Context, merID uint, page, limit int) ([]Invoice, int64, error)
-	Get(ctx context.Context, id uint) (*Invoice, error)
-	FindByOrder(ctx context.Context, orderID uint) (*Invoice, error)
+	ListProfiles(ctx context.Context, userID uint64) ([]InvoiceProfile, error)
+	GetProfile(ctx context.Context, userID, id uint64) (*InvoiceProfile, error)
+	CreateProfile(ctx context.Context, row *InvoiceProfile) error
+	UpdateProfile(ctx context.Context, row *InvoiceProfile) error
+	DeleteProfile(ctx context.Context, userID, id uint64) error
+	SetDefaultProfile(ctx context.Context, userID, id uint64) error
+	ListByUID(ctx context.Context, userID uint64, page, limit int) ([]Invoice, int64, error)
+	GetByUID(ctx context.Context, userID, id uint64) (*Invoice, error)
+	FindByOrder(ctx context.Context, orderID uint64) (*Invoice, error)
 	Create(ctx context.Context, row *Invoice) error
-	Update(ctx context.Context, row *Invoice) error
-	LoadOrder(ctx context.Context, orderID uint) (*OrderMeta, error)
+	LoadOrder(ctx context.Context, orderID uint64) (*OrderMeta, error)
 }
 
 type Service struct{ store Store }
 
 func NewService(store Store) *Service { return &Service{store: store} }
 
-func (s *Service) Apply(ctx context.Context, uid uint, in ApplyInput) (*Invoice, error) {
-	if uid == 0 || in.OrderID == 0 {
+func (s *Service) ListProfiles(ctx context.Context, userID uint64) ([]InvoiceProfile, error) {
+	if userID == 0 {
 		return nil, ErrBadParam
 	}
-	header := strings.TrimSpace(in.Header)
-	if header == "" {
+	return s.store.ListProfiles(ctx, userID)
+}
+
+func (s *Service) CreateProfile(ctx context.Context, userID uint64, in ProfileInput) (*InvoiceProfile, error) {
+	if userID == 0 {
 		return nil, ErrBadParam
 	}
-	if _, err := s.store.FindByOrder(ctx, in.OrderID); err == nil {
-		return nil, ErrExists
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	row, err := profileFromInput(in)
+	if err != nil {
 		return nil, err
 	}
-	ord, err := s.store.LoadOrder(ctx, in.OrderID)
+	row.UserID = userID
+	if err := s.store.CreateProfile(ctx, &row); err != nil {
+		return nil, err
+	}
+	if row.IsDefault {
+		if err := s.store.SetDefaultProfile(ctx, userID, row.ID); err != nil {
+			return nil, err
+		}
+	}
+	return &row, nil
+}
+
+func (s *Service) UpdateProfile(ctx context.Context, userID, id uint64, in ProfileInput) (*InvoiceProfile, error) {
+	if userID == 0 || id == 0 {
+		return nil, ErrBadParam
+	}
+	row, err := profileFromInput(in)
+	if err != nil {
+		return nil, err
+	}
+	current, err := s.store.GetProfile(ctx, userID, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, err
+	}
+	row.ID, row.UserID, row.CreatedAt = current.ID, current.UserID, current.CreatedAt
+	if err := s.store.UpdateProfile(ctx, &row); err != nil {
+		return nil, err
+	}
+	if row.IsDefault {
+		if err := s.store.SetDefaultProfile(ctx, userID, id); err != nil {
+			return nil, err
+		}
+	}
+	return &row, nil
+}
+
+func (s *Service) DeleteProfile(ctx context.Context, userID, id uint64) error {
+	if userID == 0 || id == 0 {
+		return ErrBadParam
+	}
+	if err := s.store.DeleteProfile(ctx, userID, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrProfileNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Service) SetDefaultProfile(ctx context.Context, userID, id uint64) error {
+	if userID == 0 || id == 0 {
+		return ErrBadParam
+	}
+	if err := s.store.SetDefaultProfile(ctx, userID, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrProfileNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Service) Apply(ctx context.Context, userID uint64, in ApplyInput) (*Invoice, error) {
+	if userID == 0 || in.OrderID == 0 || in.InvoiceProfileID == 0 {
+		return nil, ErrBadParam
+	}
+	profile, err := s.store.GetProfile(ctx, userID, in.InvoiceProfileID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, err
+	}
+	order, err := s.store.LoadOrder(ctx, in.OrderID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrOrder
 		}
 		return nil, err
 	}
-	if ord.UID != uid || !ord.Paid {
+	if order.UserID != userID || !invoiceableOrderStatus(order.Status) {
 		return nil, ErrOrder
 	}
-	invType := in.InvoiceType
-	if invType == 0 {
-		invType = 1
+	if _, err := s.store.FindByOrder(ctx, in.OrderID); err == nil {
+		return nil, ErrExists
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
 	}
-	headerType := in.HeaderType
-	if headerType == 0 {
-		headerType = 1
-	}
+	now := time.Now()
 	row := &Invoice{
-		UID: uid, OrderID: in.OrderID, MerID: ord.MerID,
-		InvoiceType: invType, HeaderType: headerType,
-		Header: header, TaxNo: strings.TrimSpace(in.TaxNo), Email: strings.TrimSpace(in.Email),
-		Status: StatusPending, CreateTime: time.Now(),
+		OrderID: in.OrderID, InvoiceProfileID: profile.ID, ProfileType: profile.Type,
+		Title: profile.Title, TaxNo: profile.TaxNo, Email: profile.Email,
+		Status: StatusRequested, RequestedAt: now, UpdatedAt: now,
 	}
 	if err := s.store.Create(ctx, row); err != nil {
 		return nil, err
@@ -74,50 +152,48 @@ func (s *Service) Apply(ctx context.Context, uid uint, in ApplyInput) (*Invoice,
 	return row, nil
 }
 
-func (s *Service) ListMine(ctx context.Context, uid uint, page, limit int) (*PageResult[Invoice], error) {
-	if uid == 0 {
+func (s *Service) ListMine(ctx context.Context, userID uint64, page, limit int) (*PageResult[Invoice], error) {
+	if userID == 0 {
 		return nil, ErrBadParam
 	}
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListByUID(ctx, uid, page, limit)
+	list, total, err := s.store.ListByUID(ctx, userID, page, limit)
 	if err != nil {
 		return nil, err
 	}
 	return &PageResult[Invoice]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) ListMerchant(ctx context.Context, merID uint, page, limit int) (*PageResult[Invoice], error) {
-	if merID == 0 {
+func (s *Service) GetMine(ctx context.Context, userID, id uint64) (*Invoice, error) {
+	if userID == 0 || id == 0 {
 		return nil, ErrBadParam
 	}
-	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListByMer(ctx, merID, page, limit)
-	if err != nil {
-		return nil, err
+	row, err := s.store.GetByUID(ctx, userID, id)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
 	}
-	return &PageResult[Invoice]{List: list, Total: total, Page: page, Limit: limit}, nil
+	return row, err
 }
 
-func (s *Service) Audit(ctx context.Context, merID, id uint, in AuditInput) (*Invoice, error) {
-	row, err := s.store.Get(ctx, id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNotFound
+func profileFromInput(in ProfileInput) (InvoiceProfile, error) {
+	row := InvoiceProfile{Type: strings.TrimSpace(in.Type), Title: strings.TrimSpace(in.Title), TaxNo: strings.TrimSpace(in.TaxNo), Email: strings.TrimSpace(in.Email), IsDefault: in.IsDefault}
+	if (row.Type != ProfilePersonal && row.Type != ProfileEnterprise) || row.Title == "" || len([]rune(row.Title)) > 255 || len([]rune(row.TaxNo)) > 64 || len([]rune(row.Email)) > 255 {
+		return InvoiceProfile{}, ErrBadParam
+	}
+	if row.Type == ProfileEnterprise && row.TaxNo == "" {
+		return InvoiceProfile{}, ErrBadParam
+	}
+	if row.Email != "" {
+		parsed, err := mail.ParseAddress(row.Email)
+		if err != nil || parsed.Address != row.Email {
+			return InvoiceProfile{}, ErrBadParam
 		}
-		return nil, err
-	}
-	if row.MerID != merID || row.IsDel == 1 {
-		return nil, ErrForbidden
-	}
-	if in.Status != StatusIssued && in.Status != StatusRejected {
-		return nil, ErrBadParam
-	}
-	row.Status = in.Status
-	row.Mark = strings.TrimSpace(in.Mark)
-	if err := s.store.Update(ctx, row); err != nil {
-		return nil, err
 	}
 	return row, nil
+}
+
+func invoiceableOrderStatus(status string) bool {
+	return status == "paid" || status == "fulfilling" || status == "shipped" || status == "completed"
 }
 
 func normalize(page, limit int) (int, int) {

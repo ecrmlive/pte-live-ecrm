@@ -5,20 +5,31 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/presell"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-type Handler struct{ svc *presell.Service }
+type Handler struct {
+	svc     *presell.Service
+	adminDB *gorm.DB
+}
 
-func NewHandler(svc *presell.Service) *Handler { return &Handler{svc: svc} }
+func NewHandler(svc *presell.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/presell/actives", h.List)
-	r.GET("/presell/actives/:id", h.Get)
-	r.PUT("/presell/actives/:id", h.Update)
-	r.DELETE("/presell/actives/:id", h.Delete)
+	access := []gin.HandlerFunc{
+		middleware.RequireAdminRoles("platform", "operations"),
+		middleware.RequireAdminMenu(h.adminDB, "marketing.presell.manage"),
+	}
+	r.GET("/presell/actives", append(access, h.List)...)
+	r.GET("/presell/actives/:id", append(access, h.Get)...)
+	r.PUT("/presell/actives/:id", append(access, h.Update)...)
+	r.DELETE("/presell/actives/:id", append(access, h.Delete)...)
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -50,12 +61,14 @@ func (h *Handler) Get(c *gin.Context) {
 
 func (h *Handler) Update(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
-	var in presell.SaveInput
-	if err := c.ShouldBindJSON(&in); err != nil {
+	var in struct {
+		Status *int `json:"status"`
+	}
+	if id == 0 || c.ShouldBindJSON(&in) != nil || in.Status == nil || (*in.Status != 0 && *in.Status != 1) {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	row, err := h.svc.Update(c.Request.Context(), 0, uint(id), in)
+	row, err := h.svc.Update(c.Request.Context(), 0, uint(id), presell.SaveInput{Status: in.Status})
 	if err != nil {
 		writeErr(c, err)
 		return

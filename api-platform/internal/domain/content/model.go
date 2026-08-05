@@ -12,7 +12,7 @@ type Notice struct {
 	IsDel      int8      `gorm:"column:is_del" json:"-"`
 }
 
-func (Notice) TableName() string { return "qixi_m_admin_system_notice" }
+func (Notice) TableName() string { return "qixi_crm_a_notice" }
 
 type NoticeInput struct {
 	Title   string `json:"title"`
@@ -21,7 +21,7 @@ type NoticeInput struct {
 	Sort    int    `json:"sort"`
 }
 
-// Cache 协议/缓存行（qixi_m_admin_cache，对齐 CRMEB eb_cache）。
+// Cache 保存统一后台可维护的协议与安全配置 stub。
 type Cache struct {
 	Key        string    `gorm:"column:key;primaryKey" json:"key"`
 	ExpireTime int       `gorm:"column:expire_time" json:"expire_time"`
@@ -29,7 +29,7 @@ type Cache struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Cache) TableName() string { return "qixi_m_admin_cache" }
+func (Cache) TableName() string { return "qixi_crm_a_setting_cache" }
 
 type AgreeMeta struct {
 	Key   string `json:"key"`
@@ -51,4 +51,12 @@ type PageResult[T any] struct {
 	Total int64 `json:"total"`
 	Page  int   `json:"page"`
 	Limit int   `json:"limit"`
+}
+
+// CacheListItem 价格说明、活动标签等 setting_cache 列表 stub。
+type CacheListItem struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
+	Remark  string `json:"remark"`
 }

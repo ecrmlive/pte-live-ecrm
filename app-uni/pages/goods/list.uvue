@@ -1,10 +1,12 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
 
 type Product = {
   id: number
   mer_id: number
   mer_name: string
+  brand_name: string
   title: string
   store_name: string
   shop_name: string
@@ -14,18 +16,80 @@ type Product = {
   sales: number
 }
 type ProductPage = { list: Product[]; total: number; page: number; limit: number }
+type SearchHistory = { id: number; keyword: string }
+type SearchHistoryPage = { list: SearchHistory[] }
 
 const keyword = ref('')
 const cateID = ref(0)
+const brandName = ref('')
+const sort = ref('default')
+const order = ref('desc')
+const minPrice = ref('')
+const maxPrice = ref('')
+const showPriceFilter = ref(false)
 const items = ref<Product[]>([])
 const page = ref(1)
 const total = ref(0)
 const loading = ref(false)
 const loadingMore = ref(false)
+const searchHistory = ref<SearchHistory[]>([])
+
+// 仅用于业务服务离线时的浏览演示；ID 不会请求真实详情或交易。
+const demoTitles: string[] = [
+  "夏日通勤轻奢手提包", "香氛氨基酸沐浴露礼盒", "柔软羊毛圆领针织衫", "保温随行咖啡杯", "轻弹透气城市跑鞋", "柔软披肩羊绒围巾",
+  "轻盈防晒冰感开衫", "晨间焕亮洁面组合", "简约真丝印花方巾", "居家香薰蜡烛礼盒", "水洗棉宽松短袖", "便携户外保温水壶",
+  "云感乳胶护颈枕", "日常百搭托特包", "净澈修护面膜套装", "轻量城市双肩包", "法式小众珍珠耳饰", "亲肤纯棉四件套",
+  "氨基酸洗护旅行装", "简约陶瓷马克杯", "轻柔真丝睡衣套装", "经典百搭针织马甲", "舒适居家拖鞋", "高山乌龙茶礼盒"
+]
+const demoPrices: string[] = ["199.00", "68.00", "159.00", "59.00", "239.00", "129.00", "89.00", "49.00", "79.00", "99.00", "69.00", "88.00", "169.00", "139.00", "109.00", "219.00", "129.00", "239.00", "79.00", "39.00", "268.00", "119.00", "45.00", "128.00"]
+const demoImages: string[] = ["/static/demo/product-bag-v1.png", "/static/demo/product-fragrance-v1.png", "/static/demo/product-knit-v1.png", "/static/demo/product-tumbler-v1.png", "/static/demo/product-shoes-v1.png", "/static/demo/product-scarf-v1.png"]
+const demoCategoryIDs: number[] = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
+const demoBrands: string[] = ["包袋美学社", "森氧生活馆", "绒感衣橱", "好物研究所", "行走装备库", "绒感衣橱", "云裳品质店", "森氧生活馆", "包袋美学社", "好物研究所", "云裳品质店", "行走装备库", "好物研究所", "包袋美学社", "森氧生活馆", "行走装备库", "包袋美学社", "云裳品质店", "森氧生活馆", "好物研究所", "绒感衣橱", "绒感衣橱", "行走装备库", "好物研究所"]
+
+function matchesDemoCategory(index: number): boolean {
+  const selected = cateID.value
+  if (selected <= 0) return true
+  const category = demoCategoryIDs[index % demoCategoryIDs.length]
+  if (category == selected) return true
+  if (selected == 10) return category >= 101 && category <= 103
+  if (selected == 20) return category >= 104 && category <= 106
+  if (selected == 30) return category >= 107 && category <= 109
+  if (selected == 40) return category >= 110 && category <= 112
+  return false
+}
+
+function offlineProducts(): Product[] {
+  const result: Product[] = []
+  const searchTerm = keyword.value.trim().toLowerCase()
+  const minimum = Number(minPrice.value || 0)
+  const maximum = Number(maxPrice.value || 0)
+  for (let index = 0; index < demoTitles.length; index++) {
+    const price = Number(demoPrices[index])
+    if (searchTerm.length > 0 && !demoTitles[index].toLowerCase().includes(searchTerm)) continue
+    if (!matchesDemoCategory(index)) continue
+    if (brandName.value.length > 0 && demoBrands[index] != brandName.value) continue
+    if (minimum > 0 && price < minimum) continue
+    if (maximum > 0 && price > maximum) continue
+    result.push({ id: 9701 + index, mer_id: 0, mer_name: "CRM Live 演示店铺", brand_name: demoBrands[index], title: demoTitles[index], store_name: demoTitles[index], shop_name: demoBrands[index], image: demoImages[index % demoImages.length], price: demoPrices[index], ot_price: (price * 1.35).toFixed(2), sales: 42 + index * 37 })
+  }
+  if (sort.value == "price") result.sort((left, right) => order.value == "asc" ? Number(left.price) - Number(right.price) : Number(right.price) - Number(left.price))
+  if (sort.value == "sales") result.sort((left, right) => order.value == "asc" ? left.sales - right.sales : right.sales - left.sales)
+  return result
+}
+function isDemoProduct(id: number): boolean { return id >= 9701 && id < 9701 + demoTitles.length }
 
 function productName(product: Product): string { return product.title || product.store_name || '商品' }
 function productImage(product: Product): string { return String(product.image || '').trim() }
 function canLoadMore(): boolean { return items.value.length < total.value }
+function productRows(): Product[][] {
+  const rows: Product[][] = []
+  let start = 0
+  while (start < items.value.length) {
+    rows.push(items.value.slice(start, start + 2))
+    start += 2
+  }
+  return rows
+}
 
 function load(reset: boolean = true): void {
   if (loading.value || loadingMore.value) return
@@ -36,28 +100,68 @@ function load(reset: boolean = true): void {
   const params = [`page=${nextPage}`, 'limit=20']
   const queryKeyword = keyword.value.trim()
   if (queryKeyword.length > 0) params.push(`keyword=${encodeURIComponent(queryKeyword)}`)
-  if (cateID.value > 0) params.push(`cate_id=${cateID.value}`)
+  if (cateID.value > 0) params.push('cate_id=' + cateID.value)
+  if (brandName.value.length > 0) params.push('brand=' + encodeURIComponent(brandName.value))
+  const min = minPrice.value.trim()
+  const max = maxPrice.value.trim()
+  if (min.length > 0) params.push('min_price=' + encodeURIComponent(min))
+  if (max.length > 0) params.push('max_price=' + encodeURIComponent(max))
+  if (sort.value != 'default') { params.push('sort=' + sort.value); params.push('order=' + order.value) }
   appRequest(`/catalog/products?${params.join('&')}`, 'GET', null, false).then((data) => {
     const result = data as ProductPage
     const nextItems = result.list || []
     items.value = reset ? nextItems : items.value.concat(nextItems)
     total.value = Number(result.total || 0)
     page.value = Number(result.page || nextPage)
-  }).catch((error) => {
-    uni.showToast({ title: error.message || '商品加载失败', icon: 'none' })
+  }).catch(() => {
+    const fallback = offlineProducts()
+    items.value = reset ? fallback : items.value
+    total.value = fallback.length
+    page.value = 1
   }).finally(() => {
     loading.value = false
     loadingMore.value = false
   })
 }
 
-function search(): void { load(true) }
-function goDetail(id: number): void { uni.navigateTo({ url: `/pages/goods/detail?id=${id}` }) }
+function loadSearchHistory(): void {
+  if (getAccessToken().length == 0) { searchHistory.value = []; return }
+  appRequest('/search-history').then((data) => { searchHistory.value = (data as SearchHistoryPage).list || [] }).catch(() => { searchHistory.value = [] })
+}
+function search(): void {
+  const value = keyword.value.trim()
+  if (value.length > 0 && getAccessToken().length > 0) appRequest('/search-history', 'POST', { keyword: value } as UTSJSONObject).then(() => loadSearchHistory()).catch(() => {})
+  load(true)
+}
+function useHistory(value: string): void { keyword.value = value; search() }
+function removeHistory(id: number): void { appRequest('/search-history/' + id, 'DELETE').then(() => loadSearchHistory()).catch((error) => uni.showToast({ title: error.message || '删除失败', icon: 'none' })) }
+function clearSearchHistory(): void { appRequest('/search-history', 'DELETE').then(() => { searchHistory.value = []; uni.showToast({ title: '已清空搜索记录', icon: 'success' }) }).catch((error) => uni.showToast({ title: error.message || '清空失败', icon: 'none' })) }
+function setSort(next: string): void { if (sort.value == next) order.value = order.value == 'desc' ? 'asc' : 'desc'; else { sort.value = next; order.value = 'desc' }; load(true) }
+function validPrice(value: string): boolean {
+  if (value.trim().length == 0) return true
+  const parsed = Number(value)
+  return !isNaN(parsed) && parsed >= 0
+}
+function applyPriceFilter(): void {
+  if (!validPrice(minPrice.value) || !validPrice(maxPrice.value)) { uni.showToast({ title: '请输入有效的价格', icon: 'none' }); return }
+  const min = minPrice.value.trim().length == 0 ? 0 : Number(minPrice.value)
+  const max = maxPrice.value.trim().length == 0 ? 0 : Number(maxPrice.value)
+  if (minPrice.value.trim().length > 0 && maxPrice.value.trim().length > 0 && min > max) { uni.showToast({ title: '最低价不能高于最高价', icon: 'none' }); return }
+  showPriceFilter.value = false
+  load(true)
+}
+function resetPriceFilter(): void { minPrice.value = ''; maxPrice.value = ''; showPriceFilter.value = false; load(true) }
+function goDetail(id: number): void {
+  if (isDemoProduct(id)) { uni.showToast({ title: "演示商品仅供浏览，启动业务服务后可查看详情", icon: "none" }); return }
+  uni.navigateTo({ url: "/pages/goods/detail?id=" + id.toString() })
+}
 function goStore(product: Product): void { if (product.mer_id > 0) uni.navigateTo({ url: `/pages/store/home?mer_id=${product.mer_id}` }) }
 
 onLoad((query) => {
-  cateID.value = Number(query['cate_id'] || 0)
+  cateID.value = Number(query?.['cate_id'] || 0)
+  brandName.value = String(query?.['brand'] || '').trim()
   load(true)
+  loadSearchHistory()
 })
 onReachBottom(() => load(false))
 </script>
@@ -65,15 +169,26 @@ onReachBottom(() => load(false))
 <template>
   <view class="goods-page">
     <view class="goods-header"><view class="goods-header__back" @click="uni.navigateBack()">‹</view><view class="goods-header__search"><text>⌕</text><input v-model="keyword" class="goods-header__input" confirm-type="search" placeholder="搜索商品" @confirm="search" /><text v-if="keyword.length > 0" class="goods-header__clear" @click="keyword = ''; search()">×</text></view><text class="goods-header__action" @click="search">搜索</text></view>
-    <view class="goods-filter"><text :class="{ 'goods-filter__active': cateID == 0 }" @click="cateID = 0; search()">综合</text><text>销量</text><text>价格</text><text @click="uni.navigateTo({ url: '/pages/category/index' })">分类</text></view>
+    <view v-if="keyword.length == 0 && searchHistory.length > 0" class="search-history"><view class="search-history__title"><text>最近搜索</text><text class="search-history__clear" @click="clearSearchHistory">清空</text></view><view class="search-history__tags"><view v-for="history in searchHistory" :key="history.id" class="search-history__tag"><text @click="useHistory(history.keyword)">{{ history.keyword }}</text><text class="search-history__remove" @click.stop="removeHistory(history.id)">×</text></view></view></view>
+    <view class="goods-filter"><text :class="{ 'goods-filter__active': cateID == 0 }" @click="cateID = 0; brandName = ''; search()">综合</text><text :class="sort == 'sales' ? 'goods-filter__active' : ''" @click="setSort('sales')">销量{{ sort == 'sales' ? (order == 'desc' ? '↓' : '↑') : '' }}</text><text :class="sort == 'price' ? 'goods-filter__active' : ''" @click="setSort('price')">价格{{ sort == 'price' ? (order == 'desc' ? '↓' : '↑') : '' }}</text><text :class="minPrice.length > 0 || maxPrice.length > 0 ? 'goods-filter__active' : ''" @click="showPriceFilter = !showPriceFilter">筛选</text><text @click="uni.navigateTo({ url: '/pages/category/index' })">分类</text><text :class="brandName.length > 0 ? 'goods-filter__active' : ''" @click="uni.navigateTo({ url: '/pages/brand/list' })">品牌</text></view><view v-if="showPriceFilter" class="price-filter"><view class="price-filter__inputs"><input v-model="minPrice" type="digit" class="price-filter__input" placeholder="最低价"/><text>—</text><input v-model="maxPrice" type="digit" class="price-filter__input" placeholder="最高价"/></view><view class="price-filter__actions"><button class="price-filter__reset" @click="resetPriceFilter">清空</button><button class="price-filter__apply" @click="applyPriceFilter">确定</button></view></view>
     <view v-if="loading && items.length == 0" class="goods-loading">正在加载商品…</view>
     <view v-else-if="items.length == 0" class="goods-empty"><text>暂无符合条件的商品</text><text class="goods-empty__hint">可调整关键词后重新搜索</text></view>
-    <view v-else class="goods-grid"><view v-for="product in items" :key="product.id" class="goods-card" @click="goDetail(product.id)"><image v-if="productImage(product).length > 0" class="goods-card__image" :src="productImage(product)" mode="aspectFill" /><view v-else class="goods-card__image goods-card__image--empty"><text>商品</text></view><view class="goods-card__body"><text class="goods-card__name">{{ productName(product) }}</text><text v-if="product.shop_name || product.mer_name" class="goods-card__shop" @click.stop="goStore(product)">{{ product.shop_name || product.mer_name }}</text><view class="goods-card__price-row"><view><text class="goods-card__price">¥{{ product.price }}</text><text v-if="product.ot_price" class="goods-card__original">¥{{ product.ot_price }}</text></view><text class="goods-card__sales">已售{{ product.sales }}</text></view></view></view></view>
+    <view v-else class="goods-grid">
+      <view v-for="(row, rowIndex) in productRows()" :key="rowIndex" class="goods-row">
+        <view v-for="product in row" :key="product.id" class="goods-card" @click="goDetail(product.id)">
+          <image v-if="productImage(product).length > 0" class="goods-card__image" :src="productImage(product)" mode="aspectFill" />
+          <view v-else class="goods-card__image goods-card__image--empty"><text>商品</text></view>
+          <view class="goods-card__body"><text class="goods-card__name">{{ productName(product) }}</text><text v-if="product.brand_name" class="goods-card__brand">{{ product.brand_name }}</text><text v-if="product.shop_name || product.mer_name" class="goods-card__shop" @click.stop="goStore(product)">{{ product.shop_name || product.mer_name }}</text><view class="goods-card__price-row"><view><text class="goods-card__price">¥{{ product.price }}</text><text v-if="product.ot_price" class="goods-card__original">¥{{ product.ot_price }}</text></view><text class="goods-card__sales">已售{{ product.sales }}</text></view></view>
+        </view>
+      </view>
+    </view>
     <view v-if="items.length > 0" class="goods-more"><text v-if="loadingMore">正在加载更多…</text><text v-else-if="canLoadMore()">上拉加载更多</text><text v-else>已加载全部商品</text></view>
   </view>
 </template>
 
 <style>
 .goods-page { min-height: 100vh; padding-bottom: 12px; background-color: #f6f6f6; }.goods-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 9px; padding-left: 11px; padding-right: 11px; box-sizing: content-box; background-color: #ffffff; }.goods-header__back { width: 25px; color: #333333; font-size: 31px; line-height: 31px; text-align: center; }.goods-header__search { height: 32px; min-width: 0; flex: 1; display: flex; align-items: center; padding: 0 10px; border-radius: 17px; color: #777777; background-color: #f4f4f4; }.goods-header__search text:first-child { margin-right: 6px; font-size: 18px; }.goods-header__input { min-width: 0; flex: 1; font-size: 13px; }.goods-header__clear { color: #999999; font-size: 18px; }.goods-header__action { color: #d72828; font-size: 14px; white-space: nowrap; }.goods-filter { height: 40px; display: flex; align-items: center; justify-content: space-around; color: #666666; border-top: 1px solid #f2f2f2; background-color: #ffffff; font-size: 13px; }.goods-filter__active { position: relative; color: #d72828; font-weight: 700; }.goods-filter__active::after { position: absolute; left: 50%; bottom: -11px; width: 20px; height: 2px; border-radius: 1px; background-color: #d72828; content: ''; transform: translateX(-50%); }
-.goods-grid { display: flex; flex-wrap: wrap; gap: 9px; padding: 10px 10px 0; }.goods-card { width: calc(50% - 4.5px); overflow: hidden; border-radius: 8px; background-color: #ffffff; }.goods-card__image { width: 100%; height: 168px; display: block; background-color: #f0f0f0; }.goods-card__image--empty { display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #fff0ee; font-size: 16px; }.goods-card__body { padding: 8px 9px 10px; }.goods-card__name { min-height: 36px; color: #2b2b2b; font-size: 14px; line-height: 18px; overflow: hidden; }.goods-card__shop { display: block; margin-top: 4px; overflow: hidden; color: #999999; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }.goods-card__price-row { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; }.goods-card__price { color: #d72828; font-size: 17px; font-weight: 700; }.goods-card__original { margin-left: 5px; color: #aaaaaa; font-size: 10px; text-decoration: line-through; }.goods-card__sales { color: #aaaaaa; font-size: 10px; }.goods-loading, .goods-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 14px; }.goods-empty__hint { margin-top: 8px; font-size: 12px; }.goods-more { height: 43px; display: flex; align-items: center; justify-content: center; color: #999999; font-size: 12px; }
+.price-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-top: 1px solid #f2f2f2; background-color: #ffffff; }.price-filter__inputs { min-width: 0; flex: 1; display: flex; align-items: center; gap: 7px; color: #86909c; font-size: 13px; }.price-filter__input { width: 72px; height: 32px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; color: #1f2329; background-color: #f5f6f8; font-size: 13px; }.price-filter__actions { display: flex; gap: 7px; }.price-filter__reset, .price-filter__apply { width: 52px; height: 32px; margin: 0; padding: 0; border-radius: 16px; font-size: 12px; line-height: 32px; }.price-filter__reset { color: #4e5969; background-color: #f2f3f5; }.price-filter__apply { color: #ffffff; background-color: #d72828; }
+.search-history { padding: 12px 13px 4px; background-color: #ffffff; }.search-history__title { display: flex; align-items: center; justify-content: space-between; color: #4e5969; font-size: 13px; }.search-history__clear { color: #d72828; }.search-history__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }.search-history__tag { display: flex; align-items: center; max-width: 100%; padding: 5px 8px; border-radius: 14px; color: #4e5969; background-color: #f5f6f8; font-size: 12px; }.search-history__remove { margin-left: 6px; color: #86909c; font-size: 15px; line-height: 14px; }
+.goods-grid { padding: 10px 10px 0; }.goods-row { width: 100%; display: flex; flex-direction: row; gap: 9px; margin-bottom: 9px; }.goods-card { width: 0; flex: 1; overflow: hidden; border-radius: 8px; background-color: #ffffff; }.goods-card__image { width: 100%; height: 168px; display: block; background-color: #f0f0f0; }.goods-card__image--empty { display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #fff0ee; font-size: 16px; }.goods-card__body { padding: 8px 9px 10px; }.goods-card__name { min-height: 36px; color: #2b2b2b; font-size: 14px; line-height: 18px; overflow: hidden; }.goods-card__brand { display: block; margin-top: 4px; color: #d72828; font-size: 11px; }.goods-card__shop { display: block; margin-top: 4px; overflow: hidden; color: #999999; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }.goods-card__price-row { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; }.goods-card__price { color: #d72828; font-size: 17px; font-weight: 700; }.goods-card__original { margin-left: 5px; color: #aaaaaa; font-size: 10px; text-decoration: line-through; }.goods-card__sales { color: #aaaaaa; font-size: 10px; }.goods-loading, .goods-empty { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 14px; }.goods-empty__hint { margin-top: 8px; font-size: 12px; }.goods-more { height: 43px; display: flex; align-items: center; justify-content: center; color: #999999; font-size: 12px; }
 </style>

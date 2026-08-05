@@ -1,0 +1,39 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Coupon = { coupon_id: number; title: string; coupon_price: number; discount_type: string; discount_value: number; use_min_price: number; received: boolean }
+type NewcomerData = { enabled: boolean; title: string; description: string; coupon: Coupon[] }
+const data = ref<NewcomerData | null>(null)
+const loading = ref(true)
+
+function discount(item: Coupon): string { return item.discount_type == 'rate' ? String(item.discount_value / 10) + '折' : '¥' + String(item.coupon_price) }
+function newcomerEnabled(): boolean { return data.value != null && data.value.enabled }
+function newcomerTitle(): string { return data.value == null ? '新人礼' : data.value.title }
+function newcomerDescription(): string { return data.value == null ? '当前暂无新人权益' : data.value.description }
+function newcomerCoupons(): Coupon[] { return data.value == null ? [] : data.value.coupon }
+function load(): void {
+  loading.value = true
+  appRequest('/coupons/newcomer').then((result) => { data.value = result as NewcomerData }).catch((error) => {
+    const message = error.message || '新人权益加载失败'
+    uni.showToast({ title: message, icon: 'none' })
+    if (message.indexOf('登录') >= 0) uni.navigateTo({ url: '/pages/login/index' })
+  }).finally(() => { loading.value = false })
+}
+function goMine(): void { uni.navigateTo({ url: '/pages/coupon/mine' }) }
+onShow(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="新人专享礼" />
+    <view v-if="loading" class="state">正在加载新人权益…</view>
+    <view v-else-if="data == null" class="qx-card state">请登录后查看新人权益</view>
+    <view v-else-if="!newcomerEnabled()" class="qx-card state">{{ newcomerDescription() }}</view>
+    <view v-else><view class="hero"><text class="caption">{{ newcomerTitle() }}</text><text class="title">欢迎来到 CRM Live</text><text class="description">{{ newcomerDescription() }}</text></view>
+      <view v-if="newcomerCoupons().length == 0" class="qx-card state">当前没有可用新人券</view>
+      <view v-for="item in newcomerCoupons()" :key="item.coupon_id" class="qx-card coupon"><view><text class="coupon-title">{{ item.title }}</text><text class="coupon-note">{{ discount(item) }} · 满 {{ item.use_min_price }} 可用</text></view><text class="credited">{{ item.received ? '已到账' : '仅限新用户' }}</text></view>
+      <button class="qx-primary action" @click="goMine">查看我的优惠券</button>
+    </view>
+  </view>
+</template>
+
+<style>.hero{padding:26px 18px;color:#fff;background:linear-gradient(135deg,#c56a1c,#edaa55)}.caption,.title,.description,.coupon-title,.coupon-note{display:block}.caption{font-size:13px;opacity:.85}.title{margin-top:7px;font-size:25px;font-weight:700}.description{margin-top:8px;font-size:13px;opacity:.9}.coupon{display:flex;align-items:center;justify-content:space-between;margin-top:10px}.coupon-title{font-size:16px;font-weight:600}.coupon-note{margin-top:7px;color:#86909c;font-size:13px}.credited{padding:4px 8px;color:#b85c12;background:#fff2df;border-radius:12px;font-size:12px}.action{margin:20px 12px;width:calc(100% - 24px)}.state{margin:18px 12px;padding:28px 12px;color:#86909c;text-align:center}</style>

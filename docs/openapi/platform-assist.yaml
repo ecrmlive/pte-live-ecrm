@@ -2,15 +2,42 @@ openapi: 3.0.3
 info:
   title: pte-live-ecrm platform assist
   version: 0.6.3
-  description: 平台助力监管（上下架/删除）
+  description: >-
+    平台好友助力监管。读取仅限统一后台；更新和删除要求 platform/operations
+    角色及 marketing.assist.manage 按钮码。当前 Vben 仅开放上架/下架，删除、改价、库存与时间调整仍待订单影响审计。
 servers:
   - url: /api/platform/v1
 paths:
   /assist/actives:
     get:
       summary: 全平台助力活动列表
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: mer_id, schema: { type: integer, minimum: 1 } }
   /assist/actives/{id}:
     put:
-      summary: 更新（含上下架）
-    delete:
-      summary: 软删除
+      summary: 更新（当前统一后台仅用于上下架）
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_show]
+              additionalProperties: false
+              properties:
+                is_show: { type: integer, enum: [0, 1] }
+      responses:
+        '200': { description: 更新成功 }
+        '403': { description: 缺少角色或 marketing.assist.manage 按钮权限 }
+components:
+  securitySchemes:
+    authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

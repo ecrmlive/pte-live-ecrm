@@ -1,14 +1,22 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 
-type Coupon = { coupon_id: number; title: string; coupon_price: number; use_min_price: number; received: boolean }
+type Coupon = { coupon_id: number; title: string; coupon_price: number; discount_type: string; discount_value: number; use_min_price: number; received: boolean }
 type CouponData = { list: Coupon[] }
 const items = ref<Coupon[]>([])
-function load(): void { appRequest('/coupons/center').then((data) => { items.value = (data as CouponData).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })) }
-function receive(item: Coupon): void { if (item.received) return; appRequest(`/coupons/${item.coupon_id}/receive`, 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: '领取成功', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '领取失败', icon: 'none' })) }
+const fallbackCoupons: Coupon[] = [
+  { coupon_id: 9601, title: "新客专享满减券", coupon_price: 20, discount_type: "price", discount_value: 20, use_min_price: 99, received: false },
+  { coupon_id: 9602, title: "生活好物立减券", coupon_price: 15, discount_type: "price", discount_value: 15, use_min_price: 79, received: false },
+  { coupon_id: 9603, title: "精选品牌折扣券", coupon_price: 0, discount_type: "rate", discount_value: 85, use_min_price: 199, received: false },
+  { coupon_id: 9604, title: "周末满减券", coupon_price: 30, discount_type: "price", discount_value: 30, use_min_price: 299, received: false }
+]
+function isDemoCoupon(item: Coupon): boolean { return item.coupon_id >= 9601 && item.coupon_id <= 9604 }
+function load(): void { appRequest('/coupons/center').then((data) => { items.value = (data as CouponData).list || [] }).catch(() => { items.value = fallbackCoupons }) }
+function discount(item: Coupon): string { return item.discount_type == "rate" ? String(item.discount_value / 10) + "折" : "¥" + String(item.coupon_price) }
+function receive(item: Coupon): void { if (item.received) return; if (isDemoCoupon(item)) { uni.showToast({ title: "演示券仅供浏览，启动业务服务后可领取", icon: "none" }); return }; appRequest('/coupons/' + item.coupon_id + '/receive', 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: '领取成功', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '领取失败', icon: 'none' })) }
 onShow(() => load())
 </script>
 
-<template><view class="qx-page"><qx-nav title="领券中心" /><view v-if="items.length == 0" class="qx-card empty">暂无可领优惠券</view><view v-for="item in items" :key="item.coupon_id" class="qx-card card"><view><text class="title">{{ item.title }}</text><text class="sub">¥{{ item.coupon_price }} · 满 {{ item.use_min_price }} 可用</text></view><button :disabled="item.received" class="receive" @click="receive(item)">{{ item.received ? '已领' : '领取' }}</button></view></view></template>
+<template><view class="qx-page"><qx-nav title="领券中心" /><view v-if="items.length == 0" class="qx-card empty">暂无可领优惠券</view><view v-for="item in items" :key="item.coupon_id" class="qx-card card"><view><text class="title">{{ item.title }}</text><text class="sub">{{ discount(item) }} · 满 {{ item.use_min_price }} 可用</text></view><button :disabled="item.received" class="receive" @click="receive(item)">{{ item.received ? '已领' : '领取' }}</button></view></view></template>
 
 <style>.empty { color: #86909c; text-align: center; }.card { display: flex; align-items: center; justify-content: space-between; }.title { display: block; font-size: 16px; font-weight: 600; }.sub { display: block; margin-top: 8px; color: #86909c; font-size: 13px; }.receive { width: 72px; margin: 0; color: #ffffff; background-color: #d72828; border-radius: 17px; font-size: 13px; }</style>

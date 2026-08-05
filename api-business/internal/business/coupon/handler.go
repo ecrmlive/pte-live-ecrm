@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/business/order"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -30,6 +30,7 @@ func (h *Handler) RegisterPublic(r gin.IRoutes) {
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/coupons/:id/receive", h.receive)
+	r.GET("/coupons/newcomer", h.newcomer)
 	r.GET("/coupons/mine", h.mine)
 	r.GET("/coupons/usable", h.usable)
 }
@@ -124,16 +125,23 @@ func (h *Handler) mine(c *gin.Context) {
 	uid := uint64(middleware.UID(c))
 	page, limit := pageParams(c)
 	status := strings.TrimSpace(c.Query("status"))
+	if !validMineStatus(status) {
+		response.Fail(c, http.StatusBadRequest, "优惠券状态错误")
+		return
+	}
 	q := h.baseUserCoupons(c, uid)
 	switch status {
 	case "", "all":
 	case "0", "unused":
 		q = q.Where("u.status = ? AND (c.ends_at IS NULL OR c.ends_at >= ?)", "unused", time.Now())
-	case "used", "history":
-		q = q.Where("u.status IN ? OR (u.status = ? AND c.ends_at IS NOT NULL AND c.ends_at < ?)", []string{"used", "expired"}, "unused", time.Now())
-	default:
-		response.Fail(c, http.StatusBadRequest, "优惠券状态错误")
-		return
+	case "1", "used":
+		q = q.Where("u.status = ?", "used")
+	case "2", "expired":
+		q = q.Where("u.status = ? OR (u.status = ? AND c.ends_at IS NOT NULL AND c.ends_at < ?)", "expired", "unused", time.Now())
+	case "locked":
+		q = q.Where("u.status = ?", "locked")
+	case "history":
+		q = q.Where("u.status IN ? OR (u.status = ? AND c.ends_at IS NOT NULL AND c.ends_at < ?)", []string{"used", "locked", "expired"}, "unused", time.Now())
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -236,6 +244,15 @@ func userCouponView(row userCouponRow) gin.H {
 		"ends_at":        row.EndsAt,
 	}
 }
+func validMineStatus(status string) bool {
+	switch status {
+	case "", "all", "0", "unused", "1", "used", "2", "expired", "locked", "history":
+		return true
+	default:
+		return false
+	}
+}
+
 func queryMerchant(c *gin.Context) (uint64, error) {
 	raw := c.Query("mer_id")
 	if raw == "" {

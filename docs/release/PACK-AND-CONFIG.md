@@ -11,7 +11,7 @@ job/           -> release/pte-live-ecrm-job/bin/job
 
 每个服务都是独立 Go module，在本机构建静态 Linux 二进制；Compose 仅以只读卷挂载产物运行。禁止在 Docker 容器或服务器上传源码后构建。禁止回退为 `api/cmd/*` 单 module 构建。
 
-`job` 已保留目录和 Compose profile，但其数据访问仍依赖旧单库，未迁移前不得启动或交付。
+`job` 的未支付关单任务已迁至 `qixi_crm_business`，仅连接 `databases.business`；启用前仍须完成真实 MySQL 并发回归与运行机 YAML 配置。
 
 ## 配置唯一来源
 
@@ -23,7 +23,7 @@ job/           -> release/pte-live-ecrm-job/bin/job
 | `release/config/api-platform/app.yaml` | 统一后台 API |
 | `release/config/api-business/app.yaml` | PC、小程序&H5、iOS、Android、鸿蒙 C 端 API |
 | `release/config/api-merchant/app.yaml` | 店铺系统 API |
-| `release/config/job/app.yaml` | 异步任务（迁移完成后启用） |
+| `release/config/job/app.yaml` | 异步任务（仅 `databases.business`） |
 
 所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。COS、平台支付、小程序密钥不写入运行 YAML，也不写入 Git：统一保存于被忽略的 `sql/admin/04_key.sql`，`make local-db-init` / `make test-db-init` 自动导入到统一后台配置表；`sql/business/04_key.sql` 与 `sql/merchant/04_key.sql` 只保留各自数据库边界说明。local 与 test 必须使用同一份三文件密钥 SQL。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
 

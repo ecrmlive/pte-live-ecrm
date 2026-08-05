@@ -12,7 +12,7 @@ type TimeSlot struct {
 	Pic           string    `gorm:"column:pic" json:"pic"`
 }
 
-func (TimeSlot) TableName() string { return "qixi_m_admin_store_seckill_time" }
+func (TimeSlot) TableName() string { return "qixi_crm_b_seckill_time" }
 
 type Active struct {
 	SeckillActiveID uint    `gorm:"column:seckill_active_id;primaryKey" json:"seckill_active_id"`
@@ -38,7 +38,7 @@ type Active struct {
 	InWindow  bool    `gorm:"-" json:"in_window"`
 }
 
-func (Active) TableName() string { return "qixi_m_admin_store_seckill_active" }
+func (Active) TableName() string { return "qixi_crm_b_seckill_active" }
 
 type ActiveInput struct {
 	Name           string  `json:"name"`

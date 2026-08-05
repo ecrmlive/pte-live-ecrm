@@ -1,0 +1,17 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Notice = { id:number; title:string; body:string; read:boolean; created_at:string }
+type Page = { list:Notice[]; total:number; unread_total:number; page:number; limit:number }
+const items = ref<Notice[]>([])
+const page = ref(1)
+const total = ref(0)
+const unreadTotal = ref(0)
+const loading = ref(false)
+function hasMore():boolean { return items.value.length < total.value }
+function load(reset:boolean = false):void { if (loading.value || (!reset && !hasMore())) return; if (reset) { items.value=[]; page.value=1; total.value=0 }; loading.value=true; appRequest("/notifications?page="+page.value+"&limit=20").then((data)=>{const result=data as Page;items.value=items.value.concat(result.list||[]);total.value=result.total||0;unreadTotal.value=result.unread_total||0;page.value+=1}).catch((error)=>uni.showToast({title:error.message||"消息加载失败",icon:"none"})).finally(()=>loading.value=false) }
+function read(item:Notice):void { if (item.read) return; appRequest("/notifications/"+item.id+"/read","POST").then(()=>{item.read=true;if(unreadTotal.value>0)unreadTotal.value-=1}).catch((error)=>uni.showToast({title:error.message||"操作失败",icon:"none"})) }
+function readAll():void { if (unreadTotal.value==0) return; appRequest("/notifications/read-all","POST").then(()=>{items.value.forEach((item)=>item.read=true);unreadTotal.value=0}).catch((error)=>uni.showToast({title:error.message||"操作失败",icon:"none"})) }
+onShow(()=>load(true))
+onReachBottom(()=>load())
+</script><template><view class="qx-page"><qx-nav title="消息通知"/><view v-if="items.length>0" class="toolbar"><text>未读 {{unreadTotal}} 条</text><text v-if="unreadTotal>0" @click="readAll">全部标为已读</text></view><view v-if="!loading&&items.length==0" class="qx-card empty">暂无消息通知</view><view v-for="item in items" :key="item.id" :class="item.read?'qx-card notice':'qx-card notice unread'" @click="read(item)"><text class="title">{{item.title}}</text><text class="body">{{item.body}}</text><text class="time">{{item.created_at}}</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="items.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="items.length>0" class="more" @click="load()">加载更多</text></view></template><style>.toolbar{display:flex;justify-content:space-between;padding:12px;color:#d72828;font-size:13px}.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:22px}.more{padding:16px;font-size:12px}.notice{border-left:3px solid #ffffff}.unread{border-left-color:#d72828}.title,.body,.time{display:block}.title{font-weight:600}.body{margin-top:8px;color:#4e5969;line-height:20px}.time{margin-top:8px;color:#86909c;font-size:12px}</style>

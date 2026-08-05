@@ -1,0 +1,43 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Plan = { id:number; name:string; amount:number; bonus_amount:number }
+type RechargeOrder = { id:number; recharge_no:string; amount:number; bonus_amount:number; credited_amount:number; status:string }
+type PaymentIntent = { status:string; payment_mode:string; mweb_url:string }
+
+const plans = ref<Plan[]>([])
+const selectedPlan = ref(0)
+const customAmount = ref('')
+const currentOrder = ref<RechargeOrder | null>(null)
+const loading = ref(false)
+const submitting = ref(false)
+
+function load():void { loading.value=true; appRequest('/funding/recharge-plans').then((data)=>{ plans.value=((data['list'] as Plan[])||[]) }).catch((error)=>uni.showToast({title:error.message||'充值方案加载失败',icon:'none'})).finally(()=>loading.value=false) }
+function amount():number { if(selectedPlan.value>0){const plan=plans.value.find((item)=>item.id==selectedPlan.value);return plan==null?0:plan.amount};return Number(customAmount.value||'0') }
+function createKey():string{return 'recharge-'+Date.now().toString()+'-'+Math.floor(Math.random()*1000000).toString()}
+function pay():void { if(submitting.value)return;const value=amount();if(value<1||value>1000000){uni.showToast({title:'请输入 1 至 1000000 元的金额',icon:'none'});return};submitting.value=true;const payload=selectedPlan.value>0?{plan_id:selectedPlan.value,idempotency_key:createKey()}:{amount:value,idempotency_key:createKey()};appRequest('/funding/recharge-orders','POST',payload as UTSJSONObject).then((data)=>{currentOrder.value=data as RechargeOrder;return appRequest('/funding/recharge-orders/'+currentOrder.value.id+'/pay','POST',{} as UTSJSONObject)}).then((data)=>openWechat(data as PaymentIntent)).catch((error)=>uni.showToast({title:error.message||'发起充值失败',icon:'none'})).finally(()=>submitting.value=false) }
+function refresh():void{if(currentOrder.value==null)return;appRequest('/funding/recharge-orders/'+currentOrder.value.id).then((data)=>{currentOrder.value=data as RechargeOrder;if(currentOrder.value.status=='paid')uni.showToast({title:'余额已到账',icon:'success'})}).catch((error)=>uni.showToast({title:error.message||'充值状态查询失败',icon:'none'}))}
+function currentNo():string{return currentOrder.value==null?'':currentOrder.value.recharge_no}
+function paid():boolean{return currentOrder.value!=null&&currentOrder.value.status=='paid'}
+function credited():number{return currentOrder.value==null?0:currentOrder.value.credited_amount}
+function openWechat(intent:PaymentIntent):void {
+  const raw=String(intent.mweb_url||'')
+  if(intent.status=='paid'){refresh();return}
+  if(intent.payment_mode!='mweb'||raw.length==0){uni.showToast({title:'微信支付链接无效',icon:'none'});return}
+  // #ifdef H5
+  const browser:any=globalThis as any
+  const location=browser.location
+  if(location==null||typeof location.assign!='function'){uni.showToast({title:'当前浏览器无法发起微信 H5 支付',icon:'none'});return}
+  const redirect=String(location.origin||'')+'/#/pages/funding/recharge'
+  location.assign(raw+(raw.indexOf('?')>=0?'&':'?')+'redirect_url='+encodeURIComponent(redirect))
+  // #endif
+  // #ifndef H5
+  uni.showToast({title:'请在微信浏览器中完成支付',icon:'none'})
+  // #endif
+}
+onShow(()=>{load();refresh()})
+</script>
+
+<template><view class="qx-page"><qx-nav title="余额充值"/><view class="hero"><text class="caption">安全充值</text><text class="title">充值金额到账余额，赠送金额同步入账</text></view><view class="section">选择充值方案</view><view class="plans"><view v-for="item in plans" :key="item.id" :class="selectedPlan==item.id?'plan active':'plan'" @click="selectedPlan=item.id"><text class="plan-name">{{item.name}}</text><text class="plan-price">¥{{item.amount}}</text><text class="plan-gift">赠 ¥{{item.bonus_amount}}</text></view></view><view class="section">或自定义金额</view><view class="qx-card"><input v-model="customAmount" type="digit" placeholder="请输入 1 至 1000000 元" @input="selectedPlan=0"/><text class="hint">自定义金额不参与赠送活动</text></view><view v-if="currentOrder!=null" class="qx-card status"><text>充值单：{{currentNo()}}</text><text>状态：{{paid()?'已到账':'待支付'}}</text><text v-if="paid()">到账 ¥{{credited()}}</text><text v-else class="refresh" @click="refresh">支付完成后点此刷新</text></view><view class="footer"><button class="qx-primary" :loading="submitting" @click="pay">微信安全充值 ¥{{amount()}}</button></view></view></template>
+
+<style>.hero{padding:24px 18px;color:#fff;background:linear-gradient(135deg,#dc4f39,#c61d29)}.caption,.title,.plan-name,.plan-price,.plan-gift,.hint,.status text{display:block}.caption{font-size:13px;opacity:.86}.title{margin-top:8px;font-size:18px;font-weight:600}.section{padding:14px;color:#4e5969;font-size:14px;font-weight:600}.plans{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 12px}.plan{padding:14px;border:1px solid #e5e6eb;border-radius:10px;background:#fff}.active{border-color:#d72828;background:#fff3f1}.plan-name{color:#4e5969;font-size:13px}.plan-price{margin-top:8px;color:#d72828;font-size:22px;font-weight:700}.plan-gift,.hint{margin-top:5px;color:#86909c;font-size:12px}.status{margin-top:14px}.status text+text{margin-top:7px}.refresh{color:#d72828}.footer{padding:20px 12px}</style>

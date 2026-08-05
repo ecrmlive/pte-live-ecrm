@@ -7,7 +7,7 @@
 </template>
 
 <script lang="uts">
-import { PteIMConversation, PteIMIncomingMessage, PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
+import type { PteIMConversation, PteIMIncomingMessage, PteIMSDKClient } from '../../../pte-im-sdk/utssdk/interface.uts'
 import { PteIMUIConversationListController, PteIMUIKit, PteIMUITheme } from '../../utssdk/PteIMUIKitFacade.uts'
 import PteIMUIAvatar from '../PteIMUIAvatar/PteIMUIAvatar.uvue'
 export default {

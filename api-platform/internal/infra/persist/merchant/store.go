@@ -15,12 +15,24 @@ func NewStoreAdapter(repo *Repo) *StoreAdapter {
 	return &StoreAdapter{Repo: repo}
 }
 
-func (s *StoreAdapter) ListMerchants(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]merchant.Merchant, int64, error) {
-	return s.Repo.ListMerchants(ctx, ListMerchantsFilter{Keyword: keyword, Status: status, RegionIDs: regionIDs, Page: page, Limit: limit})
+func (s *StoreAdapter) ListMerchants(ctx context.Context, keyword string, status *int8, scope merchant.MerchantScope, page, limit int) ([]merchant.Merchant, int64, error) {
+	return s.Repo.ListMerchants(ctx, ListMerchantsFilter{Keyword: keyword, Status: status, MerchantIDs: scope.MerchantIDs, RegionIDs: scope.RegionIDs, Page: page, Limit: limit})
 }
 
-func (s *StoreAdapter) ListIntentions(ctx context.Context, keyword string, status *int8, page, limit int) ([]merchant.Intention, int64, error) {
-	return s.Repo.ListIntentions(ctx, ListIntentionFilter{Keyword: keyword, Status: status, Page: page, Limit: limit})
+func (s *StoreAdapter) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]merchant.Intention, int64, error) {
+	return s.Repo.ListIntentions(ctx, ListIntentionFilter{Keyword: keyword, Status: status, RegionIDs: regionIDs, Page: page, Limit: limit})
+}
+
+func (s *StoreAdapter) GetIntention(ctx context.Context, id uint, regionIDs []uint) (*merchant.Intention, error) {
+	return s.Repo.GetIntention(ctx, id, regionIDs)
+}
+
+func (s *StoreAdapter) AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error) {
+	return s.Repo.AssignIntentionRegion(ctx, id, regionID)
+}
+
+func (s *StoreAdapter) UpsertMerchantView(ctx context.Context, row *merchant.Merchant) error {
+	return s.Repo.UpsertMerchantView(ctx, row)
 }
 
 func (s *StoreAdapter) WithTx(fn func(tx merchant.Store) error) error {

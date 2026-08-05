@@ -5,21 +5,30 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/seckill"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-type Handler struct{ svc *seckill.Service }
+type Handler struct {
+	svc     *seckill.Service
+	adminDB *gorm.DB
+}
 
-func NewHandler(svc *seckill.Service) *Handler { return &Handler{svc: svc} }
+func NewHandler(svc *seckill.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
+}
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/seckill/times", h.Times)
 	r.GET("/seckill/actives", h.List)
 	r.GET("/seckill/actives/:id", h.Get)
-	r.PUT("/seckill/actives/:id", h.Update)
-	r.DELETE("/seckill/actives/:id", h.Delete)
+	write := middleware.RequireAdminRoles("platform", "operations")
+	manage := middleware.RequireAdminMenu(h.adminDB, "marketing.seckill.manage")
+	r.PUT("/seckill/actives/:id", write, manage, h.Update)
+	r.DELETE("/seckill/actives/:id", write, manage, h.Delete)
 }
 
 func (h *Handler) Times(c *gin.Context) {

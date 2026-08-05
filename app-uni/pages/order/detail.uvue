@@ -1,11 +1,38 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { getAccessToken } from '../../common/session'
+import { activateMerchantContext } from '../../common/store-context'
 
-type StoreOrder = { order_id: number; mer_id: number; mer_name: string; pay_price: number; paid: number; status: number; delivery_name: string; delivery_id: string; verify_code: string; reservation_date: string; reservation_time_part: string }
-type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; real_name: string; user_phone: string; user_address: string; orders: StoreOrder[] }
+type ProductItem = { order_item_id:number; product_id:number; product_attr_unique:string; spec_text:string; store_name:string; image:string; product_num:number; product_price:number; commented:boolean }
+type StoreOrder = { order_id: number; mer_id: number; mer_name: string; pay_price: number; points_amount: number; activity_type: number; status: string; delivery_name: string; delivery_id: string; verify_code: string; reservation_date: string; reservation_time_part: string; products: ProductItem[] }
+type GroupOrder = { group_order_id: number; group_order_sn: string; pay_price: number; paid: number; pay_status: string; real_name: string; user_phone: string; user_address: string; activity_type: number; points_amount: number; can_archive: boolean; orders: StoreOrder[] }
 const item = ref<GroupOrder | null>(null)
 const id = ref(0)
+const cancelling = ref(false)
+const reordering = ref(0)
+const receiving = ref(0)
+const redeeming = ref(false)
+const archiving = ref(false)
 
+function hasGroupOrder(): boolean { return item.value != null }
+function groupPayStatus(): string { const group = item.value; return group == null ? 'pending' : group.pay_status }
+function groupStatus(): string { return groupStatusText(groupPayStatus()) }
+function groupOrderSN(): string { const group = item.value; return group == null ? '--' : group.group_order_sn }
+function groupAmount(): string { const group = item.value; if (group == null) return '--'; return group.activity_type == 20 ? '兑换积分：' + group.points_amount.toString() : '应付金额：¥' + group.pay_price.toString() }
+function groupRecipient(): string { const group = item.value; return group == null ? '--' : group.real_name + ' ' + group.user_phone }
+function groupAddress(): string { const group = item.value; return group == null ? '--' : group.user_address }
+function storeOrders(): StoreOrder[] { const group = item.value; return group == null ? [] : group.orders }
+function isPointsOrder(): boolean { const group = item.value; return group != null && group.activity_type == 20 }
+function isGroupPaid(): boolean { return groupPayStatus() == 'paid' }
+function storeOrderSummary(order: StoreOrder): string { const group = item.value; const summary = order.activity_type == 20 ? '积分兑换 · ' + order.points_amount.toString() + ' 积分' : '¥' + order.pay_price.toString(); return summary + ' · ' + statusText(order.status, group == null ? 'pending' : group.pay_status) }
+function showVerifyCode(order: StoreOrder): boolean { return order.verify_code.length > 0 && isGroupPaid() }
+function canRequestRefund(order: StoreOrder): boolean { return !isPointsOrder() && isGroupPaid() && canRefund(order.status) }
+function canRequestInvoice(order: StoreOrder): boolean { return !isPointsOrder() && canInvoice(order.status) }
+function canAgain(): boolean { return !isPointsOrder() && isGroupPaid() }
+function canArchiveOrder(): boolean { const group = item.value; return group != null && group.can_archive }
+function isPendingPayment(): boolean { return groupPayStatus() == 'pending' }
+function payActionText(): string { return isPointsOrder() ? '确认兑换' : '去付款' }
+function copyGroupOrderSN(): void { copy(groupOrderSN(), '订单号') }
 function load(): void {
   if (id.value == 0) return
   appRequest(`/orders/${id.value}`).then((data) => {
@@ -13,28 +40,39 @@ function load(): void {
   }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' }))
 }
 
-function statusText(status: number, paid: number): string {
-  if (paid == 0) return '待付款'
-  if (status == 0) return '待发货'
-  if (status == 1) return '待收货'
-  if (status == 2) return '待评价'
-  if (status == 3) return '已完成'
-  if (status == 9) return '拼团中'
-  if (status == 10) return '待付尾款'
-  if (status == 11) return '尾款超时'
-  if (status == -1) return '已退款'
-  return `状态 ${status}`
+function statusText(status: string, payStatus: string): string {
+  if (payStatus != 'paid') return payStatus == 'closed' ? '已取消' : '待付款'
+  if (status == 'paid') return '待发货'
+  if (status == 'awaiting_final') return '待付尾款'
+  if (status == 'final_timeout') return '尾款逾期'
+  if (status == 'fulfilling') return '处理中'
+  if (status == 'shipped') return '待收货'
+  if (status == 'completed') return '已完成'
+  if (status == 'aftersale') return '售后处理中'
+  if (status == 'cancelled') return '已取消'
+  return status
 }
+function canInvoice(status: string): boolean { return status == 'paid' || status == 'fulfilling' || status == 'shipped' || status == 'completed' }
+function canRefund(status: string): boolean { return status == "paid" || status == "fulfilling" || status == "shipped" }
+function goPay(): void { if (item.value == null || item.value.pay_status != 'pending') return; if (item.value.activity_type != 20) { uni.navigateTo({ url: '/pages/order/pay?id=' + id.value }); return }; if (redeeming.value) return; redeeming.value = true; appRequest('/order/points/pay/' + id.value, 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: '兑换成功', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '兑换失败', icon: 'none' })).finally(() => { redeeming.value = false }) }
+function groupStatusText(status: string): string { if (status == 'paid') return '已支付'; if (status == 'closed') return '已取消'; return '待付款' }
+function cancelOrder(): void { if (item.value == null || item.value.pay_status != 'pending' || cancelling.value) return; uni.showModal({ title: '取消订单', content: '取消后将释放本订单占用的优惠权益，确认继续吗？', success: (result) => { if (!result.confirm) return; cancelling.value = true; appRequest('/orders/' + id.value + '/cancel', 'POST', {} as UTSJSONObject).then(() => { uni.showToast({ title: '订单已取消', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '取消失败', icon: 'none' })).finally(() => { cancelling.value = false }) } }) }
 
-function goPay(): void { if (item.value != null && item.value.paid == 0) uni.navigateTo({ url: `/pages/order/pay?id=${id.value}` }) }
+function archiveOrder(): void { if (item.value == null || !item.value.can_archive || archiving.value) return; uni.showModal({ title: "隐藏订单", content: "订单仅会从您的订单列表隐藏，交易、售后与发票记录不会删除。确认继续吗？", success: (result) => { if (!result.confirm) return; archiving.value = true; appRequest("/orders/" + id.value, "DELETE", null).then(() => { uni.showToast({ title: "订单已隐藏", icon: "success" }); setTimeout(() => uni.navigateBack(), 500) }).catch((error) => uni.showToast({ title: error.message || "隐藏失败", icon: "none" })).finally(() => { archiving.value = false }) } }) }
 
-function refund(orderID: number): void { uni.navigateTo({ url: `/pages/refund/apply?order_id=${orderID}` }) }
+function refund(orderID: number): void { uni.navigateTo({ url: "/pages/refund/apply?order_id=" + orderID }) }
+function invoice(orderID: number): void { uni.navigateTo({ url: "/pages/invoice/apply?order_id=" + orderID }) }
+function comment(orderItemID: number): void { uni.navigateTo({ url: "/pages/comment/create?order_item_id=" + orderItemID }) }
+function receive(orderID: number): void { if (receiving.value != 0) return; uni.showModal({ title: "确认收货", content: "确认已收到商品后将完成本店订单，确认继续吗？", success: (result) => { if (!result.confirm) return; receiving.value = orderID; appRequest("/order/" + orderID + "/confirm-receipt", "POST", {} as UTSJSONObject).then(() => { uni.showToast({ title: "已确认收货", icon: "success" }); load() }).catch((error) => uni.showToast({ title: error.message || "确认收货失败", icon: "none" })).finally(() => { receiving.value = 0 }) } }) }
+function delivery(orderID: number): void { uni.navigateTo({ url: "/pages/order/delivery?order_id=" + orderID }) }
+function copy(value: string, label: string): void { if (value.length == 0) return; uni.setClipboardData({ data: value, success: () => uni.showToast({ title: label + "已复制", icon: "success" }) }) }
+function again(order: StoreOrder): void { if (reordering.value != 0 || order.products.length == 0) return; if (getAccessToken().length == 0) { uni.navigateTo({ url: "/pages/login/index" }); return }; reordering.value = order.order_id; appRequest("/catalog/products/" + order.products[0].product_id, "GET", null, false).then((product) => activateMerchantContext((product as UTSJSONObject)["merchant_app_id"] as string)).then(() => appRequest("/cart/again/" + order.order_id, "POST", {} as UTSJSONObject)).then((data) => uni.showToast({ title: "已加入" + String((data as UTSJSONObject)["added_count"]) + "件商品", icon: "success" })).catch((error) => uni.showToast({ title: error.message || "再次购买失败", icon: "none" })).finally(() => { reordering.value = 0 }) }
 
-onLoad((query) => { id.value = Number(query['id'] || 0); load() })
+onLoad((query) => { id.value = Number(query?.['id'] || 0); load() })
 </script>
 
 <template>
-  <view v-if="item != null" class="qx-page"><qx-nav title="订单详情" /><view class="qx-card"><text class="status">{{ item.paid == 1 ? '已支付' : '待付款' }}</text><text class="text">订单号：{{ item.group_order_sn }}</text><text class="text">应付金额：¥{{ item.pay_price }}</text><text class="text">{{ item.real_name }} {{ item.user_phone }}</text><text class="address">{{ item.user_address }}</text></view><view v-for="order in item.orders" :key="order.order_id" class="qx-card"><text class="merchant">{{ order.mer_name || `商户 ${order.mer_id}` }}</text><text class="text">¥{{ order.pay_price }} · {{ statusText(order.status, order.paid) }}</text><text v-if="order.verify_code && order.paid == 1" class="verify">核销码：{{ order.verify_code }}</text><text v-if="order.reservation_date" class="address">预约：{{ order.reservation_date }} {{ order.reservation_time_part }}</text><text v-if="order.delivery_id" class="address">物流：{{ order.delivery_name }} {{ order.delivery_id }}</text><button v-if="order.paid == 1 && order.status != -1" class="refund" @click="refund(order.order_id)">申请退款</button></view><view v-if="item.paid == 0" class="footer"><button class="qx-primary" @click="goPay">去付款</button></view></view>
+  <view v-if="hasGroupOrder()" class="qx-page"><qx-nav title="订单详情" /><view class="qx-card"><text class="status">{{ groupStatus() }}</text><view class="copy-line"><text class="text">订单号：{{ groupOrderSN() }}</text><text class="copy" @click="copyGroupOrderSN">复制</text></view><text class="text">{{ groupAmount() }}</text><text class="text">{{ groupRecipient() }}</text><text class="address">{{ groupAddress() }}</text></view><view v-for="order in storeOrders()" :key="order.order_id" class="qx-card"><text class="merchant">{{ order.mer_name || `商户 ${order.mer_id}` }}</text><text class="text">{{ storeOrderSummary(order) }}</text><text v-if="showVerifyCode(order)" class="verify">核销码：{{ order.verify_code }}</text><text v-if="order.reservation_date" class="address">预约：{{ order.reservation_date }} {{ order.reservation_time_part }}</text><view v-if="order.delivery_id" class="copy-line"><text class="address">物流：{{ order.delivery_name }} {{ order.delivery_id }}</text><text class="copy" @click="delivery(order.order_id)">查看进度</text><text class="copy" @click="copy(order.delivery_id, '物流单号')">复制</text></view><view v-for="product in order.products" :key="product.order_item_id" class="product-line"><view><text class="product-name">{{product.store_name}} × {{product.product_num}}</text><text class="product-spec">{{ product.spec_text || '默认规格' }}</text></view><button v-if="order.status == 'completed' && !product.commented" class="invoice" @click="comment(product.order_item_id)">评价</button><text v-else-if="order.status == 'completed'" class="commented">已评价</text></view><button v-if="canRequestRefund(order)" class="refund" @click="refund(order.order_id)">申请退款</button><button v-if="canRequestInvoice(order)" class="invoice" @click="invoice(order.order_id)">申请发票</button><button v-if="order.status == 'shipped'" :loading="receiving == order.order_id" class="invoice" @click="receive(order.order_id)">确认收货</button><button v-if="canAgain()" :loading="reordering == order.order_id" class="invoice" @click="again(order)">再次购买</button></view><view v-if="canArchiveOrder()" class="qx-card archive-card"><button class="invoice" :loading="archiving" @click="archiveOrder">隐藏订单</button></view><view v-if="isPendingPayment()" class="footer"><button :loading="cancelling" class="cancel" @click="cancelOrder">取消订单</button><button class="qx-primary" :loading="redeeming" @click="goPay">{{ payActionText() }}</button></view></view>
 </template>
 
-<style>.status { display: block; color: #d72828; font-size: 20px; font-weight: 700; }.text { display: block; margin-top: 10px; font-size: 14px; }.address { display: block; margin-top: 10px; color: #86909c; font-size: 13px; line-height: 20px; }.verify { display: block; margin-top: 12px; color: #d72828; font-size: 18px; font-weight: 700; }.merchant { display: block; margin-bottom: 8px; font-size: 15px; font-weight: 600; }.refund { width: 100px; margin: 14px 0 0; color: #d72828; background-color: #ffffff; border: 1px solid #d72828; border-radius: 18px; font-size: 13px; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { margin-bottom: 8px; border-radius: 22px; font-size: 15px; }.unavailable { color: #86909c; font-size: 13px; }</style>
+<style>.copy-line{display:flex;align-items:center;justify-content:space-between}.copy{padding:5px 10px;color:#d72828;border:1px solid #d72828;border-radius:14px;font-size:12px}.status { display: block; color: #d72828; font-size: 20px; font-weight: 700; }.text { display: block; margin-top: 10px; font-size: 14px; }.address { display: block; margin-top: 10px; color: #86909c; font-size: 13px; line-height: 20px; }.verify { display: block; margin-top: 12px; color: #d72828; font-size: 18px; font-weight: 700; }.merchant { display: block; margin-bottom: 8px; font-size: 15px; font-weight: 600; }.product-line { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; color: #4e5969; font-size: 13px; }.product-name { display: block; }.product-spec { display: block; margin-top: 3px; color: #86909c; font-size: 11px; }.commented { color: #86909c; font-size: 12px; }.invoice { width: 100px; margin: 10px 0 0; color: #4e5969; background-color: #ffffff; border: 1px solid #86909c; border-radius: 18px; font-size: 13px; }.refund { width: 100px; margin: 14px 0 0; color: #d72828; background-color: #ffffff; border: 1px solid #d72828; border-radius: 18px; font-size: 13px; }.cancel { color: #d72828; background-color: #ffffff; border: 1px solid #d72828; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { margin-bottom: 8px; border-radius: 22px; font-size: 15px; }.unavailable { color: #86909c; font-size: 13px; }.archive-card{display:flex;justify-content:flex-end}</style>

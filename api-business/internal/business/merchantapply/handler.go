@@ -6,12 +6,13 @@ package merchantapply
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -24,6 +25,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/merchant-applications", h.Create)
 	r.GET("/merchant-applications/mine", h.ListMine)
+	r.GET("/merchant-applications/mine/:id", h.Detail)
 }
 
 type createRequest struct {
@@ -45,6 +47,7 @@ type applicationRow struct {
 	MerchantType    string    `gorm:"column:merchant_type" json:"merchant_type"`
 	LicenseKey      string    `gorm:"column:license_key" json:"license_key"`
 	Status          string    `gorm:"column:status" json:"status"`
+	ReviewNote      string    `gorm:"column:review_note" json:"review_note"`
 	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
@@ -83,11 +86,26 @@ func (h *Handler) Create(c *gin.Context) {
 	response.OK(c, row)
 }
 
+func applicationPageParams(c *gin.Context) (int, int) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	return page, 20
+}
+
 func (h *Handler) ListMine(c *gin.Context) {
-	var rows []applicationRow
-	if err := h.db.WithContext(c.Request.Context()).Where("applicant_user_id = ?", middleware.UID(c)).Order("id DESC").Find(&rows).Error; err != nil {
+	page, limit := applicationPageParams(c)
+	q := h.db.WithContext(c.Request.Context()).Where("applicant_user_id = ?", middleware.UID(c))
+	var total int64
+	if err := q.Model(&applicationRow{}).Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询申请记录失败")
 		return
 	}
-	response.OK(c, gin.H{"list": rows})
+	var rows []applicationRow
+	if err := q.Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询申请记录失败")
+		return
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
 }

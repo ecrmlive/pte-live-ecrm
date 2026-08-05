@@ -1,9 +1,16 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.json",
+  "extends": "./node_modules/@dcloudio/uni-uts-v1/lib/tsconfig/tsconfig.json",
   "compilerOptions": {
     "sourceMap": true,
     "lib": ["esnext", "dom"],
-    "types": ["@dcloudio/types"]
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["@dcloudio/types", "dcloudio__uni-h5"]
   },
-  "include": ["**/*.uts", "**/*.uvue", "**/*.ts", "**/*.d.ts"]
+  "include": [
+    "node_modules/@dcloudio/uni-uts-v1/lib/tsconfig/env.d.ts",
+    "node_modules/@dcloudio/uni-uts-v1/lib/tsconfig/shim-uni.d.ts",
+    "node_modules/@dcloudio/uni-uts-v1/lib/tsconfig/shim-dom.d.ts",
+    "node_modules/@dcloudio/uni-uts-v1/lib/tsconfig/global.d.ts",
+    "**/*.uts", "**/*.uvue", "**/*.ts", "**/*.d.ts"
+  ]
 }

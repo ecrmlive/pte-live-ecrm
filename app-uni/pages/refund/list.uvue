@@ -1,12 +1,24 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
 
-type Refund = { refund_order_id: number; refund_order_sn: string; refund_price: number; status: number; create_time: string }
-type RefundPage = { list: Refund[] }
+type Refund = { refund_order_id: number; refund_order_sn: string; refund_price: number; status: number; status_code: string; create_time: string }
+type RefundPage = { list: Refund[]; total: number; page: number; limit: number }
 const items = ref<Refund[]>([])
 const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 
-function statusText(status: number): string {
+function statusText(status: number, statusCode: string): string {
+  if (statusCode == 'applied') return '待审核'
+  if (statusCode == 'merchant_handling') return '商家处理中'
+  if (statusCode == 'awaiting_return') return '待退货'
+  if (statusCode == 'awaiting_receipt') return '待收货'
+  if (statusCode == 'refunding') return '退款处理中'
+  if (statusCode == 'platform_intervene') return '平台介入'
+  if (statusCode == 'refunded') return '已退款'
+  if (statusCode == 'rejected') return '已拒绝'
+  if (statusCode == 'cancelled') return '已取消'
   if (status == 0) return '待审核'
   if (status == 1) return '待退货'
   if (status == 2) return '待收货'
@@ -14,17 +26,26 @@ function statusText(status: number): string {
   if (status == 4) return '平台介入'
   if (status == -1) return '已拒绝'
   if (status == -2) return '已取消'
-  return `状态 ${status}`
+  return '状态 ' + status
 }
 
-function load(): void {
+function hasMore(): boolean { return items.value.length < total.value }
+function load(reset: boolean = false): void {
+  if (loading.value || (!reset && !hasMore())) return
+  const next = reset ? 1 : page.value + 1
   loading.value = true
-  appRequest('/refunds?page=1&limit=30').then((data) => { items.value = (data as RefundPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
+  appRequest(`/refunds?page=${next}&limit=${limit}`).then((data) => {
+    const result = data as RefundPage
+    page.value = result.page || next
+    total.value = result.total || 0
+    items.value = reset ? (result.list || []) : items.value.concat(result.list || [])
+  }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false })
 }
 function goDetail(id: number): void { uni.navigateTo({ url: `/pages/refund/detail?id=${id}` }) }
-onShow(() => load())
+onShow(() => load(true))
+onReachBottom(() => load())
 </script>
 
-<template><view class="qx-page"><qx-nav title="售后服务" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无售后单</view><view v-for="item in items" :key="item.refund_order_id" class="qx-card card" @click="goDetail(item.refund_order_id)"><text class="sn">{{ item.refund_order_sn }}</text><view class="line"><text>¥{{ item.refund_price }}</text><text class="status">{{ statusText(item.status) }}</text></view><text class="time">{{ item.create_time }}</text></view></view></template>
+<template><view class="qx-page"><qx-nav title="售后服务" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无售后单</view><view v-for="item in items" :key="item.refund_order_id" class="qx-card card" @click="goDetail(item.refund_order_id)"><text class="sn">{{ item.refund_order_sn }}</text><view class="line"><text>¥{{ item.refund_price }}</text><text class="status">{{ statusText(item.status, item.status_code) }}</text></view><text class="time">{{ item.create_time }}</text></view><view v-if="items.length > 0" class="more">{{ loading ? '正在加载…' : (hasMore() ? '上拉加载更多' : '已经到底了') }}</view></view></template>
 
-<style>.empty { text-align: center; color: #86909c; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 17px; }.status { color: #d72828; font-size: 14px; }.time { color: #86909c; font-size: 12px; }</style>
+<style>.empty { text-align: center; color: #86909c; }.card { display: flex; flex-direction: column; gap: 10px; }.sn { font-weight: 600; }.line { display: flex; justify-content: space-between; font-size: 17px; }.status { color: #d72828; font-size: 14px; }.time { color: #86909c; font-size: 12px; }.more { padding: 16px 0 28px; text-align: center; color: #86909c; font-size: 13px; }</style>

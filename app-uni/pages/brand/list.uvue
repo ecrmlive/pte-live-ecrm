@@ -1,0 +1,42 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type Brand = { name: string; product_count: number; description: string; image: string }
+type BrandData = { list: Brand[] }
+const items = ref<Brand[]>([])
+const loading = ref(true)
+
+const fallbackBrands: Brand[] = [
+  { name: "云裳品质店", product_count: 3, description: "通勤女装与轻奢配饰", image: "/static/demo/product-knit-v1.png" },
+  { name: "森氧生活馆", product_count: 4, description: "香氛洗护与日常护肤", image: "/static/demo/product-fragrance-v1.png" },
+  { name: "好物研究所", product_count: 5, description: "居家器物与实用好物", image: "/static/demo/product-tumbler-v1.png" },
+  { name: "行走装备库", product_count: 4, description: "舒适鞋履与轻量出行", image: "/static/demo/product-shoes-v1.png" },
+  { name: "绒感衣橱", product_count: 4, description: "针织羊绒与温柔质感", image: "/static/demo/product-scarf-v1.png" },
+  { name: "包袋美学社", product_count: 4, description: "日常通勤与精致收纳", image: "/static/demo/product-bag-v1.png" }
+]
+
+function brandImage(item: Brand): string { return String(item.image || "").trim() }
+function brandDescription(item: Brand): string { const value = String(item.description || "").trim(); return value.length > 0 ? value : "精选品牌好物，发现更多生活灵感" }
+function load(): void {
+  loading.value = true
+  appRequest('/catalog/brands', 'GET', null, false).then((data) => {
+    items.value = (data as BrandData).list || []
+  }).catch(() => {
+    items.value = fallbackBrands
+  }).finally(() => { loading.value = false })
+}
+function select(item: Brand): void {
+  const name = item.name.trim()
+  if (name.length == 0) return
+  uni.navigateTo({ url: '/pages/goods/list?brand=' + encodeURIComponent(name) })
+}
+onShow(() => load())
+</script>
+
+<template>
+  <view class="brand-page"><view class="brand-header"><view class="brand-header__back" @click="uni.navigateBack()">‹</view><text class="brand-header__title">品牌精选</text></view><view class="brand-intro"><text class="brand-intro__title">发现值得信赖的好品牌</text><text class="brand-intro__text">品牌与商品将由已发布的商城数据实时更新</text></view><view v-if="loading" class="state">正在加载品牌…</view><view v-else-if="items.length == 0" class="state">暂无已发布品牌</view><view v-else class="brand-list"><view v-for="item in items" :key="item.name" class="brand-card" @click="select(item)"><image v-if="brandImage(item).length > 0" class="brand-card__image" :src="brandImage(item)" mode="aspectFill"/><view v-else class="brand-card__image brand-card__image--empty"><text>{{item.name.substring(0,1)}}</text></view><view class="brand-card__body"><text class="brand-card__name">{{item.name}}</text><text class="brand-card__description">{{brandDescription(item)}}</text><text class="brand-card__count">{{item.product_count}} 件精选商品</text></view><text class="brand-card__arrow">›</text></view></view></view>
+</template>
+
+<style>
+.brand-page{min-height:100vh;background:#f6f6f6}.brand-header{height:44px;padding-top:var(--status-bar-height);display:flex;align-items:center;justify-content:center;position:relative;background:#fff}.brand-header__back{position:absolute;left:11px;width:32px;color:#333;font-size:31px;line-height:31px;text-align:center}.brand-header__title{color:#1f2329;font-size:17px;font-weight:600}.brand-intro{margin:12px 12px 10px;padding:18px 17px;border-radius:12px;color:#fff;background:linear-gradient(120deg,#e6373a,#f1705c)}.brand-intro__title,.brand-intro__text{display:block}.brand-intro__title{font-size:19px;font-weight:700}.brand-intro__text{margin-top:7px;font-size:12px;opacity:.92}.brand-list{padding:0 12px 18px}.brand-card{min-height:92px;display:flex;align-items:center;gap:11px;margin-bottom:9px;padding:10px;border-radius:10px;background:#fff}.brand-card__image{width:72px;height:72px;flex-shrink:0;border-radius:8px;background:#f0f0f0}.brand-card__image--empty{display:flex;align-items:center;justify-content:center;color:#d72828;background:#fff0ee;font-size:26px;font-weight:700}.brand-card__body{min-width:0;flex:1}.brand-card__name,.brand-card__description,.brand-card__count{display:block}.brand-card__name{overflow:hidden;color:#1f2329;font-size:16px;font-weight:600;white-space:nowrap;text-overflow:ellipsis}.brand-card__description{margin-top:5px;overflow:hidden;color:#4e5969;font-size:12px;white-space:nowrap;text-overflow:ellipsis}.brand-card__count{margin-top:7px;color:#d72828;font-size:12px}.brand-card__arrow{margin-left:2px;color:#c9cdd4;font-size:24px}.state{padding:52px 12px;color:#86909c;text-align:center;font-size:14px}
+</style>

@@ -1,33 +1,50 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
-
 type SpreadMe = { uid: number; spread_uid: number; is_promoter: boolean; spread_count: number }
 type SpreadBill = { bill_id: number; title: string; number: number; balance: number; mark: string; create_time: string }
-type SpreadBillPage = { list: SpreadBill[] }
-
+type SpreadBillPage = { list: SpreadBill[]; total: number; page: number; limit: number }
 const me = ref<SpreadMe | null>(null)
 const bills = ref<SpreadBill[]>([])
 const spreadUID = ref('')
 const binding = ref(false)
-
-function load(): void {
-  appRequest('/spread/me').then((data) => { me.value = data as SpreadMe }).catch((error) => uni.showToast({ title: error.message || '分销信息加载失败', icon: 'none' }))
-  appRequest('/spread/bills?page=1&limit=30').then((data) => { bills.value = (data as SpreadBillPage).list || [] }).catch((error) => uni.showToast({ title: error.message || '佣金流水加载失败', icon: 'none' }))
+const billsLoading = ref(false)
+const billsPage = ref(1)
+const billsTotal = ref(0)
+const billsLimit = 20
+function billsHasMore(): boolean { return bills.value.length < billsTotal.value }
+function hasMe(): boolean { return me.value != null }
+function meUID(): number { const item = me.value; return item == null ? 0 : item.uid }
+function spreadCount(): number { const item = me.value; return item == null ? 0 : item.spread_count }
+function spreadUIDText(): string { const item = me.value; return item != null && item.spread_uid > 0 ? item.spread_uid.toString() : '未绑定' }
+function canBind(): boolean { const item = me.value; return item != null && item.spread_uid == 0 }
+function isPromoter(): boolean { const item = me.value; return item != null && item.is_promoter }
+function goWithdrawal(): void { uni.navigateTo({ url: '/pages/spread/withdraw' }) }
+function goRank(): void { uni.navigateTo({ url: '/pages/spread/rank' }) }
+function goUsers(): void { uni.navigateTo({ url: '/pages/spread/users' }) }
+function goOrders(): void { uni.navigateTo({ url: '/pages/spread/orders' }) }
+function promotionLink(): string {
+  const uid = meUID()
+  let link = '/pages/index/index?spread=' + uid.toString()
+  // #ifdef H5
+  const browser: any = globalThis as any
+  const location = browser.location
+  if (location != null) link = String(location.origin || '') + String(location.pathname || '/') + '#/pages/index/index?spread=' + uid.toString()
+  // #endif
+  return link
 }
-function bind(): void {
-  const uid = Number(spreadUID.value)
-  if (uid <= 0) { uni.showToast({ title: '请输入推广员 UID', icon: 'none' }); return }
-  binding.value = true
-  appRequest('/spread/bind', 'POST', { spread_uid: uid } as UTSJSONObject).then(() => { uni.showToast({ title: '绑定成功', icon: 'success' }); spreadUID.value = ''; load() }).catch((error) => uni.showToast({ title: error.message || '绑定失败', icon: 'none' })).finally(() => { binding.value = false })
+function copyPromotionLink(): void {
+  if (!isPromoter()) return
+  uni.setClipboardData({
+    data: promotionLink(),
+    success: () => uni.showToast({ title: '推广链接已复制', icon: 'success' }),
+    fail: () => uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+  })
 }
-
+function load(): void { appRequest('/spread/me').then((data) => { me.value = data as SpreadMe }).catch((error) => uni.showToast({ title: error.message || '分销信息加载失败', icon: 'none' })); loadBills(true) }
+function loadBills(reset: boolean = false): void { if (billsLoading.value || (!reset && !billsHasMore())) return; const next = reset ? 1 : billsPage.value + 1; billsLoading.value = true; appRequest(`/spread/bills?page=${next}&limit=${billsLimit}`).then((data) => { const result = data as SpreadBillPage; billsPage.value = result.page || next; billsTotal.value = result.total || 0; bills.value = reset ? (result.list || []) : bills.value.concat(result.list || []) }).catch((error) => uni.showToast({ title: error.message || '佣金流水加载失败', icon: 'none' })).finally(() => { billsLoading.value = false }) }
+function bind(): void { const uid = Number(spreadUID.value); if (uid <= 0) { uni.showToast({ title: '请输入推广员 UID', icon: 'none' }); return }; binding.value = true; appRequest('/spread/bind', 'POST', { spread_uid: uid } as UTSJSONObject).then(() => { uni.showToast({ title: '绑定成功', icon: 'success' }); spreadUID.value = ''; load() }).catch((error) => uni.showToast({ title: error.message || '绑定失败', icon: 'none' })).finally(() => { binding.value = false }) }
 onShow(() => load())
+onReachBottom(() => loadBills())
 </script>
-
-<template>
-  <view class="qx-page"><qx-nav title="分销中心" /><view v-if="me != null" class="summary"><text class="summary__title">我的推广中心</text><text class="summary__line">用户 UID：{{ me.uid }}</text><text class="summary__line">推广资格：{{ me.is_promoter ? '已开通' : '未开通' }}</text><text class="summary__line">直属推广用户：{{ me.spread_count }} 人</text><text class="summary__line">上级推广员：{{ me.spread_uid > 0 ? me.spread_uid : '未绑定' }}</text></view><view v-if="me != null && me.spread_uid == 0" class="qx-card"><text class="title">绑定上级推广员</text><input v-model="spreadUID" class="input" type="number" placeholder="请输入推广员 UID" /><button :loading="binding" class="bind" @click="bind">确认绑定</button><text class="tip">绑定后不可更换，请确认推荐人 UID。</text></view><view class="qx-card"><text class="title">佣金流水</text><view v-if="bills.length == 0" class="empty">暂无佣金流水</view><view v-for="bill in bills" :key="bill.bill_id" class="bill"><view><text class="bill__title">{{ bill.title || '推广佣金' }}</text><text class="bill__mark">{{ bill.mark }}</text></view><view><text class="bill__money">+¥{{ bill.number }}</text><text class="bill__time">{{ bill.create_time }}</text></view></view></view></view>
-</template>
-
-<style>
-.summary { margin: 12px; padding: 18px; color: #ffffff; background: linear-gradient(135deg, #402c75, #7465d8); border-radius: 12px; }.summary__title, .summary__line { display: block; }.summary__title { margin-bottom: 10px; font-size: 20px; font-weight: 700; }.summary__line { margin-top: 6px; font-size: 13px; opacity: 0.9; }.title { display: block; font-size: 16px; font-weight: 600; }.input { height: 42px; margin-top: 14px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.bind { margin-top: 14px; color: #ffffff; background-color: #d72828; border-radius: 20px; font-size: 14px; }.tip { display: block; margin-top: 8px; color: #86909c; font-size: 12px; }.empty { padding: 20px 0; color: #86909c; text-align: center; }.bill { display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid #f0f0f0; }.bill__title, .bill__mark, .bill__money, .bill__time { display: block; }.bill__title { font-size: 14px; }.bill__mark, .bill__time { margin-top: 5px; color: #86909c; font-size: 11px; }.bill__money { color: #d72828; font-size: 16px; font-weight: 600; text-align: right; }
-</style>
+<template><view class="qx-page"><qx-nav title="分销中心" /><view v-if="hasMe()" class="summary"><text class="summary__title">我的推广中心</text><text class="summary__line">用户 UID：{{ meUID() }}</text><text class="summary__line">推广资格：{{ isPromoter() ? '已开通' : '未开通' }}</text><text class="summary__line">直属推广用户：{{ spreadCount() }} 人</text><text class="summary__line">上级推广员：{{ spreadUIDText() }}</text></view><view v-if="canBind()" class="qx-card"><text class="title">绑定上级推广员</text><input v-model="spreadUID" class="input" type="number" placeholder="请输入推广员 UID" /><button :loading="binding" class="bind" @click="bind">确认绑定</button><text class="tip">绑定后不可更换，请确认推荐人 UID。</text></view><view v-if="isPromoter()" class="qx-card actions"><text class="actions__item" @click="goRank">推广排行榜 ›</text><text class="actions__item" @click="goUsers">直属推广用户 ›</text><text class="actions__item" @click="goOrders">推广订单明细 ›</text><text class="actions__item" @click="copyPromotionLink">复制推广链接</text></view><view v-if="isPromoter()" class="qx-card withdrawal"><view><text class="title">佣金提现</text><text class="tip">申请后由平台审核与打款</text></view><text class="withdrawal__go" @click="goWithdrawal">去提现 ›</text></view><view class="qx-card"><text class="title">佣金流水</text><view v-if="bills.length == 0 && !billsLoading" class="empty">暂无佣金流水</view><view v-for="bill in bills" :key="bill.bill_id" class="bill"><view><text class="bill__title">{{ bill.title || '推广佣金' }}</text><text class="bill__mark">{{ bill.mark }}</text></view><view><text class="bill__money">+¥{{ bill.number }}</text><text class="bill__time">{{ bill.create_time }}</text></view></view></view><view v-if="bills.length > 0" class="more">{{ billsLoading ? '正在加载更多' : (billsHasMore() ? '上拉加载更多' : '已经到底了') }}</view></view></template>
+<style>.summary { margin: 12px; padding: 18px; color: #ffffff; background: linear-gradient(135deg, #402c75, #7465d8); border-radius: 12px; }.summary__title, .summary__line { display: block; }.summary__title { margin-bottom: 10px; font-size: 20px; font-weight: 700; }.summary__line { margin-top: 6px; font-size: 13px; opacity: 0.9; }.title { display: block; font-size: 16px; font-weight: 600; }.input { height: 42px; margin-top: 14px; padding: 0 12px; background-color: #f6f7f9; border-radius: 8px; box-sizing: border-box; }.bind { margin-top: 14px; color: #ffffff; background-color: #d72828; border-radius: 20px; font-size: 14px; }.actions { display: flex; padding-top: 0; padding-bottom: 0; flex-direction: column; }.actions__item { height: 48px; color: #303133; font-size: 15px; line-height: 48px; border-bottom: 1px solid #f0f0f0; }.actions__item:last-child { border-bottom-width: 0; }.withdrawal { display: flex; align-items: center; justify-content: space-between; }.withdrawal__go { color: #d72828; font-size: 14px; }.tip { display: block; margin-top: 8px; color: #86909c; font-size: 12px; }.empty { padding: 20px 0; color: #86909c; text-align: center; }.bill { display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid #f0f0f0; }.bill__title, .bill__mark, .bill__money, .bill__time { display: block; }.bill__title { font-size: 14px; }.bill__mark, .bill__time { margin-top: 5px; color: #86909c; font-size: 11px; }.bill__money { color: #d72828; font-size: 16px; font-weight: 600; text-align: right; }.more { padding: 16px 0 28px; color: #86909c; text-align: center; font-size: 13px; }</style>

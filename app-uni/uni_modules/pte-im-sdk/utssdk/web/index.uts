@@ -1,4 +1,4 @@
-import { PteIMBaseConfig, PteIMSDKBootstrap } from '../interface.uts'
+import type { PteIMBaseConfig, PteIMSDKBootstrap } from '../interface.uts'
 import { createCrossPlatformPteIMSDK } from '../cross-platform.uts'
 
 export function createPteIMSDK(config: PteIMBaseConfig): PteIMSDKBootstrap {

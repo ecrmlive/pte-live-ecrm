@@ -1,17 +1,27 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { setCheckoutAddressID } from '../../common/checkout-address'
 
 type Address = { address_id: number; real_name: string; phone: string; province: string; city: string; district: string; detail: string; is_default: number }
 type AddressData = { list: Address[] }
 const items = ref<Address[]>([])
 const loading = ref(false)
+const selectMode = ref(false)
+const selectedID = ref(0)
 
 function load(): void { loading.value = true; appRequest('/address').then((data) => { items.value = (data as AddressData).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })).finally(() => { loading.value = false }) }
 function add(): void { uni.navigateTo({ url: '/pages/address/edit' }) }
+function edit(id: number): void { uni.navigateTo({ url: `/pages/address/edit?id=${id}` }) }
+function choose(item: Address): void {
+  if (!selectMode.value) { edit(item.address_id); return }
+  setCheckoutAddressID(item.address_id)
+  uni.navigateBack()
+}
 function remove(id: number): void { uni.showModal({ title: '删除地址', content: '确认删除此地址吗？', success: (result) => { if (!result.confirm) return; appRequest(`/address/${id}`, 'DELETE', null).then(() => { uni.showToast({ title: '已删除', icon: 'success' }); load() }).catch((error) => uni.showToast({ title: error.message || '删除失败', icon: 'none' })) } }) }
+onLoad((query) => { selectMode.value = String(query?.['select'] || '') == '1'; selectedID.value = Number(query?.['selected'] || 0) })
 onShow(() => load())
 </script>
 
-<template><view class="qx-page"><qx-nav title="收货地址" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无收货地址</view><view v-for="item in items" :key="item.address_id" class="qx-card"><text class="name">{{ item.real_name }} {{ item.phone }}<text v-if="item.is_default == 1" class="default">默认</text></text><text class="address">{{ item.province }}{{ item.city }}{{ item.district }}{{ item.detail }}</text><button class="remove" @click="remove(item.address_id)">删除</button></view><view class="footer"><button class="qx-primary" @click="add">新增收货地址</button></view></view></template>
+<template><view class="qx-page"><qx-nav :title="selectMode ? '选择收货地址' : '收货地址'" /><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无收货地址</view><view v-for="item in items" :key="item.address_id" class="qx-card item" @click="choose(item)"><view class="main"><text class="name">{{ item.real_name }} {{ item.phone }}<text v-if="item.is_default == 1" class="default">默认</text></text><text class="address">{{ item.province }}{{ item.city }}{{ item.district }}{{ item.detail }}</text></view><text v-if="selectMode" class="chosen">{{ selectedID == item.address_id ? '✓' : '›' }}</text><button v-else class="edit" @click.stop="edit(item.address_id)">编辑</button><button v-if="!selectMode" class="remove" @click.stop="remove(item.address_id)">删除</button></view><view class="footer"><button class="qx-primary" @click="add">新增收货地址</button></view></view></template>
 
-<style>.empty { color: #86909c; text-align: center; }.name { display: block; font-size: 16px; font-weight: 600; }.default { margin-left: 8px; color: #d72828; font-size: 12px; font-weight: 400; }.address { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; line-height: 20px; }.remove { width: 64px; margin: 14px 0 0; color: #86909c; background-color: #ffffff; border: 1px solid #c9cdd4; border-radius: 16px; font-size: 12px; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>
+<style>.qx-page { padding-bottom: 68px; }.empty { color: #86909c; text-align: center; }.item { position: relative; display: flex; align-items: center; gap: 12px; }.main { min-width: 0; flex: 1; }.name { display: block; font-size: 16px; font-weight: 600; }.default { margin-left: 8px; color: #d72828; font-size: 12px; font-weight: 400; }.address { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; line-height: 20px; }.chosen { color: #d72828; font-size: 22px; }.edit, .remove { width: 54px; margin: 12px 0 0; color: #4e5969; background-color: #ffffff; border: 1px solid #c9cdd4; border-radius: 16px; font-size: 12px; }.remove { color: #86909c; }.footer { position: fixed; right: 0; bottom: 0; left: 0; padding: 12px; background-color: #ffffff; box-sizing: border-box; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

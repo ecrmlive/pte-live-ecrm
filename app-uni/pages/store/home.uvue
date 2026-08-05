@@ -2,8 +2,83 @@
 import { appRequest } from '../../common/request'
 import { getAccessToken } from '../../common/session'
 import { activateMerchantContext } from '../../common/store-context'
-type Product={id:number;store_name:string;price:string};type Store={mer_id:number;mer_name:string;merchant_app_id:string;products:Product[]};const item=ref<Store|null>(null)
-function goods(id:number):void{uni.navigateTo({url:`/pages/goods/detail?id=${id}`})}function contact():void{if(item.value==null)return;if(getAccessToken().length==0){uni.navigateTo({url:'/pages/login/index'});return};uni.navigateTo({url:`/pages/cs/chat?mer_id=${item.value.mer_id}`})}onLoad((query)=>{const id=Number(query['mer_id']||0);if(id>0)appRequest(`/catalog/stores/${id}`,'GET',null,false).then((data)=>{item.value=data as Store;const store=data as Store;if(getAccessToken().length>0&&store.merchant_app_id.length>0){activateMerchantContext(store.merchant_app_id).catch(()=>uni.showToast({title:'店铺已加载，请重新登录后再购买',icon:'none'}))}}).catch((error)=>uni.showToast({title:error.message||'店铺加载失败',icon:'none'}))})
+
+type Product = { id: number; store_name: string; price: string; image: string }
+type Store = { store_id: number; mer_id: number; mer_name: string; merchant_app_id: string; products: Product[]; total: number }
+type Coupon = { coupon_id: number; title: string; coupon_price: number; discount_type: string; discount_value: number; use_min_price: number; received: boolean }
+type CouponData = { list: Coupon[] }
+const merID = ref(0)
+const item = ref<Store | null>(null)
+const keyword = ref("")
+const followed = ref(false)
+const following = ref(false)
+const loading = ref(false)
+const coupons = ref<Coupon[]>([])
+
+const fallbackStores: Store[] = [
+  { store_id: 9301, mer_id: 9101, mer_name: "云裳品质店", merchant_app_id: "", total: 3, products: [{ id: 9401, store_name: "轻盈防晒冰感开衫", price: "89.00", image: "/static/demo/product-knit-v1.png" }, { id: 9402, store_name: "水洗棉宽松短袖", price: "69.00", image: "/static/demo/product-knit-v1.png" }, { id: 9403, store_name: "轻柔真丝睡衣套装", price: "268.00", image: "/static/demo/product-scarf-v1.png" }] },
+  { store_id: 9302, mer_id: 9102, mer_name: "森氧生活馆", merchant_app_id: "", total: 4, products: [{ id: 9404, store_name: "香氛氨基酸沐浴露礼盒", price: "68.00", image: "/static/demo/product-fragrance-v1.png" }, { id: 9405, store_name: "晨间焕亮洁面组合", price: "49.00", image: "/static/demo/product-fragrance-v1.png" }, { id: 9406, store_name: "净澈修护面膜套装", price: "109.00", image: "/static/demo/product-fragrance-v1.png" }, { id: 9407, store_name: "氨基酸洗护旅行装", price: "79.00", image: "/static/demo/product-fragrance-v1.png" }] },
+  { store_id: 9303, mer_id: 9103, mer_name: "好物研究所", merchant_app_id: "", total: 5, products: [{ id: 9408, store_name: "保温随行咖啡杯", price: "59.00", image: "/static/demo/product-tumbler-v1.png" }, { id: 9409, store_name: "居家香薰蜡烛礼盒", price: "99.00", image: "/static/demo/product-tumbler-v1.png" }, { id: 9410, store_name: "云感乳胶护颈枕", price: "169.00", image: "/static/demo/product-tumbler-v1.png" }, { id: 9411, store_name: "简约陶瓷马克杯", price: "39.00", image: "/static/demo/product-tumbler-v1.png" }, { id: 9412, store_name: "高山乌龙茶礼盒", price: "128.00", image: "/static/demo/product-tumbler-v1.png" }] },
+  { store_id: 9304, mer_id: 9104, mer_name: "行走装备库", merchant_app_id: "", total: 4, products: [{ id: 9413, store_name: "轻弹透气城市跑鞋", price: "239.00", image: "/static/demo/product-shoes-v1.png" }, { id: 9414, store_name: "便携户外保温水壶", price: "88.00", image: "/static/demo/product-shoes-v1.png" }, { id: 9415, store_name: "舒适居家拖鞋", price: "45.00", image: "/static/demo/product-shoes-v1.png" }, { id: 9416, store_name: "轻量城市双肩包", price: "219.00", image: "/static/demo/product-shoes-v1.png" }] },
+  { store_id: 9305, mer_id: 9105, mer_name: "绒感衣橱", merchant_app_id: "", total: 4, products: [{ id: 9417, store_name: "柔软羊毛圆领针织衫", price: "159.00", image: "/static/demo/product-scarf-v1.png" }, { id: 9418, store_name: "柔软披肩羊绒围巾", price: "129.00", image: "/static/demo/product-scarf-v1.png" }, { id: 9419, store_name: "经典百搭针织马甲", price: "119.00", image: "/static/demo/product-scarf-v1.png" }, { id: 9420, store_name: "法式小众珍珠耳饰", price: "129.00", image: "/static/demo/product-scarf-v1.png" }] },
+  { store_id: 9306, mer_id: 9106, mer_name: "包袋美学社", merchant_app_id: "", total: 4, products: [{ id: 9421, store_name: "夏日通勤轻奢手提包", price: "199.00", image: "/static/demo/product-bag-v1.png" }, { id: 9422, store_name: "简约真丝印花方巾", price: "79.00", image: "/static/demo/product-bag-v1.png" }, { id: 9423, store_name: "日常百搭托特包", price: "139.00", image: "/static/demo/product-bag-v1.png" }, { id: 9424, store_name: "法式小众珍珠耳饰", price: "129.00", image: "/static/demo/product-bag-v1.png" }] }
+]
+const fallbackCoupons: Coupon[] = [{ coupon_id: 9501, title: "店铺满减券", coupon_price: 15, discount_type: "price", discount_value: 15, use_min_price: 99, received: false }, { coupon_id: 9502, title: "精选品牌折扣券", coupon_price: 0, discount_type: "rate", discount_value: 90, use_min_price: 199, received: false }]
+function isDemoStore(): boolean { return item.value != null && item.value.store_id >= 9301 && item.value.store_id <= 9306 }
+function isDemoProduct(id: number): boolean { return id >= 9401 && id <= 9424 }
+function isDemoCoupon(coupon: Coupon): boolean { return coupon.coupon_id >= 9501 && coupon.coupon_id <= 9502 }
+function offlineStore(merchantID: number, term: string): Store | null { const matched = fallbackStores.find((store) => store.mer_id == merchantID); if (matched == null) return null; const text = term.trim().toLowerCase(); const products = text.length == 0 ? matched.products : matched.products.filter((product) => product.store_name.toLowerCase().includes(text)); return { store_id: matched.store_id, mer_id: matched.mer_id, mer_name: matched.mer_name, merchant_app_id: "", products: products, total: matched.total } }
+
+function hasStore(): boolean { return item.value != null }
+function storeTitle(): string { const store = item.value; return store == null || store.mer_name.length == 0 ? '店铺信息加载中' : store.mer_name }
+function storeTotal(): number { const store = item.value; return store == null ? 0 : store.total }
+function products(): Product[] { const store = item.value; return store == null ? [] : store.products }
+function productsEmpty(): boolean { return hasStore() && products().length == 0 }
+function goods(id: number): void { if (isDemoProduct(id)) { uni.showToast({ title: "演示商品仅供浏览，启动业务服务后可查看详情", icon: "none" }); return }; uni.navigateTo({ url: "/pages/goods/detail?id=" + id }) }
+function contact(): void { if (item.value == null) return; if (isDemoStore()) { uni.showToast({ title: "演示店铺仅供浏览，启动业务服务后可联系客服", icon: "none" }); return }; if (getAccessToken().length == 0) { uni.navigateTo({ url: "/pages/login/index" }); return }; uni.navigateTo({ url: "/pages/cs/chat?mer_id=" + item.value.mer_id }) }
+function load(): void {
+  if (merID.value <= 0) return
+  loading.value = true
+  const text = keyword.value.trim()
+  const suffix = text.length > 0 ? `?keyword=${encodeURIComponent(text)}` : ""
+  appRequest(`/catalog/stores/${merID.value}${suffix}`, "GET", null, false).then((data) => {
+    item.value = data as Store
+    const store = data as Store
+    if (getAccessToken().length > 0 && store.store_id > 0) appRequest("/favorites/stores/" + store.store_id, "GET").then((status) => { followed.value = (status as UTSJSONObject)["followed"] as boolean }).catch(() => { followed.value = false })
+    else followed.value = false
+    if (getAccessToken().length > 0 && store.merchant_app_id.length > 0) activateMerchantContext(store.merchant_app_id).catch(() => uni.showToast({ title: "店铺已加载，请重新登录后再购买", icon: "none" }))
+    appRequest("/coupons/center?mer_id=" + store.mer_id, "GET", null, false).then((result) => { coupons.value = (result as CouponData).list || [] }).catch(() => { coupons.value = [] })
+  }).catch(() => { const fallback = offlineStore(merID.value, keyword.value); item.value = fallback; followed.value = false; coupons.value = fallback == null ? [] : fallbackCoupons }).finally(() => { loading.value = false })
+}
+function search(): void { load() }
+function clear(): void { if (keyword.value.length == 0) return; keyword.value = ""; load() }
+function discount(item: Coupon): string { return item.discount_type == "rate" ? String(item.discount_value / 10) + "折" : "¥" + String(item.coupon_price) }
+function receive(item: Coupon): void {
+  if (item.received) return
+  if (isDemoCoupon(item)) { uni.showToast({ title: "演示券仅供浏览，启动业务服务后可领取", icon: "none" }); return }
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: "/pages/login/index" }); return }
+  appRequest("/coupons/" + item.coupon_id + "/receive", "POST", {} as UTSJSONObject).then(() => { item.received = true; uni.showToast({ title: "领取成功", icon: "success" }) }).catch((error) => uni.showToast({ title: error.message || "领取失败", icon: "none" }))
+}
+function toggleFollow(): void {
+  if (item.value == null || following.value) return
+  if (isDemoStore()) { uni.showToast({ title: "演示店铺仅供浏览，启动业务服务后可关注", icon: "none" }); return }
+  if (getAccessToken().length == 0) { uni.navigateTo({ url: "/pages/login/index" }); return }
+  if (item.value.store_id <= 0) { uni.showToast({ title: "当前店铺不支持关注", icon: "none" }); return }
+  following.value = true
+  const method = followed.value ? "DELETE" : "PUT"
+  appRequest("/favorites/stores/" + item.value.store_id, method).then((data) => { followed.value = (data as UTSJSONObject)["followed"] as boolean; uni.showToast({ title: followed.value ? "已关注店铺" : "已取消关注", icon: "none" }) }).catch((error) => uni.showToast({ title: error.message || "操作失败", icon: "none" })).finally(() => { following.value = false })
+}
+onLoad((query) => { merID.value = Number(query?.["mer_id"] || 0); load() })
 </script>
-<template><view class="qx-page"><qx-nav title="店铺主页"/><view v-if="item!=null" class="hero"><text>{{item.mer_name||`店铺 ${item.mer_id}`}}</text><text>本店在售商品</text><button @click="contact">联系客服</button></view><view v-if="item!=null&&item.products.length==0" class="qx-card empty">暂无上架商品</view><view v-if="item!=null" v-for="product in item.products" :key="product.id" class="qx-card row" @click="goods(product.id)"><text>{{product.store_name}}</text><text class="price">¥{{product.price}} ›</text></view></view></template>
-<style>.hero{margin:12px;padding:20px;color:#fff;background:#d72828;border-radius:12px}.hero text{display:block}.hero text:first-child{font-size:21px;font-weight:700}.hero text:nth-child(2){margin-top:8px;font-size:13px}.hero button{width:120px;height:36px;margin:16px 0 0;padding:0;border:1px solid #fff;border-radius:18px;color:#fff;background:transparent;font-size:13px;line-height:34px}.row{display:flex;justify-content:space-between;font-size:15px}.price{color:#d72828;font-weight:600}.empty{color:#86909c;text-align:center}</style>
+<template>
+  <view class="qx-page"><qx-nav title="店铺主页" />
+    <view v-if="hasStore()" class="hero"><text>{{ storeTitle() }}</text><text>已发布商品 {{ storeTotal() }} 件</text><view class="hero__actions"><button @click="contact">联系客服</button><button :loading="following" @click="toggleFollow">{{ followed ? "已关注店铺" : "关注店铺" }}</button></view></view>
+    <view v-if="hasStore()" class="search"><input v-model="keyword" confirm-type="search" class="search__input" placeholder="搜索店内商品" @confirm="search" /><text v-if="keyword.length > 0" class="search__clear" @click="clear">清除</text><button class="search__button" @click="search">搜索</button></view>
+    <view v-if="coupons.length > 0" class="qx-card coupons"><text class="coupons__title">店铺优惠券</text><view v-for="coupon in coupons" :key="coupon.coupon_id" class="coupon"><view><text class="coupon__name">{{ coupon.title }}</text><text class="coupon__meta">{{ discount(coupon) }} · 满 {{ coupon.use_min_price }} 可用</text></view><button :disabled="coupon.received" class="coupon__receive" @click="receive(coupon)">{{ coupon.received ? "已领" : "领取" }}</button></view></view>
+    <view v-if="loading" class="qx-card empty">正在加载商品…</view><view v-else-if="productsEmpty()" class="qx-card empty">暂无匹配的上架商品</view>
+    <view v-if="hasStore()" v-for="product in products()" :key="product.id" class="qx-card row" @click="goods(product.id)"><image class="row__image" :src="product.image" mode="aspectFill" /><view class="row__body"><text class="row__name">{{ product.store_name }}</text><text class="row__meta">店内精选商品</text></view><text class="price">¥{{ product.price }} ›</text></view>
+  </view>
+</template>
+<style>
+.hero{margin:12px;padding:20px;color:#fff;background:#d72828;border-radius:12px}.hero text{display:block}.hero text:first-child{font-size:21px;font-weight:700}.hero text:nth-child(2){margin-top:8px;font-size:13px}.hero__actions{display:flex;gap:10px}.hero button{width:120px;height:36px;margin:16px 0 0;padding:0;border:1px solid #fff;border-radius:18px;color:#fff;background:transparent;font-size:13px;line-height:34px}.search{height:44px;margin:12px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:9px;background:#fff}.search__input{height:36px;flex:1;font-size:14px}.search__clear{color:#86909c;font-size:12px}.search__button{width:56px;height:32px;margin:0;padding:0;color:#fff;border-radius:16px;background:#d72828;font-size:13px;line-height:32px}.coupons__title{display:block;font-size:16px;font-weight:600}.coupon{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid #f2f3f5}.coupon:first-of-type{margin-top:8px}.coupon__name,.coupon__meta{display:block}.coupon__name{font-size:14px}.coupon__meta{margin-top:5px;color:#86909c;font-size:12px}.coupon__receive{width:62px;height:30px;margin:0;padding:0;color:#d72828;border:1px solid #d72828;border-radius:15px;background:#fff;font-size:12px;line-height:28px}.row{display:flex;align-items:center;gap:10px;font-size:15px}.row__image{width:58px;height:58px;flex-shrink:0;border-radius:7px;background:#f0f0f0}.row__body{min-width:0;flex:1}.row__name,.row__meta{display:block}.row__name{overflow:hidden;color:#1f2329;font-size:14px;white-space:nowrap;text-overflow:ellipsis}.row__meta{margin-top:5px;color:#86909c;font-size:11px}.price{color:#d72828;font-weight:600}.empty{color:#86909c;text-align:center}
+</style>

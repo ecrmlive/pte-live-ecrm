@@ -8,42 +8,45 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/adminscope"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Handler struct {
 	adminDB    *gorm.DB
 	merchantDB *gorm.DB
 	businessDB *gorm.DB
-	identity   *identity.Service
 }
 
-func NewHandler(adminDB, merchantDB, businessDB *gorm.DB, id *identity.Service) *Handler {
-	return &Handler{adminDB: adminDB, merchantDB: merchantDB, businessDB: businessDB, identity: id}
+func NewHandler(adminDB, merchantDB, businessDB *gorm.DB) *Handler {
+	return &Handler{adminDB: adminDB, merchantDB: merchantDB, businessDB: businessDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	h.RegisterMeta(r)
 	r.GET("/products", h.list)
 	r.GET("/products/:id", h.get)
-	r.POST("/products/:id/audit", middleware.RequirePlatformMenu(h.identity, identity.PlatPermProductAudit), h.audit)
+	r.POST("/products/:id/audit", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "product.audit.submit"), h.audit)
 }
 
 type productRow struct {
-	ID           uint64    `gorm:"column:id"`
-	StoreID      uint64    `gorm:"column:store_id"`
-	MerchantID   uint64    `gorm:"column:merchant_id"`
-	MerchantName string    `gorm:"column:merchant_name"`
-	StoreName    string    `gorm:"column:store_name"`
-	Title        string    `gorm:"column:title"`
-	CategoryID   uint64    `gorm:"column:category_id"`
-	Status       string    `gorm:"column:status"`
-	Version      uint64    `gorm:"column:version"`
-	CreatedAt    time.Time `gorm:"column:created_at"`
+	ID            uint64    `gorm:"column:id"`
+	StoreID       uint64    `gorm:"column:store_id"`
+	MerchantID    uint64    `gorm:"column:merchant_id"`
+	MerchantName  string    `gorm:"column:merchant_name"`
+	StoreName     string    `gorm:"column:store_name"`
+	Title         string    `gorm:"column:title"`
+	CategoryID    uint64    `gorm:"column:category_id"`
+	BrandName     string    `gorm:"column:brand_name"`
+	SVIPPriceType int8      `gorm:"column:svip_price_type"`
+	SVIPPrice     float64   `gorm:"column:svip_price"`
+	Status        string    `gorm:"column:status"`
+	Version       uint64    `gorm:"column:version"`
+	CreatedAt     time.Time `gorm:"column:created_at"`
 }
 
 type detailRow struct {
@@ -54,21 +57,40 @@ type detailRow struct {
 }
 
 type skuRow struct {
+	ID        uint64  `gorm:"column:id"`
 	ProductID uint64  `gorm:"column:product_id"`
+	SpecJSON  []byte  `gorm:"column:spec_json"`
 	Price     float64 `gorm:"column:price"`
 	Stock     int     `gorm:"column:stock"`
 }
 
 type productReview struct {
-	ID         uint64 `gorm:"column:id;primaryKey"`
-	ProductID  uint64 `gorm:"column:product_id"`
-	StoreID    uint64 `gorm:"column:store_id"`
-	Status     string `gorm:"column:status"`
-	Reason     string `gorm:"column:reason"`
-	ReviewedBy uint64 `gorm:"column:reviewed_by"`
+	ID            uint64  `gorm:"column:id;primaryKey"`
+	ProductID     uint64  `gorm:"column:product_id"`
+	StoreID       uint64  `gorm:"column:store_id"`
+	SourceEventID *uint64 `gorm:"column:source_event_id"`
+	Status        string  `gorm:"column:status"`
+	Reason        string  `gorm:"column:reason"`
+	ReviewedBy    uint64  `gorm:"column:reviewed_by"`
 }
 
 func (productReview) TableName() string { return "qixi_crm_a_product_review" }
+
+// productProjectionOutbox keeps the cross-database projection command beside
+// the platform review fact. A failed business projection is therefore durable
+// and can be retried instead of being lost after the merchant status changes.
+type productProjectionOutbox struct {
+	ID            uint64    `gorm:"column:id;primaryKey"`
+	ProductID     uint64    `gorm:"column:product_id"`
+	SourceEventID *uint64   `gorm:"column:source_event_id"`
+	Action        string    `gorm:"column:action"`
+	Payload       []byte    `gorm:"column:payload"`
+	Status        string    `gorm:"column:status"`
+	Attempts      uint      `gorm:"column:attempts"`
+	UpdatedAt     time.Time `gorm:"column:updated_at"`
+}
+
+func (productProjectionOutbox) TableName() string { return "qixi_crm_a_product_projection_outbox" }
 
 type categoryRow struct {
 	ID   uint64 `gorm:"column:category_id"`
@@ -80,8 +102,10 @@ type productResponse struct {
 	MerID      uint64  `json:"mer_id"`
 	MerName    string  `json:"mer_name"`
 	StoreName  string  `json:"store_name"`
+	Title      string  `json:"title"`
 	StoreInfo  string  `json:"store_info"`
 	CateName   string  `json:"cate_name"`
+	BrandName  string  `json:"brand_name"`
 	Image      string  `json:"image"`
 	Price      float64 `json:"price"`
 	OtPrice    float64 `json:"ot_price"`
@@ -95,7 +119,16 @@ type productResponse struct {
 
 func (h *Handler) list(c *gin.Context) {
 	page, limit := page(c)
-	query := h.base(c)
+	merchantIDs, err := h.merchantScope(c)
+	if err != nil {
+		response.Fail(c, http.StatusForbidden, "未配置商品监管数据范围")
+		return
+	}
+	if merchantIDs != nil && len(merchantIDs) == 0 {
+		response.OK(c, gin.H{"list": []productResponse{}, "total": 0, "page": page, "limit": limit})
+		return
+	}
+	query := h.base(c, merchantIDs)
 	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
 		query = query.Where("p.title LIKE ?", "%"+keyword+"%")
 	}
@@ -129,8 +162,17 @@ func (h *Handler) get(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "商品 ID 错误")
 		return
 	}
+	merchantIDs, err := h.merchantScope(c)
+	if err != nil {
+		response.Fail(c, http.StatusForbidden, "未配置商品监管数据范围")
+		return
+	}
+	if merchantIDs != nil && len(merchantIDs) == 0 {
+		response.Fail(c, http.StatusNotFound, "商品不存在")
+		return
+	}
 	var row productRow
-	if err := h.base(c).Where("p.id = ?", id).Scan(&row).Error; err != nil {
+	if err := h.base(c, merchantIDs).Where("p.id = ?", id).Scan(&row).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询商品失败")
 		return
 	}
@@ -156,9 +198,14 @@ func (h *Handler) audit(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "审核参数不合法")
 		return
 	}
+	reviewStatus, action, next := "rejected", "delete", "rejected"
+	if req.Status == 1 {
+		reviewStatus, action, next = "approved", "upsert", "on_sale"
+	}
 	var row productRow
+	var command productAuditOutbox
 	err := h.merchantDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
 			return err
 		}
 		if row.ID == 0 {
@@ -167,11 +214,20 @@ func (h *Handler) audit(c *gin.Context) {
 		if row.Status != "pending_review" && row.Status != "draft" {
 			return errAuditState
 		}
-		next := "rejected"
 		if req.Status == 1 {
-			next = "on_sale"
+			var sellableSKUs int64
+			if err := tx.Table("qixi_crm_m_product_sku").Where("product_id = ? AND status = 1", id).Count(&sellableSKUs).Error; err != nil {
+				return err
+			}
+			if sellableSKUs == 0 {
+				return errMissingSellableSKU
+			}
 		}
-		return tx.Table("qixi_crm_m_product").Where("id = ?", id).Updates(map[string]any{"status": next, "version": gorm.Expr("version + 1")}).Error
+		if err := tx.Table("qixi_crm_m_product").Where("id = ? AND status = ?", id, row.Status).Updates(map[string]any{"status": next, "version": gorm.Expr("version + 1")}).Error; err != nil {
+			return err
+		}
+		command = productAuditOutbox{ProductID: row.ID, StoreID: row.StoreID, Action: action, ReviewStatus: reviewStatus, Reason: strings.TrimSpace(req.Refusal), ReviewedBy: uint64(middleware.AdminID(c)), Status: "pending"}
+		return tx.Create(&command).Error
 	})
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		response.Fail(c, http.StatusNotFound, "商品不存在")
@@ -181,45 +237,75 @@ func (h *Handler) audit(c *gin.Context) {
 		response.Fail(c, http.StatusConflict, "商品当前不在待审核状态")
 		return
 	}
+	if errors.Is(err, errMissingSellableSKU) {
+		response.Fail(c, http.StatusUnprocessableEntity, "商品缺少可售规格，不能审核上架")
+		return
+	}
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "更新商品审核状态失败")
 		return
 	}
-	reviewStatus := "rejected"
-	if req.Status == 1 {
-		reviewStatus = "approved"
-	}
-	review := productReview{ProductID: row.ID, StoreID: row.StoreID, Status: reviewStatus, Reason: strings.TrimSpace(req.Refusal), ReviewedBy: uint64(middleware.AdminID(c))}
-	if err := h.adminDB.WithContext(c.Request.Context()).Create(&review).Error; err != nil {
-		response.Fail(c, http.StatusInternalServerError, "记录审核结果失败")
-		return
-	}
-	if req.Status == -1 {
-		_ = h.businessDB.WithContext(c.Request.Context()).Exec("DELETE FROM qixi_crm_b_product_view WHERE product_id = ?", id).Error
-		response.OK(c, gin.H{"ok": true})
-		return
-	}
-	row.Status, row.Version = "on_sale", row.Version+1
-	items, err := h.responses(c, []productRow{row})
+	processed, err := h.processAuditOutbox(c.Request.Context(), command)
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "加载商品详情失败")
+		response.OK(c, gin.H{"ok": true, "projection_pending": true})
 		return
 	}
-	item := items[0]
-	err = h.businessDB.WithContext(c.Request.Context()).Exec(`INSERT INTO qixi_crm_b_product_view
-      (product_id, merchant_id, store_id, merchant_name, store_name, category_id, title, cover_url, price, original_price, product_type, sales, stock, sale_status, version, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, 1, ?, NOW())
-      ON DUPLICATE KEY UPDATE merchant_id=VALUES(merchant_id), store_id=VALUES(store_id), merchant_name=VALUES(merchant_name), store_name=VALUES(store_name), category_id=VALUES(category_id), title=VALUES(title), cover_url=VALUES(cover_url), price=VALUES(price), original_price=VALUES(original_price), stock=VALUES(stock), sale_status=1, version=VALUES(version), updated_at=NOW()`,
-		row.ID, row.MerchantID, row.StoreID, row.MerchantName, row.StoreName, row.CategoryID, row.Title, item.Image, item.Price, nullableOriginal(item.OtPrice), item.Stock, row.Version).Error
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "同步商品消费视图失败")
+	if !processed {
+		response.OK(c, gin.H{"ok": true, "projection_pending": true})
 		return
 	}
 	response.OK(c, gin.H{"ok": true})
 }
 
-func (h *Handler) base(c *gin.Context) *gorm.DB {
-	return h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
+func (h *Handler) base(c *gin.Context, merchantIDs []uint64) *gorm.DB {
+	q := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
+	if merchantIDs != nil {
+		q = q.Where("s.merchant_id IN ?", merchantIDs)
+	}
+	return q
+}
+
+// merchantScope maps unified-admin direct merchant and region assignments to
+// the current merchant store. nil is the platform's full supervision scope.
+func (h *Handler) merchantScope(c *gin.Context) ([]uint64, error) {
+	scope, err := adminscope.ResolveMerchantScope(c.Request.Context(), h.adminDB, middleware.ClaimsFrom(c))
+	if err != nil {
+		return nil, err
+	}
+	if scope.Full {
+		return nil, nil
+	}
+	ids := append([]uint64{}, scope.MerchantIDs...)
+	if len(scope.RegionIDs) == 0 {
+		return ids, nil
+	}
+	var rows []struct{ ID uint64 }
+	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_merchant").Select("id").Where("region_id IN ?", scope.RegionIDs).Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	regionMerchantIDs := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		regionMerchantIDs = append(regionMerchantIDs, row.ID)
+	}
+	return mergeMerchantIDs(ids, regionMerchantIDs), nil
+}
+
+func mergeMerchantIDs(direct, regional []uint64) []uint64 {
+	result := make([]uint64, 0, len(direct)+len(regional))
+	seen := make(map[uint64]struct{}, len(direct)+len(regional))
+	for _, list := range [][]uint64{direct, regional} {
+		for _, id := range list {
+			if id == 0 {
+				continue
+			}
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			result = append(result, id)
+		}
+	}
+	return result
 }
 
 func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productResponse, error) {
@@ -236,7 +322,7 @@ func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productRespons
 		return nil, err
 	}
 	var skus []skuRow
-	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product_sku").Where("product_id IN ? AND status = 1", ids).Find(&skus).Error; err != nil {
+	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product_sku").Where("product_id IN ? AND status = 1", ids).Order("id ASC").Find(&skus).Error; err != nil {
 		return nil, err
 	}
 	var categoriesRows []categoryRow
@@ -272,9 +358,39 @@ func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productRespons
 		if d.OriginalPrice != nil {
 			ot = *d.OriginalPrice
 		}
-		out = append(out, productResponse{ProductID: row.ID, MerID: row.MerchantID, MerName: row.MerchantName, StoreName: row.Title, StoreInfo: d.Brief, CateName: nameByID[row.CategoryID], Image: d.CoverURL, Price: s.Price, OtPrice: ot, Stock: s.Stock, Sales: 0, Status: statusCode(row.Status), IsShow: showCode(row.Status), Refusal: reviewByID[row.ID].Reason, CreateTime: row.CreatedAt.Format("2006-01-02 15:04:05")})
+		out = append(out, productResponse{ProductID: row.ID, MerID: row.MerchantID, MerName: row.MerchantName, StoreName: row.StoreName, Title: row.Title, StoreInfo: d.Brief, CateName: nameByID[row.CategoryID], BrandName: row.BrandName, Image: d.CoverURL, Price: s.Price, OtPrice: ot, Stock: s.Stock, Sales: 0, Status: statusCode(row.Status), IsShow: showCode(row.Status), Refusal: reviewByID[row.ID].Reason, CreateTime: row.CreatedAt.Format("2006-01-02 15:04:05")})
 	}
 	return out, nil
+}
+
+// syncSKUProjection copies only sellable SKU facts into the business-owned
+// consumption view. The stored merchant SKU primary key is the later
+// inventory-command identity; it is never inferred from product_id or text.
+func (h *Handler) syncSKUProjection(c *gin.Context, productID uint64) error {
+	var skus []skuRow
+	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product_sku").Where("product_id = ? AND status = 1", productID).Order("id ASC").Find(&skus).Error; err != nil {
+		return err
+	}
+	if len(skus) == 0 {
+		return errors.New("product has no sellable sku")
+	}
+	return h.businessDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("DELETE FROM qixi_crm_b_product_sku_view WHERE product_id = ?", productID).Error; err != nil {
+			return err
+		}
+		for _, sku := range skus {
+			spec := string(sku.SpecJSON)
+			if strings.TrimSpace(spec) == "" {
+				spec = "{}"
+			}
+			if err := tx.Exec(`INSERT INTO qixi_crm_b_product_sku_view
+                (merchant_sku_id,product_id,sku_key,spec_snapshot,price,stock,sale_status,version,updated_at)
+                VALUES (?,?,?,?,?,?,1,1,NOW())`, sku.ID, productID, strconv.FormatUint(sku.ID, 10), spec, sku.Price, sku.Stock).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func page(c *gin.Context) (int, int) {
@@ -328,4 +444,7 @@ func nullableOriginal(value float64) any {
 	return value
 }
 
-var errAuditState = errors.New("product audit state invalid")
+var (
+	errAuditState         = errors.New("product audit state invalid")
+	errMissingSellableSKU = errors.New("product has no sellable sku")
+)

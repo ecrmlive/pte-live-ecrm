@@ -1,4 +1,4 @@
-import { PteIMCommerce } from './interface.uts'
+import type { PteIMCommerce } from './interface.uts'
 
 type CommerceRequest = (path: string, data: any, callback: (data: any | null, error: string | null) => void) => void
 

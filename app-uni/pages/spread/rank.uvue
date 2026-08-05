@@ -1,0 +1,32 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type RankRow = { rank: number; nickname: string; commission_amount: number; referral_count: number }
+type RankResponse = { metric: string; list: RankRow[] }
+
+const metric = ref('commission')
+const list = ref<RankRow[]>([])
+const loading = ref(false)
+
+function load(): void {
+  loading.value = true
+  appRequest('/spread/rank?metric=' + metric.value).then((data) => { list.value = (data as RankResponse).list || [] }).catch((error) => {
+    uni.showToast({ title: error.message || '排行榜加载失败', icon: 'none' })
+  }).finally(() => { loading.value = false })
+}
+function selectMetric(value: string): void {
+  if (metric.value == value) return
+  metric.value = value
+  load()
+}
+
+onShow(() => load())
+</script>
+
+<template>
+  <view class="qx-page"><qx-nav title="推广排行榜" /><view class="tabs"><text :class="['tab', metric == 'commission' ? 'tab--active' : '']" @click="selectMetric('commission')">佣金排行</text><text :class="['tab', metric == 'promoters' ? 'tab--active' : '']" @click="selectMetric('promoters')">推广排行</text></view><view class="qx-card"><view v-if="loading" class="empty">加载中...</view><view v-else-if="list.length == 0" class="empty">暂无排行数据</view><view v-else v-for="item in list" :key="item.rank" class="row"><text class="row__rank">{{ item.rank }}</text><text class="row__name">{{ item.nickname }}</text><text class="row__value">{{ metric == 'commission' ? '¥' + item.commission_amount : item.referral_count + ' 人' }}</text></view></view><text class="notice">为保护用户隐私，排行榜仅显示脱敏昵称。</text></view>
+</template>
+
+<style>
+.tabs { display: flex; height: 48px; padding: 0 12px; background-color: #ffffff; }.tab { flex: 1; line-height: 48px; color: #606266; font-size: 15px; text-align: center; }.tab--active { color: #d72828; font-weight: 600; border-bottom: 2px solid #d72828; }.row { display: flex; align-items: center; min-height: 56px; border-bottom: 1px solid #f0f0f0; }.row__rank { width: 40px; color: #d72828; font-size: 16px; font-weight: 700; text-align: center; }.row__name { flex: 1; color: #303133; font-size: 15px; }.row__value { color: #d72828; font-size: 14px; font-weight: 600; }.empty, .notice { display: block; color: #86909c; font-size: 13px; text-align: center; }.empty { padding: 30px 0; }.notice { margin: 16px 12px; }
+</style>

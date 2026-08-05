@@ -5,6 +5,7 @@
 ## 分组
 
 - 微信支付、支付宝支付
+- 微信小程序 AppID / AppSecret
 - 腾讯云账号（共享 SecretId / SecretKey）与 COS
 - 腾讯云 LVB 推流/拉流域名、URL 模板、鉴权 Key 与应用名
 - 腾讯云 VOD
@@ -20,9 +21,13 @@
 - COS 已接入运行时：后台把 COS 启用并补齐存储桶、地域及腾讯云账号后，下一次素材上传即时走数据库配置；未启用时保持 `app.yaml` 当前上传策略。
 - IM 已接入运行时：C 端和客服端在开会话、发放 UserSig、创建 C2C 会话时通过服务端 `cloudconfig.Service.Values("im")` 读取；后台保存的非空字段优先于 YAML。`api_base` 只能填写服务端 S2S 地址，`api_public_url` 与 `ws_public_url` 必须填写客户端实际可访问地址。
 - 支付、LVB/VOD、License 与回调配置的接入方必须通过服务端 `cloudconfig.Service.Values` 读取；该方法禁止在 HTTP 响应中使用。
+- 小程序静默登录读取 `wechat_mini_program` 分组：仅启用状态、AppID 与 AppSecret 齐备时开放。客户端只提交 `uni.login` 返回的一次性 code，服务端换取并绑定 openid；不得把 AppSecret、openid 或会话密钥下发给客户端。
+- 小程序微信支付使用 `payment` 分组的微信商户签名材料和回调地址；商户号必须已与该小程序 AppID 绑定。`wechat_api_v3_key` 必须是 32 字节 APIv3 密钥，不可用旧版 APIKEY 替代。
+- 微信退款必须单独配置 `wechat_refund_notify_url`，且只能是 HTTPS 回调地址；退款请求已受理不等于资金到账，业务状态只能由该地址收到并验签的退款成功通知推进。
 
 ## 运维要求
 
 - 在每个同构环境按 `sql/README.md` 执行集中初始化后，再由后台录入对应环境的真实参数。
 - `jwt.secret` 变化会使既有密文无法解密；生产环境必须在变更前导出并在变更后重新录入，或执行受控密钥轮换。
 - 密钥禁止写入 Git、OpenAPI 示例、日志和截图。
+- 已通过聊天、截图或其他非密钥管理渠道暴露的支付密钥、商户私钥或 AppSecret，应立即在微信商户平台/小程序后台轮换后再录入配置中心。

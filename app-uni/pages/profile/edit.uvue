@@ -1,0 +1,11 @@
+<script setup lang="uts">
+import { appRequest } from "../../common/request"
+
+type Profile = { nickname:string; mobile:string; channel:string }
+const nickname=ref("");const mobile=ref("");const saving=ref(false)
+function load():void{appRequest("/auth/me").then((data)=>{const profile=data as Profile;nickname.value=profile.nickname||"";mobile.value=profile.mobile||""}).catch((error)=>uni.showToast({title:error.message||"资料加载失败",icon:"none"}))}
+function save():void{const value=nickname.value.trim();if(value.length==0){uni.showToast({title:"请输入昵称",icon:"none"});return};saving.value=true;appRequest("/auth/me","PATCH",{nickname:value} as UTSJSONObject).then(()=>{uni.showToast({title:"资料已保存",icon:"success"});setTimeout(()=>uni.navigateBack(),500)}).catch((error)=>uni.showToast({title:error.message||"保存失败",icon:"none"})).finally(()=>{saving.value=false})}
+onLoad(()=>load())
+</script>
+<template><view class="qx-page"><qx-nav title="编辑资料"/><view class="qx-card"><text class="label">昵称</text><input v-model="nickname" maxlength="64" class="input" placeholder="请输入 1 至 64 个字符"/><text class="label">已绑定手机号</text><text class="mobile">{{mobile||"暂未绑定"}}</text><view class="mobile-action" @click="uni.navigateTo({url:'/pages/profile/mobile'})"><text>{{ mobile.length > 0 ? '查看绑定手机' : '绑定手机号' }}</text><text>›</text></view><text class="hint">手机号绑定需要图形验证和短信验证码。</text><button :loading="saving" class="qx-primary" @click="save">保存</button></view></view></template>
+<style>.label{display:block;margin-top:8px;color:#4e5969;font-size:13px}.input{height:44px;margin-top:8px;padding:0 10px;box-sizing:border-box;background:#f6f7f9;border-radius:8px}.mobile{display:block;margin-top:8px;color:#1f2329}.mobile-action{height:42px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;color:#d72828;font-size:14px}.hint{display:block;margin-top:8px;color:#86909c;font-size:12px;line-height:18px}.qx-primary{margin-top:20px;border-radius:22px}</style>

@@ -12,7 +12,7 @@ type Express struct {
 	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
-func (Express) TableName() string { return "qixi_m_admin_express" }
+func (Express) TableName() string { return "qixi_crm_a_express" }
 
 type City struct {
 	CityID   uint   `gorm:"column:city_id;primaryKey" json:"city_id"`
@@ -22,7 +22,7 @@ type City struct {
 	IsShow   int8   `gorm:"column:is_show" json:"is_show"`
 }
 
-func (City) TableName() string { return "qixi_m_admin_system_city" }
+func (City) TableName() string { return "qixi_crm_a_city" }
 
 type ShippingTemplate struct {
 	TemplateID uint      `gorm:"column:template_id;primaryKey" json:"template_id"`
@@ -37,7 +37,8 @@ type ShippingTemplate struct {
 	Regions    []Region  `gorm:"-" json:"regions,omitempty"`
 }
 
-func (ShippingTemplate) TableName() string { return "qixi_m_admin_shipping_template" }
+// 运费模板属于店铺事实。当前平台端未注册其 CRUD 路由，后续商户端接入时必须连接 merchant 库。
+func (ShippingTemplate) TableName() string { return "qixi_crm_m_shipping_template" }
 
 type Region struct {
 	RegionID      uint    `gorm:"column:region_id;primaryKey" json:"region_id"`
@@ -49,7 +50,7 @@ type Region struct {
 	ContinuePrice float64 `gorm:"column:continue_price" json:"continue_price"`
 }
 
-func (Region) TableName() string { return "qixi_m_admin_shipping_template_region" }
+func (Region) TableName() string { return "qixi_crm_m_shipping_template_region" }
 
 type ExpressInput struct {
 	Name   string `json:"name"`

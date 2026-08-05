@@ -1,3 +1,9 @@
+/// <reference path="./env.d.ts" />
 import App from './App.uvue'
+import { createSSRApp } from 'vue'
 
-createApp(App).mount('#app')
+export function createApp() {
+  return {
+    app: createSSRApp(App),
+  }
+}

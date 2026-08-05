@@ -15,6 +15,7 @@
   </head>
   <body>
     <div id="app"><!--app-html--></div>
-    <script type="module" src="/main.uts"></script>
+    <!-- H5 开发服务需要显式走 Vite 的模块转换；否则会把 .uts 源码按静态文件返回。 -->
+    <script type="module" src="/main"></script>
   </body>
 </html>

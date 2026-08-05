@@ -1,0 +1,33 @@
+<script setup lang="uts">
+import { appRequest } from '../../common/request'
+
+type CommissionOrder = { record_id:number; order_id:number; commission_amount:number; status:string; status_label:string; created_at:string }
+type CommissionOrderPage = { list:CommissionOrder[]; total:number; sum_commission:number; page:number; limit:number }
+
+const keyword = ref('')
+const list = ref<CommissionOrder[]>([])
+const total = ref(0)
+const sumCommission = ref(0)
+const page = ref(1)
+const loading = ref(false)
+function hasMore():boolean { return list.value.length < total.value }
+function load(reset:boolean = false):void {
+  if (loading.value || (!reset && !hasMore())) return
+  if (reset) { list.value = []; total.value = 0; page.value = 1 }
+  loading.value = true
+  const suffix = keyword.value.trim().length > 0 ? '&keyword=' + encodeURIComponent(keyword.value.trim()) : ''
+  appRequest('/spread/orders?page=' + page.value + '&limit=20' + suffix).then((data) => {
+    const result = data as CommissionOrderPage
+    list.value = list.value.concat(result.list || [])
+    total.value = result.total || 0
+    sumCommission.value = result.sum_commission || 0
+    page.value += 1
+  }).catch((error) => uni.showToast({ title:error.message || '推广订单加载失败', icon:'none' })).finally(() => { loading.value = false })
+}
+function search():void { load(true) }
+onShow(() => load(true))
+onReachBottom(() => load())
+</script>
+
+<template><view class="qx-page"><qx-nav title="推广订单"/><view class="summary"><text>累计推广佣金</text><text class="summary__amount">¥{{sumCommission}}</text></view><view class="search"><input v-model="keyword" class="search__input" type="number" placeholder="输入订单编号查询" @confirm="search"/><text class="search__button" @click="search">查询</text></view><view v-if="!loading&&list.length==0" class="qx-card empty">暂无推广订单</view><view v-for="item in list" :key="item.record_id" class="qx-card record"><view><text class="record__order">订单 #{{item.order_id}}</text><text class="record__time">{{item.created_at}}</text></view><view class="record__right"><text class="record__amount">+¥{{item.commission_amount}}</text><text class="record__status">{{item.status_label}}</text></view></view><text v-if="loading" class="more">加载中...</text><text v-else-if="list.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="list.length>0" class="more" @click="load()">加载更多</text></view></template>
+<style>.summary{margin:12px;padding:17px;color:#ffffff;background:linear-gradient(135deg,#402c75,#7465d8);border-radius:12px}.summary text{display:block}.summary__amount{margin-top:8px;font-size:28px;font-weight:700}.search{display:flex;margin:12px;padding:8px 12px;align-items:center;background:#ffffff}.search__input{height:36px;flex:1;padding:0 8px;background:#f6f7f9;border-radius:7px;font-size:14px}.search__button{margin-left:12px;color:#d72828;font-size:14px}.record{display:flex;align-items:center;justify-content:space-between}.record__order,.record__time,.record__amount,.record__status{display:block}.record__order{font-size:15px;font-weight:600}.record__time,.record__status{margin-top:6px;color:#86909c;font-size:12px}.record__right{text-align:right}.record__amount{color:#d72828;font-size:16px;font-weight:600}.empty,.more{display:block;color:#86909c;text-align:center}.empty{padding:25px}.more{padding:16px;font-size:12px}</style>

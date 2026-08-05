@@ -37,9 +37,19 @@ type ListFilter struct {
 	Status     *int8
 	Keyword    string
 	TopicID    uint
+	CategoryID uint
 	OnlyPublic bool
 	Page       int
 	Limit      int
+}
+
+const (
+	maxPostTitleRunes   = 100
+	maxPostContentRunes = 5000
+)
+
+func validPostText(title, content string) bool {
+	return title != "" && content != "" && len([]rune(title)) <= maxPostTitleRunes && len([]rune(content)) <= maxPostContentRunes
 }
 
 type Service struct{ store Store }
@@ -81,9 +91,9 @@ func (s *Service) ListHotTopics(ctx context.Context, limit int) ([]Topic, error)
 	return hot, nil
 }
 
-func (s *Service) ListApp(ctx context.Context, topicID uint, page, limit int) (*PageResult[Post], error) {
+func (s *Service) ListApp(ctx context.Context, topicID, categoryID uint, page, limit int) (*PageResult[Post], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListPosts(ctx, ListFilter{TopicID: topicID, OnlyPublic: true, Page: page, Limit: limit})
+	list, total, err := s.store.ListPosts(ctx, ListFilter{TopicID: topicID, CategoryID: categoryID, OnlyPublic: true, Page: page, Limit: limit})
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +167,7 @@ func (s *Service) CreatePost(ctx context.Context, uid uint, in CreatePostInput) 
 	}
 	title := strings.TrimSpace(in.Title)
 	content := strings.TrimSpace(in.Content)
-	if title == "" || content == "" {
+	if !validPostText(title, content) {
 		return nil, ErrBadParam
 	}
 	cateID := in.CategoryID
@@ -272,7 +282,7 @@ func (s *Service) UpdateMerchantPost(ctx context.Context, merID, id uint, in Cre
 	}
 	title := strings.TrimSpace(in.Title)
 	content := strings.TrimSpace(in.Content)
-	if title == "" || content == "" {
+	if !validPostText(title, content) {
 		return nil, ErrBadParam
 	}
 	if in.ProductID > 0 {
@@ -303,6 +313,24 @@ func (s *Service) UpdateMerchantPost(ctx context.Context, merID, id uint, in Cre
 		return nil, err
 	}
 	return s.Get(ctx, id, false)
+}
+
+// DeleteUserPost 用户撤回自己的发布内容。
+//
+// 已发布内容被撤回后也必须从公开流中消失，因此只作软删除；任何
+// 非作者请求均返回不存在，避免泄露其他用户内容是否存在。
+func (s *Service) DeleteUserPost(ctx context.Context, uid, id uint) error {
+	if uid == 0 || id == 0 {
+		return ErrBadParam
+	}
+	p, err := s.Get(ctx, id, false)
+	if err != nil {
+		return err
+	}
+	if p.UID != uid {
+		return ErrNotFound
+	}
+	return s.store.SoftDeletePost(ctx, id)
 }
 
 // DeleteMerchantPost 商户删帖：仅本店。
@@ -342,7 +370,7 @@ func (s *Service) CreateReply(ctx context.Context, uid, communityID uint, in Cre
 		return nil, ErrBadParam
 	}
 	content := strings.TrimSpace(in.Content)
-	if content == "" {
+	if content == "" || len([]rune(content)) > 1000 {
 		return nil, ErrBadParam
 	}
 	p, err := s.Get(ctx, communityID, false)

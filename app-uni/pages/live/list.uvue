@@ -1,9 +1,18 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
-type Room={broadcast_room_id:number;name:string;mer_name:string;anchor_name:string;live_status:number};type RoomPage={list:Room[]};const items=ref<Room[]>([])
-function label(status:number):string{if(status==101)return '直播中';if(status==103)return '已结束';return '未开始'}
-function load():void{appRequest('/live/rooms?page=1&limit=30','GET',null,false).then((data)=>{items.value=(data as RoomPage).list||[]}).catch((error)=>uni.showToast({title:error.message||'直播间加载失败',icon:'none'}))}
-function detail(id:number):void{uni.navigateTo({url:`/pages/live/detail?id=${id}`})} onShow(()=>load())
+type Room = { broadcast_room_id: number; name: string; mer_name: string; anchor_name: string; live_status: number }
+type RoomPage = { list: Room[]; total: number; page: number; limit: number }
+const items = ref<Room[]>([])
+const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const limit = 20
+function hasMore(): boolean { return items.value.length < total.value }
+function label(status: number): string { if (status == 101) return '直播中'; if (status == 103) return '已结束'; return '未开始' }
+function load(reset: boolean = false): void { if (loading.value || (!reset && !hasMore())) return; const next = reset ? 1 : page.value + 1; loading.value = true; appRequest(`/live/rooms?page=${next}&limit=${limit}`, 'GET', null, false).then((data) => { const result = data as RoomPage; page.value = result.page || next; total.value = result.total || 0; items.value = reset ? (result.list || []) : items.value.concat(result.list || []) }).catch((error) => uni.showToast({ title: error.message || '直播间加载失败', icon: 'none' })).finally(() => { loading.value = false }) }
+function detail(id: number): void { uni.navigateTo({ url: `/pages/live/detail?id=${id}` }) }
+onShow(() => load(true))
+onReachBottom(() => load())
 </script>
-<template><view class="qx-page"><qx-nav title="直播间"/><view class="tip">直播内容由商户配置；播放能力由已配置的腾讯云播放器授权提供。</view><view v-if="items.length==0" class="qx-card empty">暂无直播间</view><view v-for="item in items" :key="item.broadcast_room_id" class="qx-card item" @click="detail(item.broadcast_room_id)"><text class="name">{{item.name}}</text><text class="sub">{{item.mer_name||'店铺'}} · 主播 {{item.anchor_name||'-'}}</text><text :class="item.live_status==101?'living':'status'">{{label(item.live_status)}}</text></view></view></template>
-<style>.tip{padding:12px;color:#86909c;font-size:13px}.empty{color:#86909c;text-align:center}.name,.sub,.status,.living{display:block}.name{font-size:16px;font-weight:600}.sub{margin-top:7px;color:#86909c;font-size:12px}.status,.living{margin-top:10px;font-size:14px}.living{color:#d72828;font-weight:600}.status{color:#86909c}</style>
+<template><view class="qx-page"><qx-nav title="直播间" /><view class="tip">直播内容由商户配置；播放能力由已配置的腾讯云播放器授权提供。</view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无直播间</view><view v-for="item in items" :key="item.broadcast_room_id" class="qx-card item" @click="detail(item.broadcast_room_id)"><text class="name">{{ item.name }}</text><text class="sub">{{ item.mer_name || '店铺' }} · 主播 {{ item.anchor_name || '-' }}</text><text :class="item.live_status == 101 ? 'living' : 'status'">{{ label(item.live_status) }}</text></view><view v-if="items.length > 0" class="more">{{ loading ? '正在加载更多' : (hasMore() ? '上拉加载更多' : '已经到底了') }}</view></view></template>
+<style>.tip { padding: 12px; color: #86909c; font-size: 13px; }.empty { color: #86909c; text-align: center; }.name, .sub, .status, .living { display: block; }.name { font-size: 16px; font-weight: 600; }.sub { margin-top: 7px; color: #86909c; font-size: 12px; }.status, .living { margin-top: 10px; font-size: 14px; }.living { color: #d72828; font-weight: 600; }.status { color: #86909c; }.more { padding: 16px 0 28px; color: #86909c; text-align: center; font-size: 13px; }</style>

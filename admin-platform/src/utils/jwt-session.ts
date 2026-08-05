@@ -1,6 +1,5 @@
 import {
-  refreshLiveJwtToken,
-  type LoginPlatform,
+  refreshPlatformJwtToken,
   type RefreshTokenResult,
 } from '#/utils/live-token-refresh';
 
@@ -29,11 +28,9 @@ export function shouldRefreshStoredJwt() {
 export type StoredJwtRefreshOutcome = 'invalid' | 'network' | 'ok' | 'skipped';
 
 export interface StoredJwtRefreshHandlers {
-  appId?: number;
-  loginPlatform: LoginPlatform;
   onClear: () => void;
-  onToken: (token: string) => void;
-  token: string;
+  onToken: (accessToken: string, refreshToken: string) => void;
+  refreshToken: string;
   /** 登录页带历史 token 时强制校验，不受「刚登录」影响 */
   force?: boolean;
 }
@@ -45,9 +42,10 @@ export interface StoredJwtRefreshHandlers {
 export async function refreshStoredJwtSession(
   handlers: StoredJwtRefreshHandlers,
 ): Promise<StoredJwtRefreshOutcome> {
-  const token = handlers.token?.trim();
-  if (!token) {
-    return 'skipped';
+  const refreshToken = handlers.refreshToken?.trim();
+  if (!refreshToken) {
+    handlers.onClear();
+    return 'invalid';
   }
   if (!handlers.force && !shouldRefreshStoredJwt()) {
     return 'skipped';
@@ -57,18 +55,14 @@ export async function refreshStoredJwtSession(
     storedJwtRefreshDone = true;
   }
 
-  const result: RefreshTokenResult = await refreshLiveJwtToken({
-    loginPlatform: handlers.loginPlatform,
-    token,
-    appId: handlers.appId,
-  });
+  const result: RefreshTokenResult = await refreshPlatformJwtToken({ refreshToken });
 
   if (result.clearToken) {
     handlers.onClear();
     return 'invalid';
   }
-  if (result.ok && result.token) {
-    handlers.onToken(result.token);
+  if (result.ok && result.token && result.refreshToken) {
+    handlers.onToken(result.token, result.refreshToken);
     return 'ok';
   }
   return 'network';

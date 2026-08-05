@@ -1,15 +1,31 @@
 <script setup lang="uts">
-import { appRequest } from '../../common/request'
+import { appRequest } from "../../common/request"
 
-type Coupon = { coupon_user_id: number; coupon_title: string; coupon_price: number; use_min_price: number; status: number }
-type CouponData = { list: Coupon[] }
-const status = ref(0)
+type Coupon = { coupon_user_id:number; coupon_title:string; coupon_price:number; discount_type:string; discount_value:number; use_min_price:number; status:number }
+type CouponData = { list:Coupon[]; total:number; page:number; limit:number }
+
+const status = ref("unused")
 const items = ref<Coupon[]>([])
-function load(): void { appRequest(`/coupons/mine?status=${status.value}&page=1&limit=30`).then((data) => { items.value = (data as CouponData).list || [] }).catch((error) => uni.showToast({ title: error.message || '加载失败', icon: 'none' })) }
-function switchStatus(value: number): void { status.value = value; load() }
-onShow(() => load())
+const page = ref(1)
+const total = ref(0)
+const loading = ref(false)
+function hasMore():boolean { return items.value.length < total.value }
+function load(reset:boolean = false):void {
+  if (loading.value || (!reset && !hasMore())) return
+  if (reset) { page.value = 1; total.value = 0; items.value = [] }
+  loading.value = true
+  appRequest("/coupons/mine?status=" + status.value + "&page=" + page.value + "&limit=20").then((data) => {
+    const result = data as CouponData
+    items.value = items.value.concat(result.list || [])
+    total.value = result.total || 0
+    page.value += 1
+  }).catch((error) => uni.showToast({ title:error.message || "优惠券加载失败", icon:"none" })).finally(() => { loading.value = false })
+}
+function switchStatus(value:string):void { if (status.value == value) return; status.value = value; load(true) }
+function discount(item:Coupon):string { return item.discount_type == "rate" ? String(item.discount_value / 10) + "折" : "¥" + String(item.coupon_price) }
+onShow(() => load(true))
+onReachBottom(() => load())
 </script>
 
-<template><view class="qx-page"><qx-nav title="我的优惠券" /><view class="tabs"><text :class="status == 0 ? 'active' : ''" @click="switchStatus(0)">未使用</text><text :class="status == 1 ? 'active' : ''" @click="switchStatus(1)">已使用</text><text :class="status == 2 ? 'active' : ''" @click="switchStatus(2)">已过期</text></view><view v-if="items.length == 0" class="qx-card empty">暂无优惠券</view><view v-for="item in items" :key="item.coupon_user_id" class="qx-card"><text class="title">{{ item.coupon_title }}</text><text class="sub">¥{{ item.coupon_price }} · 满 {{ item.use_min_price }} 可用</text></view></view></template>
-
-<style>.tabs { padding: 14px 20px; background-color: #ffffff; display: flex; justify-content: space-around; }.tabs text { color: #86909c; font-size: 14px; }.tabs .active { color: #d72828; font-weight: 600; }.empty { text-align: center; color: #86909c; }.title { display: block; font-size: 16px; font-weight: 600; }.sub { display: block; margin-top: 8px; color: #86909c; font-size: 13px; }</style>
+<template><view class="qx-page"><qx-nav title="我的优惠券"/><view class="tabs"><text :class="status=='unused'?'active':''" @click="switchStatus('unused')">未使用</text><text :class="status=='used'?'active':''" @click="switchStatus('used')">已使用</text><text :class="status=='expired'?'active':''" @click="switchStatus('expired')">已过期</text></view><view v-if="!loading&&items.length==0" class="qx-card empty">暂无优惠券</view><view v-for="item in items" :key="item.coupon_user_id" class="qx-card"><text class="title">{{item.coupon_title}}</text><text class="sub">{{discount(item)}} · 满 {{item.use_min_price}} 可用</text></view><text v-if="loading" class="more">加载中...</text><text v-else-if="items.length>0&&!hasMore()" class="more">没有更多了</text><text v-else-if="items.length>0" class="more" @click="load()">加载更多</text></view></template>
+<style>.tabs{padding:14px 20px;background-color:#ffffff;display:flex;justify-content:space-around}.tabs text{color:#86909c;font-size:14px}.tabs .active{color:#d72828;font-weight:600}.empty,.more{display:block;text-align:center;color:#86909c}.empty{padding:22px}.more{padding:16px;font-size:12px}.title{display:block;font-size:16px;font-weight:600}.sub{display:block;margin-top:8px;color:#86909c;font-size:13px}</style>

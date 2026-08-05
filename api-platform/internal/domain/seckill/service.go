@@ -100,6 +100,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in ActiveInput) (*Acti
 	if in.Status != nil {
 		a.Status = *in.Status
 	}
+	if !validActivityDates(a.StartDay, a.EndDay) {
+		return nil, ErrBadParam
+	}
 	if err := s.store.CreateActive(ctx, a); err != nil {
 		return nil, err
 	}
@@ -107,6 +110,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in ActiveInput) (*Acti
 }
 
 func (s *Service) Update(ctx context.Context, merID, id uint, in ActiveInput) (*Active, error) {
+	if in.Status != nil && *in.Status != 0 && *in.Status != 1 {
+		return nil, ErrBadParam
+	}
 	a, err := s.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -134,6 +140,9 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in ActiveInput) (*
 	}
 	if in.Status != nil {
 		a.Status = *in.Status
+	}
+	if !validActivityDates(a.StartDay, a.EndDay) {
+		return nil, ErrBadParam
 	}
 	a.UpdateTime = time.Now().Unix()
 	if err := s.store.UpdateActive(ctx, a); err != nil {
@@ -242,6 +251,15 @@ func defaultTimes(s string) string {
 		return "1"
 	}
 	return s
+}
+
+func validActivityDates(startDay, endDay string) bool {
+	start, err := time.Parse("2006-01-02", startDay)
+	if err != nil {
+		return false
+	}
+	end, err := time.Parse("2006-01-02", endDay)
+	return err == nil && !end.Before(start)
 }
 
 func normalize(page, limit int) (int, int) {

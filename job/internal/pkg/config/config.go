@@ -11,17 +11,15 @@ import (
 type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Databases DatabasesConfig `yaml:"databases"`
-	// MySQL 仅供尚未迁移的 api-admin/api-app/job 兼容读取；新服务不得使用。
-	MySQL   MySQLConfig   `yaml:"mysql"`
-	Redis   RedisConfig   `yaml:"redis"`
-	NATS    NATSConfig    `yaml:"nats"`
-	Etcd    EtcdConfig    `yaml:"etcd"`
-	COS     COSConfig     `yaml:"cos"`
-	JWT     JWTConfig     `yaml:"jwt"`
-	Job     JobConfig     `yaml:"job"`
-	Upload  UploadConfig  `yaml:"upload"`
-	Payment PaymentConfig `yaml:"payment"`
-	IM      IMConfig      `yaml:"im"`
+	Redis     RedisConfig     `yaml:"redis"`
+	NATS      NATSConfig      `yaml:"nats"`
+	Etcd      EtcdConfig      `yaml:"etcd"`
+	COS       COSConfig       `yaml:"cos"`
+	JWT       JWTConfig       `yaml:"jwt"`
+	Job       JobConfig       `yaml:"job"`
+	Upload    UploadConfig    `yaml:"upload"`
+	Payment   PaymentConfig   `yaml:"payment"`
+	IM        IMConfig        `yaml:"im"`
 }
 
 // DatabaseScope 显式约束目标 API 的数据库所有权，禁止以一个 DSN 跨三个 CRM 库直接查询。
@@ -157,9 +155,6 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Server.Mode == "" {
 		cfg.Server.Mode = "debug"
-	}
-	if cfg.JWT.Secret == "" {
-		return nil, fmt.Errorf("jwt.secret must be configured in %s", path)
 	}
 	if cfg.JWT.AccessTTLHours <= 0 {
 		cfg.JWT.AccessTTLHours = 12

@@ -79,9 +79,14 @@ function convertNode(node: MergersMenuNode): RouteRecordStringComponent | null {
   const path = nodePath(node);
   const children = (node.children || [])
     .map(convertNode)
-    .filter(Boolean) as RouteRecordStringComponent[];
+    .filter((item): item is RouteRecordStringComponent => Boolean(item));
   const componentKey = resolveMergersComponent(path) || declaredComponent(node);
   const isLeaf = children.length === 0;
+  // 与平台后台一致：未注册真实组件的叶子不降级到 placeholder，
+  // 避免「菜单可见」被误报成「功能已实现」。空目录一并隐藏。
+  if ((isLeaf && !componentKey) || (!isLeaf && children.length === 0)) {
+    return null;
+  }
   const record: RouteRecordStringComponent = {
     name: routeNameFromPath(path),
     path,
@@ -91,8 +96,8 @@ function convertNode(node: MergersMenuNode): RouteRecordStringComponent | null {
       hideInMenu: false,
     },
   };
-  if (componentKey || isLeaf) {
-    record.component = `../views/${componentKey || 'ecrm/placeholder/index'}.vue`;
+  if (componentKey) {
+    record.component = `../views/${componentKey}.vue`;
   } else if (children[0]?.path) {
     record.redirect = children[0].path;
   }

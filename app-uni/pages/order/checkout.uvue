@@ -1,38 +1,73 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { clearCheckoutAddressID, getCheckoutAddressID } from '../../common/checkout-address'
 
 type Address = { address_id: number; real_name: string; phone: string; province: string; city: string; district: string; detail: string; is_default: number }
 type AddressData = { list: Address[] }
-type CheckResult = { pay_price: number; total_num: number; total_postage: number; coupon_price: number; integral_price: number }
-type Coupon = { coupon_user_id: number; coupon_title: string; coupon_price: number }
+type CheckoutItem = { cart_id: number; store_name: string; spec_text: string; price: number; original_price: number; svip_applied: boolean; cart_num: number }
+type CheckoutMerchant = { mer_id: number; mer_name: string; items: CheckoutItem[] }
+type CheckResult = { pay_price: number; total_num: number; total_postage: number; coupon_price: number; integral_price: number; integral: number; integral_enabled: boolean; merchants: CheckoutMerchant[] }
+type Coupon = { coupon_user_id: number; coupon_title: string; coupon_price: number; discount_type: string; discount_value: number; coupon_kind: number }
 type CouponData = { list: Coupon[] }
 
 const cartIDs = ref<number[]>([])
 const address = ref<Address | null>(null)
 const check = ref<CheckResult | null>(null)
 const coupons = ref<Coupon[]>([])
-const selectedCouponID = ref(0)
+const selectedCouponIDs = ref<number[]>([])
+const useIntegral = ref(false)
 const submitting = ref(false)
+const remark = ref('')
+const idempotencyKey = ref('')
 
+function hasAddress(): boolean { return address.value != null }
+function checkoutAddressName(): string { const item = address.value; return item == null ? '未选择地址' : item.real_name + ' ' + item.phone }
+function checkoutAddressDetail(): string { const item = address.value; return item == null ? '请新增收货地址' : item.province + item.city + item.district + item.detail }
+function merchants(): CheckoutMerchant[] { const result = check.value; return result == null ? [] : result.merchants }
+function hasCheck(): boolean { return check.value != null }
+function totalNum(): number { const result = check.value; return result == null ? 0 : result.total_num }
+function totalPostage(): number { const result = check.value; return result == null ? 0 : result.total_postage }
+function couponDiscount(): number { const result = check.value; return result == null ? 0 : result.coupon_price + result.integral_price
+}
+function integralEnabled(): boolean { const result = check.value; return result != null && result.integral_enabled
+}
+function integralPoints(): number { const result = check.value; return result == null ? 0 : result.integral
+}
+function integralPrice(): number { const result = check.value; return result == null ? 0 : result.integral_price
+}
+function toggleIntegral(): void { useIntegral.value = !useIntegral.value; idempotencyKey.value = ""; refreshCheck()
+}
+function payablePrice(): number { const result = check.value; return result == null ? 0 : result.pay_price }
 function refreshCheck(): void {
-  appRequest('/v2/order/check', 'POST', { cart_ids: cartIDs.value, coupon_user_ids: selectedCouponID.value > 0 ? [selectedCouponID.value] : [], use_integral: 0 } as UTSJSONObject).then((data) => { check.value = data as CheckResult }).catch((error) => uni.showToast({ title: error.message || '订单核对失败', icon: 'none' }))
+  appRequest('/v2/order/check', 'POST', { cart_ids: cartIDs.value, coupon_user_ids: selectedCouponIDs.value, use_integral: useIntegral.value } as UTSJSONObject).then((data) => { check.value = data as CheckResult }).catch((error) => uni.showToast({ title: error.message || '订单核对失败', icon: 'none' }))
 }
 function load(): void {
-  appRequest('/address').then((data) => { const list = (data as AddressData).list || []; address.value = list.find((item) => item.is_default == 1) || (list.length > 0 ? list[0] : null) }).catch((error) => uni.showToast({ title: error.message || '地址加载失败', icon: 'none' }))
+  appRequest('/address').then((data) => { const list = (data as AddressData).list || []; const selected = getCheckoutAddressID(); const next = list.find((item) => item.address_id == selected) || list.find((item) => item.is_default == 1) || (list.length > 0 ? list[0] : null); if ((address.value == null ? 0 : address.value.address_id) != (next == null ? 0 : next.address_id)) idempotencyKey.value = ''; address.value = next }).catch((error) => uni.showToast({ title: error.message || '地址加载失败', icon: 'none' }))
   appRequest(`/coupons/usable?cart_ids=${cartIDs.value.join(',')}`).then((data) => { coupons.value = (data as CouponData).list || [] }).catch(() => { coupons.value = [] })
   refreshCheck()
 }
-function goAddress(): void { uni.navigateTo({ url: '/pages/address/list' }) }
-function selectCoupon(id: number): void { selectedCouponID.value = selectedCouponID.value == id ? 0 : id; refreshCheck() }
+function goAddress(): void { uni.navigateTo({ url: `/pages/address/list?select=1&selected=${address.value == null ? 0 : address.value.address_id}` }) }
+function discount(coupon: Coupon): string { return coupon.discount_type == "rate" ? String(coupon.discount_value / 10) + "折" : "¥" + String(coupon.coupon_price) }
+function selected(id: number): boolean { return selectedCouponIDs.value.indexOf(id) >= 0 }
+function selectCoupon(coupon: Coupon): void {
+  idempotencyKey.value = ''
+  if (selected(coupon.coupon_user_id)) { selectedCouponIDs.value = selectedCouponIDs.value.filter((id) => id != coupon.coupon_user_id); refreshCheck(); return }
+  const compatible = selectedCouponIDs.value.filter((id) => { const current = coupons.value.find((item) => item.coupon_user_id == id); return current == null || current.coupon_kind != coupon.coupon_kind })
+  compatible.push(coupon.coupon_user_id)
+  selectedCouponIDs.value = compatible
+  refreshCheck()
+}
+function updateRemark(value: string): void { if (remark.value != value) { remark.value = value; idempotencyKey.value = '' } }
 function submit(): void {
   if (address.value == null || cartIDs.value.length == 0) { uni.showToast({ title: '请先选择收货地址和商品', icon: 'none' }); return }
+  if (idempotencyKey.value.length == 0) idempotencyKey.value = 'order-create-' + Date.now().toString() + '-' + Math.random().toString(36).slice(2)
   submitting.value = true
-  appRequest('/v2/order/create', 'POST', { cart_ids: cartIDs.value, address_id: address.value.address_id, coupon_user_ids: selectedCouponID.value > 0 ? [selectedCouponID.value] : [], use_integral: 0 } as UTSJSONObject).then((data) => { const order = data as UTSJSONObject; uni.redirectTo({ url: `/pages/order/pay?id=${order['group_order_id'] as number}` }) }).catch((error) => uni.showToast({ title: error.message || '下单失败', icon: 'none' })).finally(() => { submitting.value = false })
+  appRequest('/v2/order/create', 'POST', { cart_ids: cartIDs.value, address_id: address.value.address_id, coupon_user_ids: selectedCouponIDs.value, use_integral: useIntegral.value, mark: remark.value.trim(), idempotency_key: idempotencyKey.value } as UTSJSONObject).then((data) => { const order = data as UTSJSONObject; clearCheckoutAddressID(); uni.redirectTo({ url: `/pages/order/pay?id=${order['group_order_id'] as number}` }) }).catch((error) => uni.showToast({ title: error.message || '下单失败', icon: 'none' })).finally(() => { submitting.value = false })
 }
-onLoad((query) => { cartIDs.value = String(query['cart_ids'] || '').split(',').map((item) => Number(item)).filter((item) => item > 0); load() })
+onLoad((query) => { clearCheckoutAddressID(); cartIDs.value = String(query?.['cart_ids'] || '').split(',').map((item) => Number(item)).filter((item) => item > 0); load() })
 onShow(() => { if (cartIDs.value.length > 0) load() })
 </script>
 
-<template><view class="qx-page"><qx-nav title="确认订单" /><view class="qx-card" @click="goAddress"><text v-if="address != null" class="address">{{ address.real_name }} {{ address.phone }}<text class="next">›</text></text><text v-if="address != null" class="detail">{{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}</text><text v-else class="empty">请新增收货地址 ›</text></view><view v-if="coupons.length > 0" class="qx-card"><text class="title">优惠券</text><view v-for="coupon in coupons" :key="coupon.coupon_user_id" class="coupon" @click="selectCoupon(coupon.coupon_user_id)"><text>{{ selectedCouponID == coupon.coupon_user_id ? '●' : '○' }} {{ coupon.coupon_title }}</text><text>¥{{ coupon.coupon_price }}</text></view></view><view class="qx-card"><text class="title">订单金额</text><view v-if="check != null"><text class="line">商品数量：{{ check.total_num }}</text><text class="line">运费：¥{{ check.total_postage }}</text><text class="line">优惠：-¥{{ check.coupon_price + check.integral_price }}</text><text class="total">应付：¥{{ check.pay_price }}</text></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">提交订单</button></view></view></template>
+<template><view class="qx-page"><qx-nav title="确认订单" /><view class="qx-card" @click="goAddress"><text v-if="hasAddress()" class="address">{{ checkoutAddressName() }}<text class="next">›</text></text><text v-if="hasAddress()" class="detail">{{ checkoutAddressDetail() }}</text><text v-else class="empty">请新增收货地址 ›</text></view><view v-for="merchant in merchants()" :key="merchant.mer_id" class="qx-card"><text class="title">{{ merchant.mer_name || '平台自营' }}</text><view v-for="product in merchant.items" :key="product.cart_id" class="product"><view><text class="product-name">{{ product.store_name }}</text><text class="product-spec">{{ product.spec_text || '默认规格' }}</text></view><view class="product-price"><text v-if="product.svip_applied" class="svip-price">SVIP 价</text><text>¥{{ product.price }} × {{ product.cart_num }}</text><text v-if="product.svip_applied" class="original-price">¥{{ product.original_price }}</text></view></view></view><view v-if="coupons.length > 0" class="qx-card"><text class="title">优惠券</text><view v-for="coupon in coupons" :key="coupon.coupon_user_id" class="coupon" @click="selectCoupon(coupon)"><text>{{ selected(coupon.coupon_user_id) ? '●' : '○' }} {{ coupon.coupon_title }}</text><text>{{ discount(coupon) }}</text></view></view><view v-if="integralEnabled()" class="qx-card"><view class="coupon" v-on:click="toggleIntegral"><text>{{ useIntegral ? '●' : '○' }} 使用积分抵扣</text><text v-if="useIntegral">-¥{{ integralPrice() }}（{{ integralPoints() }} 积分）</text><text v-else>按商户规则计算</text></view></view><view class="qx-card"><text class="title">订单备注</text><textarea :value="remark" class="remark" maxlength="200" placeholder="选填，给商家留言" @input="(event) => updateRemark(String(event.detail.value || ''))" /></view><view class="qx-card"><text class="title">订单金额</text><view v-if="hasCheck()"><text class="line">商品数量：{{ totalNum() }}</text><text class="line">运费：¥{{ totalPostage() }}</text><text class="line">优惠：-¥{{ couponDiscount() }}</text><text class="total">应付：¥{{ payablePrice() }}</text></view></view><view class="footer"><button :loading="submitting" class="qx-primary" @click="submit">提交订单</button></view></view></template>
 
-<style>.address { display: block; font-size: 16px; font-weight: 600; }.next { float: right; color: #86909c; }.detail, .line { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; }.empty { color: #d72828; }.title { display: block; font-weight: 600; }.coupon { margin-top: 12px; display: flex; justify-content: space-between; color: #4e5969; font-size: 14px; }.total { display: block; margin-top: 16px; color: #d72828; font-size: 20px; font-weight: 700; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>
+<style>.address { display: block; font-size: 16px; font-weight: 600; }.next { float: right; color: #86909c; }.detail, .line { display: block; margin-top: 10px; color: #4e5969; font-size: 14px; }.empty { color: #d72828; }.title { display: block; font-weight: 600; }.product { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #4e5969; font-size: 13px; }.product-name { display: block; color: #1f2329; }.product-price{display:flex;flex-direction:column;align-items:flex-end}.svip-price{color:#9b6a00;font-size:11px}.original-price{margin-top:3px;color:#86909c;font-size:11px;text-decoration:line-through}.product-spec { display: block; margin-top: 4px; color: #86909c; font-size: 11px; }.coupon { margin-top: 12px; display: flex; justify-content: space-between; color: #4e5969; font-size: 14px; }.remark { width: 100%; min-height: 72px; margin-top: 10px; padding: 9px; box-sizing: border-box; border-radius: 8px; background-color: #f6f7f9; font-size: 14px; }.total { display: block; margin-top: 16px; color: #d72828; font-size: 20px; font-weight: 700; }.footer { padding: 12px; background-color: #ffffff; }.qx-primary { border-radius: 22px; font-size: 15px; }</style>

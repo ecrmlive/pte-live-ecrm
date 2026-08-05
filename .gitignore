@@ -80,6 +80,13 @@ node_modules/
 **/node_modules/
 .pnpm-store/
 
+# OpenHarmony local dependencies and build output
+app-harmony/.hvigor/
+app-harmony/build/
+app-harmony/entry/build/
+app-harmony/oh_modules/
+app-harmony/entry/oh_modules/
+
 # 单 Compose 运行时 YAML（只保留仓库中的 config.yaml.example）
 release/config.yaml
 release/config/

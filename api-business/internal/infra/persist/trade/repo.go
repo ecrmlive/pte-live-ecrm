@@ -287,15 +287,27 @@ func (r *Repo) MerchantsIntegralEnabled(ctx context.Context, merIDs []uint) (boo
 
 func (r *Repo) GetUserSVIP(ctx context.Context, uid uint) (int8, *time.Time, error) {
 	var row struct {
-		IsSvip      int8       `gorm:"column:is_svip"`
-		SvipEndtime *time.Time `gorm:"column:svip_endtime"`
+		Status    string     `gorm:"column:status"`
+		ExpiresAt *time.Time `gorm:"column:expires_at"`
 	}
-	err := r.db.WithContext(ctx).Table("qixi_m_app_user").
-		Select("is_svip, svip_endtime").Where("uid = ?", uid).Take(&row).Error
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_user_svip").
+		Select("status, expires_at").Where("user_id = ?", uid).Take(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return 0, nil, nil
+	}
 	if err != nil {
 		return -1, nil, err
 	}
-	return row.IsSvip, row.SvipEndtime, nil
+	switch row.Status {
+	case "trial":
+		return 1, row.ExpiresAt, nil
+	case "period":
+		return 2, row.ExpiresAt, nil
+	case "lifetime":
+		return 3, nil, nil
+	default:
+		return 0, nil, nil
+	}
 }
 
 func (r *Repo) MerchantsSVIPCouponMerge(ctx context.Context, merIDs []uint) (map[uint]int8, error) {

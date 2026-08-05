@@ -1,21 +1,31 @@
 package address
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-func TestMergeAddressSupportsPartialUpdate(t *testing.T) {
-	item := row{Recipient: "李四", Mobile: "13900000000", Detail: "原详细地址", IsDefault: 0}
-	city := "深圳市"
-	defaultFlag := int8(1)
-	if err := merge(&item, request{City: &city, IsDefault: &defaultFlag}, false); err != nil {
-		t.Fatalf("merge() error = %v", err)
-	}
-	if item.City != "深圳市" || item.Recipient != "李四" || item.IsDefault != 1 {
-		t.Fatalf("merge() changed data incorrectly: %#v", item)
+	"github.com/gin-gonic/gin"
+)
+
+func TestGetRejectsInvalidAddressID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewHandler(nil).Register(router)
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/address/not-a-number", nil))
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d, want %d", recorder.Code, http.StatusBadRequest)
 	}
 }
 
-func TestMergeAddressRequiresFieldsOnCreate(t *testing.T) {
-	if err := merge(&row{}, request{}, true); err == nil {
-		t.Fatal("merge() must reject an incomplete new address")
+func TestToResponseKeepsChineseAddressFields(t *testing.T) {
+	got := toResponse(row{
+		ID: 7, Recipient: "李明", Mobile: "13900000000", Province: "浙江省", City: "杭州市",
+		District: "西湖区", Detail: "文三路 88 号", IsDefault: 1,
+	})
+	if got["address_id"] != uint64(7) || got["real_name"] != "李明" || got["city"] != "杭州市" || got["is_default"] != int8(1) {
+		t.Fatalf("unexpected address response: %#v", got)
 	}
 }

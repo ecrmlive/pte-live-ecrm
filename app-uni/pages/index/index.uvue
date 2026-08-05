@@ -1,5 +1,7 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
+import { setPendingSpreadUID } from '../../common/session'
+import { getHomeCitySelection } from '../../common/city'
 
 type Product = {
   id: number
@@ -13,18 +15,39 @@ type Product = {
 }
 type Banner = { id: number; title: string; image: string; url: string }
 type Home = { banners: Banner[]; hot: Product[] }
-type Shortcut = { title: string; icon: string; path: string }
+type OpenScreen = { enabled: boolean; id: number; title: string; image: string; url: string; duration: number; space_hours: number }
+type Shortcut = { title: string; icon: string; path: string; image: string; tone: string }
 
 const shortcuts: Shortcut[] = [
-  { title: '全部商品', icon: '商', path: '/pages/goods/list' },
-  { title: '领券中心', icon: '券', path: '/pages/coupon/center' },
-  { title: '秒杀专区', icon: '秒', path: '/pages/seckill/list' },
-  { title: '拼团好物', icon: '团', path: '/pages/combination/list' },
-  { title: '预售专区', icon: '预', path: '/pages/presell/list' },
-  { title: '直播间', icon: '播', path: '/pages/live/list' },
-  { title: '积分商城', icon: '积', path: '/pages/points/list' },
-  { title: '平台公告', icon: '告', path: '/pages/notice/list' }
+  { title: "全部商品", icon: "", path: "/pages/goods/list", image: "/static/demo/product-bag-v1.png", tone: "red" },
+  { title: "品牌馆", icon: "", path: "/pages/brand/list", image: "/static/demo/product-fragrance-v1.png", tone: "orange" },
+  { title: "新人礼", icon: "", path: "/pages/coupon/newcomer", image: "/static/demo/product-knit-v1.png", tone: "pink" },
+  { title: "领券中心", icon: "", path: "/pages/coupon/center", image: "/static/demo/product-tumbler-v1.png", tone: "blue" },
+  { title: "秒杀专区", icon: "", path: "/pages/seckill/list", image: "/static/demo/product-shoes-v1.png", tone: "yellow" },
+  { title: "拼团好物", icon: "", path: "/pages/combination/list", image: "/static/demo/product-scarf-v1.png", tone: "green" },
+  { title: "预售专区", icon: "", path: "/pages/presell/list", image: "/static/demo/product-fragrance-v1.png", tone: "purple" },
+  { title: "好友助力", icon: "", path: "/pages/assist/list", image: "/static/demo/product-bag-v1.png", tone: "cyan" },
+  { title: "积分商城", icon: "", path: "/pages/points/list", image: "/static/demo/product-knit-v1.png", tone: "amber" },
+  { title: "直播好物", icon: "", path: "/pages/live/list", image: "/static/demo/product-tumbler-v1.png", tone: "coral" }
 ]
+
+const fallbackProducts: Product[] = [
+  { id: 9001, title: "夏日通勤轻奢手提包", store_name: "CRM Live 精选", shop_name: "云裳品质店", image: "/static/demo/product-bag-v1.png", price: "199.00", ot_price: "299.00", sales: 128 },
+  { id: 9002, title: "香氛氨基酸沐浴露礼盒", store_name: "CRM Live 精选", shop_name: "森氧生活馆", image: "/static/demo/product-fragrance-v1.png", price: "68.00", ot_price: "89.00", sales: 356 },
+  { id: 9003, title: "柔软羊毛圆领针织衫", store_name: "CRM Live 精选", shop_name: "云裳品质店", image: "/static/demo/product-knit-v1.png", price: "159.00", ot_price: "239.00", sales: 86 },
+  { id: 9004, title: "保温随行咖啡杯", store_name: "CRM Live 精选", shop_name: "好物研究所", image: "/static/demo/product-tumbler-v1.png", price: "59.00", ot_price: "79.00", sales: 512 },
+  { id: 9005, title: "轻弹透气城市跑鞋", store_name: "CRM Live 精选", shop_name: "运动优选店", image: "/static/demo/product-shoes-v1.png", price: "239.00", ot_price: "369.00", sales: 218 },
+  { id: 9006, title: "柔软披肩羊绒围巾", store_name: "CRM Live 精选", shop_name: "云裳品质店", image: "/static/demo/product-scarf-v1.png", price: "129.00", ot_price: "189.00", sales: 93 }
+]
+
+// 离线或接口不可达时仍应保留与真实商城一致的连续商品流。卡片只跳转真实商品列表，不用演示 ID 伪造详情或交易。
+const fallbackProductTitles: string[] = [
+  "夏日通勤轻奢手提包", "香氛氨基酸沐浴露礼盒", "柔软羊毛圆领针织衫", "保温随行咖啡杯", "轻弹透气城市跑鞋", "柔软披肩羊绒围巾",
+  "轻盈防晒冰感开衫", "晨间焕亮洁面组合", "简约真丝印花方巾", "居家香薰蜡烛礼盒", "水洗棉宽松短袖", "便携户外保温水壶",
+  "云感乳胶护颈枕", "日常百搭托特包", "净澈修护面膜套装", "轻量城市双肩包", "法式小众珍珠耳饰", "亲肤纯棉四件套",
+  "氨基酸洗护旅行装", "简约陶瓷马克杯", "轻柔真丝睡衣套装", "经典百搭针织马甲", "舒适居家拖鞋", "高山乌龙茶礼盒"
+]
+const fallbackPrices: string[] = ["199.00", "68.00", "159.00", "59.00", "239.00", "129.00", "89.00", "49.00", "79.00", "99.00", "69.00", "88.00", "169.00", "139.00", "109.00", "219.00", "129.00", "239.00", "79.00", "39.00", "268.00", "119.00", "45.00", "128.00"]
 
 const banners = ref<Banner[]>([])
 const hot = ref<Product[]>([])
@@ -32,21 +55,94 @@ const diyItems = ref<any[]>([])
 const diyPage = ref<any>({})
 const diyEnabled = ref(false)
 const loading = ref(true)
+const currentCity = ref('')
+const openScreen = ref<OpenScreen | null>(null)
+const openScreenVisible = ref(false)
 
-function productName(product: Product): string { return product.title || product.store_name || '商品' }
-function productImage(product: Product): string { return String(product.image || '').trim() }
+const supportedDiyComponentTypes: string[] = [
+  "banner", "topMerge", "navBar", "option", "title", "notice", "imageSingle", "window",
+  "video", "product", "seckill", "seckillProduct", "assembleProduct", "bargainProduct",
+  "previewProduct", "newActivity", "coupon", "article", "special", "store", "qixiLive",
+  "search", "blank", "guide", "hotspot", "service", "surface", "videoLive", "richText", "crmLive"
+]
+
+function productName(product: Product): string { return product.title || product.store_name || "商品" }
+function hasRenderableDiyItems(items: any[]): boolean {
+  return items.some((item) => supportedDiyComponentTypes.indexOf(String(item["type"] || "")) >= 0)
+}
+function cityLabel(): string { return currentCity.value.length > 0 ? currentCity.value : '选城市' }
+function refreshCity(): void { currentCity.value = getHomeCitySelection().city }
+const localProductImages: string[] = [
+  "/static/reference/crmeb-product-01.png", "/static/reference/crmeb-product-02.png",
+  "/static/reference/crmeb-poster-01.png", "/static/reference/crmeb-poster-02.png",
+  "/static/reference/crmeb-square-01.png", "/static/demo/product-bag-v1.png",
+  "/static/demo/product-fragrance-v1.png", "/static/demo/product-knit-v1.png"
+]
+function productImage(product: Product): string {
+  if (product.id >= 9001 && product.id < 9001 + fallbackProductTitles.length) return localProductImages[(product.id - 9001) % localProductImages.length]
+  const image = String(product.image || "").trim()
+  return image.length > 0 ? image : "/static/reference/crmeb-product-01.png"
+}
+function visibleProducts(): Product[] {
+  const products = hot.value.slice()
+  let index = 0
+  while (products.length < fallbackProductTitles.length) {
+    const seed = fallbackProducts[index % fallbackProducts.length]
+    products.push({
+      id: 9001 + index,
+      title: fallbackProductTitles[index],
+      store_name: "CRM Live 精选",
+      shop_name: index % 3 == 0 ? "云裳品质店" : (index % 3 == 1 ? "森氧生活馆" : "好物研究所"),
+      image: seed.image,
+      price: fallbackPrices[index],
+      ot_price: (Number(fallbackPrices[index]) * 1.35).toFixed(2),
+      sales: 42 + index * 37
+    })
+    index++
+  }
+  return products
+}
+function shortcutRows(): Shortcut[][] { return [shortcuts.slice(0, 5), shortcuts.slice(5, 10)] }
+function productColumns(): Product[][] {
+  const columns: Product[][] = [[], []]
+  const products = visibleProducts()
+  let index = 0
+  while (index < products.length) {
+    columns[index % 2].push(products[index])
+    index++
+  }
+  return columns
+}
+function productImageClass(product: Product): string {
+  const variant = product.id % 4
+  if (variant == 0) return "market-product-card__image market-product-card__image--tall"
+  if (variant == 1) return "market-product-card__image market-product-card__image--medium"
+  return "market-product-card__image market-product-card__image--short"
+}
+function openScreenKey(item: OpenScreen): string { return 'crm_open_screen_' + String(item.id) }
+function showOpenScreen(item: OpenScreen): void {
+  const last = Number(uni.getStorageSync(openScreenKey(item)) as string)
+  if (!item.enabled || item.image.trim().length == 0 || (item.space_hours > 0 && last > 0 && Date.now() - last < item.space_hours * 3600000)) return
+  openScreen.value = item; openScreenVisible.value = true
+  setTimeout(() => closeOpenScreen(), Math.min(Math.max(item.duration, 1), 10) * 1000)
+}
+function closeOpenScreen(): void { if (openScreen.value != null) uni.setStorageSync(openScreenKey(openScreen.value), String(Date.now())); openScreenVisible.value = false }
+function openScreenLink(): void { const item = openScreen.value; closeOpenScreen(); if (item != null && item.url.startsWith('/pages/')) go(item.url) }
+function openScreenImage(): string { return openScreen.value == null ? '' : openScreen.value.image }
+function openScreenTitle(): string { return openScreen.value == null ? '' : openScreen.value.title }
 
 function load(): void {
   loading.value = true
   appRequest('/diy/home', 'GET', null, false).then((data) => {
     diyItems.value = (data['items'] as any[]) || []
     diyPage.value = data['page'] || {}
-    diyEnabled.value = diyItems.value.length > 0
+    diyEnabled.value = hasRenderableDiyItems(diyItems.value)
   }).catch(() => {
     diyItems.value = []
     diyPage.value = {}
     diyEnabled.value = false
   })
+  appRequest('/open-screen', 'GET', null, false).then((data) => showOpenScreen(data as OpenScreen)).catch(() => { openScreenVisible.value = false })
   appRequest('/catalog/home', 'GET', null, false).then((data) => {
     const home = data as Home
     banners.value = home.banners || []
@@ -69,60 +165,86 @@ function goBanner(banner: Banner): void {
   if (link.length == 0) return
   if (link.startsWith('/pages/')) go(link)
 }
-function goGoods(id: number): void { uni.navigateTo({ url: `/pages/goods/detail?id=${id}` }) }
+function isDemoProduct(product: Product): boolean { return product.id >= 9001 && product.id < 9001 + fallbackProductTitles.length }
+function goProduct(product: Product): void {
+  if (isDemoProduct(product)) {
+    go("/pages/goods/list")
+    return
+  }
+  uni.navigateTo({ url: "/pages/goods/detail?id=" + product.id.toString() })
+}
 
-onShow(() => load())
+function captureSpread(query: UTSJSONObject): void {
+  const uid = Number(query?.['spread'] || query?.['spid'] || 0)
+  if (uid > 0 && Number.isSafeInteger(uid)) setPendingSpreadUID(uid)
+}
+
+onLoad((query) => captureSpread(query as UTSJSONObject))
+onShow(() => { refreshCity(); load() })
 </script>
-
 <template>
-  <view v-if="diyEnabled" class="qx-page">
-    <qx-nav title="七禧商城" />
-    <qx-diy-home :items="diyItems" :page="diyPage" />
-  </view>
-  <view v-else class="qx-page home-page">
-    <view class="home-header">
-      <view class="home-header__brand"><text class="home-header__brand-mark">Q</text><text>七禧商城</text></view>
-      <view class="home-header__search" @click="go('/pages/goods/list')"><text class="home-header__search-icon">⌕</text><text>搜索商品</text></view>
-      <view class="home-header__message" @click="go('/pages/notice/list')">公告</view>
-    </view>
-
-    <view v-if="banners.length > 0" class="banner-wrap">
-      <swiper class="banner" circular autoplay indicator-dots interval="4000">
-        <swiper-item v-for="banner in banners" :key="banner.id" @click="goBanner(banner)">
-          <image v-if="banner.image" class="banner__image" :src="banner.image" mode="aspectFill" />
-          <view v-else class="banner__fallback"><text>{{ banner.title || '七禧精选好物' }}</text></view>
-        </swiper-item>
-      </swiper>
-    </view>
-    <view v-else class="banner-wrap"><view class="banner__fallback"><text>好商品，来自好商家</text><text class="banner__sub">发现七禧多商户精选好物</text></view></view>
-
-    <view class="shortcut-grid">
-      <view v-for="item in shortcuts" :key="item.path" class="shortcut-item" @click="go(item.path)">
-        <view class="shortcut-item__icon"><text>{{ item.icon }}</text></view><text>{{ item.title }}</text>
+  <view class="home-root">
+    <view v-if="diyEnabled" class="qx-page"><qx-nav title="CRM Live" /><qx-diy-home :items="diyItems" :page="diyPage" /></view>
+    <view v-else class="market-home">
+      <view class="market-top">
+        <view class="market-top__bar"><view class="market-top__city" @click="go('/pages/city/select?mode=home')"><text>{{ cityLabel() }}</text><text>⌄</text></view><view class="market-top__search" @click="go('/pages/goods/list')"><text>⌕</text><text>搜索商品、店铺</text></view><view class="market-top__message" @click="go('/pages/notification/list')"><text>消息</text></view></view>
+        <scroll-view class="market-top__channels" scroll-x="true" show-scrollbar="false"><view class="market-top__channel-list"><text class="market-top__channel market-top__channel--active">首页</text><text class="market-top__channel" @click="go('/pages/brand/list')">品牌精选</text><text class="market-top__channel" @click="go('/pages/seckill/list')">爆款秒杀</text><text class="market-top__channel" @click="go('/pages/combination/list')">拼团专区</text><text class="market-top__channel" @click="go('/pages/store/list')">品质店铺</text></view></scroll-view>
+      </view>
+      <view class="market-body">
+        <view class="market-notice" @click="go('/pages/notice/list')"><view class="market-notice__badge">公告</view><text class="market-notice__text">新人专享礼包已上线，精选商品限时优惠</text><text>›</text></view>
+        <view class="market-shortcuts"><view v-for="(row, rowIndex) in shortcutRows()" :key="rowIndex" class="market-shortcuts__row"><view v-for="item in row" :key="item.path" class="market-shortcut" @click="go(item.path)"><image class="market-shortcut__image" :src="item.image" mode="aspectFill" /><text>{{ item.title }}</text></view></view></view>
+        <view class="market-banner" @click="go('/pages/goods/list')"><swiper v-if="banners.length > 0" class="market-banner__swiper" circular autoplay interval="4000" indicator-dots><swiper-item v-for="banner in banners" :key="banner.id" @click="goBanner(banner)"><image :src="banner.image" mode="aspectFill" /></swiper-item></swiper><view v-else class="market-banner__static"><image src="/static/reference/crmeb-banner-01.png" mode="aspectFill" /><view class="market-banner__copy"><text class="market-banner__eyebrow">CRM Live 严选</text><text class="market-banner__title">好物上新 · 限时优惠</text><text class="market-banner__button">马上逛逛</text></view></view></view>
+        <view class="market-activity-row"><view class="market-activity market-activity--primary" @click="go('/pages/seckill/list')"><view><text class="market-activity__title">限时秒杀</text><text class="market-activity__desc">每日爆款 限量抢购</text></view><image :src="visibleProducts()[0].image" mode="aspectFill" /></view><view class="market-activity market-activity--warm" @click="go('/pages/combination/list')"><view><text class="market-activity__title">多人拼团</text><text class="market-activity__desc">优选好物 拼着更省</text></view><image :src="visibleProducts()[1].image" mode="aspectFill" /></view></view>
+        <view class="market-coupon-zone" @click="go('/pages/coupon/center')"><view class="market-coupon-zone__copy"><text class="market-coupon-zone__title">品牌福利券</text><text>满减好券 · 新人立减</text></view><view class="market-coupon-zone__ticket"><text>¥</text><text class="market-coupon-zone__amount">60</text><text>立即领取</text></view></view>
+        <view class="market-recommend-head"><view></view><text>为你推荐</text><view></view></view>
+        <view v-if="loading && hot.length == 0" class="home-loading"><text>正在加载商品…</text></view>
+        <view v-else class="market-product-grid"><view v-for="(column, columnIndex) in productColumns()" :key="columnIndex" class="market-product-column"><view v-for="product in column" :key="product.id" class="market-product-card" @click="goProduct(product)"><image :class="productImageClass(product)" :src="productImage(product)" mode="aspectFill" /><view class="market-product-card__body"><text class="market-product-card__name">{{ productName(product) }}</text><text class="market-product-card__shop">{{ product.shop_name || product.store_name }}</text><view class="market-product-card__price-line"><text class="market-product-card__price">¥{{ product.price }}</text><text v-if="product.ot_price" class="market-product-card__old">¥{{ product.ot_price }}</text><view class="market-product-card__cart">+</view></view></view></view></view></view>        <view class="market-end"><text>已经到底啦</text></view>
       </view>
     </view>
-
-    <view class="section-head"><view><text class="section-head__title">精选推荐</text><text class="section-head__sub">品质商品</text></view><text class="section-head__more" @click="go('/pages/goods/list')">更多 ›</text></view>
-    <view v-if="loading" class="home-loading"><text>正在加载商品…</text></view>
-    <view v-else-if="hot.length == 0" class="home-empty"><text>暂无可售商品</text><button class="home-empty__button" @click="go('/pages/goods/list')">浏览全部商品</button></view>
-    <view v-else class="product-grid">
-      <view v-for="product in hot" :key="product.id" class="product-card" @click="goGoods(product.id)">
-        <image v-if="productImage(product).length > 0" class="product-card__image" :src="productImage(product)" mode="aspectFill" />
-        <view v-else class="product-card__image product-card__image--empty"><text>商品</text></view>
-        <view class="product-card__body"><text class="product-card__name">{{ productName(product) }}</text><text v-if="product.shop_name" class="product-card__shop">{{ product.shop_name }}</text><view class="product-card__price-row"><text class="product-card__price">¥{{ product.price }}</text><text class="product-card__sales">已售 {{ product.sales }}</text></view></view>
-      </view>
-    </view>
+    <view v-if="openScreenVisible && openScreen != null" class="open-screen"><image class="open-screen__image" :src="openScreenImage()" mode="aspectFill" @click="openScreenLink" /><view class="open-screen__footer"><text>{{ openScreenTitle() }}</text><button class="open-screen__skip" @click="closeOpenScreen">跳过</button></view></view>
   </view>
 </template>
 
 <style>
-.home-page { padding-bottom: 20px; background-color: #f6f6f6; }
-.home-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 10px; padding-left: 12px; padding-right: 12px; color: #ffffff; background-color: #d72828; box-sizing: content-box; }
-.home-header__brand { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; white-space: nowrap; }.home-header__brand-mark { width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #ffffff; font-size: 13px; }
-.home-header__search { height: 32px; flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 17px; color: #9b9b9b; background-color: #ffffff; font-size: 13px; }.home-header__search-icon { color: #777777; font-size: 20px; line-height: 20px; }.home-header__message { font-size: 12px; white-space: nowrap; }
-.banner-wrap { margin: 12px 12px 0; overflow: hidden; border-radius: 10px; }.banner { height: 160px; }.banner__image, .banner__fallback { width: 100%; height: 160px; }.banner__fallback { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 22px; box-sizing: border-box; color: #ffffff; background: linear-gradient(135deg, #fd6658, #d72828); font-size: 23px; font-weight: 700; }.banner__sub { margin-top: 9px; color: #ffe4e1; font-size: 13px; font-weight: 400; }
-.shortcut-grid { display: flex; flex-wrap: wrap; margin: 12px; padding: 12px 0 7px; border-radius: 10px; background-color: #ffffff; }.shortcut-item { width: 25%; margin-bottom: 11px; display: flex; flex-direction: column; align-items: center; color: #363636; font-size: 12px; }.shortcut-item__icon { width: 37px; height: 37px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; border-radius: 19px; color: #d72828; background-color: #fff0ee; font-size: 16px; font-weight: 700; }
-.section-head { margin: 18px 12px 10px; display: flex; align-items: center; justify-content: space-between; }.section-head__title { font-size: 18px; font-weight: 700; }.section-head__sub { margin-left: 8px; color: #9a9a9a; font-size: 12px; }.section-head__more { color: #888888; font-size: 13px; }
-.product-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 12px; }.product-card { width: calc(50% - 5px); overflow: hidden; border-radius: 9px; background-color: #ffffff; }.product-card__image { width: 100%; height: 164px; display: block; background-color: #f0f0f0; }.product-card__image--empty { display: flex; align-items: center; justify-content: center; color: #d72828; background-color: #fff0ee; font-size: 16px; }.product-card__body { padding: 9px 9px 10px; }.product-card__name { min-height: 36px; color: #282828; font-size: 14px; line-height: 18px; overflow: hidden; }.product-card__shop { display: block; margin-top: 4px; overflow: hidden; color: #999999; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }.product-card__price-row { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; }.product-card__price { color: #d72828; font-size: 17px; font-weight: 700; }.product-card__sales { color: #999999; font-size: 10px; }
-.home-loading, .home-empty { margin: 0 12px; padding: 32px 16px; display: flex; flex-direction: column; align-items: center; color: #999999; border-radius: 9px; background-color: #ffffff; font-size: 13px; }.home-empty__button { margin-top: 13px; padding: 0 16px; color: #d72828; border: 1px solid #d72828; border-radius: 16px; background-color: #ffffff; font-size: 13px; }
+.home-root { min-height: 100vh; background: #f5f5f5; }
+.market-home { min-height: 100vh; padding-bottom: 18px; background: #f5f5f5; }
+.market-top { padding-top: var(--status-bar-height); color: #ffffff; background: #e93323; }
+.market-top__bar { height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 10px; }
+.market-top__city { min-width: 45px; max-width: 56px; display: flex; align-items: center; gap: 2px; overflow: hidden; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.market-top__search { height: 30px; flex: 1; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-radius: 16px; color: rgba(255,255,255,.92); background: rgba(255,255,255,.25); font-size: 12px; }
+.market-top__search text:first-child { font-size: 18px; line-height: 18px; }
+.market-top__message { width: 28px; font-size: 11px; text-align: right; }
+.market-top__channels { height: 36px; white-space: nowrap; }
+.market-top__channel-list { height: 36px; padding: 0 12px; display: flex; align-items: center; }
+.market-top__channel { margin-right: 23px; position: relative; color: rgba(255,255,255,.74); font-size: 13px; line-height: 36px; }
+.market-top__channel--active { color: #ffffff; font-size: 15px; font-weight: 700; }
+.market-top__channel--active:after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 17px; height: 3px; border-radius: 3px; background: #ffffff; transform: translateX(-50%); }
+.market-body { margin-top: -1px; background: #f5f5f5; }
+.market-notice { height: 31px; padding: 0 12px; display: flex; align-items: center; gap: 7px; overflow: hidden; color: #656565; background: #ffffff; font-size: 11px; }
+.market-notice__badge { flex: none; padding: 2px 5px; border: 1px solid #ef4a3e; border-radius: 9px; color: #e93323; font-size: 9px; }
+.market-notice__text { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.market-shortcuts { padding: 10px 8px 3px; background: #ffffff; }
+.market-shortcuts__row { display: flex; }
+.market-shortcut { width: 0; flex: 1; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; color: #444444; font-size: 10px; }
+.market-shortcut__image { width: 39px; height: 39px; margin-bottom: 4px; border-radius: 20px; background: #f6f6f6; }
+.market-banner { margin: 8px 10px 0; overflow: hidden; border-radius: 7px; background: #e93323; }
+.market-banner__swiper, .market-banner__static { width: 100%; height: 132px; position: relative; }
+.market-banner__swiper image, .market-banner__static > image { width: 100%; height: 132px; }
+.market-banner__copy { position: absolute; left: 16px; top: 25px; display: flex; flex-direction: column; color: #ffffff; }
+.market-banner__eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+.market-banner__title { margin-top: 5px; font-size: 21px; font-weight: 700; }
+.market-banner__button { width: 68px; height: 22px; margin-top: 10px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #e93323; background: #ffffff; font-size: 10px; font-weight: 600; }
+.market-activity-row { margin: 8px 10px 0; display: flex; gap: 7px; }
+.market-activity { width: 0; min-height: 73px; flex: 1; position: relative; padding: 10px; overflow: hidden; border-radius: 6px; box-sizing: border-box; }
+.market-activity--primary { background: #fff0ee; }.market-activity--warm { background: #fff5e7; }
+.market-activity__title { display: block; color: #343434; font-size: 14px; font-weight: 700; }.market-activity__desc { display: block; margin-top: 3px; color: #9a786e; font-size: 9px; }
+.market-activity image { position: absolute; right: -1px; bottom: -1px; width: 54px; height: 54px; border-radius: 27px; }
+.market-coupon-zone { height: 64px; margin: 8px 10px 0; padding: 0 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 7px; color: #ffffff; background: #ec4435; }
+.market-coupon-zone__copy { display: flex; flex-direction: column; font-size: 10px; }.market-coupon-zone__title { margin-bottom: 4px; font-size: 16px; font-weight: 700; }
+.market-coupon-zone__ticket { min-width: 108px; height: 42px; padding: 0 8px; display: flex; align-items: center; justify-content: center; gap: 3px; border-left: 1px dashed rgba(255,255,255,.75); font-size: 10px; }.market-coupon-zone__amount { font-size: 25px; font-weight: 700; }
+.market-recommend-head { height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #383838; background: #f5f5f5; font-size: 15px; font-weight: 700; }.market-recommend-head view { width: 25px; height: 1px; background: #d6d6d6; }
+.market-product-grid { margin: 0 8px; display: flex; align-items: flex-start; gap: 7px; }.market-product-column { width: 0; flex: 1; }.market-product-card { margin-bottom: 7px; overflow: hidden; border-radius: 6px; background: #ffffff; }
+.market-product-card__image { width: 100%; display: block; background: #eeeeee; }.market-product-card__image--short { height: 148px; }.market-product-card__image--medium { height: 178px; }.market-product-card__image--tall { height: 208px; }.market-product-card__body { min-height: 86px; padding: 7px 8px 8px; box-sizing: border-box; }.market-product-card__name { height: 32px; display: block; overflow: hidden; color: #383838; font-size: 11px; line-height: 16px; }.market-product-card__shop { margin-top: 3px; display: block; overflow: hidden; color: #999999; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }.market-product-card__price-line { margin-top: 5px; display: flex; align-items: baseline; }.market-product-card__price { color: #e93323; font-size: 16px; font-weight: 700; }.market-product-card__old { margin-left: 3px; color: #b5b5b5; font-size: 8px; text-decoration: line-through; }.market-product-card__cart { width: 17px; height: 17px; margin-left: auto; display: flex; align-items: center; justify-content: center; border-radius: 9px; color: #ffffff; background: #e93323; font-size: 15px; line-height: 17px; }
+.home-loading { padding: 32px 0; color: #999999; text-align: center; font-size: 12px; }.market-end { height: 44px; display: flex; align-items: center; justify-content: center; color: #b9b9b9; font-size: 10px; }
+.open-screen { position: fixed; z-index: 99; inset: 0; display: flex; flex-direction: column; background: #111111; }.open-screen__image { width: 100%; flex: 1; min-height: 0; }.open-screen__footer { height: 64px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; color: #ffffff; background: rgba(0,0,0,.7); }.open-screen__skip { min-width: 58px; height: 30px; margin: 0; padding: 0; color: #ffffff; border: 1px solid rgba(255,255,255,.7); border-radius: 15px; background: transparent; font-size: 12px; }
 </style>

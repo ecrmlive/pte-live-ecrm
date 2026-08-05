@@ -38,7 +38,7 @@ export interface PlatformOrderPage {
   total: number;
 }
 
-export function listPlatformOrdersApi(params: { limit: number; page: number; paid?: number }) {
+export function listPlatformOrdersApi(params: { limit: number; page: number; paid?: number; status?: number }) {
   return requestClient.get<PlatformOrderPage>('/orders', { params });
 }
 

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +21,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/address", h.List)
+	r.GET("/address/:id", h.Get)
 	r.POST("/address", h.Create)
 	r.PUT("/address/:id", h.Update)
 	r.DELETE("/address/:id", h.Delete)
@@ -67,6 +68,22 @@ func (h *Handler) List(c *gin.Context) {
 		items = append(items, toResponse(item))
 	}
 	response.OK(c, gin.H{"list": items})
+}
+
+// Get returns one address owned by the current C-end user. It is used by the
+// H5/mini-program editor and deliberately never accepts a user ID from client.
+func (h *Handler) Get(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, "地址 ID 错误")
+		return
+	}
+	var address row
+	if err := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", id, middleware.UID(c)).First(&address).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, toResponse(address))
 }
 
 func (h *Handler) Create(c *gin.Context) {

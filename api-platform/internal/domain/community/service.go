@@ -21,6 +21,7 @@ type Store interface {
 	IncReplyCount(ctx context.Context, id uint, delta int) error
 
 	ListReplies(ctx context.Context, communityID uint, page, limit int) ([]Reply, int64, error)
+	ListAllReplies(ctx context.Context, keyword string, page, limit int) ([]Reply, int64, error)
 	CreateReply(ctx context.Context, r *Reply) error
 	SoftDeleteReply(ctx context.Context, id uint) error
 	GetReply(ctx context.Context, id uint) (*Reply, error)
@@ -318,6 +319,23 @@ func (s *Service) DeleteMerchantPost(ctx context.Context, merID, id uint) error 
 		return ErrForbidden
 	}
 	return s.store.SoftDeletePost(ctx, id)
+}
+
+func (s *Service) ListAllReplies(ctx context.Context, keyword string, page, limit int) (*PageResult[Reply], error) {
+	page, limit = normalize(page, limit)
+	list, total, err := s.store.ListAllReplies(ctx, strings.TrimSpace(keyword), page, limit)
+	if err != nil {
+		return nil, err
+	}
+	for i := range list {
+		if nick, err := s.store.LoadUserNickname(ctx, list[i].UID); err == nil {
+			list[i].Nickname = nick
+		}
+		if post, err := s.store.GetPost(ctx, list[i].CommunityID); err == nil {
+			list[i].PostTitle = post.Title
+		}
+	}
+	return &PageResult[Reply]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
 func (s *Service) ListReplies(ctx context.Context, communityID uint, page, limit int) (*PageResult[Reply], error) {

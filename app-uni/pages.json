@@ -42,6 +42,48 @@
       }
     },
     {
+      "path": "pages/profile/mobile-change",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "更换手机号"
+      }
+    },
+    {
+      "path": "pages/profile/mobile",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "绑定手机号"
+      }
+    },
+    {
+      "path": "pages/profile/security",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "账户安全"
+      }
+    },
+    {
+      "path": "pages/profile/cancel",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "注销账户"
+      }
+    },
+    {
+      "path": "pages/login/reset-password",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "重置密码"
+      }
+    },
+    {
+      "path": "pages/login/sms",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "短信登录"
+      }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationStyle": "custom",
@@ -53,6 +95,13 @@
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "商品列表"
+      }
+    },
+    {
+      "path": "pages/brand/list",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "品牌精选"
       }
     },
     {
@@ -84,6 +133,10 @@
       }
     },
     {
+      "path": "pages/order/delivery",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "配送详情" }
+    },
+    {
       "path": "pages/refund/list",
       "style": {
         "navigationStyle": "custom",
@@ -102,6 +155,13 @@
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "申请售后"
+      }
+    },
+    {
+      "path": "pages/refund/logistics",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "登记退货物流"
       }
     },
     {
@@ -140,6 +200,13 @@
       }
     },
     {
+      "path": "pages/city/select",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "选择城市"
+      }
+    },
+    {
       "path": "pages/coupon/center",
       "style": {
         "navigationStyle": "custom",
@@ -147,10 +214,39 @@
       }
     },
     {
+      "path": "pages/coupon/newcomer",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "新人专享礼"
+      }
+    },
+    {
       "path": "pages/coupon/mine",
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "我的优惠券"
+      }
+    },
+    {
+      "path": "pages/feedback/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "意见反馈" }
+    },
+    {
+      "path": "pages/feedback/detail",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "反馈详情" }
+    },
+    {
+      "path": "pages/history/list",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "浏览记录"
+      }
+    },
+    {
+      "path": "pages/favorite/list",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "我的收藏"
       }
     },
     {
@@ -173,6 +269,42 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "分销中心"
       }
+    },
+    {
+      "path": "pages/spread/rank",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "推广排行榜"
+      }
+    },
+    {
+      "path": "pages/spread/users",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "直属推广用户"
+      }
+    },
+    {
+      "path": "pages/spread/orders",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "推广订单"
+      }
+    },
+    {
+      "path": "pages/spread/withdraw",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "佣金提现"
+      }
+    },
+    {
+      "path": "pages/article/list",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "商城资讯" }
+    },
+    {
+      "path": "pages/article/detail",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "资讯详情" }
     },
     {
       "path": "pages/notice/list",
@@ -282,8 +414,76 @@
       "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的发布" }
     },
     {
+      "path": "pages/seckill/detail",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "秒杀详情" }
+    },
+    {
       "path": "pages/seckill/list",
       "style": { "navigationStyle": "custom", "navigationBarTitleText": "秒杀专区" }
+    },
+    {
+      "path": "pages/comment/list",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的评价" }
+    },
+    {
+      "path": "pages/comment/create",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "评价商品" }
+    },
+    {
+      "path": "pages/invoice/list",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的发票" }
+    },
+    {
+      "path": "pages/invoice/profiles",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "开票抬头" }
+    },
+    {
+      "path": "pages/invoice/apply",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "申请发票" }
+    },
+    {
+      "path": "pages/merchant/application-detail",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "入驻申请详情" }
+    },
+    {
+      "path": "pages/merchant/apply",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "商户入驻" }
+    },
+    {
+      "path": "pages/account/balance",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的余额" }
+    },
+    {
+      "path": "pages/funding/recharge",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "余额充值" }
+    },
+    {
+      "path": "pages/account/points",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的积分" }
+    },
+    {
+      "path": "pages/member/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "会员中心" }
+    },
+    {
+      "path": "pages/funding/svip",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "SVIP 权益" }
+    },
+    {
+      "path": "pages/sign/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "每日签到" }
+    },
+    {
+      "path": "pages/notification/list",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "消息通知" }
+    },
+    {
+      "path": "pages/profile/edit",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "编辑资料" }
+    },
+    {
+      "path": "pages/store/list",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "店铺街" }
     },
     {
       "path": "pages/store/home",
@@ -304,7 +504,7 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "七禧商城",
+    "navigationBarTitleText": "CRM Live",
     "navigationBarBackgroundColor": "#ffffff",
     "backgroundColor": "#f6f7f9"
   }

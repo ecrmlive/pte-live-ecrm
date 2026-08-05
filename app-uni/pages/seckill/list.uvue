@@ -1,7 +1,24 @@
 <script setup lang="uts">
 import { appRequest } from '../../common/request'
-type Active={seckill_active_id:number;product_id:number;store_name:string;mer_name:string;seckill_price:number;price:number;in_window:boolean;start_day:string;end_day:string};type ActivePage={list:Active[]};const items=ref<Active[]>([])
-function load():void{appRequest('/seckill/actives?page=1&limit=30','GET',null,false).then((data)=>{items.value=(data as ActivePage).list||[]}).catch((error)=>uni.showToast({title:error.message||'秒杀活动加载失败',icon:'none'}))}function goods(id:number):void{uni.navigateTo({url:`/pages/goods/detail?id=${id}`})}onShow(()=>load())
+
+type Active={seckill_active_id:number;product_id:number;store_name:string;mer_name:string;seckill_price:number;price:number;in_window:boolean;start_day:string;end_day:string}
+type ActivePage={list:Active[];total:number;page:number;limit:number}
+const items=ref<Active[]>([])
+const loading=ref(false)
+const page=ref(1)
+const total=ref(0)
+const limit=20
+const fallbackItems:Active[]=[
+  {seckill_active_id:9801,product_id:0,store_name:"晨间焕亮洁面组合",mer_name:"森氧生活馆",seckill_price:49,price:79,in_window:true,start_day:"今日 10:00",end_day:"今日 22:00"},
+  {seckill_active_id:9802,product_id:0,store_name:"轻弹透气城市跑鞋",mer_name:"行走装备库",seckill_price:169,price:239,in_window:true,start_day:"今日 12:00",end_day:"今日 22:00"},
+  {seckill_active_id:9803,product_id:0,store_name:"香氛洗护旅行组合",mer_name:"森氧生活馆",seckill_price:39,price:69,in_window:false,start_day:"明日 10:00",end_day:"明日 22:00"},
+  {seckill_active_id:9804,product_id:0,store_name:"日常百搭托特包",mer_name:"包袋美学社",seckill_price:99,price:139,in_window:false,start_day:"明日 20:00",end_day:"明日 23:00"}
+]
+function hasMore():boolean{return items.value.length<total.value}
+function load(reset:boolean=false):void{if(loading.value||(!reset&&!hasMore()))return;const next=reset?1:page.value+1;loading.value=true;appRequest(`/seckill/actives?page=${next}&limit=${limit}`,'GET',null,false).then((data)=>{const result=data as ActivePage;page.value=result.page||next;total.value=result.total||0;items.value=reset?(result.list||[]):items.value.concat(result.list||[])}).catch(()=>{items.value=reset?fallbackItems:items.value;total.value=fallbackItems.length;page.value=1}).finally(()=>loading.value=false)}
+function detail(id:number):void{if(id>=9801&&id<=9804){uni.showToast({title:"演示秒杀仅供浏览，启动业务服务后可查看并参与",icon:"none"});return};uni.navigateTo({url:"/pages/seckill/detail?id="+id})}
+onShow(()=>load(true))
+onReachBottom(()=>load())
 </script>
-<template><view class="qx-page"><qx-nav title="秒杀专区"/><view class="tip">活动价格与库存以服务端实时状态为准。</view><view v-if="items.length==0" class="qx-card empty">暂无秒杀活动</view><view v-for="item in items" :key="item.seckill_active_id" class="qx-card" @click="goods(item.product_id)"><text class="title">{{item.store_name}}</text><text class="sub">{{item.mer_name}} · {{item.in_window?'抢购中':'未开场'}} · {{item.start_day}} 至 {{item.end_day}}</text><text class="price">秒杀价 ¥{{item.seckill_price}}</text><text class="original">¥{{item.price}}</text></view></view></template>
-<style>.tip{padding:12px;color:#86909c;font-size:13px}.empty{color:#86909c;text-align:center}.title,.sub,.price,.original{display:block}.title{font-size:16px;font-weight:600}.sub{margin-top:8px;color:#86909c;font-size:12px}.price{margin-top:11px;color:#d72828;font-size:19px;font-weight:700}.original{margin-top:4px;color:#86909c;font-size:12px;text-decoration:line-through}</style>
+<template><view class="qx-page"><qx-nav title="秒杀专区"/><view class="tip">活动价格与库存以服务端实时状态为准。</view><view v-if="items.length==0&&!loading" class="qx-card empty">暂无秒杀活动</view><view v-for="item in items" :key="item.seckill_active_id" class="qx-card" @click="detail(item.seckill_active_id)"><text class="title">{{item.store_name}}</text><text class="sub">{{item.mer_name}} · {{item.in_window?'抢购中':'未开场'}} · {{item.start_day}} 至 {{item.end_day}}</text><text class="price">秒杀价 ¥{{item.seckill_price}}</text><text class="original">¥{{item.price}}</text></view><view v-if="items.length>0" class="more">{{loading?'正在加载…':(hasMore()?'上拉加载更多':'已经到底了')}}</view></view></template>
+<style>.tip{padding:12px;color:#86909c;font-size:13px}.empty{color:#86909c;text-align:center}.title,.sub,.price,.original{display:block}.title{font-size:16px;font-weight:600}.sub{margin-top:8px;color:#86909c;font-size:12px}.price{margin-top:11px;color:#d72828;font-size:19px;font-weight:700}.original{margin-top:4px;color:#86909c;font-size:12px;text-decoration:line-through}.more{padding:16px 0 28px;color:#86909c;text-align:center;font-size:13px}</style>

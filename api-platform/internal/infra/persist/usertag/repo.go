@@ -71,8 +71,8 @@ func (r *Repo) SoftDeleteGroup(ctx context.Context, id uint) error {
 
 func (r *Repo) ListUserLabels(ctx context.Context, uid uint) ([]usertag.Label, error) {
 	var rows []usertag.Label
-	err := r.db.WithContext(ctx).Table("qixi_m_app_user_label AS l").
-		Joins("INNER JOIN qixi_m_app_user_label_relation r ON r.label_id = l.label_id").
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_user_label AS l").
+		Joins("INNER JOIN qixi_crm_b_user_label_relation r ON r.label_id = l.label_id").
 		Where("r.uid = ? AND l.is_del = 0", uid).
 		Select("l.*").Order("l.sort DESC, l.label_id DESC").Find(&rows).Error
 	return rows, err

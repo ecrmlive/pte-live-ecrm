@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "app_name", "value": "七禧商城" },
+    { "name": "module_desc", "value": "七禧 CRM 鸿蒙客户端" },
+    { "name": "EntryAbility_desc", "value": "七禧商城主入口" },
+    { "name": "EntryAbility_label", "value": "七禧商城" }
+  ]
+}

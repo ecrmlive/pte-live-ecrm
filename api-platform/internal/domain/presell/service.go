@@ -86,6 +86,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Produc
 		title = name + " · 预售"
 	}
 	start, end := parseRange(in.StartTime, in.EndTime)
+	if !validActivityRange(in.StartTime, in.EndTime, start, end) {
+		return nil, ErrBadParam
+	}
 	stock := in.Stock
 	if stock <= 0 {
 		stock = 100
@@ -119,6 +122,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Produc
 	if ptype == 2 && p.FinalEndTime == "" {
 		p.FinalEndTime = time.Now().AddDate(0, 0, 30).Format("2006-01-02 15:04:05")
 	}
+	if ptype == 2 && !validFinalRange(p.FinalStartTime, p.FinalEndTime) {
+		return nil, ErrBadParam
+	}
 	if in.DeliveryType > 0 {
 		p.DeliveryType = in.DeliveryType
 	}
@@ -135,6 +141,9 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Produc
 }
 
 func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*ProductPresell, error) {
+	if in.Status != nil && *in.Status != 0 && *in.Status != 1 {
+		return nil, ErrBadParam
+	}
 	p, err := s.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -164,14 +173,18 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 		p.Stock = in.Stock
 	}
 	if in.StartTime != "" {
-		if t, ok := parseTime(in.StartTime); ok {
-			p.StartTime = t
+		t, ok := parseTime(in.StartTime)
+		if !ok {
+			return nil, ErrBadParam
 		}
+		p.StartTime = t
 	}
 	if in.EndTime != "" {
-		if t, ok := parseTime(in.EndTime); ok {
-			p.EndTime = t
+		t, ok := parseTime(in.EndTime)
+		if !ok {
+			return nil, ErrBadParam
 		}
+		p.EndTime = t
 	}
 	if strings.TrimSpace(in.FinalStartTime) != "" {
 		p.FinalStartTime = strings.TrimSpace(in.FinalStartTime)
@@ -195,12 +208,18 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 		p.Status = *in.Status
 	}
 	if p.PresellType == 2 {
+		if !validFinalRange(p.FinalStartTime, p.FinalEndTime) {
+			return nil, ErrBadParam
+		}
 		if p.FinalPrice <= 0 {
 			p.FinalPrice = round2(p.Price - p.DownPrice)
 		}
 		if err := validateDeposit(p.Price, p.DownPrice, p.FinalPrice); err != nil {
 			return nil, err
 		}
+	}
+	if p.EndTime.Before(p.StartTime) {
+		return nil, ErrBadParam
 	}
 	if err := s.store.Update(ctx, p); err != nil {
 		return nil, err
@@ -474,6 +493,36 @@ func parseRange(startS, endS string) (time.Time, time.Time) {
 		end = start.AddDate(0, 0, 30)
 	}
 	return start, end
+}
+
+// validActivityRange 保留空时间的创建默认值，但拒绝非法输入和倒置时间窗。
+func validActivityRange(startS, endS string, start, end time.Time) bool {
+	startRaw, endRaw := strings.TrimSpace(startS), strings.TrimSpace(endS)
+	if startRaw != "" && !validTime(startRaw) || endRaw != "" && !validTime(endRaw) {
+		return false
+	}
+	if startRaw != "" && endRaw != "" {
+		rawStart, _ := parseTime(startRaw)
+		rawEnd, _ := parseTime(endRaw)
+		if rawEnd.Before(rawStart) {
+			return false
+		}
+	}
+	return !end.Before(start)
+}
+
+func validFinalRange(startS, endS string) bool {
+	start, ok := parseTime(startS)
+	if !ok {
+		return false
+	}
+	end, ok := parseTime(endS)
+	return ok && !end.Before(start)
+}
+
+func validTime(s string) bool {
+	_, ok := parseTime(s)
+	return ok
 }
 
 func parseTime(s string) (time.Time, bool) {

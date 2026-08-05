@@ -1,0 +1,10 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "ecrm-harmo",
+  "version": "0.1.0",
+  "description": "七禧 CRM 鸿蒙客户端",
+  "main": "",
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

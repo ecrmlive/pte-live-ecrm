@@ -21,6 +21,28 @@ paths:
         '200': { description: token 和用户资料 }
         '400': { description: 参数或来源错误 }
         '401': { description: 账号或密码错误 }
+  /auth/wechat/mini-program:
+    post:
+      summary: 微信小程序静默登录
+      description: >-
+        小程序先调用 uni.login 获取短期 code，服务端使用加密云配置中的小程序凭据换取 openid，
+        再按 mini_program 身份创建或登录同一 C 端用户。请求和响应均不包含 AppSecret、openid
+        或商户私钥；小程序凭据未启用时返回 503。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, minLength: 1, maxLength: 1024 }
+      responses:
+        '200': { description: access/refresh token 和用户资料 }
+        '400': { description: code 缺失或格式错误 }
+        '401': { description: code 已失效或无效 }
+        '502': { description: 微信服务暂不可用 }
+        '503': { description: 微信小程序云配置未启用或不完整 }
   /auth/register:
     post:
       summary: C 端注册并登录

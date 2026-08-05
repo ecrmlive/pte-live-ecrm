@@ -2,6 +2,7 @@ package content
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -176,27 +177,387 @@ func agreeMeta(key string) (AgreeMeta, bool) {
 
 const smsConfigKey = "sms_config"
 
-// GetSMSConfig 短信通道配置 stub（存 qixi_m_admin_cache，未发真实短信）。
+// smsStubConfig intentionally has no provider credentials. The current product
+// baseline only exposes a non-delivery stub; real SMS channel secrets belong in
+// an external secret manager, never in the unified-admin cache or response.
+type smsStubConfig struct {
+	Enabled  bool   `json:"enabled"`
+	Provider string `json:"provider"`
+	Sign     string `json:"sign"`
+	Remark   string `json:"remark"`
+}
+
+func defaultSMSConfig() smsStubConfig {
+	return smsStubConfig{Enabled: false, Provider: "stub", Sign: "七禧商城", Remark: "未配置真实短信通道"}
+}
+
+func marshalSMSConfig(config smsStubConfig) string {
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+func parseSMSConfig(raw string) (smsStubConfig, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
+		return smsStubConfig{}, ErrBadParam
+	}
+	for key := range fields {
+		switch key {
+		case "enabled", "provider", "sign", "remark":
+		default:
+			return smsStubConfig{}, ErrBadParam
+		}
+	}
+	var config smsStubConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil || strings.TrimSpace(config.Provider) != "stub" || len([]rune(config.Sign)) > 64 || len([]rune(config.Remark)) > 500 {
+		return smsStubConfig{}, ErrBadParam
+	}
+	config.Provider = "stub"
+	config.Sign = strings.TrimSpace(config.Sign)
+	config.Remark = strings.TrimSpace(config.Remark)
+	if config.Sign == "" {
+		config.Sign = defaultSMSConfig().Sign
+	}
+	if config.Remark == "" {
+		config.Remark = defaultSMSConfig().Remark
+	}
+	return config, nil
+}
+
+// GetSMSConfig returns only a validated non-secret stub configuration. Legacy
+// malformed or secret-bearing cache values are never echoed back to browsers.
 func (s *Service) GetSMSConfig(ctx context.Context) (string, error) {
 	row, err := s.store.GetCache(ctx, smsConfigKey)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return `{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"未配置"}`, nil
+			return marshalSMSConfig(defaultSMSConfig()), nil
 		}
 		return "", err
 	}
-	return row.Result, nil
+	config, err := parseSMSConfig(row.Result)
+	if err != nil {
+		return marshalSMSConfig(defaultSMSConfig()), nil
+	}
+	return marshalSMSConfig(config), nil
 }
 
 func (s *Service) SaveSMSConfig(ctx context.Context, raw string) (string, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "", ErrBadParam
-	}
-	if err := s.store.UpsertCache(ctx, &Cache{Key: smsConfigKey, ExpireTime: 0, Result: raw}); err != nil {
+	config, err := parseSMSConfig(raw)
+	if err != nil {
 		return "", err
 	}
-	return raw, nil
+	canonical := marshalSMSConfig(config)
+	if err := s.store.UpsertCache(ctx, &Cache{Key: smsConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
+		return "", err
+	}
+	return canonical, nil
+}
+
+const shopConfigKey = "mall_shop_config"
+const payConfigKey = "mall_pay_config"
+const wechatAppConfigKey = "wechat_app_config"
+
+type shopConfig struct {
+	SiteName               string `json:"site_name"`
+	SiteURL                string `json:"site_url"`
+	OrderAutoCancelMinutes int    `json:"order_auto_cancel_minutes"`
+	OrderAutoReceiveDays   int    `json:"order_auto_receive_days"`
+	Enabled                bool   `json:"enabled"`
+	Remark                 string `json:"remark"`
+}
+
+type payConfig struct {
+	WechatEnabled  bool   `json:"wechat_enabled"`
+	AlipayEnabled  bool   `json:"alipay_enabled"`
+	BalanceEnabled bool   `json:"balance_enabled"`
+	Remark         string `json:"remark"`
+}
+
+type wechatAppConfig struct {
+	AppName string `json:"app_name"`
+	Enabled bool   `json:"enabled"`
+	Remark  string `json:"remark"`
+}
+
+func defaultShopConfig() shopConfig {
+	return shopConfig{
+		SiteName:               "七禧商城",
+		SiteURL:                "",
+		OrderAutoCancelMinutes: 30,
+		OrderAutoReceiveDays:   7,
+		Enabled:                true,
+		Remark:                 "",
+	}
+}
+
+func defaultPayConfig() payConfig {
+	return payConfig{
+		WechatEnabled:  false,
+		AlipayEnabled:  false,
+		BalanceEnabled: true,
+		Remark:         "不含支付密钥；真实凭据请通过云服务配置或密钥管理维护",
+	}
+}
+
+func defaultWechatAppConfig() wechatAppConfig {
+	return wechatAppConfig{
+		AppName: "七禧商城公众号",
+		Enabled: false,
+		Remark:  "不含 AppSecret、Token 或 EncodingAESKey；真实凭据请通过云服务配置维护",
+	}
+}
+
+func marshalShopConfig(config shopConfig) string {
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+func marshalPayConfig(config payConfig) string {
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+func marshalWechatAppConfig(config wechatAppConfig) string {
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+func parseShopConfig(raw string) (shopConfig, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
+		return shopConfig{}, ErrBadParam
+	}
+	for key := range fields {
+		switch key {
+		case "site_name", "site_url", "order_auto_cancel_minutes", "order_auto_receive_days", "enabled", "remark":
+		default:
+			return shopConfig{}, ErrBadParam
+		}
+	}
+	var config shopConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil {
+		return shopConfig{}, ErrBadParam
+	}
+	config.SiteName = strings.TrimSpace(config.SiteName)
+	config.SiteURL = strings.TrimSpace(config.SiteURL)
+	config.Remark = strings.TrimSpace(config.Remark)
+	if config.SiteName == "" {
+		config.SiteName = defaultShopConfig().SiteName
+	}
+	if config.OrderAutoCancelMinutes < 0 || config.OrderAutoReceiveDays < 0 ||
+		len([]rune(config.SiteName)) > 128 || len([]rune(config.SiteURL)) > 256 || len([]rune(config.Remark)) > 500 {
+		return shopConfig{}, ErrBadParam
+	}
+	return config, nil
+}
+
+func isSensitiveConfigKey(key string) bool {
+	lower := strings.ToLower(strings.TrimSpace(key))
+	for _, part := range []string{"secret", "key", "cert", "password", "token"} {
+		if strings.Contains(lower, part) {
+			return true
+		}
+	}
+	return false
+}
+
+func parsePayConfig(raw string) (payConfig, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
+		return payConfig{}, ErrBadParam
+	}
+	for key := range fields {
+		if isSensitiveConfigKey(key) {
+			return payConfig{}, ErrBadParam
+		}
+		switch key {
+		case "wechat_enabled", "alipay_enabled", "balance_enabled", "remark":
+		default:
+			return payConfig{}, ErrBadParam
+		}
+	}
+	var config payConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil || len([]rune(strings.TrimSpace(config.Remark))) > 500 {
+		return payConfig{}, ErrBadParam
+	}
+	config.Remark = strings.TrimSpace(config.Remark)
+	if config.Remark == "" {
+		config.Remark = defaultPayConfig().Remark
+	}
+	return config, nil
+}
+
+func parseWechatAppConfig(raw string) (wechatAppConfig, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
+		return wechatAppConfig{}, ErrBadParam
+	}
+	for key := range fields {
+		if isSensitiveConfigKey(key) {
+			return wechatAppConfig{}, ErrBadParam
+		}
+		switch key {
+		case "app_name", "enabled", "remark":
+		default:
+			return wechatAppConfig{}, ErrBadParam
+		}
+	}
+	var config wechatAppConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil || len([]rune(strings.TrimSpace(config.AppName))) > 64 || len([]rune(strings.TrimSpace(config.Remark))) > 500 {
+		return wechatAppConfig{}, ErrBadParam
+	}
+	config.AppName = strings.TrimSpace(config.AppName)
+	config.Remark = strings.TrimSpace(config.Remark)
+	if config.AppName == "" {
+		config.AppName = defaultWechatAppConfig().AppName
+	}
+	if config.Remark == "" {
+		config.Remark = defaultWechatAppConfig().Remark
+	}
+	return config, nil
+}
+
+func (s *Service) GetShopConfig(ctx context.Context) (string, error) {
+	row, err := s.store.GetCache(ctx, shopConfigKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return marshalShopConfig(defaultShopConfig()), nil
+		}
+		return "", err
+	}
+	config, err := parseShopConfig(row.Result)
+	if err != nil {
+		return marshalShopConfig(defaultShopConfig()), nil
+	}
+	return marshalShopConfig(config), nil
+}
+
+func (s *Service) SaveShopConfig(ctx context.Context, raw string) (string, error) {
+	config, err := parseShopConfig(raw)
+	if err != nil {
+		return "", err
+	}
+	canonical := marshalShopConfig(config)
+	if err := s.store.UpsertCache(ctx, &Cache{Key: shopConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
+		return "", err
+	}
+	return canonical, nil
+}
+
+func (s *Service) GetPayConfig(ctx context.Context) (string, error) {
+	row, err := s.store.GetCache(ctx, payConfigKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return marshalPayConfig(defaultPayConfig()), nil
+		}
+		return "", err
+	}
+	config, err := parsePayConfig(row.Result)
+	if err != nil {
+		return marshalPayConfig(defaultPayConfig()), nil
+	}
+	return marshalPayConfig(config), nil
+}
+
+func (s *Service) SavePayConfig(ctx context.Context, raw string) (string, error) {
+	config, err := parsePayConfig(raw)
+	if err != nil {
+		return "", err
+	}
+	canonical := marshalPayConfig(config)
+	if err := s.store.UpsertCache(ctx, &Cache{Key: payConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
+		return "", err
+	}
+	return canonical, nil
+}
+
+func (s *Service) GetWechatAppConfig(ctx context.Context) (string, error) {
+	row, err := s.store.GetCache(ctx, wechatAppConfigKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return marshalWechatAppConfig(defaultWechatAppConfig()), nil
+		}
+		return "", err
+	}
+	config, err := parseWechatAppConfig(row.Result)
+	if err != nil {
+		return marshalWechatAppConfig(defaultWechatAppConfig()), nil
+	}
+	return marshalWechatAppConfig(config), nil
+}
+
+func (s *Service) SaveWechatAppConfig(ctx context.Context, raw string) (string, error) {
+	config, err := parseWechatAppConfig(raw)
+	if err != nil {
+		return "", err
+	}
+	canonical := marshalWechatAppConfig(config)
+	if err := s.store.UpsertCache(ctx, &Cache{Key: wechatAppConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
+		return "", err
+	}
+	return canonical, nil
+}
+
+const (
+	PriceDescriptionCacheKey = "product_price_desc"
+	ActivityLabelCacheKey    = "product_activity_label"
+)
+
+func (s *Service) GetCacheList(ctx context.Context, key string) ([]CacheListItem, error) {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return nil, ErrBadParam
+	}
+	row, err := s.store.GetCache(ctx, key)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []CacheListItem{}, nil
+		}
+		return nil, err
+	}
+	if strings.TrimSpace(row.Result) == "" {
+		return []CacheListItem{}, nil
+	}
+	var list []CacheListItem
+	if err := json.Unmarshal([]byte(row.Result), &list); err != nil {
+		return nil, ErrBadParam
+	}
+	return list, nil
+}
+
+func (s *Service) SaveCacheList(ctx context.Context, key string, items []CacheListItem) ([]CacheListItem, error) {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return nil, ErrBadParam
+	}
+	clean := make([]CacheListItem, 0, len(items))
+	seen := map[string]struct{}{}
+	for _, item := range items {
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			return nil, ErrBadParam
+		}
+		id := strings.TrimSpace(item.ID)
+		if id == "" {
+			id = name
+		}
+		if _, ok := seen[id]; ok {
+			return nil, ErrBadParam
+		}
+		seen[id] = struct{}{}
+		clean = append(clean, CacheListItem{
+			ID: id, Name: name, Enabled: item.Enabled,
+			Remark: strings.TrimSpace(item.Remark),
+		})
+	}
+	raw, err := json.Marshal(clean)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.UpsertCache(ctx, &Cache{Key: key, ExpireTime: 0, Result: string(raw)}); err != nil {
+		return nil, err
+	}
+	return clean, nil
 }
 
 func normalize(page, limit int) (int, int) {

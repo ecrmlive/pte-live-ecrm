@@ -1,6 +1,6 @@
 <script setup lang="uts">
 import PteIMUIChat from '../../uni_modules/pte-im-uikit/components/PteIMUIChat/PteIMUIChat.uvue'
-import { PteIMSDKClient } from '../../uni_modules/pte-im-sdk/utssdk/interface.uts'
+import type { PteIMSDKClient } from '../../uni_modules/pte-im-sdk/utssdk/interface.uts'
 import { openCustomerServiceSession, stopCustomerServiceSession } from '../../common/customer-service-im'
 import { getAccessToken } from '../../common/session'
 
@@ -27,13 +27,13 @@ async function connect(merID: number): Promise<void> {
 function goBack(): void { uni.navigateBack() }
 function showError(message: string): void { uni.showToast({ title: message || '客服消息发送失败', icon: 'none' }) }
 
-onLoad((query) => { const merID = Number(query['mer_id'] ?? 0); if (merID > 0) void connect(merID); else { loading.value = false; errorText.value = '商户信息不完整' } })
+onLoad((query) => { const merID = Number(query?.['mer_id'] ?? 0); if (merID > 0) void connect(merID); else { loading.value = false; errorText.value = '商户信息不完整' } })
 onUnload(() => { stopCustomerServiceSession() })
 </script>
 
 <template>
   <view class="cs-page">
-    <view v-if="loading" class="state"><text>正在连接七禧客服…</text></view>
+    <view v-if="loading" class="state"><text>正在连接CRM Live 客服…</text></view>
     <view v-else-if="errorText.length > 0" class="state"><text>{{ errorText }}</text><button class="qx-primary" @click="goBack">返回</button></view>
     <PteIMUIChat v-else-if="client != null && conversationID.length > 0" :client="client" :conversation-id="conversationID" title="商户客服" subtitle="在线客服" :custom-actions="[]" @back="goBack" @error="showError" />
   </view>

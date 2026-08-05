@@ -3,40 +3,52 @@ import { appRequest } from '../../common/request'
 import { getAccessToken } from '../../common/session'
 
 type PointsProduct = { id: number; store_name: string; mer_name: string; integral: number; stock: number; image: string }
-type PointsProductPage = { list: PointsProduct[] }
+type PointsProductPage = { list: PointsProduct[]; total: number; page: number; limit: number }
 type IntegralData = { integral: number }
 
 const items = ref<PointsProduct[]>([])
 const integral = ref(0)
 const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 
-function load(): void {
+function hasMore(): boolean { return items.value.length < total.value }
+function loadProducts(reset: boolean = false): void {
+  if (loading.value || (!reset && !hasMore())) return
+  const next = reset ? 1 : page.value + 1
   loading.value = true
-  appRequest('/points/products?page=1&limit=30', 'GET', null, false).then((data) => {
-    items.value = (data as PointsProductPage).list || []
+  appRequest(`/points/products?page=${next}&limit=${limit}`, 'GET', null, false).then((data) => {
+    const result = data as PointsProductPage
+    page.value = result.page || next
+    total.value = result.total || 0
+    items.value = reset ? (result.list || []) : items.value.concat(result.list || [])
   }).catch((error) => {
     uni.showToast({ title: error.message || '积分商品加载失败', icon: 'none' })
   }).finally(() => { loading.value = false })
+}
+function loadIntegral(): void {
   if (getAccessToken().length > 0) {
     appRequest('/integral').then((data) => { integral.value = (data as IntegralData).integral || 0 }).catch(() => { integral.value = 0 })
   } else {
     integral.value = 0
   }
 }
-
+function load(): void { loadProducts(true); loadIntegral() }
+function rules(): void { uni.navigateTo({ url: '/pages/agreement/detail?key=sys_integral_agree' }) }
 function exchange(product: PointsProduct): void {
   if (getAccessToken().length == 0) { uni.navigateTo({ url: '/pages/login/index' }); return }
   if (product.stock <= 0) { uni.showToast({ title: '商品库存不足', icon: 'none' }); return }
   uni.navigateTo({ url: `/pages/points/checkout?product_id=${product.id}` })
 }
-
 onShow(() => load())
+onReachBottom(() => loadProducts())
 </script>
 
 <template>
-  <view class="qx-page"><qx-nav title="积分商城" /><view class="balance"><text class="balance__label">我的积分</text><text class="balance__value">{{ integral }}</text><text class="balance__tip">积分兑换订单独立结算，不与普通订单混用</text></view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无可兑换商品</view><view v-for="product in items" :key="product.id" class="qx-card product"><view class="cover"><text>{{ product.store_name.slice(0, 1) }}</text></view><view class="meta"><text class="name">{{ product.store_name }}</text><text class="merchant">{{ product.mer_name }}</text><text class="points">{{ product.integral }} 积分</text><text class="stock">剩余 {{ product.stock }}</text></view><button class="exchange" :disabled="product.stock <= 0" @click="exchange(product)">兑换</button></view></view>
+  <view class="qx-page"><qx-nav title="积分商城" /><view class="balance"><text class="balance__label">我的积分</text><text class="balance__value">{{ integral }}</text><text class="balance__tip">积分兑换订单独立结算，不与普通订单混用</text><text class="balance__rules" @click="rules">查看积分规则 ›</text></view><view v-if="items.length == 0 && !loading" class="qx-card empty">暂无可兑换商品</view><view v-for="product in items" :key="product.id" class="qx-card product"><view class="cover"><text>{{ product.store_name.slice(0, 1) }}</text></view><view class="meta"><text class="name">{{ product.store_name }}</text><text class="merchant">{{ product.mer_name }}</text><text class="points">{{ product.integral }} 积分</text><text class="stock">剩余 {{ product.stock }}</text></view><button class="exchange" :disabled="product.stock <= 0" @click="exchange(product)">兑换</button></view><view v-if="items.length > 0" class="more">{{ loading ? '正在加载…' : (hasMore() ? '上拉加载更多' : '已经到底了') }}</view></view>
 </template>
 
 <style>
-.balance { margin: 12px; padding: 18px; color: #ffffff; background: linear-gradient(135deg, #5a3922, #a36531); border-radius: 12px; }.balance__label, .balance__tip { display: block; font-size: 13px; opacity: 0.85; }.balance__value { display: block; margin: 4px 0; font-size: 30px; font-weight: 700; }.empty { color: #86909c; text-align: center; }.product { display: flex; align-items: center; gap: 10px; }.cover { width: 72px; height: 72px; color: #a36531; background-color: #fff4e8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }.meta { flex: 1; min-width: 0; }.name, .merchant, .points, .stock { display: block; }.name { font-weight: 600; font-size: 16px; }.merchant, .stock { margin-top: 5px; color: #86909c; font-size: 12px; }.points { margin-top: 6px; color: #d72828; font-size: 15px; font-weight: 600; }.exchange { width: 62px; margin: 0; color: #ffffff; background-color: #d72828; border-radius: 16px; font-size: 13px; }.exchange[disabled] { color: #86909c; background-color: #f2f3f5; }
+.balance { margin: 12px; padding: 18px; color: #ffffff; background: linear-gradient(135deg, #5a3922, #a36531); border-radius: 12px; }.balance__label, .balance__tip, .balance__rules { display: block; font-size: 13px; opacity: 0.85; }.balance__rules { margin-top: 10px; text-decoration: underline; }.balance__value { display: block; margin: 4px 0; font-size: 30px; font-weight: 700; }.empty { color: #86909c; text-align: center; }.product { display: flex; align-items: center; gap: 10px; }.cover { width: 72px; height: 72px; color: #a36531; background-color: #fff4e8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }.meta { flex: 1; min-width: 0; }.name, .merchant, .points, .stock { display: block; }.name { font-weight: 600; font-size: 16px; }.merchant, .stock { margin-top: 5px; color: #86909c; font-size: 12px; }.points { margin-top: 6px; color: #d72828; font-size: 15px; font-weight: 600; }.exchange { width: 62px; margin: 0; color: #ffffff; background-color: #d72828; border-radius: 16px; font-size: 13px; }.exchange[disabled] { color: #86909c; background-color: #f2f3f5; }.more { padding: 16px 0 28px; color: #86909c; text-align: center; font-size: 13px; }
 </style>

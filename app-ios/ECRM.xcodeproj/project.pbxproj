@@ -1,0 +1,603 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		041BD1D534D398A46C65FCE3 /* ECRMNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25B898C0542A37A1670281D /* ECRMNavigationController.swift */; };
+		29533ECCEE6F2DD8FF43691A /* MainTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3B7A9E8BEDA8F2268A27E0F /* MainTabBarController.swift */; };
+		2DC3380F7C69262A719DBC60 /* Authentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AC47DDFB1D73CD3DD3FF392 /* Authentication.swift */; };
+		35DE2CAAFC3471BE9CB14700 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C31F55F592D06A6F3AACB28 /* AppConfiguration.swift */; };
+		50BD89A99300A91942E0AF2F /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE9BD268E38B4EEE0FE6A0B /* PlaceholderViewController.swift */; };
+		5B7BC9F723FD8BACE0C3BF95 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89710C994EF9EE32B6B558E5 /* PersistenceController.swift */; };
+		7D7FEEC0F6BFF8ECAD7720C9 /* UIColor+ECRM.swift in Sources */ = {isa = PBXBuildFile; fileRef = D422B94F06720A6EABD317A6 /* UIColor+ECRM.swift */; };
+		83631F1A9F2825BF9F2411B9 /* HTTPClientContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA6F2B4F029FA4234CEF175 /* HTTPClientContractTests.swift */; };
+		8618FA992EAB29A779FDEDBA /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42F166A595F612404AD6DC50 /* AppContainer.swift */; };
+		94133E53D0C34A74A1A2CEB8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2931A73EFD1776E054D6A2EE /* AppDelegate.swift */; };
+		BBEA6B8AD12952F13DA39BB0 /* Factory in Frameworks */ = {isa = PBXBuildFile; productRef = C3F1293325B3F012632E25DB /* Factory */; };
+		C4FFF1A65CAFE74AEB73A522 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09AAF6506213EF47860F3C8 /* AppLogger.swift */; };
+		DEBAC154956B5FBE4F344D8B /* LiveAuthenticationRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40113B497179D5BAC663EB9 /* LiveAuthenticationRepository.swift */; };
+		E1C8CCAF21264D1FD2926611 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7395522E54818C972AD39D42 /* HTTPClient.swift */; };
+		EC47FA824BD166248567648C /* KeychainCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D59D4328D0D0D18A5CE786 /* KeychainCredentialsStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BDA5D7A5C2729170E4DAD9A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DE97CD12E771B2989245A050 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA8081AC4A84629767F62BA5;
+			remoteInfo = ECRM;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		08D0F3FA0596015EAD62A6CB /* ECRM.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ECRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C31F55F592D06A6F3AACB28 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		25D59D4328D0D0D18A5CE786 /* KeychainCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialsStore.swift; sourceTree = "<group>"; };
+		2931A73EFD1776E054D6A2EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		2AC47DDFB1D73CD3DD3FF392 /* Authentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authentication.swift; sourceTree = "<group>"; };
+		42F166A595F612404AD6DC50 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
+		4EA6F2B4F029FA4234CEF175 /* HTTPClientContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClientContractTests.swift; sourceTree = "<group>"; };
+		7395522E54818C972AD39D42 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
+		8460AB4DD8FAE905C87691FB /* ECRMTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ECRMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		89710C994EF9EE32B6B558E5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		B25B898C0542A37A1670281D /* ECRMNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECRMNavigationController.swift; sourceTree = "<group>"; };
+		B40113B497179D5BAC663EB9 /* LiveAuthenticationRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAuthenticationRepository.swift; sourceTree = "<group>"; };
+		C3B7A9E8BEDA8F2268A27E0F /* MainTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabBarController.swift; sourceTree = "<group>"; };
+		D422B94F06720A6EABD317A6 /* UIColor+ECRM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+ECRM.swift"; sourceTree = "<group>"; };
+		E09AAF6506213EF47860F3C8 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		FBE9BD268E38B4EEE0FE6A0B /* PlaceholderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderViewController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FD674995B47FB5420D49745F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BBEA6B8AD12952F13DA39BB0 /* Factory in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0F1374BFE2D2C5AD1F2E706C /* ECRM */ = {
+			isa = PBXGroup;
+			children = (
+				6A2EF4DE84EC904FB9F7181C /* App */,
+				C03FCFF9717E33CF7A43305D /* Core */,
+				2B2F232FAE1FB0C0108A374C /* Data */,
+				EC819B43C5765D0BEC4E4305 /* Domain */,
+				5446F226200AA59F5B8ABABA /* Features */,
+			);
+			path = ECRM;
+			sourceTree = "<group>";
+		};
+		1420AAC3A1108631F5C9AC59 /* Authentication */ = {
+			isa = PBXGroup;
+			children = (
+				2AC47DDFB1D73CD3DD3FF392 /* Authentication.swift */,
+			);
+			path = Authentication;
+			sourceTree = "<group>";
+		};
+		2A9437A927CECC78898EA51A /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				1C31F55F592D06A6F3AACB28 /* AppConfiguration.swift */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		2B2F232FAE1FB0C0108A374C /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				FC91E9A7FBAE2F6DB221ED98 /* Authentication */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		5446F226200AA59F5B8ABABA /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				E3D81D26253D472E804D53A7 /* Main */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		5D8ED0EB785A65842ED10FA0 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				7395522E54818C972AD39D42 /* HTTPClient.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		6A2EF4DE84EC904FB9F7181C /* App */ = {
+			isa = PBXGroup;
+			children = (
+				42F166A595F612404AD6DC50 /* AppContainer.swift */,
+				2931A73EFD1776E054D6A2EE /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		70B6D74636257102A51FFFE5 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				25D59D4328D0D0D18A5CE786 /* KeychainCredentialsStore.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		82D172F205C21CBA575D3251 /* ECRMTests */ = {
+			isa = PBXGroup;
+			children = (
+				4EA6F2B4F029FA4234CEF175 /* HTTPClientContractTests.swift */,
+			);
+			path = ECRMTests;
+			sourceTree = "<group>";
+		};
+		A6C306AF05A7E476B4D8BE03 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				89710C994EF9EE32B6B558E5 /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		B432B7714E086CB441A5C5E0 = {
+			isa = PBXGroup;
+			children = (
+				0F1374BFE2D2C5AD1F2E706C /* ECRM */,
+				82D172F205C21CBA575D3251 /* ECRMTests */,
+				FDD3C7CCA622C9A0B9E1A43E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C03FCFF9717E33CF7A43305D /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				2A9437A927CECC78898EA51A /* Configuration */,
+				F452B6192630C280C82F9459 /* Logging */,
+				5D8ED0EB785A65842ED10FA0 /* Network */,
+				A6C306AF05A7E476B4D8BE03 /* Persistence */,
+				70B6D74636257102A51FFFE5 /* Security */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		E3D81D26253D472E804D53A7 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				B25B898C0542A37A1670281D /* ECRMNavigationController.swift */,
+				C3B7A9E8BEDA8F2268A27E0F /* MainTabBarController.swift */,
+				FBE9BD268E38B4EEE0FE6A0B /* PlaceholderViewController.swift */,
+				D422B94F06720A6EABD317A6 /* UIColor+ECRM.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		EC819B43C5765D0BEC4E4305 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				1420AAC3A1108631F5C9AC59 /* Authentication */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		F452B6192630C280C82F9459 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				E09AAF6506213EF47860F3C8 /* AppLogger.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
+		FC91E9A7FBAE2F6DB221ED98 /* Authentication */ = {
+			isa = PBXGroup;
+			children = (
+				B40113B497179D5BAC663EB9 /* LiveAuthenticationRepository.swift */,
+			);
+			path = Authentication;
+			sourceTree = "<group>";
+		};
+		FDD3C7CCA622C9A0B9E1A43E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				08D0F3FA0596015EAD62A6CB /* ECRM.app */,
+				8460AB4DD8FAE905C87691FB /* ECRMTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		98641722B958454E7D8889C0 /* ECRMTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D1EB632A93BD2104C1A4CD9 /* Build configuration list for PBXNativeTarget "ECRMTests" */;
+			buildPhases = (
+				95A66FF95518833A14391FF9 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4EF3AAC6037D91FC28795559 /* PBXTargetDependency */,
+			);
+			name = ECRMTests;
+			packageProductDependencies = (
+			);
+			productName = ECRMTests;
+			productReference = 8460AB4DD8FAE905C87691FB /* ECRMTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA8081AC4A84629767F62BA5 /* ECRM */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D695F257323C0023B9DC6B6 /* Build configuration list for PBXNativeTarget "ECRM" */;
+			buildPhases = (
+				0DB6CE970C6D91B87103E32B /* Sources */,
+				FD674995B47FB5420D49745F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ECRM;
+			packageProductDependencies = (
+				C3F1293325B3F012632E25DB /* Factory */,
+			);
+			productName = ECRM;
+			productReference = 08D0F3FA0596015EAD62A6CB /* ECRM.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DE97CD12E771B2989245A050 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					98641722B958454E7D8889C0 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					AA8081AC4A84629767F62BA5 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 2941B3C0409943081A22FC66 /* Build configuration list for PBXProject "ECRM" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = B432B7714E086CB441A5C5E0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F08FC27B0B9BE17BB5204816 /* XCRemoteSwiftPackageReference "Factory" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FDD3C7CCA622C9A0B9E1A43E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA8081AC4A84629767F62BA5 /* ECRM */,
+				98641722B958454E7D8889C0 /* ECRMTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0DB6CE970C6D91B87103E32B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35DE2CAAFC3471BE9CB14700 /* AppConfiguration.swift in Sources */,
+				8618FA992EAB29A779FDEDBA /* AppContainer.swift in Sources */,
+				94133E53D0C34A74A1A2CEB8 /* AppDelegate.swift in Sources */,
+				C4FFF1A65CAFE74AEB73A522 /* AppLogger.swift in Sources */,
+				2DC3380F7C69262A719DBC60 /* Authentication.swift in Sources */,
+				041BD1D534D398A46C65FCE3 /* ECRMNavigationController.swift in Sources */,
+				E1C8CCAF21264D1FD2926611 /* HTTPClient.swift in Sources */,
+				EC47FA824BD166248567648C /* KeychainCredentialsStore.swift in Sources */,
+				DEBAC154956B5FBE4F344D8B /* LiveAuthenticationRepository.swift in Sources */,
+				29533ECCEE6F2DD8FF43691A /* MainTabBarController.swift in Sources */,
+				5B7BC9F723FD8BACE0C3BF95 /* PersistenceController.swift in Sources */,
+				50BD89A99300A91942E0AF2F /* PlaceholderViewController.swift in Sources */,
+				7D7FEEC0F6BFF8ECAD7720C9 /* UIColor+ECRM.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95A66FF95518833A14391FF9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				83631F1A9F2825BF9F2411B9 /* HTTPClientContractTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4EF3AAC6037D91FC28795559 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA8081AC4A84629767F62BA5 /* ECRM */;
+			targetProxy = BDA5D7A5C2729170E4DAD9A3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		30612985E481115E5A7B7561 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "七禧商城";
+				INFOPLIST_KEY_ECRMAPIBaseURL = "https://api.example.invalid/";
+				INFOPLIST_KEY_ECRMLogNetwork = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		501DF21E080F0F83CE0CC6ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ECRM.app/ECRM";
+			};
+			name = Debug;
+		};
+		7DBDFD7867F9028E98B54D10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios;
+				PRODUCT_NAME = ECRM;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		99E886B710B7CF0D5214900C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "七禧商城";
+				INFOPLIST_KEY_ECRMAPIBaseURL = "https://api.example.invalid/";
+				INFOPLIST_KEY_ECRMLogNetwork = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		AE087BC8FBFEE00B964D1784 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios;
+				PRODUCT_NAME = ECRM;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B85731BC6BEFA4E78BD17839 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qixi.ecrm.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ECRM.app/ECRM";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2941B3C0409943081A22FC66 /* Build configuration list for PBXProject "ECRM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				30612985E481115E5A7B7561 /* Debug */,
+				99E886B710B7CF0D5214900C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7D1EB632A93BD2104C1A4CD9 /* Build configuration list for PBXNativeTarget "ECRMTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				501DF21E080F0F83CE0CC6ED /* Debug */,
+				B85731BC6BEFA4E78BD17839 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7D695F257323C0023B9DC6B6 /* Build configuration list for PBXNativeTarget "ECRM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE087BC8FBFEE00B964D1784 /* Debug */,
+				7DBDFD7867F9028E98B54D10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F08FC27B0B9BE17BB5204816 /* XCRemoteSwiftPackageReference "Factory" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hmlongco/Factory.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C3F1293325B3F012632E25DB /* Factory */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F08FC27B0B9BE17BB5204816 /* XCRemoteSwiftPackageReference "Factory" */;
+			productName = Factory;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DE97CD12E771B2989245A050 /* Project object */;
+}
