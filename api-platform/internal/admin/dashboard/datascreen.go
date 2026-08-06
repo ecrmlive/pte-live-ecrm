@@ -218,7 +218,10 @@ func (h *Handler) GetDataScreen(c *gin.Context) {
 	oq := h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_order AS o").
 		Select(`o.paid_at, o.pay_amount,
 			COALESCE(NULLIF(TRIM(o.store_name_snapshot), ''), '—') AS store_name,
-			'' AS store_image,
+			COALESCE((
+				SELECT NULLIF(TRIM(p.cover_url), '') FROM qixi_crm_b_product_view AS p
+				WHERE p.store_id = o.store_id ORDER BY p.product_id ASC LIMIT 1
+			), '') AS store_image,
 			CASE COALESCE(g.pay_channel, 'mock')
 				WHEN 'wechat' THEN '微信支付'
 				WHEN 'alipay' THEN '支付宝'
@@ -252,6 +255,7 @@ func (h *Handler) GetDataScreen(c *gin.Context) {
 	type storeRankRow struct {
 		SaleAmount float64 `gorm:"column:sale_amount"`
 		SaleCount  int64   `gorm:"column:sale_count"`
+		StoreImage string  `gorm:"column:store_image"`
 		StoreName  string  `gorm:"column:store_name"`
 	}
 	var ranks []storeRankRow
@@ -259,6 +263,10 @@ func (h *Handler) GetDataScreen(c *gin.Context) {
 		Table("qixi_crm_b_order AS o").
 		Select(`
 			MAX(o.store_name_snapshot) AS store_name,
+			COALESCE((
+				SELECT NULLIF(TRIM(p.cover_url), '') FROM qixi_crm_b_product_view AS p
+				WHERE p.store_id = o.store_id ORDER BY p.product_id ASC LIMIT 1
+			), '') AS store_image,
 			COALESCE(SUM(o.total_quantity), 0) AS sale_count,
 			COALESCE(SUM(o.pay_amount), 0) AS sale_amount`).
 		Where("o.status IN ('paid','fulfilling','shipped','completed') AND DATE(o.paid_at) = CURDATE()")
@@ -271,11 +279,10 @@ func (h *Handler) GetDataScreen(c *gin.Context) {
 		Limit(20).
 		Scan(&ranks).Error
 	for _, row := range ranks {
-		// 店铺排行不再误绑商品封面，避免与单品排行视觉混淆。
 		out.TodayPayMerchantRank.Data = append(out.TodayPayMerchantRank.Data, DataScreenMerchantRank{
 			Count:  row.SaleCount,
 			Number: row.SaleAmount,
-			Store:  DataScreenStore{Image: "", StoreName: row.StoreName},
+			Store:  DataScreenStore{Image: row.StoreImage, StoreName: row.StoreName},
 		})
 	}
 

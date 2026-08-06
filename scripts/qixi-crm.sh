@@ -255,8 +255,13 @@ initialize_databases() {
 			[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}；init_key.sql 不纳入 Git，请从 init_key.sql.example 复制后填写" >&2; exit 1; }
 			echo ">> 导入 sql/${domain}/${phase}.sql 到 pte_live_mysql"
 			shared_mysql <"${sql_file}"
-			done
 		done
+	done
+	screen_demo_sql="${ROOT_DIR}/sql/business/init_data_screen_demo.sql"
+	if [[ -f "${screen_demo_sql}" ]]; then
+		echo ">> 导入 sql/business/init_data_screen_demo.sql 到 pte_live_mysql"
+		shared_mysql <"${screen_demo_sql}"
+	fi
 	merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 	[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
 	echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql 到 pte_live_mysql"
