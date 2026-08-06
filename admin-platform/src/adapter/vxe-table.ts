@@ -14,6 +14,7 @@ import { ElButton, ElImage } from 'element-plus';
 import {
   PLATFORM_LIST_GRID_CLASS,
   PLATFORM_LIST_GRID_LAYOUT,
+  platformListPagerConfig,
 } from '#/constants/platform-list-grid';
 
 import { useVbenForm } from './form';
@@ -105,7 +106,7 @@ function withAutoHeightVirtualYGuard<T extends Record<string, any>>(
   };
 }
 
-/** 主列表默认：platform-vxe-grid + showOverflow false + 单元格顶对齐 */
+/** 主列表默认：platform-vxe-grid + showOverflow false + 单元格顶对齐 + 真实分页 */
 function withPlatformListGridDefaults<T extends Record<string, any>>(
   options?: GridHookOptions<T>,
 ): GridHookOptions<T> {
@@ -121,6 +122,10 @@ function withPlatformListGridDefaults<T extends Record<string, any>>(
       cellConfig: {
         ...PLATFORM_LIST_GRID_LAYOUT.cellConfig,
         ...gridOptions.cellConfig,
+      },
+      pagerConfig: {
+        ...platformListPagerConfig(),
+        ...(gridOptions.pagerConfig ?? {}),
       },
     },
   };

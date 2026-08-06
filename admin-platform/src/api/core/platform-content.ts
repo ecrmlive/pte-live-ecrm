@@ -10,4 +10,7 @@ export function deletePlatformNoticeApi(id: number) { return requestClient.delet
 
 export interface PlatformAgreement { content: string; key: string; label: string; }
 export function listPlatformAgreementsApi() { return requestClient.get<{ list: PlatformAgreement[] }>('/agreements'); }
+export function getPlatformAgreementApi(key: string) {
+  return requestClient.get<PlatformAgreement>(`/agreements/${encodeURIComponent(key)}`);
+}
 export function savePlatformAgreementApi(key: string, content: string) { return requestClient.put<PlatformAgreement>(`/agreements/${key}`, { content }); }

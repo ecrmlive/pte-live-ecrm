@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,7 @@ func (h *Handler) list(c *gin.Context) {
 	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
 		q = q.Where("name LIKE ?", "%"+keyword+"%")
 	}
+	q = listquery.ApplyTimeColumnDateRange(q, "starts_at", strings.TrimSpace(c.Query("date_from")), strings.TrimSpace(c.Query("date_to")))
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c, "查询优惠套餐失败")

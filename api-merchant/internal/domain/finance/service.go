@@ -28,10 +28,14 @@ type Store interface {
 }
 
 type ListFilter struct {
-	MerID  *uint
-	Status *int
-	Page   int
-	Limit  int
+	DateFrom        string
+	DateTo          string
+	FinancialSN     string
+	FinancialStatus *int
+	Limit           int
+	MerID           *uint
+	Page            int
+	Status          *int
 }
 
 type Service struct {
@@ -123,12 +127,12 @@ func (s *Service) ApplyWithdraw(ctx context.Context, merID uint, merAdminID uint
 	return created, nil
 }
 
-func (s *Service) ListMerchant(ctx context.Context, merID uint, page, limit int) (*PageResult[Financial], error) {
-	list, total, err := s.store.ListFinancials(ctx, ListFilter{MerID: &merID, Page: page, Limit: limit})
+func (s *Service) ListMerchant(ctx context.Context, filter ListFilter) (*PageResult[Financial], error) {
+	list, total, err := s.store.ListFinancials(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	page, limit = normalizePage(page, limit)
+	page, limit := normalizePage(filter.Page, filter.Limit)
 	return &PageResult[Financial]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 

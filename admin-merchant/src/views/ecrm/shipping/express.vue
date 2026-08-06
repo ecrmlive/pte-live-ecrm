@@ -1,55 +1,90 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page } from '@vben/common-ui';
+import { ElTag } from 'element-plus';
 
-import { listMerchantExpressApi, type MerchantExpressRow } from '#/api/core/merchant-logistics';
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listMerchantExpressApi,
+  type MerchantExpressRow,
+} from '#/api/core/merchant-logistics';
+import { MERCHANT_LIST_GRID_LAYOUT } from '#/constants/merchant-list-grid';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const rows = ref<MerchantExpressRow[]>([]);
-const total = ref(0);
-const query = reactive({ limit: 50, page: 1 });
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '名称 / 编码' },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '展示', value: 1 },
+        { label: '隐藏', value: 0 },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'is_show',
+    label: '状态',
+  },
+]);
 
-async function load() {
-  loading.value = true;
-  try {
-    const result = await listMerchantExpressApi(query);
-    rows.value = result.list || [];
-    total.value = result.total || 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const gridOptions: VxeGridProps<MerchantExpressRow> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'express_id', title: 'ID', width: 90 },
+    { field: 'name', minWidth: 160, showOverflow: false, title: '名称' },
+    { field: 'code', minWidth: 140, showOverflow: false, title: '编码' },
+    { field: 'sort', title: '排序', width: 90 },
+    {
+      field: 'is_show',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 90,
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 50, pageSizes: [20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const isShow = formValues?.is_show;
+        const data = await listMerchantExpressApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          is_show: isShow === 0 || isShow === 1 ? Number(isShow) : undefined,
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'express_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
 
-void load();
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 </script>
 
 <template>
-  <Page title="物流公司" description="只读查看平台维护的快递公司列表，发货时可选择对应物流编码。">
-    <el-card shadow="never">
-      <el-table v-loading="loading" :data="rows" row-key="express_id">
-        <el-table-column label="ID" prop="express_id" width="90" />
-        <el-table-column label="名称" min-width="160" prop="name" />
-        <el-table-column label="编码" min-width="140" prop="code" />
-        <el-table-column label="排序" prop="sort" width="90" />
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }">
-            <el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '展示' : '隐藏' }}</el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="mt-4 flex justify-end">
-        <el-pagination
-          :current-page="query.page"
-          :page-size="query.limit"
-          :page-sizes="[20, 50, 100]"
-          :total="total"
-          background
-          layout="total, sizes, prev, pager, next"
-          @current-change="(page: number) => { query.page = page; load(); }"
-          @size-change="(limit: number) => { query.limit = limit; query.page = 1; load(); }"
-        />
-      </div>
-    </el-card>
+  <Page auto-content-height>
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
+          {{ row.is_show === 1 ? '展示' : '隐藏' }}
+        </ElTag>
+      </template>
+    </Grid>
   </Page>
 </template>

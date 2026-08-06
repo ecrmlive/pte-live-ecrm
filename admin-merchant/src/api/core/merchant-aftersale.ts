@@ -42,11 +42,19 @@ export interface MerchantRefundEventPage { limit: number; list: MerchantRefundEv
 export interface MerchantRefundExport { content: string; file_name: string; row_count: number; truncated: boolean; }
 export interface MerchantReturnShipment { carrier_name: string; remark?: string; submitted_at: string; tracking_no: string; }
 
-export function listMerchantRefundsApi(params: {
+export interface MerchantRefundListQuery {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
   limit: number;
+  order_sn?: string;
   page: number;
+  phone?: string;
+  refund_type?: number;
   status?: number;
-}) {
+}
+
+export function listMerchantRefundsApi(params: MerchantRefundListQuery) {
   return requestClient.get<MerchantRefundPage>('/refunds', { params });
 }
 
@@ -56,7 +64,12 @@ export function getMerchantRefundApi(id: number) {
 
 export function listMerchantRefundEventsApi(id: number, params = { page: 1, limit: 100 }) { return requestClient.get<MerchantRefundEventPage>(`/refunds/${id}/events`, { params }); }
 export function getMerchantRefundExpressApi(id: number) { return requestClient.get<MerchantReturnShipment>(`/refunds/${id}/express`); }
-export function exportMerchantRefundsApi(params?: { status?: number }) { return requestClient.get<MerchantRefundExport>('/refunds/export', { params }); }
+export function exportMerchantRefundsApi(params?: Pick<
+  MerchantRefundListQuery,
+  'date_from' | 'date_to' | 'keyword' | 'order_sn' | 'phone' | 'refund_type' | 'status'
+>) {
+  return requestClient.get<MerchantRefundExport>('/refunds/export', { params });
+}
 export function addMerchantRefundRemarkApi(id: number, input: { idempotency_key: string; note: string }) { return requestClient.post(`/refunds/${id}/remark`, input); }
 export function hideMerchantRefundApi(id: number, input: { idempotency_key: string; reason: string }) { return requestClient.delete(`/refunds/${id}`, { data: input }); }
 

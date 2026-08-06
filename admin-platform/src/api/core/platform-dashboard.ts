@@ -2,8 +2,10 @@ import { liveAdminPost } from '#/api/live-request';
 import { requestClient } from '#/api/request';
 
 export interface DashboardMetric {
+  last_week?: number;
   month: number;
   today: number;
+  week_ratio?: number;
   yesterday: number;
 }
 
@@ -12,32 +14,252 @@ export interface StoreSalesRankRow {
   sale_amount: number;
   sale_count: number;
   store_id: number;
+  store_image?: string;
   store_name: string;
 }
 
+export interface HourAmountPoint {
+  hour: string;
+  today_amount: number;
+  yesterday_amount: number;
+}
+
+export interface SparkStat {
+  ratio: number;
+  spark: number[];
+  spark_label?: string;
+  value: number;
+}
+
+export interface OrderStatsBlock {
+  month_order_count: SparkStat;
+  month_payer_count: SparkStat;
+  today_order_count: SparkStat;
+  today_payer_count: SparkStat;
+}
+
+export interface UserTrendPoint {
+  day: string;
+  new_users: number;
+  total_users: number;
+  visit_users: number;
+}
+
+export interface DealFunnelBlock {
+  avg_order_amount: number;
+  order_amount: number;
+  order_pay_rate: number;
+  order_users: number;
+  pay_amount: number;
+  pay_users: number;
+  visit_order_rate: number;
+  visit_users: number;
+}
+
+export interface DealRatioBlock {
+  new_amount: number;
+  new_users: number;
+  old_amount: number;
+  old_users: number;
+}
+
+export type DashboardPeriod = '7d' | '30d' | 'month' | 'year';
+
 export interface PlatformDashboardSummary {
-	/** all: 平台全量；store: 当前账号获授权店铺范围 */
-	scope: 'all' | 'store';
+  /** all: 平台全量；store: 当前账号获授权店铺范围 */
+  scope: 'all' | 'store';
+  deal_funnel: DealFunnelBlock;
+  deal_ratio: DealRatioBlock;
   new_users: DashboardMetric;
   on_sale_product: number;
+  order_stats: OrderStatsBlock;
   page_views: DashboardMetric;
   paid_order: number;
+  pending_community: number;
   pending_delivery: number;
+  pending_feedback: number;
+  pending_integral_ship: number;
   pending_product_audit: number;
   pending_refund: number;
   pending_service: number;
+  pending_spread_gift: number;
   pending_store_audit: number;
+  pending_transfer: number;
+  pending_withdraw: number;
   store_count: number;
   store_sales_rank: StoreSalesRankRow[];
   store_total: number;
+  stores: DashboardMetric;
   today_order_count: number;
+  today_order_hours: HourAmountPoint[];
   today_paid_amount: number;
   today_payer_count: number;
+  user_trend: UserTrendPoint[];
   visitors: DashboardMetric;
+}
+
+function emptySpark(): SparkStat {
+  return { ratio: 0, spark: [], value: 0 };
+}
+
+export function emptyDashboardSummary(): PlatformDashboardSummary {
+  const metric = (): DashboardMetric => ({ month: 0, today: 0, week_ratio: 0, yesterday: 0 });
+  return {
+    deal_funnel: {
+      avg_order_amount: 0,
+      order_amount: 0,
+      order_pay_rate: 0,
+      order_users: 0,
+      pay_amount: 0,
+      pay_users: 0,
+      visit_order_rate: 0,
+      visit_users: 0,
+    },
+    deal_ratio: { new_amount: 0, new_users: 0, old_amount: 0, old_users: 0 },
+    new_users: metric(),
+    on_sale_product: 0,
+    order_stats: {
+      month_order_count: emptySpark(),
+      month_payer_count: emptySpark(),
+      today_order_count: emptySpark(),
+      today_payer_count: emptySpark(),
+    },
+    page_views: metric(),
+    paid_order: 0,
+    pending_community: 0,
+    pending_delivery: 0,
+    pending_feedback: 0,
+    pending_integral_ship: 0,
+    pending_product_audit: 0,
+    pending_refund: 0,
+    pending_service: 0,
+    pending_spread_gift: 0,
+    pending_store_audit: 0,
+    pending_transfer: 0,
+    pending_withdraw: 0,
+    scope: 'all',
+    store_count: 0,
+    store_sales_rank: [],
+    store_total: 0,
+    stores: metric(),
+    today_order_count: 0,
+    today_order_hours: [],
+    today_paid_amount: 0,
+    today_payer_count: 0,
+    user_trend: [],
+    visitors: metric(),
+  };
 }
 
 export function getPlatformDashboardSummaryApi() {
   return requestClient.get<PlatformDashboardSummary>('/dashboard/summary');
+}
+
+export function getPlatformMerchantTopApi(period: DashboardPeriod = 'month') {
+  return requestClient.get<{ list: StoreSalesRankRow[]; period: string }>('/dashboard/merchant-top', {
+    params: { period },
+  });
+}
+
+export function getPlatformUserTrendApi(period: Exclude<DashboardPeriod, 'year'> = '30d') {
+  return requestClient.get<{ list: UserTrendPoint[]; period: string }>('/dashboard/user-trend', {
+    params: { period },
+  });
+}
+
+export function getPlatformDealApi(period: DashboardPeriod = 'month') {
+  return requestClient.get<{ funnel: DealFunnelBlock; period: string; ratio: DealRatioBlock }>(
+    '/dashboard/deal',
+    { params: { period } },
+  );
+}
+
+export interface DataScreenTodayNumbers {
+  today_pay_number: number;
+  today_pay_user_first: number;
+  visit_num: number;
+  visit_user_num: number;
+}
+
+export interface DataScreenNewOld {
+  new_count: number;
+  old_count: number;
+}
+
+export interface DataScreenPaymentAmount {
+  count: number;
+  number: number;
+  order_id: number;
+  paid: number;
+}
+
+export interface DataScreenCityRank {
+  code?: string;
+  name: string;
+  value: number;
+}
+
+export interface DataScreenMonthPoint {
+  day: string;
+  total_sum: number;
+}
+
+export interface DataScreenHourPoint {
+  hours: string;
+  order_count: number;
+  user_count: number;
+}
+
+export interface DataScreenOrderInfo {
+  number: number;
+  payment_method: string;
+  paytime: string;
+  product: DataScreenProduct;
+  store: DataScreenStore;
+}
+
+export interface DataScreenProduct {
+  image?: string;
+  product_name: string;
+}
+
+export interface DataScreenStore {
+  image?: string;
+  store_name: string;
+}
+
+export interface DataScreenMerchantRank {
+  count: number;
+  number: number;
+  store: DataScreenStore;
+}
+
+export interface DataScreenMerchantRankBoard {
+  data: DataScreenMerchantRank[];
+  type: string;
+}
+
+export interface DataScreenProductRank {
+  count: number;
+  number: number;
+  product: DataScreenProduct;
+}
+
+export interface PlatformDataScreen {
+  city_ranking: DataScreenCityRank[];
+  config: { data_screen_title: string };
+  month_pay_count: DataScreenMonthPoint[];
+  pay_product_rank: DataScreenProductRank[];
+  today_pay_count: DataScreenHourPoint[];
+  today_pay_count_number: DataScreenTodayNumbers;
+  today_pay_info: DataScreenOrderInfo[];
+  today_pay_merchant_rank: DataScreenMerchantRankBoard;
+  today_pay_new_old: DataScreenNewOld;
+  today_pay_number: DataScreenPaymentAmount;
+}
+
+export function getPlatformDataScreenApi() {
+  return requestClient.get<PlatformDataScreen>('/dashboard/data-screen');
 }
 
 export interface PlatformDashboardOverview {

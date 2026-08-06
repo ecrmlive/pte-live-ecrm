@@ -9,8 +9,21 @@ export interface StorePickupPoint {
   region_code: string;
 }
 
-export function listStorePickupPointsApi() {
-  return requestClient.get<{ list: StorePickupPoint[] }>('/store-pickup-points');
+export interface StorePickupPointListParams {
+  keyword?: string;
+  limit?: number;
+  page?: number;
+}
+
+export interface StorePickupPointPage {
+  limit: number;
+  list: StorePickupPoint[];
+  page: number;
+  total: number;
+}
+
+export function listStorePickupPointsApi(params: StorePickupPointListParams = {}) {
+  return requestClient.get<StorePickupPointPage>('/store-pickup-points', { params });
 }
 
 export function createStorePickupPointApi(body: Omit<StorePickupPoint, 'id'>) {

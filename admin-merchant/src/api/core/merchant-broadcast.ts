@@ -55,7 +55,16 @@ export interface MerchantBroadcastPage {
   total: number;
 }
 
-export function listMerchantBroadcastRoomsApi(params: { limit: number; page: number }) {
+export interface MerchantBroadcastListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: number;
+}
+
+export function listMerchantBroadcastRoomsApi(params: MerchantBroadcastListParams) {
   return requestClient.get<MerchantBroadcastPage>('/broadcast/rooms', { params });
 }
 

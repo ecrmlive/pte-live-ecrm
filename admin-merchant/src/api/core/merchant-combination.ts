@@ -41,7 +41,16 @@ export interface MerchantCombinationSaveInput {
   time: number;
 }
 
-export function listMerchantCombinationGroupsApi(params: { limit: number; page: number }) {
+export interface MerchantCombinationListParams {
+  date_from?: string;
+  date_to?: string;
+  is_show?: 0 | 1;
+  keyword?: string;
+  limit: number;
+  page: number;
+}
+
+export function listMerchantCombinationGroupsApi(params: MerchantCombinationListParams) {
   return requestClient.get<MerchantCombinationPage>('/combination/groups', { params });
 }
 

@@ -55,7 +55,16 @@ export interface MerchantCommunityPage<T> {
   total: number;
 }
 
-export function listMerchantCommunityPostsApi(params: { limit: number; page: number }) {
+export interface MerchantCommunityListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: number;
+}
+
+export function listMerchantCommunityPostsApi(params: MerchantCommunityListParams) {
   return requestClient.get<MerchantCommunityPage<MerchantCommunityPost>>('/community/posts', { params });
 }
 

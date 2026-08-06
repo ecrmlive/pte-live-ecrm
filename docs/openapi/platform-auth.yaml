@@ -36,6 +36,13 @@ paths:
       responses:
         '200':
           description: 刷新成功
+  /auth/logout:
+    post:
+      summary: 退出登录（客户端清 token；服务端确认成功）
+      security: [{ qixiJWT: [] }]
+      responses:
+        '200':
+          description: 已退出
   /auth/me:
     get:
       summary: 当前统一后台账号与角色

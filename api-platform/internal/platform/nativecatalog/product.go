@@ -10,6 +10,7 @@ import (
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/adminscope"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -138,6 +139,7 @@ func (h *Handler) list(c *gin.Context) {
 	if status := strings.TrimSpace(c.Query("status")); status != "" {
 		query = query.Where("p.status = ?", statusName(status))
 	}
+	query = queryfilter.ApplyCreatedAtRange(query, c, "p.created_at")
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询商品失败")

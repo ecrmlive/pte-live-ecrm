@@ -37,7 +37,16 @@ export type ProductLabelInput = Pick<ProductLabel, 'info' | 'name' | 'sort' | 's
 export type ProductGuaranteeInput = Pick<ProductGuarantee, 'content' | 'name' | 'sort' | 'status'>;
 export type ProductAttrTemplateInput = Pick<ProductAttrTemplate, 'sort' | 'template_name' | 'template_value'>;
 
-export function listProductLabelsApi(params: { limit: number; page: number }) {
+export interface ProductMetaListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: 0 | 1;
+}
+
+export function listProductLabelsApi(params: ProductMetaListParams) {
   return requestClient.get<ProductMetaPage<ProductLabel>>('/product/labels', { params });
 }
 
@@ -53,7 +62,7 @@ export function deleteProductLabelApi(id: number) {
   return requestClient.delete(`/product/labels/${id}`);
 }
 
-export function listProductGuaranteesApi(params: { limit: number; page: number }) {
+export function listProductGuaranteesApi(params: ProductMetaListParams) {
   return requestClient.get<ProductMetaPage<ProductGuarantee>>('/product/guarantees', { params });
 }
 
@@ -69,7 +78,7 @@ export function deleteProductGuaranteeApi(id: number) {
   return requestClient.delete(`/product/guarantees/${id}`);
 }
 
-export function listProductAttrTemplatesApi(params: { limit: number; page: number }) {
+export function listProductAttrTemplatesApi(params: ProductMetaListParams) {
   return requestClient.get<ProductMetaPage<ProductAttrTemplate>>('/product/attr-templates', { params });
 }
 

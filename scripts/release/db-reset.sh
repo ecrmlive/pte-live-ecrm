@@ -34,6 +34,12 @@ for domain in admin business merchant; do
 	done
 done
 
+# CRMEB 商户菜单全量（is_mer=1）；须在 merchant/init_data 之后覆盖写入。
+merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
+[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
+echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql"
+mysql_exec <"${merchant_menu_sql}"
+
 for pair in "qixi_crm_admin:qixi_crm_a_%" "qixi_crm_business:qixi_crm_b_%" "qixi_crm_merchant:qixi_crm_m_%"; do
 	database_name="${pair%%:*}"
 	prefix="${pair#*:}"

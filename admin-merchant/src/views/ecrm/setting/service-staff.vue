@@ -1,37 +1,95 @@
 <script setup lang="ts">
-import type { MerchantStaff } from '#/api/core/staff';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { Page } from '@vben/common-ui';
-import { onMounted, ref } from 'vue';
-import { listMerchantStaffApi } from '#/api/core/staff';
+import { ElTag } from 'element-plus';
 
-const rows = ref<MerchantStaff[]>([]);
-const loading = ref(false);
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { listMerchantStaffApi, type MerchantStaff } from '#/api/core/staff';
+import { MERCHANT_LIST_GRID_LAYOUT } from '#/constants/merchant-list-grid';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listMerchantStaffApi({ page: 1, limit: 100 });
-    rows.value = (data.list ?? []).filter((item) => item.role_code === 'service' || item.is_open === 1);
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '昵称 / 账号 / 手机' },
+    fieldName: 'keyword',
+    label: '员工搜索',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '启用', value: 1 },
+        { label: '停用', value: 0 },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
 
-onMounted(() => void load());
+const gridOptions: VxeGridProps<MerchantStaff> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'service_id', title: 'ID', width: 80 },
+    { field: 'nickname', minWidth: 140, showOverflow: false, title: '昵称' },
+    { field: 'account', minWidth: 140, showOverflow: false, title: '账号' },
+    { field: 'phone', title: '手机号', width: 140 },
+    { field: 'role_code', title: '角色', width: 100 },
+    {
+      field: 'is_open',
+      title: '接单',
+      width: 80,
+      formatter: ({ cellValue }) => (cellValue ? '是' : '否'),
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 80,
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 100, pageSizes: [20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const status = formValues?.status;
+        const data = await listMerchantStaffApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status: status === 0 || status === 1 ? Number(status) : undefined,
+          staff_scope: 'service',
+        });
+        return { items: data.list ?? [], total: data.total ?? 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'service_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 </script>
 
 <template>
-  <Page title="客服员工" description="具备接单/客服能力的店铺员工。">
-    <el-card v-loading="loading" shadow="never">
-      <el-table :data="rows">
-        <el-table-column prop="service_id" label="ID" width="80" />
-        <el-table-column prop="nickname" label="昵称" min-width="140" />
-        <el-table-column prop="account" label="账号" min-width="140" />
-        <el-table-column prop="phone" label="手机号" width="140" />
-        <el-table-column prop="role_code" label="角色" width="100" />
-        <el-table-column label="接单" width="80"><template #default="{ row }">{{ row.is_open ? '是' : '否' }}</template></el-table-column>
-        <el-table-column label="状态" width="80"><template #default="{ row }"><el-tag :type="row.status ? 'success' : 'info'">{{ row.status ? '启用' : '停用' }}</el-tag></template></el-table-column>
-      </el-table>
-    </el-card>
+  <Page auto-content-height>
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="row.status ? 'success' : 'info'">
+          {{ row.status ? '启用' : '停用' }}
+        </ElTag>
+      </template>
+    </Grid>
   </Page>
 </template>

@@ -17,6 +17,8 @@ ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`content`=VALUES(`content`),`is_
 INSERT INTO `qixi_crm_a_setting_cache` (`key`,`expire_time`,`result`) VALUES
   ('sys_user_agree',0,'七禧商城本地验收用户协议：本内容为虚构中文示例。'),
   ('sys_userr_privacy',0,'七禧商城本地验收隐私政策：不包含真实个人信息。'),
+  ('sys_merchant_type',0,'<p>七禧店铺类型说明（本地验收虚构文案）：用于向入驻商户解释不同类型店铺的规则与权益。</p>'),
+  ('sys_merchant_category',0,'<p>七禧店铺分类说明（本地验收虚构文案）：用于向入驻商户解释店铺分类的选择指引。</p>'),
   ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}')
 ON DUPLICATE KEY UPDATE `expire_time`=VALUES(`expire_time`),`result`=VALUES(`result`);
 

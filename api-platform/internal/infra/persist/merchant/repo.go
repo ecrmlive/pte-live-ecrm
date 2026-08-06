@@ -377,6 +377,8 @@ func (r *Repo) UpsertMerchantView(ctx context.Context, m *merchant.Merchant) err
 type ListIntentionFilter struct {
 	Status    *int8
 	Keyword   string
+	DateFrom  string
+	DateTo    string
 	RegionIDs []uint
 	Page      int
 	Limit     int
@@ -406,6 +408,12 @@ func (r *Repo) ListIntentions(ctx context.Context, f ListIntentionFilter) ([]mer
 	if f.Keyword != "" {
 		like := "%" + f.Keyword + "%"
 		q = q.Where("merchant_name LIKE ? OR contact_mobile LIKE ? OR contact_name LIKE ?", like, like, like)
+	}
+	if f.DateFrom != "" {
+		q = q.Where("created_at >= ?", f.DateFrom+" 00:00:00")
+	}
+	if f.DateTo != "" {
+		q = q.Where("created_at < ?", f.DateTo+" 23:59:59")
 	}
 	if f.RegionIDs != nil {
 		if len(f.RegionIDs) == 0 {

@@ -63,11 +63,20 @@ export interface PlatformRefundExport {
   truncated: boolean;
 }
 
-export function listPlatformRefundsApi(params: {
+export interface PlatformRefundListParams {
   limit: number;
   page: number;
   status?: string;
-}) {
+  refund_order_sn?: string;
+  refund_type?: number;
+  order_sn?: string;
+  phone?: string;
+  real_name?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
+export function listPlatformRefundsApi(params: PlatformRefundListParams) {
   return requestClient.get<PlatformRefundPage>('/refunds', { params });
 }
 
@@ -79,7 +88,19 @@ export function listPlatformRefundEventsApi(id: number, params = { page: 1, limi
   return requestClient.get<PlatformRefundEventPage>(`/refunds/${id}/events`, { params });
 }
 
-export function exportPlatformRefundsApi(input: { reason: string; status?: string }) {
+export function exportPlatformRefundsApi(
+  input: Pick<
+    PlatformRefundListParams,
+    | 'status'
+    | 'refund_order_sn'
+    | 'refund_type'
+    | 'order_sn'
+    | 'phone'
+    | 'real_name'
+    | 'date_from'
+    | 'date_to'
+  > & { reason: string },
+) {
   return requestClient.post<PlatformRefundExport>('/refunds/export', input);
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/combination"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +12,7 @@ type Repo struct{ db *gorm.DB }
 
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-func (r *Repo) ListGroups(ctx context.Context, merID *uint, onlyOn bool, page, limit int) ([]combination.ProductGroup, int64, error) {
+func (r *Repo) ListGroups(ctx context.Context, merID *uint, onlyOn bool, page, limit int, filter listquery.AdminFilter) ([]combination.ProductGroup, int64, error) {
 	q := r.db.WithContext(ctx).Model(&combination.ProductGroup{}).Where("is_del = 0")
 	if merID != nil {
 		q = q.Where("mer_id = ?", *merID)
@@ -19,6 +20,10 @@ func (r *Repo) ListGroups(ctx context.Context, merID *uint, onlyOn bool, page, l
 	if onlyOn {
 		q = q.Where("is_show = 1 AND status = 1 AND action_status = 1 AND start_time <= NOW() AND end_time >= NOW()")
 	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", int(*filter.Status))
+	}
+	q = listquery.ApplyTimeColumnDateRange(q, "create_time", filter.DateFrom, filter.DateTo)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err

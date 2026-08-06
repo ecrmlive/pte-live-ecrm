@@ -34,11 +34,17 @@ export interface ShippingTemplate {
   }>;
 }
 
-export function fetchInvoices(params: {
-  page: number;
+export interface InvoiceListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
   limit: number;
+  order_id?: number;
+  page: number;
   status?: string | number;
-}) {
+}
+
+export function fetchInvoices(params: InvoiceListParams) {
   return requestClient.get<PageResult<InvoiceRow>>('/invoices', { params });
 }
 

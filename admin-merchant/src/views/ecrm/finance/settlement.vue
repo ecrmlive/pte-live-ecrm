@@ -1,7 +1,19 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
+import { onMounted, ref } from 'vue';
+
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
+import {
+  ElButton,
+  ElDescriptions,
+  ElDescriptionsItem,
+  ElMessage,
+  ElTag,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi } from '#/api/core/auth';
 import {
   applyMerchantSettlementApi,
@@ -10,21 +22,19 @@ import {
   type MerchantSettlement,
   type MerchantSettlementStatus,
 } from '#/api/core/merchant-finance';
-import { EcrmListPage } from '#/components/ecrm';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const applying = ref(false);
-const rows = ref<MerchantSettlement[]>([]);
-const total = ref(0);
-const detailOpen = ref(false);
-const detail = ref<MerchantSettlement>();
 const canApply = ref(false);
-const query = reactive({
-  limit: 20,
-  page: 1,
-  status: undefined as MerchantSettlementStatus | undefined,
-});
+const applying = ref(false);
+const detail = ref<MerchantSettlement>();
 
 const statusLabels: Record<MerchantSettlementStatus, string> = {
   approved: '已审核',
@@ -35,7 +45,10 @@ const statusLabels: Record<MerchantSettlementStatus, string> = {
   withdraw_applied: '待平台审核',
 };
 
-const statusTypes: Record<MerchantSettlementStatus, 'danger' | 'info' | 'success' | 'warning'> = {
+const statusTypes: Record<
+  MerchantSettlementStatus,
+  'danger' | 'info' | 'success' | 'warning'
+> = {
   approved: 'success',
   bill_frozen: 'warning',
   bill_pending: 'info',
@@ -43,10 +56,6 @@ const statusTypes: Record<MerchantSettlementStatus, 'danger' | 'info' | 'success
   rejected: 'danger',
   withdraw_applied: 'warning',
 };
-
-function formatTime(value?: string | null) {
-  return formatShanghaiDateTime(value || null);
-}
 
 function canApplyRow(row: MerchantSettlement) {
   return canApply.value && row.status === 'bill_frozen' && row.amount > 0;
@@ -56,40 +65,114 @@ function idempotencyKey(settlementId: number) {
   return `merchant-apply-${settlementId}-${crypto.randomUUID()}`;
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    const page = await listMerchantSettlementsApi(query);
-    rows.value = page.list;
-    total.value = page.total;
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(statusLabels).map(([value, label]) => ({
+        label,
+        value,
+      })),
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '结算状态',
+  },
+]);
 
-function search() {
-  query.page = 1;
-  void load();
-}
+const gridOptions: VxeGridProps<MerchantSettlement> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'settlement_id', title: '结算 ID', width: 100 },
+    {
+      field: 'period_start',
+      minWidth: 280,
+      showOverflow: false,
+      slots: { default: 'period' },
+      title: '结算周期',
+    },
+    {
+      field: 'amount',
+      title: '结算金额',
+      width: 120,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 120,
+    },
+    {
+      field: 'application_no',
+      minWidth: 140,
+      showOverflow: false,
+      title: '申请单号',
+    },
+    {
+      field: 'updated_at',
+      minWidth: 170,
+      title: '更新时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+    merchantListActionColumn({ width: 148 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const status = String(formValues?.status ?? '').trim();
+        const data = await listMerchantSettlementsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          status: (status || undefined) as MerchantSettlementStatus | undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'settlement_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
 
-function reset() {
-  query.status = undefined;
-  query.page = 1;
-  void load();
-}
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
+  class: 'w-[560px] max-w-[96vw]',
+  showConfirmButton: false,
+  cancelText: '关闭',
+  placement: 'right',
+});
 
 async function openDetail(row: MerchantSettlement) {
-  detail.value = await getMerchantSettlementApi(row.settlement_id);
-  detailOpen.value = true;
+  detailDrawerApi.setState({ title: '结算详情', loading: true }).open();
+  try {
+    detail.value = await getMerchantSettlementApi(row.settlement_id);
+  } finally {
+    detailDrawerApi.setState({ loading: false });
+  }
 }
 
 async function apply(row: MerchantSettlement) {
   try {
-    await ElMessageBox.confirm(
-      `确认提交结算申请？账期 ${formatTime(row.period_start)} 至 ${formatTime(row.period_end)}，金额 ¥${Number(row.amount).toFixed(2)}。提交后由平台审核打款，本页不录入收款账户。`,
-      '提交结算申请',
-      { confirmButtonText: '确认提交', cancelButtonText: '取消', type: 'warning' },
-    );
+    await confirm({
+      content: `确认提交结算申请？账期 ${formatShanghaiDateTime(row.period_start)} 至 ${formatShanghaiDateTime(row.period_end)}，金额 ¥${Number(row.amount).toFixed(2)}。提交后由平台审核打款，本页不录入收款账户。`,
+      icon: 'warning',
+      title: '提交结算申请',
+    });
   } catch {
     return;
   }
@@ -99,125 +182,86 @@ async function apply(row: MerchantSettlement) {
       idempotency_key: idempotencyKey(row.settlement_id),
     });
     ElMessage.success('结算申请已提交，等待平台审核');
-    await load();
+    gridApi.reload();
+    if (detail.value?.settlement_id === row.settlement_id) {
+      detail.value = await getMerchantSettlementApi(row.settlement_id);
+    }
   } finally {
     applying.value = false;
   }
 }
 
 onMounted(async () => {
-  const permissions = await getAccessCodesApi();
+  const permissions = await getAccessCodesApi().catch(() => [] as string[]);
   canApply.value = permissions.includes('finance.settlement.apply');
-  await load();
 });
 </script>
 
 <template>
-  <EcrmListPage
-    title="结算管理"
-    description="查看本店结算账期与申请进度；仅账期已冻结且金额大于 0 时可提交结算申请，审核与打款由平台处理。申请需 finance.settlement.apply。"
-  >
-    <template #filters>
-      <el-form class="flex flex-wrap gap-x-4" label-width="72px" @submit.prevent="search">
-        <el-form-item label="结算状态">
-          <el-select v-model="query.status" clearable class="w-40" placeholder="全部">
-            <el-option
-              v-for="(label, status) in statusLabels"
-              :key="status"
-              :label="label"
-              :value="status"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="search">查询</el-button>
-          <el-button @click="reset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </template>
+  <Page auto-content-height>
+    <Grid>
+      <template #period="{ row }">
+        {{ formatShanghaiDateTime(row.period_start) }}
+        至
+        {{ formatShanghaiDateTime(row.period_end) }}
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="statusTypes[row.status]" size="small">
+          {{ statusLabels[row.status] }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
+        <ElButton
+          v-if="canApplyRow(row)"
+          :loading="applying"
+          link
+          type="success"
+          @click="apply(row)"
+        >
+          申请结算
+        </ElButton>
+      </template>
+    </Grid>
 
-    <el-table v-loading="loading" :data="rows" border row-key="settlement_id" stripe>
-      <el-table-column label="结算 ID" prop="settlement_id" width="100" />
-      <el-table-column label="结算周期" min-width="280">
-        <template #default="{ row }">
-          {{ formatTime(row.period_start) }} 至 {{ formatTime(row.period_end) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="结算金额" width="120">
-        <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="statusTypes[row.status]" size="small">{{ statusLabels[row.status] }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="申请单号" min-width="140" prop="application_no" show-overflow-tooltip />
-      <el-table-column label="更新时间" min-width="170">
-        <template #default="{ row }">{{ formatTime(row.updated_at) }}</template>
-      </el-table-column>
-      <el-table-column fixed="right" label="操作" width="148">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row)">详情</el-button>
-          <el-button
-            v-if="canApplyRow(row)"
-            :loading="applying"
-            link
-            type="success"
-            @click="apply(row)"
-          >
-            申请结算
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <template #pager>
-      <el-pagination
-        :current-page="query.page"
-        :page-size="query.limit"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="total"
-        background
-        layout="total, sizes, prev, pager, next"
-        @current-change="
-          (page) => {
-            query.page = page;
-            void load();
-          }
-        "
-        @size-change="
-          (limit) => {
-            query.limit = limit;
-            query.page = 1;
-            void load();
-          }
-        "
-      />
-    </template>
-
-    <el-drawer v-model="detailOpen" :with-header="false" size="560px">
+    <DetailDrawer>
       <template v-if="detail">
-        <div class="mb-5 text-lg font-medium">结算详情</div>
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="结算 ID">{{ detail.settlement_id }}</el-descriptions-item>
-          <el-descriptions-item label="结算周期">
-            {{ formatTime(detail.period_start) }} 至 {{ formatTime(detail.period_end) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="结算金额">
+        <ElDescriptions :column="1" border>
+          <ElDescriptionsItem label="结算 ID">
+            {{ detail.settlement_id }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="结算周期">
+            {{ formatShanghaiDateTime(detail.period_start) }}
+            至
+            {{ formatShanghaiDateTime(detail.period_end) }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="结算金额">
             ¥{{ Number(detail.amount).toFixed(2) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="statusTypes[detail.status]">{{ statusLabels[detail.status] }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="申请单号">{{ detail.application_no || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="审核备注">{{ detail.review_note || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="打款时间">{{ formatTime(detail.paid_at) }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ formatTime(detail.updated_at) }}</el-descriptions-item>
-        </el-descriptions>
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="状态">
+            <ElTag :type="statusTypes[detail.status]">
+              {{ statusLabels[detail.status] }}
+            </ElTag>
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="申请单号">
+            {{ detail.application_no || '—' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="审核备注">
+            {{ detail.review_note || '—' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="打款时间">
+            {{ formatShanghaiDateTime(detail.paid_at) }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem label="更新时间">
+            {{ formatShanghaiDateTime(detail.updated_at) }}
+          </ElDescriptionsItem>
+        </ElDescriptions>
         <div v-if="canApplyRow(detail)" class="mt-6">
-          <el-button :loading="applying" type="primary" @click="apply(detail)">提交结算申请</el-button>
+          <ElButton :loading="applying" type="primary" @click="apply(detail)">
+            提交结算申请
+          </ElButton>
         </div>
       </template>
-    </el-drawer>
-  </EcrmListPage>
+    </DetailDrawer>
+  </Page>
 </template>

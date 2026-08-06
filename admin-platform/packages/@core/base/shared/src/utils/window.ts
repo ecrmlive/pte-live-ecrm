@@ -31,7 +31,9 @@ function openRouteInNewWindow(path: string) {
   const { hash, origin } = location;
   const fullPath = path.startsWith('/') ? path : `/${path}`;
   const url = `${origin}${hash && !fullPath.startsWith('/#') ? '/#' : ''}${fullPath}`;
-  openWindow(url, { target: '_blank' });
+  // 同源路由禁用 noopener：否则新标签拿不到 opener 的 sessionStorage 副本，
+  // 登录态若仅落在 sessionStorage（如 refresh token）会被守卫误清并跳登录页。
+  openWindow(url, { target: '_blank', noopener: false, noreferrer: false });
 }
 
 export { openRouteInNewWindow, openWindow };

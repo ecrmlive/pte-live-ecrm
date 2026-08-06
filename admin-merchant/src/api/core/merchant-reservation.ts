@@ -49,7 +49,15 @@ export interface ReservationConfigSaveInput {
   }>;
 }
 
-export function listReservationProductsApi(params: { limit: number; page: number }) {
+export interface ReservationProductListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+}
+
+export function listReservationProductsApi(params: ReservationProductListParams) {
   return requestClient.get<ReservationPage<ReservationProduct>>('/reservation/products', { params });
 }
 

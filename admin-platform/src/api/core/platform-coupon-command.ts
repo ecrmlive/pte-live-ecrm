@@ -21,6 +21,8 @@ export interface CouponCommandFilter {
   user_id?: number;
   coupon_id?: number;
   action?: CouponCommandRecord['action'];
+  date_from?: string;
+  date_to?: string;
 }
 
 export function listCouponCommands(params: CouponCommandFilter) {
@@ -45,6 +47,8 @@ export interface CouponReceiptFilter {
   user_id?: number;
   coupon_id?: number;
   status?: CouponReceiptRecord['status'];
+  date_from?: string;
+  date_to?: string;
 }
 
 export function listCouponReceiptRecords(params: CouponReceiptFilter) {

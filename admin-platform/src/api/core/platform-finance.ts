@@ -32,6 +32,10 @@ export function listPlatformWithdrawsApi(params: {
   limit: number;
   page: number;
   status?: number;
+  keyword?: string;
+  financial_sn?: string;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<PlatformWithdrawPage>('/finance/withdraws', { params });
 }

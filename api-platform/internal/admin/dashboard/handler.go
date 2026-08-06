@@ -17,36 +17,51 @@ import (
 // Summary is backed only by the current qixi_crm_a_/qixi_crm_b_ projections.
 // It deliberately never falls back to the removed qixi_m_* compatibility tables.
 type Summary struct {
-	Scope               string           `json:"scope"`
-	StoreTotal          int64            `json:"store_total"`
-	OnSaleProduct       int64            `json:"on_sale_product"`
-	PaidOrder           int64            `json:"paid_order"`
-	PendingRefund       int64            `json:"pending_refund"`
-	PendingStoreAudit   int64            `json:"pending_store_audit"`
-	PendingProductAudit int64            `json:"pending_product_audit"`
-	PendingDelivery     int64            `json:"pending_delivery"`
-	PendingService      int64            `json:"pending_service"`
-	NewUsers            Metric           `json:"new_users"`
-	PageViews           Metric           `json:"page_views"`
-	Visitors            Metric           `json:"visitors"`
-	StoreCount          int64            `json:"store_count"`
-	TodayOrderCount     int64            `json:"today_order_count"`
-	TodayPayerCount     int64            `json:"today_payer_count"`
-	TodayPaidAmount     float64          `json:"today_paid_amount"`
-	StoreSalesRank      []StoreSalesRank `json:"store_sales_rank"`
+	Scope                 string            `json:"scope"`
+	StoreTotal            int64             `json:"store_total"`
+	OnSaleProduct         int64             `json:"on_sale_product"`
+	PaidOrder             int64             `json:"paid_order"`
+	PendingRefund         int64             `json:"pending_refund"`
+	PendingStoreAudit     int64             `json:"pending_store_audit"`
+	PendingProductAudit   int64             `json:"pending_product_audit"`
+	PendingDelivery       int64             `json:"pending_delivery"`
+	PendingService        int64             `json:"pending_service"`
+	PendingSpreadGift     int64             `json:"pending_spread_gift"`
+	PendingWithdraw       int64             `json:"pending_withdraw"`
+	PendingTransfer       int64             `json:"pending_transfer"`
+	PendingCommunity      int64             `json:"pending_community"`
+	PendingFeedback       int64             `json:"pending_feedback"`
+	PendingIntegralShip   int64             `json:"pending_integral_ship"`
+	NewUsers              Metric            `json:"new_users"`
+	PageViews             Metric            `json:"page_views"`
+	Visitors              Metric            `json:"visitors"`
+	Stores                Metric            `json:"stores"`
+	StoreCount            int64             `json:"store_count"`
+	TodayOrderCount       int64             `json:"today_order_count"`
+	TodayPayerCount       int64             `json:"today_payer_count"`
+	TodayPaidAmount       float64           `json:"today_paid_amount"`
+	TodayOrderHours       []HourAmountPoint `json:"today_order_hours"`
+	OrderStats            OrderStatsBlock   `json:"order_stats"`
+	UserTrend             []UserTrendPoint  `json:"user_trend"`
+	DealFunnel            DealUserBlock     `json:"deal_funnel"`
+	DealRatio             DealRatioBlock    `json:"deal_ratio"`
+	StoreSalesRank        []StoreSalesRank  `json:"store_sales_rank"`
 }
 
 // Metric contains only persisted facts. Today/yesterday/month are calculated in
 // MySQL so every card uses the same database calendar as the order ledger.
 type Metric struct {
-	Today     int64 `json:"today"`
-	Yesterday int64 `json:"yesterday"`
-	Month     int64 `json:"month"`
+	Today     int64   `json:"today"`
+	Yesterday int64   `json:"yesterday"`
+	Month     int64   `json:"month"`
+	WeekRatio float64 `json:"week_ratio"`
+	LastWeek  int64   `json:"last_week"`
 }
 
 type StoreSalesRank struct {
 	StoreID       uint64  `json:"store_id"`
 	StoreName     string  `json:"store_name"`
+	StoreImage    string  `json:"store_image"`
 	FollowerCount int64   `json:"follower_count"`
 	SaleCount     int64   `json:"sale_count"`
 	SaleAmount    float64 `json:"sale_amount"`
@@ -73,6 +88,8 @@ func NewHandler(adminDB, businessDB, merchantDB *gorm.DB) *Handler {
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/dashboard/summary", h.GetSummary)
+	r.GET("/dashboard/data-screen", h.GetDataScreen)
+	h.RegisterConsole(r)
 }
 
 func (h *Handler) GetSummary(c *gin.Context) {
@@ -181,6 +198,28 @@ func (h *Handler) GetSummary(c *gin.Context) {
 	out.TodayOrderCount = today.TodayOrderCount
 	out.TodayPayerCount = today.TodayPayerCount
 	out.TodayPaidAmount = today.TodayPaidAmount
+	h.fillExtraTodos(c, scope, &out)
+	if err := metricFor(h.merchantDB, "qixi_crm_m_store", "created_at", "1 = 1", false, &out.Stores); err != nil {
+		out.Stores = Metric{}
+	}
+	out.Stores.Month = out.StoreCount
+	if hours, err := h.todayOrderHours(c, scope); err == nil {
+		out.TodayOrderHours = hours
+	} else {
+		out.TodayOrderHours = []HourAmountPoint{}
+	}
+	if stats, err := h.orderStatsBlock(c, scope); err == nil {
+		out.OrderStats = stats
+	}
+	if trend, err := h.userTrend(c, scope, "30d"); err == nil {
+		out.UserTrend = trend
+	} else {
+		out.UserTrend = []UserTrendPoint{}
+	}
+	if funnel, ratio, err := h.dealBlocks(c, scope, "month"); err == nil {
+		out.DealFunnel = funnel
+		out.DealRatio = ratio
+	}
 	if err := h.storeSalesRank(c, scope, &out.StoreSalesRank); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "加载店铺销售排行失败")
 		return
@@ -191,22 +230,61 @@ func (h *Handler) GetSummary(c *gin.Context) {
 	if out.StoreSalesRank == nil {
 		out.StoreSalesRank = []StoreSalesRank{}
 	}
+	if out.TodayOrderHours == nil {
+		out.TodayOrderHours = []HourAmountPoint{}
+	}
+	if out.UserTrend == nil {
+		out.UserTrend = []UserTrendPoint{}
+	}
 	response.OK(c, out)
 }
 
+func (h *Handler) fillExtraTodos(c *gin.Context, scope dashboardScope, out *Summary) {
+	safeCount(h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_withdrawal_application").
+		Where("status IN ('applied','reviewing')"), &out.PendingWithdraw)
+	safeCount(h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_settlement_view").
+		Where("status = 'withdraw_applied'"), &out.PendingTransfer)
+	safeCount(h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_social_post").
+		Where("is_del = 0 AND status = 0"), &out.PendingCommunity)
+	safeCount(h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_user_feedback").
+		Where("deleted_at IS NULL AND status = 'pending'"), &out.PendingFeedback)
+	// 分销礼包 / 积分订单发货：当前 schema 无独立待审表，固定 0，结构占位。
+	out.PendingSpreadGift = 0
+	out.PendingIntegralShip = 0
+	_ = scope
+}
+
 func metricFor(db *gorm.DB, table, timeColumn, where string, distinctUser bool, out *Metric, args ...any) error {
+	type rawMetric struct {
+		Today     int64 `gorm:"column:today"`
+		Yesterday int64 `gorm:"column:yesterday"`
+		Month     int64 `gorm:"column:month"`
+		LastWeek  int64 `gorm:"column:last_week"`
+	}
+	var raw rawMetric
+	var selectSQL string
 	if !distinctUser {
-		selectSQL := fmt.Sprintf(`
+		selectSQL = fmt.Sprintf(`
 			COALESCE(SUM(CASE WHEN DATE(%[1]s) = CURDATE() THEN 1 ELSE 0 END), 0) AS today,
 			COALESCE(SUM(CASE WHEN DATE(%[1]s) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END), 0) AS yesterday,
-			COALESCE(SUM(CASE WHEN DATE_FORMAT(%[1]s, '%%Y-%%m') = DATE_FORMAT(CURDATE(), '%%Y-%%m') THEN 1 ELSE 0 END), 0) AS month`, timeColumn)
-		return db.Table(table).Where(where, args...).Select(selectSQL).Scan(out).Error
+			COALESCE(SUM(CASE WHEN DATE_FORMAT(%[1]s, '%%Y-%%m') = DATE_FORMAT(CURDATE(), '%%Y-%%m') THEN 1 ELSE 0 END), 0) AS month,
+			COALESCE(SUM(CASE WHEN DATE(%[1]s) = DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END), 0) AS last_week`, timeColumn)
+	} else {
+		selectSQL = fmt.Sprintf(`
+			COALESCE(COUNT(DISTINCT CASE WHEN DATE(%[1]s) = CURDATE() THEN user_id END), 0) AS today,
+			COALESCE(COUNT(DISTINCT CASE WHEN DATE(%[1]s) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN user_id END), 0) AS yesterday,
+			COALESCE(COUNT(DISTINCT CASE WHEN DATE_FORMAT(%[1]s, '%%Y-%%m') = DATE_FORMAT(CURDATE(), '%%Y-%%m') THEN user_id END), 0) AS month,
+			COALESCE(COUNT(DISTINCT CASE WHEN DATE(%[1]s) = DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN user_id END), 0) AS last_week`, timeColumn)
 	}
-	selectSQL := fmt.Sprintf(`
-		COALESCE(COUNT(DISTINCT CASE WHEN DATE(%[1]s) = CURDATE() THEN user_id END), 0) AS today,
-		COALESCE(COUNT(DISTINCT CASE WHEN DATE(%[1]s) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN user_id END), 0) AS yesterday,
-		COALESCE(COUNT(DISTINCT CASE WHEN DATE_FORMAT(%[1]s, '%%Y-%%m') = DATE_FORMAT(CURDATE(), '%%Y-%%m') THEN user_id END), 0) AS month`, timeColumn)
-	return db.Table(table).Where(where, args...).Select(selectSQL).Scan(out).Error
+	if err := db.Table(table).Where(where, args...).Select(selectSQL).Scan(&raw).Error; err != nil {
+		return err
+	}
+	out.Today = raw.Today
+	out.Yesterday = raw.Yesterday
+	out.Month = raw.Month
+	out.LastWeek = raw.LastWeek
+	out.WeekRatio = growthRatio(raw.Today, raw.LastWeek)
+	return nil
 }
 
 func (h *Handler) storeSalesRank(c *gin.Context, scope dashboardScope, out *[]StoreSalesRank) error {

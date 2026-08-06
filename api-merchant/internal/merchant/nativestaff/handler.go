@@ -61,6 +61,21 @@ func (h *Handler) list(c *gin.Context) {
 	page, limit := pagination(c)
 	q := h.db.WithContext(c.Request.Context()).Model(&account{}).
 		Where("store_id = ? AND role_code <> ?", middleware.StoreID(c), "owner")
+	if statusRaw := strings.TrimSpace(c.Query("status")); statusRaw != "" {
+		if status, err := strconv.Atoi(statusRaw); err == nil && (status == 0 || status == 1) {
+			q = q.Where("status = ?", status)
+		}
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("(display_name LIKE ? OR phone LIKE ? OR username LIKE ?)", like, like, like)
+	}
+	switch strings.TrimSpace(c.Query("staff_scope")) {
+	case "delivery":
+		q = q.Where("role_code = ? OR can_ship_orders = 1", "delivery")
+	case "service":
+		q = q.Where("role_code = ? OR can_accept_orders = 1", "service")
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询员工失败")

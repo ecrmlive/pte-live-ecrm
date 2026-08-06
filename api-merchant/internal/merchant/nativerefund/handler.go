@@ -40,18 +40,20 @@ func (h *Handler) Register(r gin.IRoutes) {
 }
 
 type refund struct {
-	ID         uint64    `gorm:"column:id"`
-	OrderID    uint64    `gorm:"column:order_id"`
-	RefundNo   string    `gorm:"column:refund_no"`
-	Reason     string    `gorm:"column:reason"`
-	Amount     float64   `gorm:"column:amount"`
-	RefundType string    `gorm:"column:refund_type"`
-	Status     string    `gorm:"column:status"`
-	MerchantID uint64    `gorm:"column:merchant_id"`
-	StoreID    uint64    `gorm:"column:store_id"`
-	UserID     uint64    `gorm:"column:user_id"`
-	CreatedAt  time.Time `gorm:"column:created_at"`
-	UpdatedAt  time.Time `gorm:"column:updated_at"`
+	ID                uint64    `gorm:"column:id"`
+	OrderID           uint64    `gorm:"column:order_id"`
+	RefundNo          string    `gorm:"column:refund_no"`
+	Reason            string    `gorm:"column:reason"`
+	Amount            float64   `gorm:"column:amount"`
+	RefundType        string    `gorm:"column:refund_type"`
+	Status            string    `gorm:"column:status"`
+	MerchantID        uint64    `gorm:"column:merchant_id"`
+	StoreID           uint64    `gorm:"column:store_id"`
+	UserID            uint64    `gorm:"column:user_id"`
+	OrderNo           string    `gorm:"column:order_no"`
+	RecipientSnapshot string    `gorm:"column:recipient_snapshot"`
+	CreatedAt         time.Time `gorm:"column:created_at"`
+	UpdatedAt         time.Time `gorm:"column:updated_at"`
 }
 type returnShipment struct {
 	CarrierName string    `gorm:"column:carrier_name"`
@@ -96,6 +98,7 @@ func (h *Handler) list(c *gin.Context) {
 	if status := strings.TrimSpace(c.Query("status")); status != "" {
 		q = q.Where("r.status = ?", normalizeStatus(status))
 	}
+	q = applyRefundListFilters(q, c)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)
@@ -185,6 +188,7 @@ func (h *Handler) export(c *gin.Context) {
 	if status != "" {
 		q = q.Where("r.status = ?", normalizeStatus(status))
 	}
+	q = applyRefundListFilters(q, c)
 	var rows []refund
 	if err := q.Order("r.id DESC").Limit(5000).Scan(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "退款导出查询失败")
@@ -502,8 +506,37 @@ func (h *Handler) isHidden(c *gin.Context, refundID uint64) (bool, error) {
 
 func (h *Handler) base(c *gin.Context) *gorm.DB {
 	return h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_refund AS r").
-		Select("r.id,r.order_id,r.refund_no,r.reason,r.amount,r.refund_type,r.status,r.created_at,r.updated_at,o.merchant_id,o.store_id,o.user_id").
+		Select("r.id,r.order_id,r.refund_no,r.reason,r.amount,r.refund_type,r.status,r.created_at,r.updated_at,o.merchant_id,o.store_id,o.user_id,o.order_no,o.recipient_snapshot").
 		Joins("JOIN qixi_crm_b_order AS o ON o.id = r.order_id").Where("o.store_id = ?", middleware.StoreID(c))
+}
+
+func applyRefundListFilters(q *gorm.DB, c *gin.Context) *gorm.DB {
+	if refundType := strings.TrimSpace(c.Query("refund_type")); refundType == "1" {
+		q = q.Where("r.refund_type = ?", "refund_only")
+	} else if refundType == "2" {
+		q = q.Where("r.refund_type = ?", "return_and_refund")
+	}
+	if orderSN := strings.TrimSpace(c.Query("order_sn")); orderSN != "" {
+		q = q.Where("o.order_no LIKE ?", "%"+orderSN+"%")
+	}
+	if phone := strings.TrimSpace(c.Query("phone")); phone != "" {
+		q = q.Where("o.recipient_snapshot LIKE ?", "%"+phone+"%")
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("(r.refund_no LIKE ? OR r.reason LIKE ? OR o.order_no LIKE ?)", like, like, like)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("r.created_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("r.created_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
+	return q
 }
 
 func view(row refund) gin.H {

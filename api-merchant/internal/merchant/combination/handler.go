@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/combination"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/identity"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 )
@@ -33,7 +34,7 @@ func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	merID := middleware.MerID(c)
-	res, err := h.svc.ListAdmin(c.Request.Context(), &merID, page, limit)
+	res, err := h.svc.ListAdmin(c.Request.Context(), &merID, page, limit, listquery.ParseAdminFilter(c))
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

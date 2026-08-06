@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/seckill"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +19,7 @@ func (r *Repo) ListTimes(ctx context.Context) ([]seckill.TimeSlot, error) {
 	return rows, err
 }
 
-func (r *Repo) ListActives(ctx context.Context, merID *uint, onlyOn bool, page, limit int) ([]seckill.Active, int64, error) {
+func (r *Repo) ListActives(ctx context.Context, merID *uint, onlyOn bool, page, limit int, filter listquery.AdminFilter) ([]seckill.Active, int64, error) {
 	q := r.db.WithContext(ctx).Model(&seckill.Active{}).Where("delete_time IS NULL")
 	if merID != nil {
 		q = q.Where("mer_id = ?", *merID)
@@ -26,6 +27,11 @@ func (r *Repo) ListActives(ctx context.Context, merID *uint, onlyOn bool, page, 
 	if onlyOn {
 		q = q.Where("status = 1 AND active_status = 1")
 	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	q = listquery.ApplyKeywordLike(q, filter.Keyword, "name")
+	q = listquery.ApplyUnixColumnDateRange(q, "create_time", filter.DateFrom, filter.DateTo)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err

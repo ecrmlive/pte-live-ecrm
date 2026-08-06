@@ -17,6 +17,12 @@ export interface StoreCustomerPage {
   total: number;
 }
 
-export function listStoreCustomersApi(params: { keyword?: string; limit: number; page: number }) {
+export interface StoreCustomerListParams {
+  keyword?: string;
+  limit: number;
+  page: number;
+}
+
+export function listStoreCustomersApi(params: StoreCustomerListParams) {
   return requestClient.get<StoreCustomerPage>('/store-customers', { params });
 }

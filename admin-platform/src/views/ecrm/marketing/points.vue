@@ -1,27 +1,317 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
-import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
+
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElAlert,
+  ElButton,
+  ElCol,
+  ElForm,
+  ElFormItem,
+  ElInputNumber,
+  ElMessage,
+  ElRadio,
+  ElRadioGroup,
+  ElRow,
+  ElTag,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
-import { getPlatformPointsSummaryApi, listPlatformPointsOrdersApi, listPlatformPointsProductsApi, updatePlatformPointsProductApi, type PlatformPointsOrder, type PlatformPointsProduct } from '#/api/core/platform-points';
-const canManage = ref(false), loading = ref(false), saving = ref(false), rows = ref<PlatformPointsProduct[]>([]), orders = ref<PlatformPointsOrder[]>([]), total = ref(0), orderTotal = ref(0), summary = ref({ total: 0, on_sale: 0, stock: 0 }), editOpen = ref(false), editing = ref<PlatformPointsProduct>();
-const query = reactive({ keyword: '', limit: 20, merchant_id: undefined as number | undefined, page: 1, sale_status: undefined as number | undefined });
-const orderQuery = reactive({ limit: 10, page: 1, pay_status: undefined as string | undefined });
+import {
+  getPlatformPointsSummaryApi,
+  listPlatformPointsOrdersApi,
+  listPlatformPointsProductsApi,
+  updatePlatformPointsProductApi,
+  type PlatformPointsOrder,
+  type PlatformPointsProduct,
+} from '#/api/core/platform-points';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  buildStandardListParams,
+  LIST_DATE_RANGE_FIELD,
+  LIST_KEYWORD_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
+
+const canManage = ref(false);
+const saving = ref(false);
+const summary = ref({ total: 0, on_sale: 0, stock: 0 });
+const editing = ref<PlatformPointsProduct>();
 const form = reactive({ points_required: 1, sale_status: 1, stock: 0, version: 0 });
-async function load() { if (!canManage.value) return; loading.value = true; try { const [products, stats, pointOrders] = await Promise.all([listPlatformPointsProductsApi(query), getPlatformPointsSummaryApi(), listPlatformPointsOrdersApi(orderQuery)]); rows.value = products.list || []; total.value = products.total || 0; summary.value = stats; orders.value = pointOrders.list || []; orderTotal.value = pointOrders.total || 0; } finally { loading.value = false; } }
-function edit(row: PlatformPointsProduct) { editing.value = row; Object.assign(form, { points_required: row.points_required, sale_status: row.sale_status, stock: row.stock, version: row.version }); editOpen.value = true; }
-async function save() { if (!editing.value || form.points_required < 1 || form.stock < 0) { ElMessage.warning('请填写正积分值和非负库存'); return; } saving.value = true; try { await updatePlatformPointsProductApi(editing.value.product_id, { ...form }); ElMessage.success('积分商品已更新，新订单将使用新配置'); editOpen.value = false; await load(); } finally { saving.value = false; } }
-onMounted(async () => { const [profile, codes] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]); canManage.value = profile.roles.some((role) => role === 'platform' || role === 'operations') && codes.includes('marketing.points.manage'); await load(); });
+
+const productFormOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  LIST_KEYWORD_FIELD('商品名称'),
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '商户 ID' },
+    fieldName: 'merchant_id',
+    label: '商户 ID',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '上架', value: 1 },
+        { label: '下架', value: 0 },
+      ],
+      placeholder: '全部状态',
+    },
+    fieldName: 'status',
+    label: '上架状态',
+  },
+]);
+
+function buildProductParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const base = buildStandardListParams(page, formValues, { merField: 'merchant_id' });
+  const statusRaw = formValues?.status;
+  const merchantId = base.merchant_id;
+  return {
+    page: base.page,
+    limit: base.limit,
+    keyword: base.keyword,
+    merchant_id:
+      merchantId !== undefined && merchantId !== null && merchantId !== ''
+        ? Number(merchantId)
+        : undefined,
+    sale_status: statusRaw === 0 || statusRaw === 1 ? Number(statusRaw) : undefined,
+    date_from: base.date_from,
+    date_to: base.date_to,
+  };
+}
+
+const productGridOptions: VxeGridProps<PlatformPointsProduct> = {
+  columns: [
+    { field: 'title', minWidth: 180, showOverflow: false, title: '商品' },
+    {
+      field: 'merchant_name',
+      minWidth: 140,
+      showOverflow: false,
+      title: '商户',
+      formatter: ({ row }) => row.merchant_name || `商户 #${row.merchant_id}`,
+    },
+    { field: 'points_required', title: '所需积分', width: 110 },
+    { field: 'stock', title: '库存', width: 90 },
+    {
+      field: 'sale_status',
+      slots: { default: 'sale_status' },
+      title: '状态',
+      width: 90,
+    },
+    platformListActionColumn({ width: 80 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        if (!canManage.value) return { items: [], total: 0 };
+        const [products, stats] = await Promise.all([
+          listPlatformPointsProductsApi(buildProductParams(page, formValues)),
+          getPlatformPointsSummaryApi(),
+        ]);
+        summary.value = stats;
+        return { items: products.list || [], total: products.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'product_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const orderFormOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '待支付', value: 'pending' },
+        { label: '已支付', value: 'paid' },
+        { label: '已关闭', value: 'closed' },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'pay_status',
+    label: '支付状态',
+  },
+]);
+
+function buildOrderParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
+  const payStatus = formValues?.pay_status;
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    pay_status: typeof payStatus === 'string' && payStatus ? payStatus : undefined,
+    date_from: range[0] as string | undefined,
+    date_to: range[1] as string | undefined,
+  };
+}
+
+const orderGridOptions: VxeGridProps<PlatformPointsOrder> = {
+  columns: [
+    { field: 'order_no', minWidth: 190, showOverflow: false, title: '订单号' },
+    { field: 'user_id', title: '用户 ID', width: 100 },
+    { field: 'points_amount', title: '应付积分', width: 100 },
+    { field: 'total_quantity', title: '件数', width: 80 },
+    { field: 'pay_status', title: '支付状态', width: 100 },
+    {
+      field: 'created_at',
+      minWidth: 180,
+      title: '创建时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        if (!canManage.value) return { items: [], total: 0 };
+        const data = await listPlatformPointsOrdersApi(buildOrderParams(page, formValues));
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [ProductGrid, productGridApi] = useVbenVxeGrid({
+  formOptions: productFormOptions,
+  gridOptions: productGridOptions,
+});
+
+const [OrderGrid] = useVbenVxeGrid({
+  formOptions: orderFormOptions,
+  gridOptions: orderGridOptions,
+});
+
+const [EditModal, editModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function edit(row: PlatformPointsProduct) {
+  editing.value = row;
+  Object.assign(form, {
+    points_required: row.points_required,
+    sale_status: row.sale_status,
+    stock: row.stock,
+    version: row.version,
+  });
+  editModalApi.setState({ title: '编辑积分商品' }).open();
+}
+
+async function save() {
+  if (!editing.value || form.points_required < 1 || form.stock < 0) {
+    ElMessage.warning('请填写正积分值和非负库存');
+    return;
+  }
+  editModalApi.lock();
+  saving.value = true;
+  try {
+    await updatePlatformPointsProductApi(editing.value.product_id, { ...form });
+    editModalApi.close();
+    ElMessage.success('积分商品已更新，新订单将使用新配置');
+    productGridApi.reload();
+  } finally {
+    saving.value = false;
+    editModalApi.unlock();
+  }
+}
+
+onMounted(async () => {
+  const [profile, codes] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
+  canManage.value =
+    profile.roles.some((role) => role === 'platform' || role === 'operations') &&
+    codes.includes('marketing.points.manage');
+  if (canManage.value) productGridApi.reload();
+});
 </script>
+
 <template>
-  <Page title="积分商城监管" description="监管积分商品与积分订单。商品积分、库存、上下架仅影响新建订单；已创建订单的积分应付快照不可改写。">
-    <el-alert v-if="!canManage" title="当前账号没有积分商城监管权限" type="warning" :closable="false" />
+  <Page
+    auto-content-height
+    description="监管积分商品与积分订单。商品积分、库存、上下架仅影响新建订单；已创建订单的积分应付快照不可改写。"
+    title="积分商城监管"
+  >
+    <ElAlert
+      v-if="!canManage"
+      title="当前账号没有积分商城监管权限"
+      type="warning"
+      :closable="false"
+    />
     <template v-else>
-      <el-row :gutter="16" class="mb-4"><el-col :span="8"><el-card shadow="never">积分商品：{{ summary.total }}</el-card></el-col><el-col :span="8"><el-card shadow="never">上架商品：{{ summary.on_sale }}</el-card></el-col><el-col :span="8"><el-card shadow="never">可用库存：{{ summary.stock }}</el-card></el-col></el-row>
-      <el-card shadow="never"><el-form inline @submit.prevent="query.page = 1; load()"><el-form-item label="商品名称"><el-input v-model="query.keyword" clearable /></el-form-item><el-form-item label="商户 ID"><el-input-number v-model="query.merchant_id" :min="1" /></el-form-item><el-form-item label="状态"><el-select v-model="query.sale_status" clearable><el-option label="上架" :value="1" /><el-option label="下架" :value="0" /></el-select></el-form-item><el-button type="primary" @click="query.page = 1; load()">查询</el-button></el-form><el-table v-loading="loading" :data="rows"><el-table-column prop="title" label="商品" min-width="180" /><el-table-column label="商户" min-width="140"><template #default="{ row }">{{ row.merchant_name || `商户 #${row.merchant_id}` }}</template></el-table-column><el-table-column label="所需积分" prop="points_required" width="110" /><el-table-column label="库存" prop="stock" width="90" /><el-table-column label="状态" width="90"><template #default="{ row }"><el-tag :type="row.sale_status ? 'success' : 'info'">{{ row.sale_status ? '上架' : '下架' }}</el-tag></template></el-table-column><el-table-column label="操作" width="80" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button></template></el-table-column></el-table></el-card>
-      <div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :total="total" layout="total,prev,pager,next" @current-change="(page) => { query.page = page; load(); }" /></div>
-      <el-card class="mt-4" shadow="never"><template #header>积分订单（不展示个人资料）</template><el-form inline @submit.prevent="orderQuery.page = 1; load()"><el-form-item label="支付状态"><el-select v-model="orderQuery.pay_status" clearable placeholder="全部"><el-option label="待支付" value="pending" /><el-option label="已支付" value="paid" /><el-option label="已关闭" value="closed" /></el-select></el-form-item><el-button type="primary" @click="orderQuery.page = 1; load()">查询</el-button></el-form><el-table :data="orders"><el-table-column prop="order_no" label="订单号" min-width="190" /><el-table-column prop="user_id" label="用户 ID" width="100" /><el-table-column prop="points_amount" label="应付积分" width="100" /><el-table-column prop="total_quantity" label="件数" width="80" /><el-table-column prop="pay_status" label="支付状态" width="100" /><el-table-column prop="created_at" label="创建时间" min-width="180" /></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="orderQuery.page" :page-size="orderQuery.limit" :total="orderTotal" layout="total,prev,pager,next" @current-change="(page) => { orderQuery.page = page; load(); }" /></div></el-card>
-      <el-dialog v-model="editOpen" title="编辑积分商品" width="500px" destroy-on-close><el-alert type="warning" :closable="false" title="保存只影响后续新建订单；已有积分订单的应付积分、库存扣减和支付状态保持原快照。" /><el-form class="mt-4" label-width="90px"><el-form-item label="所需积分"><el-input-number v-model="form.points_required" :min="1" /></el-form-item><el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" /></el-form-item><el-form-item label="上架状态"><el-radio-group v-model="form.sale_status"><el-radio :value="1">上架</el-radio><el-radio :value="0">下架</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="editOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="save">保存</el-button></template></el-dialog>
+      <ElRow :gutter="16" class="mb-4">
+        <ElCol :span="8">
+          <div class="rounded border p-4">积分商品：{{ summary.total }}</div>
+        </ElCol>
+        <ElCol :span="8">
+          <div class="rounded border p-4">上架商品：{{ summary.on_sale }}</div>
+        </ElCol>
+        <ElCol :span="8">
+          <div class="rounded border p-4">可用库存：{{ summary.stock }}</div>
+        </ElCol>
+      </ElRow>
+
+      <ProductGrid>
+        <template #sale_status="{ row }">
+          <ElTag :type="row.sale_status ? 'success' : 'info'">
+            {{ row.sale_status ? '上架' : '下架' }}
+          </ElTag>
+        </template>
+        <template #action="{ row }">
+          <ElButton link type="primary" @click="edit(row)">编辑</ElButton>
+        </template>
+      </ProductGrid>
+
+      <div class="mb-2 mt-6 text-base font-medium">积分订单（不展示个人资料）</div>
+      <OrderGrid />
+
+      <EditModal class="w-[500px]">
+        <ElAlert
+          type="warning"
+          :closable="false"
+          title="保存只影响后续新建订单；已有积分订单的应付积分、库存扣减和支付状态保持原快照。"
+        />
+        <ElForm class="mt-4" label-width="90px">
+          <ElFormItem label="所需积分">
+            <ElInputNumber v-model="form.points_required" :min="1" class="w-full" />
+          </ElFormItem>
+          <ElFormItem label="库存">
+            <ElInputNumber v-model="form.stock" :min="0" class="w-full" />
+          </ElFormItem>
+          <ElFormItem label="上架状态">
+            <ElRadioGroup v-model="form.sale_status">
+              <ElRadio :value="1">上架</ElRadio>
+              <ElRadio :value="0">下架</ElRadio>
+            </ElRadioGroup>
+          </ElFormItem>
+        </ElForm>
+      </EditModal>
     </template>
   </Page>
 </template>

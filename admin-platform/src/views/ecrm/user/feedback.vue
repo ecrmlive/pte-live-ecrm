@@ -1,12 +1,220 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { Page } from '@vben/common-ui'; import { ElMessage, ElMessageBox } from 'element-plus';
-import { closeUserFeedback, deleteUserFeedback, fetchUserFeedback, replyUserFeedback, type UserFeedbackRow } from '#/api/core/ecrm';
-const loading=ref(false),rows=ref<UserFeedbackRow[]>([]),total=ref(0);const query=reactive({page:1,limit:20,status:''});const key=(a:string,id:number)=>`feedback-${a}-${id}-${crypto.randomUUID()}`;
-async function load(){loading.value=true;try{const x=await fetchUserFeedback({...query,status:query.status||undefined});rows.value=x.list||[];total.value=x.total||0}finally{loading.value=false}}
-async function reply(row:UserFeedbackRow){try{const {value}=await ElMessageBox.prompt('回复会同步给反馈用户，最多 1000 字。','回复用户反馈',{inputValidator:v=>v.trim()?'请填写回复':''});await replyUserFeedback(row.id,{reply:value.trim(),idempotency_key:key('reply',row.id)});ElMessage.success('已回复');await load()}catch{}}
-async function close(row:UserFeedbackRow){try{const {value}=await ElMessageBox.prompt('可填写关闭说明。','关闭反馈',{inputPlaceholder:'关闭说明（可选）'});await closeUserFeedback(row.id,{reply:value.trim(),idempotency_key:key('close',row.id)});ElMessage.success('已关闭');await load()}catch{}}
-async function remove(row:UserFeedbackRow){try{await ElMessageBox.confirm(`将软删除反馈 #${row.id}，该操作保留审计记录。`,'删除反馈',{type:'warning'});await deleteUserFeedback(row.id,{idempotency_key:key('delete',row.id)});ElMessage.success('已删除');await load()}catch{}}
-onMounted(()=>void load());
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { ref } from 'vue';
+
+import { Page } from '@vben/common-ui';
+import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  closeUserFeedback,
+  deleteUserFeedback,
+  fetchUserFeedback,
+  replyUserFeedback,
+  type UserFeedbackRow,
+} from '#/api/core/ecrm';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
+
+const statusLabels: Record<UserFeedbackRow['status'], string> = {
+  pending: '待处理',
+  replied: '已回复',
+  closed: '已关闭',
+};
+
+const statusTypes: Record<
+  UserFeedbackRow['status'],
+  'info' | 'success' | 'warning'
+> = {
+  pending: 'warning',
+  replied: 'success',
+  closed: 'info',
+};
+
+function idempotencyKey(action: string, id: number) {
+  return `feedback-${action}-${id}-${crypto.randomUUID()}`;
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '反馈内容 / 用户 ID',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '待处理', value: 'pending' },
+        { label: '已回复', value: 'replied' },
+        { label: '已关闭', value: 'closed' },
+      ],
+      placeholder: '全部状态',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<UserFeedbackRow> = {
+  columns: [
+    { field: 'id', title: 'ID', width: 80 },
+    { field: 'user_id', title: '用户 ID', width: 100 },
+    { field: 'type', title: '类型', width: 120 },
+    {
+      field: 'content',
+      minWidth: 280,
+      showOverflow: false,
+      title: '反馈内容',
+    },
+    {
+      field: 'reply',
+      minWidth: 220,
+      showOverflow: false,
+      title: '平台回复',
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 100,
+    },
+    {
+      field: 'created_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      title: '提交时间',
+      width: 170,
+    },
+    platformListActionColumn({ width: 180 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const status = String(formValues?.status ?? '').trim() || undefined;
+        const result = await fetchUserFeedback({
+          page: page.currentPage,
+          limit: page.pageSize,
+          status,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          date_from: range[0] as string | undefined,
+          date_to: range[1] as string | undefined,
+        });
+        return {
+          items: result.list || [],
+          total: result.total || 0,
+        };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+async function reply(row: UserFeedbackRow) {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '回复会同步给反馈用户，最多 1000 字。',
+      '回复用户反馈',
+      { inputValidator: (v) => (v.trim() ? true : '请填写回复') },
+    );
+    await replyUserFeedback(row.id, {
+      reply: value.trim(),
+      idempotency_key: idempotencyKey('reply', row.id),
+    });
+    ElMessage.success('已回复');
+    gridApi.reload();
+  } catch {
+    /* 用户取消 */
+  }
+}
+
+async function close(row: UserFeedbackRow) {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '可填写关闭说明。',
+      '关闭反馈',
+      { inputPlaceholder: '关闭说明（可选）' },
+    );
+    await closeUserFeedback(row.id, {
+      reply: value.trim(),
+      idempotency_key: idempotencyKey('close', row.id),
+    });
+    ElMessage.success('已关闭');
+    gridApi.reload();
+  } catch {
+    /* 用户取消 */
+  }
+}
+
+async function remove(row: UserFeedbackRow) {
+  try {
+    await ElMessageBox.confirm(
+      `将软删除反馈 #${row.id}，该操作保留审计记录。`,
+      '删除反馈',
+      { type: 'warning' },
+    );
+    await deleteUserFeedback(row.id, {
+      idempotency_key: idempotencyKey('delete', row.id),
+    });
+    ElMessage.success('已删除');
+    gridApi.reload();
+  } catch {
+    /* 用户取消 */
+  }
+}
 </script>
-<template><Page title="用户反馈" description="仅展示虚构用户 ID；回复、关闭和软删除均通过业务服务命令执行并保留审计。"><el-card shadow="never"><el-form inline><el-form-item label="状态"><el-select v-model="query.status" clearable><el-option label="待处理" value="pending"/><el-option label="已回复" value="replied"/><el-option label="已关闭" value="closed"/></el-select></el-form-item><el-button type="primary" @click="query.page=1;load()">查询</el-button></el-form></el-card><el-card class="mt-4" shadow="never"><el-table v-loading="loading" :data="rows"><el-table-column prop="id" label="ID" width="80"/><el-table-column prop="user_id" label="用户 ID" width="100"/><el-table-column prop="type" label="类型" width="120"/><el-table-column prop="content" label="反馈内容" min-width="280" show-overflow-tooltip/><el-table-column prop="reply" label="平台回复" min-width="220" show-overflow-tooltip/><el-table-column label="状态" width="100"><template #default="{row}"><el-tag>{{row.status}}</el-tag></template></el-table-column><el-table-column prop="created_at" label="提交时间" width="170"/><el-table-column label="操作" width="180"><template #default="{row}"><el-button v-if="row.status==='pending'" link type="primary" @click="reply(row)">回复</el-button><el-button v-if="row.status!=='closed'" link type="warning" @click="close(row)">关闭</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :total="total" layout="total,prev,pager,next" @current-change="p=>{query.page=p;load()}"/></div></el-card></Page></template>
+
+<template>
+  <Page auto-content-height>
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="statusTypes[row.status]">
+          {{ statusLabels[row.status] || row.status }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton
+          v-if="row.status === 'pending'"
+          link
+          type="primary"
+          @click="reply(row)"
+        >
+          回复
+        </ElButton>
+        <ElButton
+          v-if="row.status !== 'closed'"
+          link
+          type="warning"
+          @click="close(row)"
+        >
+          关闭
+        </ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
+  </Page>
+</template>

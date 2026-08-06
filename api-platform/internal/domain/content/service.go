@@ -116,6 +116,9 @@ func AgreeCatalog() []AgreeMeta {
 		{Key: "mer_settle_agree", Label: "商户结算说明"},
 		{Key: "sys_lottery_agree", Label: "抽奖活动说明"},
 		{Key: "sys_deposit_agree", Label: "保证金说明"},
+		// 店铺设置 / 说明提示（对齐 CRMEB sys_merchant_type / sys_merchant_category）
+		{Key: "sys_merchant_type", Label: "店铺类型说明"},
+		{Key: "sys_merchant_category", Label: "店铺分类说明"},
 	}
 }
 

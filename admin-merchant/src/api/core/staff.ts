@@ -26,7 +26,17 @@ export interface MerchantStaffSaveInput {
 
 interface PageResult<T> { limit: number; list: T[]; page: number; total: number }
 
-export function listMerchantStaffApi(params: { limit?: number; page?: number }) {
+export interface MerchantStaffListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit?: number;
+  page?: number;
+  staff_scope?: 'delivery' | 'service';
+  status?: 0 | 1;
+}
+
+export function listMerchantStaffApi(params: MerchantStaffListParams = {}) {
   return requestClient.get<PageResult<MerchantStaff>>('/setting/staff', { params });
 }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -65,6 +66,11 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("user_id = ?", userID)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("reference_type LIKE ? OR reference_id LIKE ?", like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		writeFailure(c)

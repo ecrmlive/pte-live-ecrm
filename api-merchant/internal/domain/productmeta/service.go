@@ -16,13 +16,13 @@ type Store interface {
 	UpdateLabel(ctx context.Context, row *Label) error
 	SoftDeleteLabel(ctx context.Context, merID, id uint) error
 
-	ListGuarantee(ctx context.Context, merID uint, page, limit int) ([]Guarantee, int64, error)
+	ListGuarantee(ctx context.Context, merID uint, page, limit int, keyword string, status *int8) ([]Guarantee, int64, error)
 	GetGuarantee(ctx context.Context, merID, id uint) (*Guarantee, error)
 	CreateGuarantee(ctx context.Context, row *Guarantee) error
 	UpdateGuarantee(ctx context.Context, row *Guarantee) error
 	SoftDeleteGuarantee(ctx context.Context, merID, id uint) error
 
-	ListAttrTemplate(ctx context.Context, merID uint, page, limit int) ([]AttrTemplate, int64, error)
+	ListAttrTemplate(ctx context.Context, merID uint, page, limit int, keyword string) ([]AttrTemplate, int64, error)
 	GetAttrTemplate(ctx context.Context, merID, id uint) (*AttrTemplate, error)
 	CreateAttrTemplate(ctx context.Context, row *AttrTemplate) error
 	UpdateAttrTemplate(ctx context.Context, row *AttrTemplate) error
@@ -107,12 +107,12 @@ func (s *Service) DeleteLabel(ctx context.Context, merID, id uint) error {
 	return s.store.SoftDeleteLabel(ctx, merID, id)
 }
 
-func (s *Service) ListGuarantees(ctx context.Context, merID uint, page, limit int) (*PageResult[Guarantee], error) {
+func (s *Service) ListGuarantees(ctx context.Context, merID uint, page, limit int, keyword string, status *int8) (*PageResult[Guarantee], error) {
 	if merID == 0 {
 		return nil, ErrBadParam
 	}
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListGuarantee(ctx, merID, page, limit)
+	list, total, err := s.store.ListGuarantee(ctx, merID, page, limit, keyword, status)
 	if err != nil {
 		return nil, err
 	}
@@ -178,12 +178,12 @@ func (s *Service) DeleteGuarantee(ctx context.Context, merID, id uint) error {
 	return s.store.SoftDeleteGuarantee(ctx, merID, id)
 }
 
-func (s *Service) ListAttrTemplates(ctx context.Context, merID uint, page, limit int) (*PageResult[AttrTemplate], error) {
+func (s *Service) ListAttrTemplates(ctx context.Context, merID uint, page, limit int, keyword string) (*PageResult[AttrTemplate], error) {
 	if merID == 0 {
 		return nil, ErrBadParam
 	}
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListAttrTemplate(ctx, merID, page, limit)
+	list, total, err := s.store.ListAttrTemplate(ctx, merID, page, limit, keyword)
 	if err != nil {
 		return nil, err
 	}

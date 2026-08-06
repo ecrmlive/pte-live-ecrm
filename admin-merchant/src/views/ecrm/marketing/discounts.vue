@@ -1,7 +1,24 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
+import { onMounted, reactive, ref } from 'vue';
+
+import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElOption,
+  ElSelect,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi } from '#/api/core/auth';
 import {
   createMerchantDiscountApi,
@@ -12,21 +29,18 @@ import {
   type MerchantDiscount,
   type MerchantDiscountStatus,
 } from '#/api/core/merchant-discount';
-import { EcrmFormDialog, EcrmListPage } from '#/components/ecrm';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
 const saving = ref(false);
-const rows = ref<MerchantDiscount[]>([]);
-const total = ref(0);
-const canManage = ref(false);
-const dialog = ref(false);
 const editingID = ref<number>();
-const query = reactive({
-  keyword: '',
-  limit: 20,
-  page: 1,
-  status: undefined as MerchantDiscountStatus | undefined,
-});
+const canManage = ref(false);
 const form = reactive({
   ends_at: '',
   free_shipping: false,
@@ -46,32 +60,143 @@ const statusLabels: Record<MerchantDiscountStatus, string> = {
   rejected: '已拒绝',
 };
 
-async function load() {
-  loading.value = true;
-  try {
-    const page = await listMerchantDiscountsApi({
-      keyword: query.keyword.trim() || undefined,
-      limit: query.limit,
-      page: query.page,
-      status: query.status,
-    });
-    rows.value = page.list || [];
-    total.value = page.total || 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '套餐名称' },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(statusLabels).map(([value, label]) => ({
+        label,
+        value,
+      })),
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
 
-function search() {
-  query.page = 1;
-  void load();
-}
+const gridOptions: VxeGridProps<MerchantDiscount> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'activity_id', title: 'ID', width: 90 },
+    { field: 'name', minWidth: 160, showOverflow: false, title: '名称' },
+    {
+      field: 'package_price',
+      title: '套餐价',
+      width: 110,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    {
+      field: 'product_ids',
+      title: '商品数',
+      width: 90,
+      formatter: ({ cellValue }) => (cellValue || []).length,
+    },
+    {
+      field: 'free_shipping',
+      title: '包邮',
+      width: 80,
+      formatter: ({ cellValue }) => (cellValue ? '是' : '否'),
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 100,
+    },
+    {
+      field: 'starts_at',
+      minWidth: 220,
+      showOverflow: false,
+      slots: { default: 'period' },
+      title: '有效期',
+    },
+    merchantListActionColumn({ width: 200 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const data = await listMerchantDiscountsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status: formValues?.status || undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'activity_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
 
-function reset() {
-  query.keyword = '';
-  query.status = undefined;
-  query.page = 1;
-  void load();
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [EditModal, editModalApi] = useVbenModal({
+  onConfirm: async () => {
+    const productIDs = parseProductIDs();
+    if (
+      !form.name.trim() ||
+      form.package_price <= 0 ||
+      productIDs.length === 0
+    ) {
+      ElMessage.warning('请填写名称、正数套餐价，并至少填写一个商品 ID');
+      return;
+    }
+    saving.value = true;
+    editModalApi.lock();
+    try {
+      const body = {
+        ends_at: form.ends_at || undefined,
+        free_shipping: form.free_shipping,
+        name: form.name.trim(),
+        package_price: form.package_price,
+        product_ids: productIDs,
+        remark: form.remark.trim(),
+        starts_at: form.starts_at || undefined,
+        status: form.status,
+      };
+      if (editingID.value) {
+        await updateMerchantDiscountApi(editingID.value, body);
+        ElMessage.success('优惠套餐已更新');
+      } else {
+        await createMerchantDiscountApi(body);
+        ElMessage.success('优惠套餐已创建');
+      }
+      editModalApi.close();
+      gridApi.reload();
+    } finally {
+      saving.value = false;
+      editModalApi.unlock();
+    }
+  },
+});
+
+function parseProductIDs() {
+  return form.product_ids_text
+    .split(/[,，\s]+/)
+    .map((part) => Number(part.trim()))
+    .filter((id) => Number.isFinite(id) && id > 0);
 }
 
 function openCreate() {
@@ -86,7 +211,7 @@ function openCreate() {
     starts_at: '',
     status: 'draft',
   });
-  dialog.value = true;
+  editModalApi.setState({ title: '新增优惠套餐' }).open();
 }
 
 function openEdit(row: MerchantDiscount) {
@@ -101,201 +226,115 @@ function openEdit(row: MerchantDiscount) {
     starts_at: row.starts_at,
     status: row.status,
   });
-  dialog.value = true;
-}
-
-function parseProductIDs() {
-  return form.product_ids_text
-    .split(/[,，\s]+/)
-    .map((part) => Number(part.trim()))
-    .filter((id) => Number.isFinite(id) && id > 0);
-}
-
-async function save() {
-  const productIDs = parseProductIDs();
-  if (!form.name.trim() || form.package_price <= 0 || productIDs.length === 0) {
-    ElMessage.warning('请填写名称、正数套餐价，并至少填写一个商品 ID');
-    return;
-  }
-  saving.value = true;
-  try {
-    const body = {
-      ends_at: form.ends_at || undefined,
-      free_shipping: form.free_shipping,
-      name: form.name.trim(),
-      package_price: form.package_price,
-      product_ids: productIDs,
-      remark: form.remark.trim(),
-      starts_at: form.starts_at || undefined,
-      status: form.status,
-    };
-    if (editingID.value) {
-      await updateMerchantDiscountApi(editingID.value, body);
-      ElMessage.success('优惠套餐已更新');
-    } else {
-      await createMerchantDiscountApi(body);
-      ElMessage.success('优惠套餐已创建');
-    }
-    dialog.value = false;
-    await load();
-  } finally {
-    saving.value = false;
-  }
+  editModalApi.setState({ title: '编辑优惠套餐' }).open();
 }
 
 async function toggleStatus(row: MerchantDiscount) {
-  const next: MerchantDiscountStatus = row.status === 'active' ? 'closed' : 'active';
+  const next: MerchantDiscountStatus =
+    row.status === 'active' ? 'closed' : 'active';
   const action = next === 'active' ? '上架' : '关闭';
   try {
-    await ElMessageBox.confirm(`确认${action}「${row.name}」？`, `${action}确认`, { type: 'warning' });
+    await confirm({
+      content: `确认${action}「${row.name}」？`,
+      icon: 'warning',
+      title: `${action}确认`,
+    });
     await setMerchantDiscountStatusApi(row.activity_id, next);
     ElMessage.success(`已${action}`);
-    await load();
+    gridApi.reload();
   } catch {
-    /* cancel or request layer toast */
+    // cancelled
   }
 }
 
 async function remove(row: MerchantDiscount) {
   try {
-    await ElMessageBox.confirm(`删除「${row.name}」后不可恢复，确认继续？`, '删除优惠套餐', {
-      type: 'warning',
-      confirmButtonText: '删除',
+    await confirm({
+      content: `删除「${row.name}」后不可恢复，确认继续？`,
+      icon: 'warning',
+      title: '删除优惠套餐',
     });
     await deleteMerchantDiscountApi(row.activity_id);
     ElMessage.success('已删除');
-    await load();
+    gridApi.reload();
   } catch {
-    /* cancel or request layer toast */
+    // cancelled
   }
 }
 
 onMounted(async () => {
   const permissions = await getAccessCodesApi();
   canManage.value = permissions.includes('marketing.discounts.manage');
-  await load();
 });
 </script>
 
 <template>
-  <EcrmListPage
-    title="优惠套餐"
-    description="店铺优惠套餐写入 qixi_crm_m_marketing_activity（activity_type=discount），并同步业务投影供 C 端/平台监管。"
-  >
-    <template #filters>
-      <el-form class="flex flex-wrap gap-x-4" label-width="72px" @submit.prevent="search">
-        <el-form-item label="关键词">
-          <el-input v-model="query.keyword" clearable maxlength="64" placeholder="套餐名称" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable class="w-32" placeholder="全部">
-            <el-option
+  <Page auto-content-height>
+    <template v-if="canManage" #extra>
+      <ElButton type="primary" @click="openCreate">新增套餐</ElButton>
+    </template>
+
+    <Grid>
+      <template #status="{ row }">
+        <ElTag>{{ statusLabels[row.status] || row.status }}</ElTag>
+      </template>
+      <template #period="{ row }">
+        {{ row.starts_at || '—' }} ~ {{ row.ends_at || '—' }}
+      </template>
+      <template #action="{ row }">
+        <template v-if="canManage">
+          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+          <ElButton link type="warning" @click="toggleStatus(row)">
+            {{ row.status === 'active' ? '关闭' : '上架' }}
+          </ElButton>
+          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        </template>
+        <span v-else class="text-muted-foreground">—</span>
+      </template>
+    </Grid>
+
+    <EditModal class="w-[560px] max-w-[96vw]">
+      <ElForm label-width="96px">
+        <ElFormItem label="名称" required>
+          <ElInput v-model="form.name" maxlength="128" show-word-limit />
+        </ElFormItem>
+        <ElFormItem label="套餐价" required>
+          <ElInputNumber
+            v-model="form.package_price"
+            :min="0.01"
+            :precision="2"
+            :step="1"
+          />
+        </ElFormItem>
+        <ElFormItem label="商品 ID" required>
+          <ElInput
+            v-model="form.product_ids_text"
+            placeholder="多个 ID 用逗号分隔，如 1001,1006"
+          />
+        </ElFormItem>
+        <ElFormItem label="状态">
+          <ElSelect v-model="form.status" class="w-40">
+            <ElOption
               v-for="(label, status) in statusLabels"
               :key="status"
               :label="label"
               :value="status"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="search">查询</el-button>
-          <el-button @click="reset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </template>
-
-    <template #actions>
-      <el-button v-if="canManage" type="primary" @click="openCreate">新增套餐</el-button>
-    </template>
-
-    <el-table v-loading="loading" :data="rows" row-key="activity_id">
-      <el-table-column prop="activity_id" label="ID" width="90" />
-      <el-table-column prop="name" label="名称" min-width="160" />
-      <el-table-column label="套餐价" width="110">
-        <template #default="{ row }">¥{{ Number(row.package_price).toFixed(2) }}</template>
-      </el-table-column>
-      <el-table-column label="商品数" width="90">
-        <template #default="{ row }">{{ (row.product_ids || []).length }}</template>
-      </el-table-column>
-      <el-table-column label="包邮" width="80">
-        <template #default="{ row }">{{ row.free_shipping ? '是' : '否' }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag>{{ statusLabels[row.status] || row.status }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="有效期" min-width="220">
-        <template #default="{ row }">
-          {{ row.starts_at || '—' }} ~ {{ row.ends_at || '—' }}
-        </template>
-      </el-table-column>
-      <el-table-column v-if="canManage" fixed="right" label="操作" width="200">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="warning" @click="toggleStatus(row)">
-            {{ row.status === 'active' ? '关闭' : '上架' }}
-          </el-button>
-          <el-button link type="danger" @click="remove(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <template #pager>
-      <el-pagination
-        :current-page="query.page"
-        :page-size="query.limit"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="(page: number) => { query.page = page; load(); }"
-      />
-    </template>
-  </EcrmListPage>
-
-  <EcrmFormDialog
-    v-model="dialog"
-    :title="editingID ? '编辑优惠套餐' : '新增优惠套餐'"
-    width="560px"
-  >
-    <el-form label-width="96px">
-      <el-form-item label="名称" required>
-        <el-input v-model="form.name" maxlength="128" show-word-limit />
-      </el-form-item>
-      <el-form-item label="套餐价" required>
-        <el-input-number v-model="form.package_price" :min="0.01" :precision="2" :step="1" />
-      </el-form-item>
-      <el-form-item label="商品 ID" required>
-        <el-input
-          v-model="form.product_ids_text"
-          placeholder="多个 ID 用逗号分隔，如 1001,1006"
-        />
-      </el-form-item>
-      <el-form-item label="状态">
-        <el-select v-model="form.status" class="w-40">
-          <el-option
-            v-for="(label, status) in statusLabels"
-            :key="status"
-            :label="label"
-            :value="status"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="开始时间">
-        <el-input v-model="form.starts_at" placeholder="YYYY-MM-DD HH:mm:ss" />
-      </el-form-item>
-      <el-form-item label="结束时间">
-        <el-input v-model="form.ends_at" placeholder="YYYY-MM-DD HH:mm:ss" />
-      </el-form-item>
-      <el-form-item label="包邮">
-        <el-switch v-model="form.free_shipping" />
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="form.remark" type="textarea" :rows="2" maxlength="255" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="dialog = false">取消</el-button>
-      <el-button :loading="saving" type="primary" @click="save">保存</el-button>
-    </template>
-  </EcrmFormDialog>
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="开始时间">
+          <ElInput v-model="form.starts_at" placeholder="YYYY-MM-DD HH:mm:ss" />
+        </ElFormItem>
+        <ElFormItem label="结束时间">
+          <ElInput v-model="form.ends_at" placeholder="YYYY-MM-DD HH:mm:ss" />
+        </ElFormItem>
+        <ElFormItem label="包邮">
+          <ElSwitch v-model="form.free_shipping" />
+        </ElFormItem>
+        <ElFormItem label="备注">
+          <ElInput v-model="form.remark" :rows="2" maxlength="255" type="textarea" />
+        </ElFormItem>
+      </ElForm>
+    </EditModal>
+  </Page>
 </template>

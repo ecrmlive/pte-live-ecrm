@@ -28,6 +28,8 @@ func (h *Handler) RegisterSettings(authed gin.IRoutes) {
 	authed.POST("/setting/roles", platformOnly, h.CreateRole)
 	authed.PUT("/setting/roles/:id", platformOnly, h.UpdateRole)
 	authed.GET("/setting/menus/tree", platformOnly, h.MenuTree)
+	authed.GET("/setting/menus", platformOnly, h.ListMenus)
+	authed.PUT("/setting/menus/:id", platformOnly, h.UpdateMenu)
 }
 
 type adminListRow struct {
@@ -641,6 +643,140 @@ func (h *Handler) MenuTree(c *gin.Context) {
 		}
 	}
 	response.OK(c, gin.H{"list": roots})
+}
+
+type menuListRow struct {
+	MenuID   uint64 `json:"menu_id"`
+	PID      uint64 `json:"pid"`
+	Path     string `json:"path"`
+	Icon     string `json:"icon"`
+	MenuName string `json:"menu_name"`
+	Route    string `json:"route"`
+	Sort     int    `json:"sort"`
+	IsShow   int8   `json:"is_show"`
+	IsMenu   int8   `json:"is_menu"`
+	IsAgent  int8   `json:"is_agent"`
+}
+
+func (h *Handler) ListMenus(c *gin.Context) {
+	var rows []struct {
+		ID        uint64 `gorm:"column:id"`
+		ParentID  uint64 `gorm:"column:parent_id"`
+		Code      string `gorm:"column:code"`
+		Title     string `gorm:"column:title"`
+		Icon      string `gorm:"column:icon"`
+		RoutePath string `gorm:"column:route_path"`
+		Kind      string `gorm:"column:kind"`
+		Sort      int    `gorm:"column:sort"`
+		Status    int8   `gorm:"column:status"`
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
+		Select("id,parent_id,code,title,icon,route_path,kind,sort,status").
+		Order("sort ASC, id ASC").Scan(&rows).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	out := make([]menuListRow, 0, len(rows))
+	for _, row := range rows {
+		isMenu := int8(1)
+		if row.Kind == "button" {
+			isMenu = 2
+		}
+		out = append(out, menuListRow{
+			MenuID:   row.ID,
+			PID:      row.ParentID,
+			Path:     row.RoutePath,
+			Icon:     row.Icon,
+			MenuName: row.Title,
+			Route:    row.Code,
+			Sort:     row.Sort,
+			IsShow:   row.Status,
+			IsMenu:   isMenu,
+			IsAgent:  0,
+		})
+	}
+	response.OK(c, gin.H{"list": out, "total": len(out)})
+}
+
+func (h *Handler) UpdateMenu(c *gin.Context) {
+	id, err := parseID(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "菜单 ID 错误")
+		return
+	}
+	var req struct {
+		MenuName *string `json:"menu_name"`
+		Sort     *int    `json:"sort"`
+		IsShow   *int8   `json:"is_show"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	updates := map[string]any{}
+	if req.MenuName != nil {
+		name := strings.TrimSpace(*req.MenuName)
+		if name == "" || len([]rune(name)) > 64 {
+			response.Fail(c, http.StatusBadRequest, "菜单名称不能为空且不超过 64 字")
+			return
+		}
+		updates["title"] = name
+	}
+	if req.Sort != nil {
+		updates["sort"] = *req.Sort
+	}
+	if req.IsShow != nil {
+		if *req.IsShow != 0 && *req.IsShow != 1 {
+			response.Fail(c, http.StatusBadRequest, "显示状态仅支持 0/1")
+			return
+		}
+		updates["status"] = *req.IsShow
+	}
+	if len(updates) == 0 {
+		response.Fail(c, http.StatusBadRequest, "无更新字段")
+		return
+	}
+	res := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Where("id = ?", id).Updates(updates)
+	if res.Error != nil {
+		writeError(c, res.Error)
+		return
+	}
+	if res.RowsAffected == 0 {
+		response.Fail(c, http.StatusNotFound, "菜单不存在")
+		return
+	}
+	var row struct {
+		ID        uint64 `gorm:"column:id"`
+		ParentID  uint64 `gorm:"column:parent_id"`
+		Code      string `gorm:"column:code"`
+		Title     string `gorm:"column:title"`
+		Icon      string `gorm:"column:icon"`
+		RoutePath string `gorm:"column:route_path"`
+		Kind      string `gorm:"column:kind"`
+		Sort      int    `gorm:"column:sort"`
+		Status    int8   `gorm:"column:status"`
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
+		Select("id,parent_id,code,title,icon,route_path,kind,sort,status").
+		Where("id = ?", id).Take(&row).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	isMenu := int8(1)
+	if row.Kind == "button" {
+		isMenu = 2
+	}
+	response.OK(c, menuListRow{
+		MenuID:   row.ID,
+		PID:      row.ParentID,
+		Path:     row.RoutePath,
+		Icon:     row.Icon,
+		MenuName: row.Title,
+		Route:    row.Code,
+		Sort:     row.Sort,
+		IsShow:   row.Status,
+		IsMenu:   isMenu,
+	})
 }
 
 func normalizedRoleCodes(req adminSaveRequest) []string {

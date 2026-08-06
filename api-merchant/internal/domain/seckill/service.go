@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"gorm.io/gorm"
 )
 
 type Store interface {
 	ListTimes(ctx context.Context) ([]TimeSlot, error)
-	ListActives(ctx context.Context, merID *uint, onlyOn bool, page, limit int) ([]Active, int64, error)
+	ListActives(ctx context.Context, merID *uint, onlyOn bool, page, limit int, filter listquery.AdminFilter) ([]Active, int64, error)
 	GetActive(ctx context.Context, id uint) (*Active, error)
 	GetActiveByProduct(ctx context.Context, productID uint) (*Active, error)
 	CreateActive(ctx context.Context, a *Active) error
@@ -29,9 +30,9 @@ func (s *Service) ListTimes(ctx context.Context) ([]TimeSlot, error) {
 	return s.store.ListTimes(ctx)
 }
 
-func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int) (*PageResult[Active], error) {
+func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int, filter listquery.AdminFilter) (*PageResult[Active], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListActives(ctx, merID, false, page, limit)
+	list, total, err := s.store.ListActives(ctx, merID, false, page, limit, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int) (
 
 func (s *Service) ListApp(ctx context.Context, page, limit int) (*PageResult[Active], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListActives(ctx, nil, true, page, limit)
+	list, total, err := s.store.ListActives(ctx, nil, true, page, limit, listquery.AdminFilter{})
 	if err != nil {
 		return nil, err
 	}

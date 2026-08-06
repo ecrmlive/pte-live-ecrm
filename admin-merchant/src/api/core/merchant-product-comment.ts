@@ -20,12 +20,17 @@ export interface MerchantProductCommentPage {
   total: number;
 }
 
-export function listMerchantProductCommentsApi(params: {
+export interface MerchantProductCommentListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
   limit: number;
   page: number;
   product_id?: number;
-  status?: string;
-}) {
+  status?: 'hidden' | 'pending' | 'published';
+}
+
+export function listMerchantProductCommentsApi(params: MerchantProductCommentListParams) {
   return requestClient.get<MerchantProductCommentPage>('/product/comments', { params });
 }
 

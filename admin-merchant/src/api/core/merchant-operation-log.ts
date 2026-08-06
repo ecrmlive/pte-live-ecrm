@@ -17,6 +17,15 @@ export interface MerchantOperationLogPage {
   total: number;
 }
 
-export function listMerchantOperationLogsApi(params: { limit: number; page: number }) {
+export interface MerchantOperationLogListParams {
+  action?: string;
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+}
+
+export function listMerchantOperationLogsApi(params: MerchantOperationLogListParams) {
   return requestClient.get<MerchantOperationLogPage>('/setting/operation-logs', { params });
 }

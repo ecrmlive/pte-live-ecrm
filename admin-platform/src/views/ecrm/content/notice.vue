@@ -1,17 +1,245 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { createPlatformNoticeApi, deletePlatformNoticeApi, listPlatformNoticesApi, updatePlatformNoticeApi, type PlatformNotice } from '#/api/core/platform-content';
+
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi } from '#/api/core/auth';
-const loading = ref(false); const rows = ref<PlatformNotice[]>([]); const total = ref(0); const open = ref(false); const editing = ref<PlatformNotice>(); const canManage = ref(false); const query = reactive({ limit: 20, page: 1 }); const form = reactive({ content: '', is_show: 1, sort: 0, title: '' });
-async function load() { loading.value = true; try { const data = await listPlatformNoticesApi(query); rows.value = data.list || []; total.value = data.total || 0; } finally { loading.value = false; } }
-function add() { editing.value = undefined; Object.assign(form, { content: '', is_show: 1, sort: 0, title: '' }); open.value = true; }
-function edit(row: PlatformNotice) { editing.value = row; Object.assign(form, { content: row.content, is_show: row.is_show, sort: row.sort, title: row.title }); open.value = true; }
-async function save() { if (!form.title.trim() || !form.content.trim()) { ElMessage.warning('请填写公告标题和正文'); return; } if (editing.value) await updatePlatformNoticeApi(editing.value.notice_id, { ...form, content: form.content.trim(), title: form.title.trim() }); else await createPlatformNoticeApi({ ...form, content: form.content.trim(), title: form.title.trim() }); open.value = false; ElMessage.success('公告已保存'); await load(); }
-async function remove(row: PlatformNotice) { try { await ElMessageBox.confirm(`删除公告“${row.title}”后不可恢复，是否继续？`, '删除公告', { type: 'warning' }); await deletePlatformNoticeApi(row.notice_id); ElMessage.success('公告已删除'); await load(); } catch { /* 取消或请求错误统一提示 */ } }
-onMounted(async () => { const [permissions] = await Promise.all([getAccessCodesApi(), load()]); canManage.value = permissions.includes('content.notice.manage'); });
+import {
+  createPlatformNoticeApi,
+  deletePlatformNoticeApi,
+  listPlatformNoticesApi,
+  updatePlatformNoticeApi,
+  type PlatformNotice,
+} from '#/api/core/platform-content';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_KEYWORD_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
+
+const canManage = ref(false);
+const editing = ref<PlatformNotice>();
+const form = reactive({ content: '', is_show: 1, sort: 0, title: '' });
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_KEYWORD_FIELD('公告标题'),
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '展示', value: 1 },
+        { label: '隐藏', value: 0 },
+      ],
+      placeholder: '全部状态',
+    },
+    fieldName: 'is_show',
+    label: '展示状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<PlatformNotice> = {
+  columns: [
+    { field: 'notice_id', title: 'ID', width: 80 },
+    {
+      field: 'title',
+      minWidth: 220,
+      showOverflow: false,
+      title: '标题',
+    },
+    {
+      field: 'content',
+      minWidth: 260,
+      showOverflow: false,
+      title: '正文',
+    },
+    { field: 'sort', title: '排序', width: 90 },
+    {
+      field: 'is_show',
+      slots: { default: 'is_show' },
+      title: '展示',
+      width: 90,
+    },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 180,
+      title: '发布时间',
+    },
+    platformListActionColumn({ width: 150 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const keyword = String(formValues?.keyword ?? '')
+          .trim()
+          .toLowerCase();
+        const showRaw = formValues?.is_show;
+        const result = await listPlatformNoticesApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+        });
+        let list = result.list || [];
+        if (keyword) {
+          list = list.filter(
+            (row) =>
+              row.title.toLowerCase().includes(keyword) ||
+              row.content.toLowerCase().includes(keyword),
+          );
+        }
+        if (showRaw === 0 || showRaw === 1) {
+          list = list.filter((row) => row.is_show === Number(showRaw));
+        }
+        return {
+          items: list,
+          total: keyword || showRaw === 0 || showRaw === 1 ? list.length : result.total || 0,
+        };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'notice_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [FormModal, formModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function resetForm() {
+  editing.value = undefined;
+  Object.assign(form, { content: '', is_show: 1, sort: 0, title: '' });
+}
+
+function openCreate() {
+  resetForm();
+  formModalApi.setState({ title: '发布公告' }).open();
+}
+
+function openEdit(row: PlatformNotice) {
+  editing.value = row;
+  Object.assign(form, {
+    content: row.content,
+    is_show: row.is_show,
+    sort: row.sort,
+    title: row.title,
+  });
+  formModalApi.setState({ title: '编辑公告' }).open();
+}
+
+async function save() {
+  if (!form.title.trim() || !form.content.trim()) {
+    ElMessage.warning('请填写公告标题和正文');
+    return;
+  }
+  formModalApi.lock();
+  try {
+    const payload = {
+      ...form,
+      content: form.content.trim(),
+      title: form.title.trim(),
+    };
+    if (editing.value) {
+      await updatePlatformNoticeApi(editing.value.notice_id, payload);
+    } else {
+      await createPlatformNoticeApi(payload);
+    }
+    formModalApi.close();
+    ElMessage.success('公告已保存');
+    gridApi.reload();
+  } finally {
+    formModalApi.unlock();
+  }
+}
+
+async function remove(row: PlatformNotice) {
+  try {
+    await ElMessageBox.confirm(
+      `删除公告“${row.title}”后不可恢复，是否继续？`,
+      '删除公告',
+      { type: 'warning' },
+    );
+    await deletePlatformNoticeApi(row.notice_id);
+    ElMessage.success('公告已删除');
+    gridApi.reload();
+  } catch {
+    /* 取消 */
+  }
+}
+
+onMounted(async () => {
+  const permissions = await getAccessCodesApi();
+  canManage.value = permissions.includes('content.notice.manage');
+});
 </script>
+
 <template>
-  <Page title="平台公告" description="维护 C 端可见公告；新增、编辑、删除均受统一后台按钮权限控制。"><template #extra><el-button v-if="canManage" type="primary" @click="add">发布公告</el-button></template><el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="notice_id"><el-table-column label="ID" prop="notice_id" width="80" /><el-table-column label="标题" min-width="220" prop="title" show-overflow-tooltip /><el-table-column label="正文" min-width="260" prop="content" show-overflow-tooltip /><el-table-column label="排序" prop="sort" width="90" /><el-table-column label="展示" width="90"><template #default="{ row }"><el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '展示' : '隐藏' }}</el-tag></template></el-table-column><el-table-column label="发布时间" min-width="170" prop="create_time" /><el-table-column label="操作" width="150"><template #default="{ row }"><el-button v-if="canManage" link type="primary" @click="edit(row)">编辑</el-button><el-button v-if="canManage" link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10,20,50,100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div></el-card><el-dialog v-model="open" :title="editing ? '编辑公告' : '发布公告'" width="720px" destroy-on-close><el-form label-width="72px"><el-form-item label="标题" required><el-input v-model="form.title" maxlength="100" show-word-limit /></el-form-item><el-form-item label="正文" required><el-input v-model="form.content" :rows="10" type="textarea" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item><el-form-item label="展示"><el-switch v-model="form.is_show" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template></el-dialog></Page>
+  <Page auto-content-height>
+    <Grid>
+      <template #toolbar-actions>
+        <ElButton
+          v-if="canManage"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          发布公告
+        </ElButton>
+      </template>
+      <template #is_show="{ row }">
+        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
+          {{ row.is_show === 1 ? '展示' : '隐藏' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <template v-if="canManage">
+          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        </template>
+        <span v-else>—</span>
+      </template>
+    </Grid>
+
+    <FormModal>
+      <ElForm label-width="72px">
+        <ElFormItem label="标题" required>
+          <ElInput v-model="form.title" maxlength="100" show-word-limit />
+        </ElFormItem>
+        <ElFormItem label="正文" required>
+          <ElInput v-model="form.content" :rows="10" type="textarea" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" />
+        </ElFormItem>
+        <ElFormItem label="展示">
+          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </FormModal>
+  </Page>
 </template>

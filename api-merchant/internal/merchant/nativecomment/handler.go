@@ -49,6 +49,20 @@ func (h *Handler) list(c *gin.Context) {
 	if productID, err := strconv.ParseUint(c.Query("product_id"), 10, 64); err == nil && productID > 0 {
 		q = q.Where("pc.product_id = ?", productID)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("(pc.content LIKE ? OR p.title LIKE ?)", like, like)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("pc.created_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("pc.created_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询商品评论失败")

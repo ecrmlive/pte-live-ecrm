@@ -47,7 +47,16 @@ export function listMerchantSeckillTimesApi() {
   return requestClient.get<{ list: MerchantSeckillTime[] }>('/seckill/times');
 }
 
-export function listMerchantSeckillActivesApi(params: { limit: number; page: number }) {
+export interface MerchantSeckillListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: 0 | 1;
+}
+
+export function listMerchantSeckillActivesApi(params: MerchantSeckillListParams) {
   return requestClient.get<MerchantSeckillPage>('/seckill/actives', { params });
 }
 

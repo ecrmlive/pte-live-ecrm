@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
+import { reactive, ref } from 'vue';
 
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElRadio,
+  ElRadioGroup,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   getReservationConfigApi,
   listReservationProductsApi,
@@ -11,31 +24,89 @@ import {
   type ReservationProduct,
   type ReservationSlot,
 } from '#/api/core/merchant-reservation';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
 const saving = ref(false);
-const rows = ref<ReservationProduct[]>([]);
-const total = ref(0);
-const configOpen = ref(false);
 const current = ref<ReservationProduct>();
 const slots = ref<ReservationSlot[]>([]);
-const query = reactive({ limit: 20, page: 1 });
 const form = reactive({
   reservation_type: 1,
   show_reservation_days: 7,
   slotText: '',
 });
 
-async function load() {
-  loading.value = true;
-  try {
-    const result = await listReservationProductsApi(query);
-    rows.value = result.list || [];
-    total.value = result.total || 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '商品名称 / 商品 ID' },
+    fieldName: 'keyword',
+    label: '商品搜索',
+  },
+]);
+
+const gridOptions: VxeGridProps<ReservationProduct> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'product_id', title: '商品 ID', width: 100 },
+    { field: 'store_name', minWidth: 200, showOverflow: false, title: '商品名称' },
+    {
+      field: 'price',
+      title: '售价',
+      width: 100,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    { field: 'stock', title: '库存', width: 90 },
+    { field: 'show_reservation_days', title: '可预约天数', width: 110 },
+    {
+      field: 'reservation_type',
+      title: '预约类型',
+      width: 100,
+      formatter: ({ cellValue }) =>
+        Number(cellValue) === 2 ? '按时段' : '按日期',
+    },
+    merchantListActionColumn({ width: 100 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const data = await listReservationProductsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'product_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [ConfigModal, configModalApi] = useVbenModal({
+  onConfirm: saveConfig,
+});
 
 function slotsToText(items: ReservationSlot[]) {
   return items
@@ -63,16 +134,19 @@ function parseSlots(text: string) {
 async function openConfig(row: ReservationProduct) {
   current.value = row;
   const result = await getReservationConfigApi(row.product_id);
-  form.reservation_type = result.config?.reservation_type ?? row.reservation_type ?? 1;
-  form.show_reservation_days = result.config?.show_reservation_days ?? row.show_reservation_days ?? 7;
+  form.reservation_type =
+    result.config?.reservation_type ?? row.reservation_type ?? 1;
+  form.show_reservation_days =
+    result.config?.show_reservation_days ?? row.show_reservation_days ?? 7;
   slots.value = result.slots || [];
   form.slotText = slotsToText(slots.value);
-  configOpen.value = true;
+  configModalApi.setState({ title: '预约配置' }).open();
 }
 
 async function saveConfig() {
   if (!current.value) return;
   saving.value = true;
+  configModalApi.lock();
   try {
     await saveReservationConfigApi(current.value.product_id, {
       reservation_type: form.reservation_type,
@@ -80,73 +154,50 @@ async function saveConfig() {
       slots: parseSlots(form.slotText),
     });
     ElMessage.success('预约配置已保存');
-    configOpen.value = false;
-    await load();
+    configModalApi.close();
+    gridApi.reload();
   } finally {
     saving.value = false;
+    configModalApi.unlock();
   }
 }
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <Page title="预约设置" description="管理本店预约服务商品的可预约天数与时段库存；仅 type=预约 的商品会出现在列表中。">
-    <el-card shadow="never">
-      <el-table v-loading="loading" :data="rows" row-key="product_id">
-        <el-table-column label="商品 ID" prop="product_id" width="100" />
-        <el-table-column label="商品名称" min-width="200" prop="store_name" show-overflow-tooltip />
-        <el-table-column label="售价" width="100">
-          <template #default="{ row }">¥{{ Number(row.price).toFixed(2) }}</template>
-        </el-table-column>
-        <el-table-column label="库存" prop="stock" width="90" />
-        <el-table-column label="可预约天数" prop="show_reservation_days" width="110" />
-        <el-table-column label="预约类型" width="100">
-          <template #default="{ row }">{{ row.reservation_type === 2 ? '按时段' : '按日期' }}</template>
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
-          <template #default="{ row }"><el-button link type="primary" @click="openConfig(row)">配置</el-button></template>
-        </el-table-column>
-      </el-table>
-      <div class="mt-4 flex justify-end">
-        <el-pagination
-          :current-page="query.page"
-          :page-size="query.limit"
-          :page-sizes="[10, 20, 50]"
-          :total="total"
-          background
-          layout="total, sizes, prev, pager, next"
-          @current-change="(page: number) => { query.page = page; load(); }"
-          @size-change="(limit: number) => { query.limit = limit; query.page = 1; load(); }"
-        />
-      </div>
-    </el-card>
+  <Page auto-content-height>
+    <Grid>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openConfig(row)">配置</ElButton>
+      </template>
+    </Grid>
 
-    <el-dialog v-model="configOpen" destroy-on-close title="预约配置" width="640px">
+    <ConfigModal class="w-[640px] max-w-[96vw]">
       <template v-if="current">
         <div class="mb-4 text-base font-medium">{{ current.store_name }}</div>
-        <el-form label-width="112px">
-          <el-form-item label="预约类型">
-            <el-radio-group v-model="form.reservation_type">
-              <el-radio :value="1">按日期</el-radio>
-              <el-radio :value="2">按时段</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="可预约天数"><el-input-number v-model="form.show_reservation_days" :min="1" :max="90" /></el-form-item>
-          <el-form-item label="时段与库存">
-            <el-input
+        <ElForm label-width="112px">
+          <ElFormItem label="预约类型">
+            <ElRadioGroup v-model="form.reservation_type">
+              <ElRadio :value="1">按日期</ElRadio>
+              <ElRadio :value="2">按时段</ElRadio>
+            </ElRadioGroup>
+          </ElFormItem>
+          <ElFormItem label="可预约天数">
+            <ElInputNumber
+              v-model="form.show_reservation_days"
+              :min="1"
+              :max="90"
+            />
+          </ElFormItem>
+          <ElFormItem label="时段与库存">
+            <ElInput
               v-model="form.slotText"
               :rows="6"
               placeholder="每行一条：09:00-10:00,20&#10;10:00-11:00,15"
               type="textarea"
             />
-          </el-form-item>
-        </el-form>
+          </ElFormItem>
+        </ElForm>
       </template>
-      <template #footer>
-        <el-button @click="configOpen = false">取消</el-button>
-        <el-button :loading="saving" type="primary" @click="saveConfig">保存</el-button>
-      </template>
-    </el-dialog>
+    </ConfigModal>
   </Page>
 </template>

@@ -46,5 +46,12 @@ export interface SvipOrderSummary {
 export const listSvipPlans = () => requestClient.get<{ list: SvipPlan[] }>('/svip/plans');
 export const createSvipPlan = (data: SvipPlanInput) => requestClient.post<SvipPlan>('/svip/plans', data);
 export const updateSvipPlan = (id: number, data: SvipPlanInput) => requestClient.put(`/svip/plans/${id}`, data);
-export const listSvipOrders = (params: { page: number; limit: number; status?: string }) => requestClient.get<{ list: SvipOrder[]; total: number }>('/svip/orders', { params });
+export const listSvipOrders = (params: {
+  page: number;
+  limit: number;
+  status?: string;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+}) => requestClient.get<{ list: SvipOrder[]; total: number }>('/svip/orders', { params });
 export const getSvipOrderSummary = () => requestClient.get<SvipOrderSummary>('/svip/orders/summary');

@@ -42,7 +42,16 @@ export interface MerchantPresellSaveInput {
   start_time: string;
 }
 
-export function listMerchantPresellActivesApi(params: { limit: number; page: number }) {
+export interface MerchantPresellListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  is_show?: 0 | 1;
+  limit: number;
+  page: number;
+}
+
+export function listMerchantPresellActivesApi(params: MerchantPresellListParams) {
   return requestClient.get<MerchantPresellPage>('/presell/actives', { params });
 }
 

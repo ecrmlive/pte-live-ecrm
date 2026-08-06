@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	mysqlDriver "github.com/go-sql-driver/mysql"
@@ -183,6 +184,7 @@ func (h *Handler) ListCouponCommands(c *gin.Context) {
 	if action != "" {
 		db = db.Where("a.action=?", action)
 	}
+	db = queryfilter.ApplyCreatedAtRange(db, c, "a.created_at")
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "优惠券发送记录查询失败")
@@ -228,6 +230,7 @@ func (h *Handler) ListCouponRecords(c *gin.Context) {
 	if status != "" {
 		db = db.Where("cu.status=?", status)
 	}
+	db = queryfilter.ApplyCreatedAtRange(db, c, "cu.obtained_at")
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "优惠券领取记录查询失败")
@@ -625,8 +628,16 @@ func (h *Handler) List(c *gin.Context) {
 			response.Fail(c, http.StatusBadRequest, "用户搜索词过长")
 			return
 		}
-		q = q.Where("u.nickname LIKE ?", "%"+keyword+"%")
+		like := "%" + keyword + "%"
+		q = q.Where("u.nickname LIKE ? OR u.mobile LIKE ? OR CAST(u.id AS CHAR) = ?", like, like, keyword)
 	}
+	if nickname := strings.TrimSpace(c.Query("nickname")); nickname != "" {
+		q = q.Where("u.nickname LIKE ?", "%"+nickname+"%")
+	}
+	if phone := strings.TrimSpace(c.Query("phone")); phone != "" {
+		q = q.Where("u.mobile LIKE ?", "%"+phone+"%")
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "u.created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, 500, "用户查询失败")

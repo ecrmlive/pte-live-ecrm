@@ -15,6 +15,15 @@ export interface UserSearchRecordPage {
   total: number;
 }
 
-export function listUserSearchRecordsApi(params: { limit: number; page: number }) {
+export interface UserSearchRecordListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  user_id?: number;
+}
+
+export function listUserSearchRecordsApi(params: UserSearchRecordListParams) {
   return requestClient.get<UserSearchRecordPage>('/user/search-records', { params });
 }

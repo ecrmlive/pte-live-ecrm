@@ -33,12 +33,16 @@ export interface MerchantDiscountInput {
   status?: MerchantDiscountStatus;
 }
 
-export function listMerchantDiscountsApi(params: {
+export interface MerchantDiscountListParams {
+  date_from?: string;
+  date_to?: string;
   keyword?: string;
   limit: number;
   page: number;
   status?: MerchantDiscountStatus;
-}) {
+}
+
+export function listMerchantDiscountsApi(params: MerchantDiscountListParams) {
   return requestClient.get<MerchantDiscountPage>('/marketing/discounts', { params });
 }
 

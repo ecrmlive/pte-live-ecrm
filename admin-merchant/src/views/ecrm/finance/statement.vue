@@ -1,15 +1,26 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { listFinanceStatementsApi, type FinanceStatement } from '#/api/core/merchant-ledger';
-import { EcrmListPage } from '#/components/ecrm';
+import { Page } from '@vben/common-ui';
+import { ElTag } from 'element-plus';
 
-const loading = ref(false);
-const rows = ref<FinanceStatement[]>([]);
-const total = ref(0);
-const query = reactive({ page: 1, limit: 20 });
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listFinanceStatementsApi,
+  type FinanceStatement,
+  type FinanceStatementStatus,
+} from '#/api/core/merchant-ledger';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+} from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<FinanceStatementStatus, string> = {
   approved: '已审核',
   bill_frozen: '账期已冻结',
   bill_pending: '账期待生成',
@@ -18,57 +29,114 @@ const statusLabels: Record<string, string> = {
   withdraw_applied: '待平台审核',
 };
 
+const statusTypes: Record<
+  FinanceStatementStatus,
+  'danger' | 'info' | 'success' | 'warning'
+> = {
+  approved: 'success',
+  bill_frozen: 'warning',
+  bill_pending: 'info',
+  paid: 'success',
+  rejected: 'danger',
+  withdraw_applied: 'warning',
+};
+
 function statusLabel(status: string) {
-  return statusLabels[status] || status;
+  return statusLabels[status as FinanceStatementStatus] || status;
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listFinanceStatementsApi({ ...query });
-    rows.value = data.list ?? [];
-    total.value = data.total ?? 0;
-  } finally {
-    loading.value = false;
-  }
+function statusType(status: string) {
+  return statusTypes[status as FinanceStatementStatus] || 'info';
 }
 
-onMounted(() => void load());
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(statusLabels).map(([value, label]) => ({
+        label,
+        value,
+      })),
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '账单状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<FinanceStatement> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'statement_id', title: '账单 ID', width: 100 },
+    {
+      field: 'period_start',
+      minWidth: 220,
+      showOverflow: false,
+      slots: { default: 'period' },
+      title: '账期',
+    },
+    {
+      field: 'amount',
+      title: '金额',
+      width: 120,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 120,
+    },
+    {
+      field: 'updated_at',
+      minWidth: 170,
+      title: '更新时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const status = String(formValues?.status ?? '').trim();
+        const data = await listFinanceStatementsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          status: (status || undefined) as FinanceStatementStatus | undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'statement_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 </script>
 
 <template>
-  <EcrmListPage title="对账单" description="按账期查看本店结算对账单；数据来自 qixi_crm_m_settlement_bill。">
-    <template #filters>
-      <div class="flex flex-wrap items-center gap-2">
-        <el-button @click="load">刷新</el-button>
-      </div>
-    </template>
-
-    <el-table v-loading="loading" :data="rows" row-key="statement_id">
-      <el-table-column prop="statement_id" label="账单 ID" width="100" />
-      <el-table-column label="账期" min-width="200">
-        <template #default="{ row }">{{ row.period_start }} ~ {{ row.period_end }}</template>
-      </el-table-column>
-      <el-table-column label="金额" width="120">
-        <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="120">
-        <template #default="{ row }">
-          <el-tag>{{ statusLabel(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="updated_at" label="更新时间" width="180" />
-    </el-table>
-    <el-empty v-if="!loading && !rows.length" description="暂无对账单" />
-
-    <template #pager>
-      <el-pagination
-        :current-page="query.page"
-        :page-size="query.limit"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="(page: number) => { query.page = page; load(); }"
-      />
-    </template>
-  </EcrmListPage>
+  <Page auto-content-height>
+    <Grid>
+      <template #period="{ row }">
+        {{ row.period_start }} ~ {{ row.period_end }}
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="statusType(row.status)">{{ statusLabel(row.status) }}</ElTag>
+      </template>
+    </Grid>
+  </Page>
 </template>

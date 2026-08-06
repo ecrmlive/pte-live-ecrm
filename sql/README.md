@@ -8,7 +8,7 @@
 | --- | --- |
 | `qixi_crm_admin` | `admin/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
 | `qixi_crm_business` | `business/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
-| `qixi_crm_merchant` | `merchant/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` |
+| `qixi_crm_merchant` | `merchant/init_table.sql` → `init_config.sql` → `init_data.sql` → `init_key.sql` → `init_test_data.sql` → **`init_menu_crmeb_full.sql`**（CRMEB `is_mer=1` 店铺菜单全量 693 条） |
 
 ## 密钥文件
 

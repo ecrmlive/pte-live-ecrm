@@ -1,47 +1,96 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { Page } from '@vben/common-ui';
-import { listStoreCustomersApi, type StoreCustomer } from '#/api/core/merchant-store-customer';
-import { EcrmListPage } from '#/components/ecrm';
+import { ElTag } from 'element-plus';
 
-const loading = ref(false);
-const rows = ref<StoreCustomer[]>([]);
-const total = ref(0);
-const query = reactive({ page: 1, limit: 20, keyword: '' });
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listStoreCustomersApi,
+  type StoreCustomer,
+} from '#/api/core/merchant-store-customer';
+import { MERCHANT_LIST_GRID_LAYOUT } from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listStoreCustomersApi({ page: query.page, limit: query.limit, keyword: query.keyword.trim() || undefined });
-    rows.value = data.list ?? [];
-    total.value = data.total ?? 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '用户 ID 或昵称',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+]);
 
-onMounted(() => void load());
+const gridOptions: VxeGridProps<StoreCustomer> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'user_id', title: '用户 ID', width: 90 },
+    {
+      field: 'nickname',
+      minWidth: 140,
+      showOverflow: false,
+      title: '昵称',
+    },
+    { field: 'mobile', title: '手机号', width: 140 },
+    { field: 'order_count', title: '订单数', width: 90 },
+    {
+      field: 'total_pay',
+      title: '累计消费',
+      width: 120,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    {
+      field: 'last_order_at',
+      minWidth: 170,
+      title: '最近下单',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 90,
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const data = await listStoreCustomersApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+        });
+        return { items: data.list ?? [], total: data.total ?? 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'user_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 </script>
 
 <template>
-  <Page title="用户列表" description="展示在本店产生过有效订单的客户（脱敏手机号）。">
-    <EcrmListPage title="店铺客户">
-      <template #filters>
-        <el-form inline @submit.prevent="query.page = 1; load()">
-          <el-form-item label="关键词"><el-input v-model="query.keyword" placeholder="用户 ID 或昵称" clearable /></el-form-item>
-        </el-form>
+  <Page auto-content-height>
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="row.status ? 'success' : 'info'">
+          {{ row.status ? '正常' : '停用' }}
+        </ElTag>
       </template>
-      <template #actions><el-button type="primary" @click="query.page = 1; load()">查询</el-button></template>
-      <el-table v-loading="loading" :data="rows">
-        <el-table-column prop="user_id" label="用户 ID" width="90" />
-        <el-table-column prop="nickname" label="昵称" min-width="140" />
-        <el-table-column prop="mobile" label="手机号" width="140" />
-        <el-table-column prop="order_count" label="订单数" width="90" />
-        <el-table-column label="累计消费" width="120"><template #default="{ row }">¥{{ Number(row.total_pay).toFixed(2) }}</template></el-table-column>
-        <el-table-column prop="last_order_at" label="最近下单" width="180" />
-        <el-table-column label="状态" width="90"><template #default="{ row }"><el-tag :type="row.status ? 'success' : 'info'">{{ row.status ? '正常' : '停用' }}</el-tag></template></el-table-column>
-      </el-table>
-      <template #pager><el-pagination :current-page="query.page" :page-size="query.limit" :total="total" layout="total,prev,pager,next" @current-change="(page) => { query.page = page; load(); }" /></template>
-    </EcrmListPage>
+    </Grid>
   </Page>
 </template>

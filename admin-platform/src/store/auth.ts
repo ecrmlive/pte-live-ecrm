@@ -59,6 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       accessStore.setAccessToken(accessToken);
+      accessStore.setRefreshToken(refreshToken);
       setEncryptedToken(accessToken);
       setEncryptedRefreshToken(refreshToken);
       usePlatformUserStore().setToken(accessToken);

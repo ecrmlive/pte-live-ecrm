@@ -107,11 +107,7 @@ func (h *Handler) list(c *gin.Context) {
 	} else if paid == "1" {
 		q = q.Where("o.status <> 'pending_pay'")
 	}
-	if statusStr := c.Query("status"); statusStr != "" {
-		if status, err := strconv.Atoi(statusStr); err == nil && status == -1 {
-			q = q.Where("o.status = ?", "cancelled")
-		}
-	}
+	q = applyOrderListFilters(q, c)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c, "查询订单失败")
@@ -171,6 +167,78 @@ func (h *Handler) base(c *gin.Context, merchantIDs []uint64) *gorm.DB {
 		q = q.Where("o.merchant_id IN ?", merchantIDs)
 	}
 	return q
+}
+
+// applyOrderListFilters 对齐 CRMEB 平台订单列表重要筛选项。
+func applyOrderListFilters(q *gorm.DB, c *gin.Context) *gorm.DB {
+	if orderSN := strings.TrimSpace(c.Query("order_sn")); orderSN != "" {
+		q = q.Where("o.order_no LIKE ?", "%"+orderSN+"%")
+	}
+	if merID := strings.TrimSpace(c.Query("mer_id")); merID != "" {
+		if id, err := strconv.ParseUint(merID, 10, 64); err == nil && id > 0 {
+			q = q.Where("o.merchant_id = ?", id)
+		}
+	}
+	if payType := strings.TrimSpace(c.Query("pay_type")); payType != "" {
+		if channel := payChannelFromType(payType); channel != "" {
+			q = q.Where("g.pay_channel = ?", channel)
+		}
+	}
+	if statusStr := strings.TrimSpace(c.Query("status")); statusStr != "" {
+		q = applyStatusFilter(q, statusStr)
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where(
+			"o.order_no LIKE ? OR o.recipient_snapshot LIKE ? OR CAST(o.id AS CHAR) = ?",
+			like, like, keyword,
+		)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("o.created_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("o.created_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
+	return q
+}
+
+func applyStatusFilter(q *gorm.DB, statusStr string) *gorm.DB {
+	status, err := strconv.Atoi(strings.TrimSpace(statusStr))
+	if err != nil {
+		return q
+	}
+	switch status {
+	case -1:
+		return q.Where("o.status = ?", "cancelled")
+	case 0:
+		return q.Where("o.status IN ?", []string{"paid", "fulfilling"})
+	case 1:
+		return q.Where("o.status = ?", "shipped")
+	case 3:
+		return q.Where("o.status = ?", "completed")
+	default:
+		return q
+	}
+}
+
+func payChannelFromType(payType string) string {
+	switch payType {
+	case "0":
+		return "balance"
+	case "1":
+		return "wechat"
+	case "2":
+		return "alipay"
+	case "7":
+		return "mock"
+	default:
+		return ""
+	}
 }
 
 // merchantScope maps unified-admin merchant and region assignments to the
@@ -273,7 +341,8 @@ func (h *Handler) responses(c *gin.Context, rows []order, includeItems bool) ([]
 			"store_id": row.StoreID, "store_name": storeNames[row.StoreID], "paid": paid(row.Status), "status": orderStatus(row.Status),
 			"pay_price": row.PayAmount, "total_price": row.TotalAmount, "total_num": row.TotalQuantity, "pay_type": payType(row.PayChannel),
 			"pay_time": payTime, "delivery_type": d.DeliveryType, "delivery_name": d.CarrierCode, "delivery_id": d.TrackingNo,
-			"user_phone": address.Mobile, "user_address": strings.TrimSpace(address.Province + address.City + address.District + " " + address.Detail),
+			"real_name": address.Recipient, "user_phone": address.Mobile,
+			"user_address": strings.TrimSpace(address.Province + address.City + address.District + " " + address.Detail),
 			"create_time": row.CreatedAt.Format("2006-01-02 15:04:05"), "products": itemsByOrder[row.ID],
 		})
 	}

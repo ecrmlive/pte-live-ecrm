@@ -3,6 +3,7 @@ package feedback
 import (
 	command "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/feedbackmoderation"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -65,7 +66,7 @@ type categoryInput struct {
 }
 
 func (h *Handler) List(c *gin.Context) {
-	page, limit := page(c)
+	page, limit := queryfilter.Page(c)
 	status := strings.TrimSpace(c.Query("status"))
 	if status != "" {
 		if status != "pending" && status != "replied" && status != "closed" {
@@ -77,6 +78,11 @@ func (h *Handler) List(c *gin.Context) {
 	if status != "" {
 		q = q.Where("status=?", status)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("content LIKE ? OR CAST(user_id AS CHAR) LIKE ?", like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
 	var total int64
 	if q.Count(&total).Error != nil {
 		response.Fail(c, 500, "反馈查询失败")

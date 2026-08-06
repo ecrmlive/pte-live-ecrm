@@ -1,18 +1,244 @@
 <script setup lang="ts">
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { reactive, ref } from 'vue';
-import type { MerchantCategory, MerchantCategoryInput } from '#/api/core/merchant-category';
-import { createMerchantCategoryApi, deleteMerchantCategoryApi, listMerchantCategoriesApi, updateMerchantCategoryApi } from '#/api/core/merchant-category';
-const rows = ref<MerchantCategory[]>([]), loading = ref(false), saving = ref(false), open = ref(false), editID = ref<number>();
-const form = reactive<MerchantCategoryInput>({ parent_id: 0, name: '', sort: 0, status: 1 });
-async function load() { loading.value = true; try { rows.value = (await listMerchantCategoriesApi()).list ?? []; } finally { loading.value = false; } }
-function reset() { editID.value = undefined; Object.assign(form, { parent_id: 0, name: '', sort: 0, status: 1 }); }
-function create() { reset(); open.value = true; }
-function edit(row: MerchantCategory) { editID.value = row.category_id; Object.assign(form, { parent_id: row.parent_id, name: row.name, sort: row.sort, status: row.status }); open.value = true; }
-async function save() { if (!form.name.trim()) { ElMessage.warning('请填写分类名称'); return; } saving.value = true; try { if (editID.value) await updateMerchantCategoryApi(editID.value, { ...form, name: form.name.trim() }); else await createMerchantCategoryApi({ ...form, name: form.name.trim() }); open.value = false; await load(); ElMessage.success('商品分类已保存'); } finally { saving.value = false; } }
-async function changeStatus(row: MerchantCategory) { try { await updateMerchantCategoryApi(row.category_id, { parent_id: row.parent_id, name: row.name, sort: row.sort, status: row.status }); ElMessage.success('状态已更新'); } catch { await load(); } }
-async function remove(row: MerchantCategory) { try { await ElMessageBox.confirm(`确定删除商品分类“${row.name}”吗？存在子分类或商品时将拒绝删除。`, '删除确认', { type: 'warning' }); await deleteMerchantCategoryApi(row.category_id); await load(); ElMessage.success('商品分类已删除'); } catch {} }
-void load();
+
+import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElOption,
+  ElSelect,
+  ElSwitch,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import type {
+  MerchantCategory,
+  MerchantCategoryInput,
+} from '#/api/core/merchant-category';
+import {
+  createMerchantCategoryApi,
+  deleteMerchantCategoryApi,
+  listMerchantCategoriesApi,
+  updateMerchantCategoryApi,
+} from '#/api/core/merchant-category';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+
+const saving = ref(false);
+const editID = ref<number>();
+const allRows = ref<MerchantCategory[]>([]);
+const form = reactive<MerchantCategoryInput>({
+  parent_id: 0,
+  name: '',
+  sort: 0,
+  status: 1,
+});
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '分类名称' },
+    fieldName: 'keyword',
+    label: '分类搜索',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '已启用', value: 1 },
+        { label: '已停用', value: 0 },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<MerchantCategory> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'category_id', title: 'ID', width: 80 },
+    { field: 'name', minWidth: 220, showOverflow: false, title: '分类名称', treeNode: true },
+    { field: 'sort', title: '排序', width: 90 },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '启用',
+      width: 100,
+    },
+    merchantListActionColumn({ width: 130 }),
+  ],
+  pagerConfig: { enabled: false },
+  proxyConfig: {
+    ajax: {
+      query: async (_params, formValues) => {
+        const data = await listMerchantCategoriesApi({
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status:
+            formValues?.status === 0 || formValues?.status === 1
+              ? Number(formValues.status)
+              : undefined,
+        });
+        allRows.value = data.list ?? [];
+        return { items: allRows.value, total: allRows.value.length };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'category_id' },
+  treeConfig: {
+    expandAll: true,
+    parentField: 'parent_id',
+    rowField: 'category_id',
+    transform: true,
+  },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [EditModal, editModalApi] = useVbenModal({
+  onConfirm: save,
+});
+
+function reset() {
+  editID.value = undefined;
+  Object.assign(form, { parent_id: 0, name: '', sort: 0, status: 1 });
+}
+
+function create() {
+  reset();
+  editModalApi.setState({ title: '新增商品分类' }).open();
+}
+
+function edit(row: MerchantCategory) {
+  editID.value = row.category_id;
+  Object.assign(form, {
+    parent_id: row.parent_id,
+    name: row.name,
+    sort: row.sort,
+    status: row.status,
+  });
+  editModalApi.setState({ title: '编辑商品分类' }).open();
+}
+
+async function save() {
+  if (!form.name.trim()) {
+    ElMessage.warning('请填写分类名称');
+    return;
+  }
+  saving.value = true;
+  editModalApi.lock();
+  try {
+    if (editID.value) {
+      await updateMerchantCategoryApi(editID.value, {
+        ...form,
+        name: form.name.trim(),
+      });
+    } else {
+      await createMerchantCategoryApi({ ...form, name: form.name.trim() });
+    }
+    editModalApi.close();
+    ElMessage.success('商品分类已保存');
+    gridApi.reload();
+  } finally {
+    saving.value = false;
+    editModalApi.unlock();
+  }
+}
+
+async function changeStatus(row: MerchantCategory) {
+  try {
+    await updateMerchantCategoryApi(row.category_id, {
+      parent_id: row.parent_id,
+      name: row.name,
+      sort: row.sort,
+      status: row.status,
+    });
+    ElMessage.success('状态已更新');
+  } catch {
+    gridApi.reload();
+  }
+}
+
+async function remove(row: MerchantCategory) {
+  try {
+    await confirm({
+      content: `确定删除商品分类“${row.name}”吗？存在子分类或商品时将拒绝删除。`,
+      icon: 'warning',
+      title: '删除确认',
+    });
+    await deleteMerchantCategoryApi(row.category_id);
+    ElMessage.success('商品分类已删除');
+    gridApi.reload();
+  } catch {
+    // cancelled
+  }
+}
 </script>
-<template><Page title="商品分类" description="维护本店商品分类；分类与商品均按店铺隔离。"><template #extra><el-button type="primary" @click="create">新增分类</el-button></template><el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="category_id" default-expand-all><el-table-column prop="category_id" label="ID" width="80"/><el-table-column prop="name" label="分类名称" min-width="220"/><el-table-column prop="sort" label="排序" width="90"/><el-table-column label="启用" width="100"><template #default="{ row }"><el-switch v-model="row.status" :active-value="1" :inactive-value="0" @change="changeStatus(row)"/></template></el-table-column><el-table-column fixed="right" label="操作" width="130"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table></el-card><el-dialog v-model="open" :title="editID ? '编辑商品分类' : '新增商品分类'" width="500px"><el-form label-width="88px"><el-form-item label="上级分类"><el-select v-model="form.parent_id" class="w-full"><el-option :value="0" label="顶级分类"/><el-option v-for="item in rows" :key="item.category_id" :value="item.category_id" :disabled="item.category_id === editID" :label="item.name"/></el-select></el-form-item><el-form-item label="分类名称" required><el-input v-model="form.name" maxlength="128"/></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0"/></el-form-item><el-form-item label="启用"><el-switch v-model="form.status" :active-value="1" :inactive-value="0"/></el-form-item></el-form><template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存</el-button></template></el-dialog></Page></template>
+
+<template>
+  <Page auto-content-height>
+    <template #extra>
+      <ElButton type="primary" @click="create">新增分类</ElButton>
+    </template>
+
+    <Grid>
+      <template #status="{ row }">
+        <ElSwitch
+          v-model="row.status"
+          :active-value="1"
+          :inactive-value="0"
+          @change="changeStatus(row)"
+        />
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="edit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
+
+    <EditModal class="w-[500px] max-w-[96vw]">
+      <ElForm label-width="88px">
+        <ElFormItem label="上级分类">
+          <ElSelect v-model="form.parent_id" class="w-full">
+            <ElOption :value="0" label="顶级分类" />
+            <ElOption
+              v-for="item in allRows"
+              :key="item.category_id"
+              :value="item.category_id"
+              :disabled="item.category_id === editID"
+              :label="item.name"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="分类名称" required>
+          <ElInput v-model="form.name" maxlength="128" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" />
+        </ElFormItem>
+        <ElFormItem label="启用">
+          <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </EditModal>
+  </Page>
+</template>

@@ -10,7 +10,13 @@ ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`status`=VALUES(`status`);
 -- “统一后台”是系统身份，不是侧栏菜单；控制台是所有有权限账号的首个业务入口。
 -- icon 使用 admin-platform 本地打包的 lucide 图标，不依赖公网 Iconify 服务。
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
-  (2,0,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
+  -- 首页：对齐 CRMEB 平台侧栏（控制台 / 数据大屏 / 商品·订单·用户统计）
+  (1,0,'home','首页','lucide:house','/','directory',1),
+  (2,1,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
+  (216,1,'data.screen','数据大屏','lucide:monitor','/data-screen/index','page',2),
+  (194,1,'statistic.product','商品统计','lucide:package','/statistic/product','page',3),
+  (193,1,'statistic.order','订单统计','lucide:receipt-text','/statistic/order','page',4),
+  (195,1,'statistic.user','用户统计','lucide:users','/statistic/user','page',5),
 
   -- 店铺侧栏：一级「店铺功能」→ 店铺管理 / 店铺设置；商户管理为独立一级。
   -- icon 必须是 admin-platform 离线 lucide 白名单（见 platform-lucide-icons.ts）。
@@ -139,10 +145,6 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(191,120,'setting.pay','支付设置','lucide:credit-card','/setting/pay','page',10)
   ,(130,0,'app','应用管理','lucide:smartphone','/app','directory',130)
   ,(131,130,'app.wechat','公众号','lucide:message-circle','/app/wechat','page',1)
-  ,(192,0,'statistic','数据统计','lucide:bar-chart-3','/statistic','directory',15)
-  ,(193,192,'statistic.order','订单统计','lucide:receipt-text','/statistic/order','page',1)
-  ,(194,192,'statistic.product','商品统计','lucide:package','/statistic/product','page',2)
-  ,(195,192,'statistic.user','用户统计','lucide:users','/statistic/user','page',3)
   ,(196,120,'setting.storage','存储配置','lucide:hard-drive','/setting/storage','page',11)
   ,(197,0,'maintain','系统维护','lucide:wrench','/maintain','directory',197)
   ,(198,197,'maintain.cache','清除缓存','lucide:eraser','/maintain/cache','page',1)
@@ -157,6 +159,18 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
 ON DUPLICATE KEY UPDATE
   `parent_id`=VALUES(`parent_id`),`code`=VALUES(`code`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),
   `route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
+
+-- 首页树纠偏（可重复执行）
+UPDATE `qixi_crm_a_menu` SET `code`='home',`title`='首页',`icon`='lucide:house',`route_path`='/',`kind`='directory',`sort`=1,`parent_id`=0 WHERE `id`=1;
+INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
+  (2,1,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
+  (216,1,'data.screen','数据大屏','lucide:monitor','/data-screen/index','page',2),
+  (194,1,'statistic.product','商品统计','lucide:package','/statistic/product','page',3),
+  (193,1,'statistic.order','订单统计','lucide:receipt-text','/statistic/order','page',4),
+  (195,1,'statistic.user','用户统计','lucide:users','/statistic/user','page',5)
+ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`code`=VALUES(`code`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`);
+DELETE FROM `qixi_crm_a_role_menu` WHERE `menu_id`=192;
+DELETE FROM `qixi_crm_a_menu` WHERE `id`=192;
 
 -- 统一后台按钮节点必须使用 qixi_crm_a_* RBAC；运营写操作不再依赖旧系统菜单表。
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
@@ -304,15 +318,17 @@ FROM `qixi_crm_a_role` AS r
 JOIN `qixi_crm_a_menu` AS m
 WHERE r.code = 'platform'
    OR (r.code = 'merchant' AND m.code IN (
-      'dashboard','store','store.manage','merchant.list','merchant.audit',
+      'home','dashboard','data.screen','statistic.product','statistic.order','statistic.user',
+      'store','store.manage','merchant.list','merchant.audit',
       'product','product.audit',
       'order','order.list','order.refund','order.cancellation'))
    OR (r.code = 'region' AND m.code IN (
-      'dashboard','store','store.manage','merchant.list','merchant.audit',
+      'home','dashboard','data.screen','statistic.product','statistic.order','statistic.user',
+      'store','store.manage','merchant.list','merchant.audit',
       'product','product.audit','order','order.list','order.refund','order.cancellation',
       'accounts','accounts.merchant_settlement','accounts.merchant_settlement.read','merchant.intention.audit'))
    OR (r.code = 'customer_service' AND m.code IN (
-      'dashboard','service',
+      'home','dashboard','service',
       'user','user.feedback','user.feedback.list','user.feedback.read','user.feedback.manage'))
    OR (r.code = 'operations' AND m.code IN (
       'marketing','marketing.coupon','marketing.seckill','marketing.combination',

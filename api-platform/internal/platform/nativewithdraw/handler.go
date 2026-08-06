@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -66,6 +67,11 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("status IN ?", statuses)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("withdrawal_no LIKE ? OR CAST(user_id AS CHAR) LIKE ?", like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)

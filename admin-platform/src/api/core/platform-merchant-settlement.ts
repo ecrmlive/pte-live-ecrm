@@ -45,6 +45,8 @@ export function listPlatformMerchantSettlementsApi(params: {
   merchant_id?: number;
   page: number;
   status?: MerchantSettlementStatus;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<MerchantSettlementPage>('/finance/merchant-settlements', { params });
 }
@@ -73,6 +75,8 @@ export function listPlatformTransferRecordsApi(params: {
   merchant_id?: number;
   page: number;
   status?: TransferRecordStatus;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<MerchantSettlementPage>('/finance/transfer-records', { params });
 }

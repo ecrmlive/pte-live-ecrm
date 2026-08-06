@@ -32,10 +32,34 @@ export interface FinanceStatementPage {
   total: number;
 }
 
-export function listFinanceLedgerApi(params: { limit: number; page: number }) {
+export interface FinanceLedgerListParams {
+  date_from?: string;
+  date_to?: string;
+  entry_type?: string;
+  limit: number;
+  page: number;
+}
+
+export function listFinanceLedgerApi(params: FinanceLedgerListParams) {
   return requestClient.get<FinanceLedgerPage>('/finance/ledger', { params });
 }
 
-export function listFinanceStatementsApi(params: { limit: number; page: number }) {
+export type FinanceStatementStatus =
+  | 'approved'
+  | 'bill_frozen'
+  | 'bill_pending'
+  | 'paid'
+  | 'rejected'
+  | 'withdraw_applied';
+
+export interface FinanceStatementListParams {
+  date_from?: string;
+  date_to?: string;
+  limit: number;
+  page: number;
+  status?: FinanceStatementStatus;
+}
+
+export function listFinanceStatementsApi(params: FinanceStatementListParams) {
   return requestClient.get<FinanceStatementPage>('/finance/statements', { params });
 }

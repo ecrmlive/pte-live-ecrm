@@ -31,10 +31,22 @@ export function listPlatformUserAssetsApi(params: {
   limit: number;
   page: number;
   user_id?: number;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<UserAssetLedgerPage>('/finance/user-assets', { params });
 }
 
-export function getPlatformUserAssetSummaryApi() {
-  return requestClient.get<{ list: UserAssetSummary[] }>('/finance/user-assets/summary');
+export function getPlatformUserAssetSummaryApi(params?: {
+  asset_type?: UserAssetType;
+  user_id?: number;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return requestClient.get<{ list: UserAssetSummary[] }>(
+    '/finance/user-assets/summary',
+    { params },
+  );
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/adminscope"
 	merchantsettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantsettlement"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -86,6 +87,7 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("merchant_id = ?", merchantID)
 	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "updated_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)
@@ -140,6 +142,7 @@ func (h *Handler) ListTransferRecords(c *gin.Context) {
 		}
 		q = q.Where("merchant_id = ?", merchantID)
 	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "updated_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)

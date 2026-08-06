@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"gorm.io/gorm"
 )
 
 type Store interface {
-	ListGroups(ctx context.Context, merID *uint, onlyOn bool, page, limit int) ([]ProductGroup, int64, error)
+	ListGroups(ctx context.Context, merID *uint, onlyOn bool, page, limit int, filter listquery.AdminFilter) ([]ProductGroup, int64, error)
 	GetGroup(ctx context.Context, id uint) (*ProductGroup, error)
 	CreateGroup(ctx context.Context, g *ProductGroup) error
 	UpdateGroup(ctx context.Context, g *ProductGroup) error
@@ -37,9 +38,9 @@ type Service struct{ store Store }
 
 func NewService(store Store) *Service { return &Service{store: store} }
 
-func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int) (*PageResult[ProductGroup], error) {
+func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int, filter listquery.AdminFilter) (*PageResult[ProductGroup], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListGroups(ctx, merID, false, page, limit)
+	list, total, err := s.store.ListGroups(ctx, merID, false, page, limit, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int) (
 
 func (s *Service) ListApp(ctx context.Context, page, limit int) (*PageResult[ProductGroup], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListGroups(ctx, nil, true, page, limit)
+	list, total, err := s.store.ListGroups(ctx, nil, true, page, limit, listquery.AdminFilter{})
 	if err != nil {
 		return nil, err
 	}

@@ -77,8 +77,9 @@ func (h *Handler) list(c *gin.Context) {
 		q = q.Where("o.status <> 'pending_pay'")
 	}
 	if status := c.Query("status"); status != "" {
-		q = q.Where("o.status = ?", fromStatus(status))
+		q = applyMerchantStatusFilter(q, status)
 	}
+	q = applyMerchantOrderFilters(q, c)
 	q = applyVerifyTab(q, c.Query("verify_tab"))
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -278,6 +279,55 @@ func fromStatus(v string) string {
 	default:
 		return "paid"
 	}
+}
+
+func applyMerchantStatusFilter(q *gorm.DB, status string) *gorm.DB {
+	switch strings.TrimSpace(status) {
+	case "0":
+		return q.Where("o.status IN ?", []string{"paid", "fulfilling"})
+	case "1":
+		return q.Where("o.status = ?", "shipped")
+	case "3":
+		return q.Where("o.status = ?", "completed")
+	default:
+		return q.Where("o.status = ?", fromStatus(status))
+	}
+}
+
+func applyMerchantOrderFilters(q *gorm.DB, c *gin.Context) *gorm.DB {
+	if orderSN := strings.TrimSpace(c.Query("order_sn")); orderSN != "" {
+		q = q.Where("o.order_no LIKE ?", "%"+orderSN+"%")
+	}
+	if payType := strings.TrimSpace(c.Query("pay_type")); payType != "" {
+		switch payType {
+		case "0":
+			q = q.Where("g.pay_channel = ?", "balance")
+		case "1":
+			q = q.Where("g.pay_channel = ?", "wechat")
+		case "2":
+			q = q.Where("g.pay_channel = ?", "alipay")
+		case "7":
+			q = q.Where("g.pay_channel = ?", "mock")
+		}
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where(
+			"o.order_no LIKE ? OR o.recipient_snapshot LIKE ? OR CAST(o.id AS CHAR) = ?",
+			like, like, keyword,
+		)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("o.created_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("o.created_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
+	return q
 }
 func payType(v string) int {
 	switch v {

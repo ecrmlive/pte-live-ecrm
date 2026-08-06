@@ -1,9 +1,21 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElTag,
+} from 'element-plus';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   assignMerchantIntentionRegion,
   auditMerchantIntention,
@@ -11,50 +23,147 @@ import {
   type MerchantIntentionRow,
 } from '#/api/core/ecrm';
 import { getAccessCodesApi } from '#/api/core/auth';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const rows = ref<MerchantIntentionRow[]>([]);
-const total = ref(0);
-const dialogOpen = ref(false);
-const regionDialogOpen = ref(false);
-const submitting = ref(false);
 const selected = ref<MerchantIntentionRow>();
+const submitting = ref(false);
 const canAudit = ref(false);
 const canAssignRegion = ref(false);
-const query = reactive({ keyword: '', page: 1, limit: 20, status: 0 as number | undefined });
-const form = reactive({ account: '', fail_msg: '', mark: '', password: '', region_id: 0, status: 1 });
+
+const form = reactive({
+  account: '',
+  fail_msg: '',
+  mark: '',
+  password: '',
+  region_id: 0,
+  status: 1,
+});
 const assignment = reactive({ region_id: 0 });
 
-const statusText = (status: number) => ({ 0: '待审核', 1: '已通过', 2: '已驳回' }[status] || '未知');
-const statusType = (status: number) => ({ 0: 'warning', 1: 'success', 2: 'danger' }[status] || 'info');
-const formatTime = (value?: string | null) => {
-  if (!value) return '—';
-  return formatShanghaiDateTime(value);
+const statusText = (status: number) =>
+  ({ 0: '待审核', 1: '已通过', 2: '已驳回' })[status] || '未知';
+const statusType = (status: number) =>
+  ({ 0: 'warning', 1: 'success', 2: 'danger' })[status] || 'info';
+const formatTime = (value?: string | null) =>
+  value ? formatShanghaiDateTime(value) : '—';
+
+function buildListParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
+  const statusRaw = formValues?.status;
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    keyword: String(formValues?.keyword ?? '').trim() || undefined,
+    status:
+      statusRaw === 0 || statusRaw === 1 || statusRaw === 2
+        ? Number(statusRaw)
+        : undefined,
+    date_from: range[0],
+    date_to: range[1],
+  };
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '店铺名称 / 联系人 / 手机号',
+    },
+    fieldName: 'keyword',
+    label: '申请搜索',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '待审核', value: 0 },
+        { label: '已通过', value: 1 },
+        { label: '已驳回', value: 2 },
+      ],
+      placeholder: '全部状态',
+    },
+    fieldName: 'status',
+    label: '审核状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<MerchantIntentionRow> = {
+  columns: [
+    { field: 'mer_intention_id', title: '申请 ID', width: 88 },
+    {
+      field: 'mer_name',
+      minWidth: 150,
+      showOverflow: false,
+      title: '店铺名称',
+    },
+    { field: 'name', minWidth: 110, title: '联系人' },
+    { field: 'phone', minWidth: 130, title: '联系电话' },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatTime(cellValue),
+      minWidth: 170,
+      title: '申请时间',
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 96,
+    },
+    {
+      field: 'circle_id',
+      formatter: ({ cellValue }) => cellValue || '未分配',
+      title: '分配区域',
+      width: 108,
+    },
+    {
+      field: 'fail_msg',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 160,
+      showOverflow: false,
+      title: '驳回原因',
+    },
+    platformListActionColumn({ width: 205 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const data = await fetchMerchantIntentions(buildListParams(page, formValues));
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'mer_intention_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
 };
 
-async function load() {
-  loading.value = true;
-  try {
-    const result = await fetchMerchantIntentions({ ...query, keyword: query.keyword.trim() || undefined });
-    rows.value = result.list;
-    total.value = result.total;
-  } finally {
-    loading.value = false;
-  }
-}
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-function search() {
-  query.page = 1;
-  void load();
-}
+const [AuditModal, auditModalApi] = useVbenModal({
+  onConfirm: async () => submitAudit(),
+});
 
-function reset() {
-  query.keyword = '';
-  query.status = 0;
-  query.page = 1;
-  void load();
-}
+const [RegionModal, regionModalApi] = useVbenModal({
+  onConfirm: async () => assignRegion(),
+});
 
 function openAudit(row: MerchantIntentionRow, status: number) {
   selected.value = row;
@@ -64,27 +173,41 @@ function openAudit(row: MerchantIntentionRow, status: number) {
   form.account = '';
   form.password = '';
   form.region_id = row.circle_id || 0;
-  dialogOpen.value = true;
+  auditModalApi
+    .setState({
+      title: status === 1 ? '通过店铺入驻' : '驳回店铺入驻',
+    })
+    .open();
 }
 
 function openRegionAssignment(row: MerchantIntentionRow) {
   selected.value = row;
   assignment.region_id = row.circle_id || 0;
-  regionDialogOpen.value = true;
+  regionModalApi.setState({ title: '分配入驻审核区域' }).open();
 }
 
 async function assignRegion() {
-  if (!selected.value || assignment.region_id <= 0) { ElMessage.warning('请填写有效区域 ID'); return; }
+  if (!selected.value || assignment.region_id <= 0) {
+    ElMessage.warning('请填写有效区域 ID');
+    return;
+  }
+  regionModalApi.lock();
   submitting.value = true;
   try {
-    await assignMerchantIntentionRegion(selected.value.mer_intention_id, assignment.region_id);
+    await assignMerchantIntentionRegion(
+      selected.value.mer_intention_id,
+      assignment.region_id,
+    );
     ElMessage.success('入驻申请已分配区域');
-    regionDialogOpen.value = false;
-    await load();
-  } finally { submitting.value = false; }
+    regionModalApi.close();
+    gridApi.reload();
+  } finally {
+    submitting.value = false;
+    regionModalApi.unlock();
+  }
 }
 
-async function submit() {
+async function submitAudit() {
   if (!selected.value) return;
   if (form.status === 2 && !form.fail_msg.trim()) {
     ElMessage.warning('请填写驳回原因');
@@ -94,6 +217,7 @@ async function submit() {
     ElMessage.warning('通过入驻时必须设置商户管理账号和初始密码');
     return;
   }
+  auditModalApi.lock();
   submitting.value = true;
   try {
     await auditMerchantIntention(selected.value.mer_intention_id, {
@@ -105,65 +229,116 @@ async function submit() {
       status: form.status,
     });
     ElMessage.success(form.status === 1 ? '入驻审核已通过' : '入驻申请已驳回');
-    dialogOpen.value = false;
-    await load();
+    auditModalApi.close();
+    gridApi.reload();
   } finally {
     submitting.value = false;
+    auditModalApi.unlock();
   }
 }
 
 onMounted(async () => {
-  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
+  const permissions = await getAccessCodesApi();
   canAudit.value = permissions.includes('merchant.intention.audit');
   canAssignRegion.value = permissions.includes('merchant.intention.assign_region');
 });
 </script>
 
 <template>
-  <Page title="店铺入驻审核" description="审核通过后创建商户及其管理账号；驳回必须保留原因。">
-    <el-card shadow="never">
-      <el-form class="grid gap-x-4 md:grid-cols-3 xl:grid-cols-4" label-width="76px" @submit.prevent="search">
-        <el-form-item label="申请搜索"><el-input v-model="query.keyword" clearable placeholder="店铺名称 / 联系人 / 手机号" @keyup.enter="search" /></el-form-item>
-        <el-form-item label="审核状态">
-          <el-select v-model="query.status" class="w-full">
-            <el-option label="待审核" :value="0" /><el-option label="已通过" :value="1" /><el-option label="已驳回" :value="2" />
-          </el-select>
-        </el-form-item>
-        <el-form-item><el-button type="primary" @click="search">搜索</el-button><el-button @click="reset">重置</el-button></el-form-item>
-      </el-form>
-    </el-card>
-    <el-card class="mt-4" shadow="never">
-      <el-table v-loading="loading" :data="rows" row-key="mer_intention_id">
-        <el-table-column label="申请 ID" prop="mer_intention_id" width="88" />
-        <el-table-column label="店铺名称" min-width="150" prop="mer_name" show-overflow-tooltip />
-        <el-table-column label="联系人" min-width="110" prop="name" />
-        <el-table-column label="联系电话" min-width="130" prop="phone" />
-        <el-table-column label="申请时间" min-width="170"><template #default="{ row }">{{ formatTime(row.create_time) }}</template></el-table-column>
-        <el-table-column label="状态" width="96"><template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="分配区域" width="108"><template #default="{ row }">{{ row.circle_id || '未分配' }}</template></el-table-column>
-        <el-table-column label="驳回原因" min-width="160" prop="fail_msg" show-overflow-tooltip />
-        <el-table-column fixed="right" label="操作" width="205">
-          <template #default="{ row }"><template v-if="row.status === 0"><el-button v-if="canAssignRegion" link type="primary" @click="openRegionAssignment(row)">分配区域</el-button><el-button v-if="canAudit" link type="primary" @click="openAudit(row, 1)">通过</el-button><el-button v-if="canAudit" link type="danger" @click="openAudit(row, 2)">驳回</el-button><span v-if="!canAssignRegion && !canAudit">—</span></template><span v-else>—</span></template>
-        </el-table-column>
-      </el-table>
-      <div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10, 20, 50, 100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div>
-    </el-card>
-    <el-dialog v-model="dialogOpen" :title="form.status === 1 ? '通过店铺入驻' : '驳回店铺入驻'" width="520px" destroy-on-close>
-      <el-form label-width="105px">
-        <el-form-item label="申请店铺"><span>{{ selected?.mer_name }}</span></el-form-item>
-        <template v-if="form.status === 1">
-          <el-form-item label="商户管理账号" required><el-input v-model="form.account" autocomplete="off" /></el-form-item>
-          <el-form-item label="初始密码" required><el-input v-model="form.password" autocomplete="new-password" show-password type="password" /></el-form-item>
-          <el-form-item label="所属区域ID"><el-input-number v-model="form.region_id" :min="0" /><div class="text-xs text-gray-500">填写区域商圈对应的商户 region_id，区域管理员将按此范围管理商户。</div></el-form-item>
+  <Page auto-content-height>
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="statusType(row.status)">{{ statusText(row.status) }}</ElTag>
+      </template>
+      <template #action="{ row }">
+        <template v-if="row.status === 0">
+          <ElButton
+            v-if="canAssignRegion"
+            link
+            type="primary"
+            @click="openRegionAssignment(row)"
+          >
+            分配区域
+          </ElButton>
+          <ElButton
+            v-if="canAudit"
+            link
+            type="primary"
+            @click="openAudit(row, 1)"
+          >
+            通过
+          </ElButton>
+          <ElButton
+            v-if="canAudit"
+            link
+            type="danger"
+            @click="openAudit(row, 2)"
+          >
+            驳回
+          </ElButton>
+          <span v-if="!canAssignRegion && !canAudit">—</span>
         </template>
-        <el-form-item v-else label="驳回原因" required><el-input v-model="form.fail_msg" :rows="3" maxlength="300" show-word-limit type="textarea" /></el-form-item>
-        <el-form-item label="审核备注"><el-input v-model="form.mark" :rows="3" maxlength="300" show-word-limit type="textarea" /></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="dialogOpen = false">取消</el-button><el-button :loading="submitting" type="primary" @click="submit">确定</el-button></template>
-    </el-dialog>
-    <el-dialog v-model="regionDialogOpen" title="分配入驻审核区域" width="420px" destroy-on-close>
-      <el-form label-width="100px"><el-form-item label="申请店铺"><span>{{ selected?.mer_name }}</span></el-form-item><el-form-item label="区域 ID" required><el-input-number v-model="assignment.region_id" :min="1" /></el-form-item><p class="text-xs text-gray-500">分配后仅对应区域管理员可查看和审核该申请。</p></el-form>
-      <template #footer><el-button @click="regionDialogOpen = false">取消</el-button><el-button :loading="submitting" type="primary" @click="assignRegion">确定</el-button></template>
-    </el-dialog>
+        <span v-else>—</span>
+      </template>
+    </Grid>
+
+    <AuditModal>
+      <ElForm label-width="105px">
+        <ElFormItem label="申请店铺">
+          <span>{{ selected?.mer_name }}</span>
+        </ElFormItem>
+        <template v-if="form.status === 1">
+          <ElFormItem label="商户管理账号" required>
+            <ElInput v-model="form.account" autocomplete="off" />
+          </ElFormItem>
+          <ElFormItem label="初始密码" required>
+            <ElInput
+              v-model="form.password"
+              autocomplete="new-password"
+              show-password
+              type="password"
+            />
+          </ElFormItem>
+          <ElFormItem label="所属区域ID">
+            <ElInputNumber v-model="form.region_id" :min="0" />
+            <div class="text-xs text-gray-500">
+              填写区域商圈对应的商户 region_id，区域管理员将按此范围管理商户。
+            </div>
+          </ElFormItem>
+        </template>
+        <ElFormItem v-else label="驳回原因" required>
+          <ElInput
+            v-model="form.fail_msg"
+            :rows="3"
+            maxlength="300"
+            show-word-limit
+            type="textarea"
+          />
+        </ElFormItem>
+        <ElFormItem label="审核备注">
+          <ElInput
+            v-model="form.mark"
+            :rows="3"
+            maxlength="300"
+            show-word-limit
+            type="textarea"
+          />
+        </ElFormItem>
+      </ElForm>
+    </AuditModal>
+
+    <RegionModal>
+      <ElForm label-width="100px">
+        <ElFormItem label="申请店铺">
+          <span>{{ selected?.mer_name }}</span>
+        </ElFormItem>
+        <ElFormItem label="区域 ID" required>
+          <ElInputNumber v-model="assignment.region_id" :min="1" />
+        </ElFormItem>
+        <p class="text-xs text-gray-500">
+          分配后仅对应区域管理员可查看和审核该申请。
+        </p>
+      </ElForm>
+    </RegionModal>
   </Page>
 </template>

@@ -1,28 +1,105 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { ref } from 'vue';
+
 import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
-import { onMounted, ref } from 'vue';
-import { listProductUnitsApi, saveProductUnitsApi, type ProductUnit } from '#/api/core/merchant-product-unit';
+import { ElButton, ElInput, ElMessage } from 'element-plus';
 
-const rows = ref<ProductUnit[]>([]);
-const loading = ref(false);
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listProductUnitsApi,
+  saveProductUnitsApi,
+  type ProductUnit,
+} from '#/api/core/merchant-product-unit';
+import { MERCHANT_LIST_GRID_LAYOUT } from '#/constants/merchant-list-grid';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+
 const saving = ref(false);
+const rows = ref<ProductUnit[]>([]);
+const loaded = ref(false);
 
-async function load() {
-  loading.value = true;
-  try {
-    rows.value = (await listProductUnitsApi()).list ?? [];
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '单位名称' },
+    fieldName: 'keyword',
+    label: '单位搜索',
+  },
+]);
+
+const gridOptions: VxeGridProps<ProductUnit> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    {
+      field: 'name',
+      minWidth: 220,
+      showOverflow: false,
+      slots: { default: 'name' },
+      title: '单位名称',
+    },
+    {
+      field: 'sort',
+      title: '排序',
+      width: 120,
+      slots: { default: 'sort' },
+    },
+    {
+      field: 'action',
+      fixed: 'right',
+      showOverflow: false,
+      slots: { default: 'action' },
+      title: '操作',
+      width: 100,
+    },
+  ],
+  pagerConfig: { enabled: false },
+  proxyConfig: {
+    ajax: {
+      query: async (_params, formValues) => {
+        if (!loaded.value) {
+          const data = await listProductUnitsApi();
+          rows.value = data.list ?? [];
+          loaded.value = true;
+        }
+        const keyword = String(formValues?.keyword ?? '')
+          .trim()
+          .toLowerCase();
+        let list = rows.value;
+        if (keyword) {
+          list = list.filter((item) =>
+            item.name.toLowerCase().includes(keyword),
+          );
+        }
+        return { items: list, total: list.length };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'unit_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 function addRow() {
-  rows.value.push({ unit_id: rows.value.length + 1, name: '', sort: rows.value.length });
+  rows.value.push({
+    unit_id: rows.value.length + 1,
+    name: '',
+    sort: rows.value.length,
+  });
+  gridApi.reload();
 }
 
 function removeRow(index: number) {
   rows.value.splice(index, 1);
+  gridApi.reload();
 }
 
 async function save() {
@@ -32,26 +109,40 @@ async function save() {
   }
   saving.value = true;
   try {
-    const result = await saveProductUnitsApi({ list: rows.value.map((item, index) => ({ ...item, name: item.name.trim(), sort: index })) });
+    const result = await saveProductUnitsApi({
+      list: rows.value.map((item, index) => ({
+        ...item,
+        name: item.name.trim(),
+        sort: index,
+      })),
+    });
     rows.value = result.list ?? rows.value;
+    loaded.value = true;
     ElMessage.success('商品单位已保存');
+    gridApi.reload();
   } finally {
     saving.value = false;
   }
 }
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <Page title="商品单位" description="维护本店商品计量单位，新建商品时可选择。">
-    <template #extra><el-button type="primary" @click="addRow">新增单位</el-button><el-button type="success" :loading="saving" @click="save">保存</el-button></template>
-    <el-card v-loading="loading" shadow="never">
-      <el-table :data="rows" row-key="unit_id">
-        <el-table-column label="单位名称" min-width="220"><template #default="{ row }"><el-input v-model="row.name" maxlength="16" /></template></el-table-column>
-        <el-table-column label="排序" width="120"><template #default="{ $index }">{{ $index }}</template></el-table-column>
-        <el-table-column label="操作" width="100"><template #default="{ $index }"><el-button link type="danger" @click="removeRow($index)">删除</el-button></template></el-table-column>
-      </el-table>
-    </el-card>
+  <Page auto-content-height>
+    <template #extra>
+      <ElButton @click="addRow">新增单位</ElButton>
+      <ElButton type="primary" :loading="saving" @click="save">保存</ElButton>
+    </template>
+
+    <Grid>
+      <template #name="{ row }">
+        <ElInput v-model="row.name" maxlength="16" />
+      </template>
+      <template #sort="{ rowIndex }">
+        {{ rowIndex }}
+      </template>
+      <template #action="{ rowIndex }">
+        <ElButton link type="danger" @click="removeRow(rowIndex)">删除</ElButton>
+      </template>
+    </Grid>
   </Page>
 </template>

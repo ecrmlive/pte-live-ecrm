@@ -10,6 +10,7 @@ import (
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -227,6 +228,11 @@ func (h *Handler) ListOrders(c *gin.Context) {
 		}
 		q = q.Where("status = ?", status)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("order_no LIKE ? OR CAST(user_id AS CHAR) LIKE ?", like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		svipFail(c, "会员记录查询失败")

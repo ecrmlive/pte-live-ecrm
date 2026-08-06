@@ -36,14 +36,41 @@ type account struct {
 }
 
 func (h *Handler) List(c *gin.Context) {
-	var rows []account
-	if e := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_deposit_account").Order("merchant_id").Find(&rows).Error; e != nil {
+	page, limit := pageLimit(c)
+	q := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_deposit_account")
+	if mid := strings.TrimSpace(c.Query("merchant_id")); mid != "" {
+		id, err := strconv.ParseUint(mid, 10, 64)
+		if err != nil || id == 0 {
+			response.Fail(c, 400, "商户 ID 参数错误")
+			return
+		}
+		q = q.Where("merchant_id = ?", id)
+	}
+	if status := strings.TrimSpace(c.Query("status")); status != "" {
+		q = q.Where("state = ?", status)
+	}
+	if kw := strings.TrimSpace(c.Query("keyword")); kw != "" {
+		like := "%" + kw + "%"
+		q = q.Where(
+			"CAST(merchant_id AS CHAR) LIKE ? OR state LIKE ?",
+			like, like,
+		)
+	}
+	var total int64
+	if e := q.Count(&total).Error; e != nil {
 		fail(c, e)
 		return
 	}
-	response.OK(c, gin.H{"list": rows})
+	var rows []account
+	if e := q.Order("merchant_id").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; e != nil {
+		fail(c, e)
+		return
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
 }
+
 func (h *Handler) ListRefunds(c *gin.Context) {
+	page, limit := pageLimit(c)
 	var rows []struct {
 		ID              uint      `json:"id"`
 		MerchantID      uint      `json:"merchant_id"`
@@ -54,15 +81,53 @@ func (h *Handler) ListRefunds(c *gin.Context) {
 		PayoutReference *string   `json:"payout_reference"`
 		CreatedAt       time.Time `json:"created_at"`
 	}
-	q := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_deposit_refund").Order("id DESC")
+	q := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_deposit_refund")
 	if status := strings.TrimSpace(c.Query("status")); status != "" {
 		q = q.Where("status=?", status)
 	}
-	if e := q.Find(&rows).Error; e != nil {
+	if mid := strings.TrimSpace(c.Query("merchant_id")); mid != "" {
+		id, err := strconv.ParseUint(mid, 10, 64)
+		if err != nil || id == 0 {
+			response.Fail(c, 400, "商户 ID 参数错误")
+			return
+		}
+		q = q.Where("merchant_id = ?", id)
+	}
+	if kw := strings.TrimSpace(c.Query("keyword")); kw != "" {
+		like := "%" + kw + "%"
+		q = q.Where("reason LIKE ? OR COALESCE(review_note,'') LIKE ?", like, like)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		q = q.Where("created_at >= ?", from+" 00:00:00")
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		q = q.Where("created_at <= ?", to+" 23:59:59")
+	}
+	var total int64
+	if e := q.Count(&total).Error; e != nil {
 		fail(c, e)
 		return
 	}
-	response.OK(c, gin.H{"list": rows})
+	if e := q.Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; e != nil {
+		fail(c, e)
+		return
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
+}
+
+func pageLimit(c *gin.Context) (int, int) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	return page, limit
 }
 func (h *Handler) Deduct(c *gin.Context) {
 	mid, e := strconv.ParseUint(c.Param("merchant_id"), 10, 64)

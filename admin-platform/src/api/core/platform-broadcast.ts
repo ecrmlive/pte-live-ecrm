@@ -42,7 +42,15 @@ export interface AuditRoomPayload {
   status: -1 | 0 | 2;
 }
 
-export function listRoomsApi(params: { limit: number; page: number }) {
+export function listRoomsApi(params: {
+  limit: number;
+  page: number;
+  mer_id?: number;
+  keyword?: string;
+  status?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<RoomPage>('/broadcast/rooms', { params });
 }
 

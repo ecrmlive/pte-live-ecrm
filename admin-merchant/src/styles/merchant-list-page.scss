@@ -65,7 +65,7 @@
   padding-top: 12px;
 }
 
-/* 行高随内容增高：关闭 vxe ellipsis 固定行高后的单元格换行与内边距 */
+/* 行高随内容增高（grid showOverflow: false；列级 showOverflow: true 走下方 ellipsis） */
 .merchant-vxe-grid .vxe-body--column .vxe-cell {
   overflow: visible;
   white-space: normal;
@@ -75,11 +75,12 @@
   padding-bottom: 10px;
 }
 
-.merchant-vxe-grid .vxe-body--column.col--ellipsis,
+/* 列级 showOverflow: true — 单行省略，避免长文本撑高行挤掉 fixed 操作列 */
 .merchant-vxe-grid .vxe-body--column.col--ellipsis .vxe-cell {
-  height: auto !important;
-  max-height: none !important;
-  text-overflow: clip;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  word-break: normal;
 }
 
 .merchant-vxe-grid .vxe-header--column .vxe-cell {

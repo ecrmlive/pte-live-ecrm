@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -47,6 +48,11 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("o.order_no LIKE ?", "%"+orderNo+"%")
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("o.order_no LIKE ? OR oi.title LIKE ? OR oi.invoice_no LIKE ?", like, like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "oi.requested_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "发票列表查询失败")

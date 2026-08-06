@@ -21,6 +21,8 @@ import {
   withTimeout,
 } from '#/utils/platform-bootstrap';
 
+import { STANDALONE_ROUTE_PATHS } from './routes/standalone';
+
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 
 async function loadPlatformMenuTree(
@@ -69,7 +71,11 @@ async function generateAccess(options: GenerateAccessOptions) {
     throw error;
   }
 
-  const routerRoutes = extractPlatformRouterRoutes(menuTree);
+  // DIY / 数据大屏等已在 standalone 注册为无 BasicLayout 页；
+  // 菜单树仍保留入口，但动态路由不再挂到侧栏布局下。
+  const routerRoutes = extractPlatformRouterRoutes(menuTree).filter(
+    (route) => !STANDALONE_ROUTE_PATHS.has(String(route.path || '')),
+  );
 
   const result = await generateAccessible(preferences.app.accessMode, {
     ...options,

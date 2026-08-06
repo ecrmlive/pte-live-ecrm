@@ -1,9 +1,21 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { reactive, ref } from 'vue';
 
+import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElSwitch,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createProductGuaranteeApi,
   deleteProductGuaranteeApi,
@@ -12,15 +24,95 @@ import {
   type ProductGuarantee,
   type ProductGuaranteeInput,
 } from '#/api/core/product-meta';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-const loading = ref(false);
 const saving = ref(false);
-const rows = ref<ProductGuarantee[]>([]);
-const total = ref(0);
-const dialogOpen = ref(false);
 const editingID = ref<number>();
-const query = reactive({ page: 1, limit: 20 });
-const form = reactive<ProductGuaranteeInput>({ name: '', content: '', sort: 0, status: 1 });
+const form = reactive<ProductGuaranteeInput>({
+  name: '',
+  content: '',
+  sort: 0,
+  status: 1,
+});
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '保障名称' },
+    fieldName: 'keyword',
+    label: '保障搜索',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '已启用', value: 1 },
+        { label: '已停用', value: 0 },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<ProductGuarantee> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'guarantee_id', title: 'ID', width: 88 },
+    { field: 'name', minWidth: 160, showOverflow: false, title: '保障名称' },
+    { field: 'content', minWidth: 260, showOverflow: false, title: '服务说明' },
+    { field: 'sort', title: '排序', width: 90 },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '启用',
+      width: 100,
+    },
+    {
+      field: 'create_time',
+      minWidth: 170,
+      title: '创建时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+    merchantListActionColumn({ width: 128 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const status = formValues?.status;
+        const data = await listProductGuaranteesApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status: status === 0 || status === 1 ? Number(status) : undefined,
+        });
+        return { items: data.list, total: data.total };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'guarantee_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [EditModal, editModalApi] = useVbenModal({
+  onConfirm: save,
+});
 
 function resetForm() {
   editingID.value = undefined;
@@ -30,62 +122,114 @@ function resetForm() {
   form.status = 1;
 }
 
-function openCreate() { resetForm(); dialogOpen.value = true; }
+function openCreate() {
+  resetForm();
+  editModalApi.setState({ title: '新增保障服务' }).open();
+}
+
 function openEdit(row: ProductGuarantee) {
   editingID.value = row.guarantee_id;
   form.name = row.name;
   form.content = row.content;
   form.sort = row.sort;
   form.status = row.status;
-  dialogOpen.value = true;
-}
-
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listProductGuaranteesApi(query);
-    rows.value = data.list;
-    total.value = data.total;
-  } finally { loading.value = false; }
+  editModalApi.setState({ title: '编辑保障服务' }).open();
 }
 
 async function save() {
-  if (!form.name.trim()) { ElMessage.warning('请填写保障名称'); return; }
+  if (!form.name.trim()) {
+    ElMessage.warning('请填写保障名称');
+    return;
+  }
   saving.value = true;
+  editModalApi.lock();
   try {
-    if (editingID.value) await updateProductGuaranteeApi(editingID.value, form);
-    else await createProductGuaranteeApi(form);
-    dialogOpen.value = false;
+    if (editingID.value) {
+      await updateProductGuaranteeApi(editingID.value, form);
+    } else {
+      await createProductGuaranteeApi(form);
+    }
+    editModalApi.close();
     ElMessage.success('保存成功');
-    await load();
-  } finally { saving.value = false; }
+    gridApi.reload();
+  } finally {
+    saving.value = false;
+    editModalApi.unlock();
+  }
 }
 
 async function remove(row: ProductGuarantee) {
   try {
-    await ElMessageBox.confirm(`删除保障服务“${row.name}”后不可恢复，是否继续？`, '删除确认', { type: 'warning' });
+    await confirm({
+      content: `删除保障服务“${row.name}”后不可恢复，是否继续？`,
+      icon: 'warning',
+      title: '删除确认',
+    });
     await deleteProductGuaranteeApi(row.guarantee_id);
     ElMessage.success('已删除');
-    await load();
+    gridApi.reload();
   } catch {
-    // 用户取消不提示错误。
+    // cancelled
   }
 }
 
 async function changeStatus(row: ProductGuarantee) {
   try {
-    await updateProductGuaranteeApi(row.guarantee_id, { name: row.name, content: row.content, sort: row.sort, status: row.status });
+    await updateProductGuaranteeApi(row.guarantee_id, {
+      name: row.name,
+      content: row.content,
+      sort: row.sort,
+      status: row.status,
+    });
     ElMessage.success('状态已更新');
-  } catch { row.status = row.status === 1 ? 0 : 1; }
+  } catch {
+    gridApi.reload();
+  }
 }
-
-onMounted(load);
 </script>
 
 <template>
-  <Page title="保障服务" description="维护商品售后保障说明；仅启用的保障服务可在本店商品中选择。">
-    <template #extra><el-button type="primary" @click="openCreate">新增保障</el-button></template>
-    <el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="guarantee_id"><el-table-column label="ID" prop="guarantee_id" width="88" /><el-table-column label="保障名称" min-width="160" prop="name" /><el-table-column label="服务说明" min-width="260" prop="content" show-overflow-tooltip /><el-table-column label="排序" prop="sort" width="90" /><el-table-column label="启用" width="100"><template #default="{ row }"><el-switch v-model="row.status" :active-value="1" :inactive-value="0" @change="changeStatus(row)" /></template></el-table-column><el-table-column label="创建时间" min-width="170" prop="create_time" /><el-table-column fixed="right" label="操作" width="128"><template #default="{ row }"><el-button link type="primary" @click="openEdit(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10, 20, 50, 100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div></el-card>
-    <el-dialog v-model="dialogOpen" :title="editingID ? '编辑保障服务' : '新增保障服务'" width="560px" destroy-on-close><el-form label-width="88px"><el-form-item label="保障名称" required><el-input v-model="form.name" maxlength="64" /></el-form-item><el-form-item label="服务说明"><el-input v-model="form.content" :rows="5" maxlength="1000" show-word-limit type="textarea" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item><el-form-item label="启用"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="dialogOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="save">保存</el-button></template></el-dialog>
+  <Page auto-content-height>
+    <template #extra>
+      <ElButton type="primary" @click="openCreate">新增保障</ElButton>
+    </template>
+
+    <Grid>
+      <template #status="{ row }">
+        <ElSwitch
+          v-model="row.status"
+          :active-value="1"
+          :inactive-value="0"
+          @change="changeStatus(row)"
+        />
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
+
+    <EditModal class="w-[560px] max-w-[96vw]">
+      <ElForm label-width="88px">
+        <ElFormItem label="保障名称" required>
+          <ElInput v-model="form.name" maxlength="64" />
+        </ElFormItem>
+        <ElFormItem label="服务说明">
+          <ElInput
+            v-model="form.content"
+            :rows="5"
+            maxlength="1000"
+            show-word-limit
+            type="textarea"
+          />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" />
+        </ElFormItem>
+        <ElFormItem label="启用">
+          <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </EditModal>
   </Page>
 </template>

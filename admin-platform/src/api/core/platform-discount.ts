@@ -27,6 +27,8 @@ export function listPlatformDiscountsApi(params: {
   page: number;
   status?: number | string;
   store_id?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<PlatformDiscountPage>('/marketing/discounts', { params });
 }

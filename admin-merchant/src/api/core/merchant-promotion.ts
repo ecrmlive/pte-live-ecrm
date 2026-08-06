@@ -65,7 +65,16 @@ export interface MerchantCouponPageResult<T> {
   total: number;
 }
 
-export function listMerchantCouponsApi(params: { limit: number; page: number }) {
+export interface MerchantCouponListParams {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: 0 | 1;
+}
+
+export function listMerchantCouponsApi(params: MerchantCouponListParams) {
   return requestClient.get<MerchantCouponPage>('/coupons', { params });
 }
 
@@ -89,10 +98,30 @@ export function sendMerchantCouponApi(id: number, body: { mark: string; uids: nu
   return requestClient.post<MerchantCouponSend>(`/coupons/${id}/send`, body);
 }
 
-export function listMerchantCouponRecordsApi(params: { coupon_id?: number; limit: number; page: number }) {
+export interface MerchantCouponRecordListParams {
+  coupon_id?: number;
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: 0 | 1 | 2;
+  uid?: number;
+}
+
+export interface MerchantCouponSendListParams {
+  coupon_id?: number;
+  date_from?: string;
+  date_to?: string;
+  limit: number;
+  page: number;
+  status?: 0 | 1;
+}
+
+export function listMerchantCouponRecordsApi(params: MerchantCouponRecordListParams) {
   return requestClient.get<MerchantCouponPageResult<MerchantCouponRecord>>('/coupons/records', { params });
 }
 
-export function listMerchantCouponSendsApi(params: { limit: number; page: number }) {
+export function listMerchantCouponSendsApi(params: MerchantCouponSendListParams) {
   return requestClient.get<MerchantCouponPageResult<MerchantCouponSend>>('/coupons/sends', { params });
 }

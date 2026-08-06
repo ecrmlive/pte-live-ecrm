@@ -257,6 +257,10 @@ initialize_databases() {
 			shared_mysql <"${sql_file}"
 			done
 		done
+	merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
+	[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
+	echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql 到 pte_live_mysql"
+	shared_mysql <"${merchant_menu_sql}"
 	provision_shared_database_user
 	echo "七禧三库已导入共享 MySQL：qixi_crm_admin、qixi_crm_business、qixi_crm_merchant。"
 }

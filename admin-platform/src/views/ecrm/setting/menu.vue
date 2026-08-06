@@ -1,31 +1,244 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
+import { onMounted, reactive, ref } from 'vue';
 
-import { fetchPlatformMenus, updatePlatformMenu, type PlatformMenuRow } from '#/api/core/ecrm';
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
 
-const rows = ref<PlatformMenuRow[]>([]);
-const loading = ref(false);
-const query = reactive({ keyword: '', type: undefined as number | undefined });
-const dialogOpen = ref(false);
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  fetchPlatformMenus,
+  updatePlatformMenu,
+  type PlatformMenuRow,
+} from '#/api/core/ecrm';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { LIST_KEYWORD_FIELD, listFormOptionsDefaults } from '#/utils/list-form-defaults';
+
+const allRows = ref<PlatformMenuRow[]>([]);
 const editing = ref<PlatformMenuRow>();
 const form = reactive({ menu_name: '', sort: 0, is_show: 1 });
-const filtered = computed(() => rows.value.filter((row) => (!query.keyword || `${row.menu_name}${row.path}${row.route}`.toLowerCase().includes(query.keyword.toLowerCase())) && (query.type === undefined || row.is_menu === query.type)));
-const typeText = (value: number) => value === 2 ? '按钮权限' : '菜单页面';
 
-async function load() { loading.value = true; try { rows.value = await fetchPlatformMenus(); } finally { loading.value = false; } }
-function edit(row: PlatformMenuRow) { editing.value = row; Object.assign(form, { menu_name: row.menu_name, sort: row.sort, is_show: row.is_show }); dialogOpen.value = true; }
-async function save() { if (!editing.value || !form.menu_name.trim()) { ElMessage.warning('菜单名称不能为空'); return; } await updatePlatformMenu(editing.value.menu_id, { menu_name: form.menu_name.trim(), sort: form.sort, is_show: form.is_show }); ElMessage.success('菜单已保存'); dialogOpen.value = false; await load(); }
-onMounted(load);
+function typeText(value: number) {
+  return value === 2 ? '按钮权限' : '菜单页面';
+}
+
+async function loadMenus() {
+  allRows.value = await fetchPlatformMenus();
+  return allRows.value;
+}
+
+async function saveMenu(
+  id: number,
+  data: { menu_name?: string; sort?: number; is_show?: number },
+) {
+  return updatePlatformMenu(id, data);
+}
+
+/** 筛选时保留命中节点及其祖先，便于树形仍能展开到目标项 */
+function filterMenuRows(
+  rows: PlatformMenuRow[],
+  keyword: string,
+  typeRaw: unknown,
+): PlatformMenuRow[] {
+  let matched = rows;
+  if (keyword) {
+    matched = matched.filter((row) =>
+      `${row.menu_name}${row.path}${row.route}`
+        .toLowerCase()
+        .includes(keyword),
+    );
+  }
+  if (typeRaw === 1 || typeRaw === 2) {
+    matched = matched.filter((row) => row.is_menu === Number(typeRaw));
+  }
+  if (matched.length === 0 || matched.length === rows.length) {
+    return matched.length === 0 ? [] : rows;
+  }
+  const byId = new Map(rows.map((row) => [row.menu_id, row]));
+  const keep = new Set<number>();
+  for (const row of matched) {
+    let cur: PlatformMenuRow | undefined = row;
+    while (cur) {
+      if (keep.has(cur.menu_id)) break;
+      keep.add(cur.menu_id);
+      cur = cur.pid ? byId.get(cur.pid) : undefined;
+    }
+  }
+  return rows.filter((row) => keep.has(row.menu_id));
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_KEYWORD_FIELD('名称 / 路径 / 路由'),
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '菜单页面', value: 1 },
+        { label: '按钮权限', value: 2 },
+      ],
+      placeholder: '全部类型',
+    },
+    fieldName: 'type',
+    label: '类型',
+  },
+]);
+
+const gridOptions: VxeGridProps<PlatformMenuRow> = {
+  columns: [
+    { field: 'menu_id', title: 'ID', width: 76 },
+    {
+      field: 'menu_name',
+      minWidth: 220,
+      title: '名称',
+      treeNode: true,
+    },
+    {
+      field: 'path',
+      minWidth: 210,
+      showOverflow: false,
+      title: '路径',
+    },
+    {
+      field: 'route',
+      minWidth: 150,
+      showOverflow: false,
+      title: '路由',
+    },
+    {
+      field: 'is_menu',
+      slots: { default: 'type' },
+      title: '类型',
+      width: 100,
+    },
+    { field: 'sort', title: '排序', width: 80 },
+    {
+      field: 'is_show',
+      slots: { default: 'is_show' },
+      title: '显示',
+      width: 80,
+    },
+    platformListActionColumn({ width: 90 }),
+  ],
+  pagerConfig: { enabled: false },
+  proxyConfig: {
+    ajax: {
+      query: async (_ctx, formValues) => {
+        await loadMenus();
+        const list = filterMenuRows(
+          allRows.value,
+          String(formValues?.keyword ?? '')
+            .trim()
+            .toLowerCase(),
+          formValues?.type,
+        );
+        return { items: list, total: list.length };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'menu_id' },
+  treeConfig: {
+    expandAll: false,
+    indent: 20,
+    parentField: 'pid',
+    rowField: 'menu_id',
+    transform: true,
+  },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [FormModal, formModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function openEdit(row: PlatformMenuRow) {
+  editing.value = row;
+  Object.assign(form, {
+    menu_name: row.menu_name,
+    sort: row.sort,
+    is_show: row.is_show,
+  });
+  formModalApi.setState({ title: '编辑菜单' }).open();
+}
+
+async function save() {
+  if (!editing.value || !form.menu_name.trim()) {
+    ElMessage.warning('菜单名称不能为空');
+    return;
+  }
+  formModalApi.lock();
+  try {
+    await saveMenu(editing.value.menu_id, {
+      menu_name: form.menu_name.trim(),
+      sort: form.sort,
+      is_show: form.is_show,
+    });
+    formModalApi.close();
+    ElMessage.success('菜单已保存');
+    await loadMenus();
+    gridApi.reload();
+  } finally {
+    formModalApi.unlock();
+  }
+}
+
+onMounted(() => {
+  /* grid loads on mount */
+});
 </script>
 
 <template>
-  <Page title="菜单管理" description="维护平台后台菜单与按钮权限的名称、排序和显示状态；路由由功能模块注册，不能在此页任意改写。">
-    <el-card shadow="never"><el-form class="grid gap-x-4 md:grid-cols-3" label-width="72px"><el-form-item label="搜索"><el-input v-model="query.keyword" clearable placeholder="名称 / 路径 / 路由" /></el-form-item><el-form-item label="类型"><el-select v-model="query.type" clearable class="w-full" placeholder="全部"><el-option label="菜单页面" :value="1" /><el-option label="按钮权限" :value="2" /></el-select></el-form-item><el-form-item><el-button @click="load">刷新</el-button></el-form-item></el-form>
-      <el-table v-loading="loading" :data="filtered" border><el-table-column prop="menu_id" label="ID" width="76" /><el-table-column prop="menu_name" label="名称" min-width="160" /><el-table-column prop="path" label="路径" min-width="210" show-overflow-tooltip /><el-table-column prop="route" label="路由" min-width="150" show-overflow-tooltip /><el-table-column label="类型" width="100"><template #default="{ row }"><el-tag :type="row.is_menu === 2 ? 'warning' : 'success'">{{ typeText(row.is_menu) }}</el-tag></template></el-table-column><el-table-column prop="sort" label="排序" width="80" /><el-table-column label="显示" width="80"><template #default="{ row }"><el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '显示' : '隐藏' }}</el-tag></template></el-table-column><el-table-column label="操作" width="90" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button></template></el-table-column></el-table>
-    </el-card>
-    <el-dialog v-model="dialogOpen" title="编辑菜单" width="520px"><el-form label-width="100px"><el-form-item label="菜单 ID"><el-input :model-value="String(editing?.menu_id || '')" disabled /></el-form-item><el-form-item label="菜单名称"><el-input v-model="form.menu_name" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" /></el-form-item><el-form-item label="显示状态"><el-switch v-model="form.is_show" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="dialogOpen = false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template></el-dialog>
+  <Page auto-content-height>
+    <Grid>
+      <template #type="{ row }">
+        <ElTag :type="row.is_menu === 2 ? 'warning' : 'success'">
+          {{ typeText(row.is_menu) }}
+        </ElTag>
+      </template>
+      <template #is_show="{ row }">
+        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
+          {{ row.is_show === 1 ? '显示' : '隐藏' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+      </template>
+    </Grid>
+
+    <FormModal>
+      <ElForm label-width="100px">
+        <ElFormItem label="菜单 ID">
+          <ElInput :model-value="String(editing?.menu_id || '')" disabled />
+        </ElFormItem>
+        <ElFormItem label="菜单名称">
+          <ElInput v-model="form.menu_name" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" />
+        </ElFormItem>
+        <ElFormItem label="显示状态">
+          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </FormModal>
   </Page>
 </template>

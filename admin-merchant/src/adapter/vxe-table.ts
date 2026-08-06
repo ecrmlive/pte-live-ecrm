@@ -11,6 +11,12 @@ import {
 
 import { ElButton, ElImage } from 'element-plus';
 
+import {
+  MERCHANT_LIST_GRID_CLASS,
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListPagerConfig,
+} from '#/constants/merchant-list-grid';
+
 import { useVbenForm } from './form';
 
 setupVbenVxeTable({
@@ -39,7 +45,7 @@ setupVbenVxeTable({
           showResponseMsg: false,
         },
         round: true,
-        // 默认 true（单行省略）；主列表页用 MERCHANT_LIST_GRID_LAYOUT.showOverflow: false 覆盖以支持行高自适应
+        // 默认 true（单行省略）；主列表页由 useVbenVxeGrid 合并 MERCHANT_LIST_GRID_LAYOUT 覆盖
         showOverflow: true,
         size: 'small',
       } as VxeTableGridOptions,
@@ -102,10 +108,35 @@ function withAutoHeightVirtualYGuard<T extends Record<string, any>>(
   };
 }
 
+/** 主列表默认：merchant-vxe-grid + showOverflow false + 单元格顶对齐 + 真实分页 */
+function withMerchantListGridDefaults<T extends Record<string, any>>(
+  options?: GridHookOptions<T>,
+): GridHookOptions<T> {
+  const base = options ?? {};
+  const gridOptions = base.gridOptions ?? {};
+
+  return {
+    ...base,
+    gridClass: base.gridClass ?? MERCHANT_LIST_GRID_CLASS,
+    gridOptions: {
+      ...MERCHANT_LIST_GRID_LAYOUT,
+      ...gridOptions,
+      cellConfig: {
+        ...MERCHANT_LIST_GRID_LAYOUT.cellConfig,
+        ...gridOptions.cellConfig,
+      },
+      pagerConfig: {
+        ...merchantListPagerConfig(),
+        ...(gridOptions.pagerConfig ?? {}),
+      },
+    },
+  };
+}
+
 export const useVbenVxeGrid = <T extends Record<string, any>>(
   options?: GridHookOptions<T>,
 ) => {
-  const normalized = (options ?? {}) as GridHookOptions<T>;
+  const normalized = withMerchantListGridDefaults(options);
   return useGrid<T, ComponentType, ComponentPropsMap>(
     withAutoHeightVirtualYGuard(normalized) ?? normalized,
   );

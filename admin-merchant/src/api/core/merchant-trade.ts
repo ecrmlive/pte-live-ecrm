@@ -46,6 +46,11 @@ export function listMerchantOrdersApi(params: {
   paid?: number;
   status?: number;
   verify_tab?: 'pending' | 'verified';
+  keyword?: string;
+  order_sn?: string;
+  pay_type?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<MerchantOrderPage>('/orders', { params });
 }

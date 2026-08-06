@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/productmeta"
+	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/listquery"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -79,7 +80,8 @@ func (h *Handler) DeleteLabel(c *gin.Context) {
 func (h *Handler) ListGuarantees(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListGuarantees(c.Request.Context(), middleware.MerID(c), page, limit)
+	filter := listquery.ParseAdminFilter(c)
+	res, err := h.svc.ListGuarantees(c.Request.Context(), middleware.MerID(c), page, limit, filter.Keyword, filter.Status)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -128,7 +130,8 @@ func (h *Handler) DeleteGuarantee(c *gin.Context) {
 func (h *Handler) ListAttrTemplates(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListAttrTemplates(c.Request.Context(), middleware.MerID(c), page, limit)
+	filter := listquery.ParseAdminFilter(c)
+	res, err := h.svc.ListAttrTemplates(c.Request.Context(), middleware.MerID(c), page, limit, filter.Keyword)
 	if err != nil {
 		writeErr(c, err)
 		return

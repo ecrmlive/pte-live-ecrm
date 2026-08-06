@@ -1,6 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { computed, reactive, ref } from 'vue';
+
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElOption,
+  ElSelect,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createPlatformBrandCategoryApi,
   deletePlatformBrandCategoryApi,
@@ -8,42 +28,134 @@ import {
   updatePlatformBrandCategoryApi,
   type PlatformBrandCategory,
 } from '#/api/core/platform-catalog';
-import { EcrmFormDialog, EcrmListPage } from '#/components/ecrm';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import {
+  LIST_ENABLE_STATUS_FIELD,
+  LIST_KEYWORD_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const rows = ref<PlatformBrandCategory[]>([]);
-const loading = ref(false);
-const open = ref(false);
+const treeRows = ref<PlatformBrandCategory[]>([]);
 const editing = ref<PlatformBrandCategory>();
 const form = reactive({ cate_name: '', is_show: 1, pid: 0, sort: 0 });
 
-const flatParents = computed(() => flatten(rows.value));
+const flatParents = computed(() => flatten(treeRows.value));
 
-function flatten(nodes: PlatformBrandCategory[], prefix = ''): Array<{ label: string; value: number }> {
+function flatten(
+  nodes: PlatformBrandCategory[],
+  prefix = '',
+): Array<{ label: string; value: number }> {
   return nodes.flatMap((node) => [
     { label: `${prefix}${node.cate_name}`, value: node.brand_category_id },
     ...flatten(node.children || [], `${prefix}— `),
   ]);
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    rows.value = (await listPlatformBrandCategoriesApi()).list || [];
-  } finally {
-    loading.value = false;
-  }
+function filterTree(
+  nodes: PlatformBrandCategory[],
+  keyword: string,
+  status?: number,
+): PlatformBrandCategory[] {
+  return nodes
+    .map((node) => {
+      const children = node.children
+        ? filterTree(node.children, keyword, status)
+        : undefined;
+      const nameMatch =
+        !keyword || node.cate_name.toLowerCase().includes(keyword);
+      const statusMatch =
+        status !== 0 && status !== 1 ? true : node.is_show === status;
+      if ((nameMatch && statusMatch) || (children && children.length)) {
+        return { ...node, children };
+      }
+      return null;
+    })
+    .filter((node): node is PlatformBrandCategory => node !== null);
 }
 
-function add(parentID = 0) {
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_KEYWORD_FIELD('分类名称'),
+  LIST_ENABLE_STATUS_FIELD('显示状态'),
+]);
+
+const gridOptions: VxeGridProps<PlatformBrandCategory> = {
+  columns: [
+    {
+      field: 'cate_name',
+      minWidth: 220,
+      showOverflow: false,
+      title: '分类名称',
+      treeNode: true,
+    },
+    { field: 'sort', title: '排序', width: 90 },
+    {
+      field: 'is_show',
+      slots: { default: 'is_show' },
+      title: '状态',
+      width: 100,
+    },
+    platformListActionColumn({ width: 220 }),
+  ],
+  pagerConfig: { enabled: false },
+  proxyConfig: {
+    ajax: {
+      query: async (_ctx, formValues) => {
+        const keyword = String(formValues?.keyword ?? '')
+          .trim()
+          .toLowerCase();
+        const statusRaw = formValues?.status;
+        const status =
+          statusRaw === 0 || statusRaw === 1 ? Number(statusRaw) : undefined;
+        let list = (await listPlatformBrandCategoriesApi()).list || [];
+        treeRows.value = list;
+        if (keyword || status !== undefined) {
+          list = filterTree(list, keyword, status);
+        }
+        return { items: list, total: list.length };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'brand_category_id' },
+  treeConfig: { childrenField: 'children', expandAll: true },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [FormModal, formModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function resetForm(parentID = 0) {
   editing.value = undefined;
-  Object.assign(form, { cate_name: '', is_show: 1, pid: parentID, sort: 0 });
-  open.value = true;
+  Object.assign(form, {
+    cate_name: '',
+    is_show: 1,
+    pid: parentID,
+    sort: 0,
+  });
 }
 
-function edit(row: PlatformBrandCategory) {
+function openCreate(parentID = 0) {
+  resetForm(parentID);
+  formModalApi.setState({ title: '新增品牌分类' }).open();
+}
+
+function openEdit(row: PlatformBrandCategory) {
   editing.value = row;
-  Object.assign(form, { cate_name: row.cate_name, is_show: row.is_show, pid: row.pid, sort: row.sort });
-  open.value = true;
+  Object.assign(form, {
+    cate_name: row.cate_name,
+    is_show: row.is_show,
+    pid: row.pid,
+    sort: row.sort,
+  });
+  formModalApi.setState({ title: '编辑品牌分类' }).open();
 }
 
 async function save() {
@@ -51,74 +163,93 @@ async function save() {
     ElMessage.warning('请填写分类名称');
     return;
   }
-  const body = { cate_name: form.cate_name.trim(), is_show: form.is_show, pid: form.pid, sort: form.sort };
-  if (editing.value) {
-    await updatePlatformBrandCategoryApi(editing.value.brand_category_id, body);
-  } else {
-    await createPlatformBrandCategoryApi(body);
+  formModalApi.lock();
+  try {
+    const body = {
+      cate_name: form.cate_name.trim(),
+      is_show: form.is_show,
+      pid: form.pid,
+      sort: form.sort,
+    };
+    if (editing.value) {
+      await updatePlatformBrandCategoryApi(
+        editing.value.brand_category_id,
+        body,
+      );
+    } else {
+      await createPlatformBrandCategoryApi(body);
+    }
+    formModalApi.close();
+    ElMessage.success('品牌分类已保存');
+    gridApi.reload();
+  } finally {
+    formModalApi.unlock();
   }
-  open.value = false;
-  ElMessage.success('品牌分类已保存');
-  await load();
 }
 
 async function remove(row: PlatformBrandCategory) {
   try {
-    await ElMessageBox.confirm(`删除分类“${row.cate_name}”？子分类与品牌须先清空。`, '删除品牌分类', { type: 'warning' });
+    await ElMessageBox.confirm(
+      `删除分类“${row.cate_name}”？子分类与品牌须先清空。`,
+      '删除品牌分类',
+      { type: 'warning' },
+    );
     await deletePlatformBrandCategoryApi(row.brand_category_id);
     ElMessage.success('品牌分类已删除');
-    await load();
+    gridApi.reload();
   } catch {
     /* 取消 */
   }
 }
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <EcrmListPage title="品牌分类" description="维护品牌分类树；品牌列表可按分类筛选。权限码 product.brand.manage。">
-    <template #actions>
-      <el-button type="primary" @click="add(0)">新增分类</el-button>
-    </template>
-    <el-table v-loading="loading" :data="rows" row-key="brand_category_id" default-expand-all>
-      <el-table-column label="分类名称" min-width="220" prop="cate_name" />
-      <el-table-column label="排序" prop="sort" width="90" />
-      <el-table-column label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.is_show === 1 ? 'success' : 'info'">{{ row.is_show === 1 ? '显示' : '隐藏' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="220">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="add(row.brand_category_id)">加子类</el-button>
-          <el-button link type="primary" @click="edit(row)">编辑</el-button>
-          <el-button link type="danger" @click="remove(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-  </EcrmListPage>
+  <Page auto-content-height>
+    <Grid>
+      <template #toolbar-actions>
+        <ElButton :icon="Plus" type="primary" @click="openCreate(0)">
+          新增分类
+        </ElButton>
+      </template>
+      <template #is_show="{ row }">
+        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
+          {{ row.is_show === 1 ? '显示' : '隐藏' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openCreate(row.brand_category_id)">
+          加子类
+        </ElButton>
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
 
-  <EcrmFormDialog v-model="open" :title="editing ? '编辑品牌分类' : '新增品牌分类'">
-    <el-form label-width="88px">
-      <el-form-item label="上级分类">
-        <el-select v-model="form.pid" clearable class="w-full" placeholder="顶级分类">
-          <el-option label="顶级分类" :value="0" />
-          <el-option
-            v-for="item in flatParents.filter((x) => x.value !== editing?.brand_category_id)"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="分类名称" required><el-input v-model="form.cate_name" /></el-form-item>
-      <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" class="w-full" /></el-form-item>
-      <el-form-item label="显示"><el-switch v-model="form.is_show" :active-value="1" :inactive-value="0" /></el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="open = false">取消</el-button>
-      <el-button type="primary" @click="save">保存</el-button>
-    </template>
-  </EcrmFormDialog>
+    <FormModal>
+      <ElForm label-width="88px">
+        <ElFormItem label="上级分类">
+          <ElSelect v-model="form.pid" clearable class="w-full" placeholder="顶级分类">
+            <ElOption label="顶级分类" :value="0" />
+            <ElOption
+              v-for="item in flatParents.filter(
+                (x) => x.value !== editing?.brand_category_id,
+              )"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="分类名称" required>
+          <ElInput v-model="form.cate_name" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="显示">
+          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </FormModal>
+  </Page>
 </template>

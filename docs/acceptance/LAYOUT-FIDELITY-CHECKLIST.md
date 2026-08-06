@@ -22,7 +22,7 @@
 2. `useVbenVxeGrid`：`formOptions` 筛选 → 状态 Tab / 工具栏 → 表格 → 底部分页。
 3. 操作列 `fixed: 'right'`（`platformListActionColumn`）；单元格可用 `ElButton` link / `ElSwitch` / `ElTag`。
 4. 添加 / 编辑 / 详情使用 `useVbenDrawer`（宽抽屉 ~1000px）；详情只读描述 + 可切编辑；确认用 `confirm()`。
-5. 表格行高自适应（`showOverflow: false` + platform grid 布局），整页滚动而非表体内滚。
+5. 表格行高自适应（默认 `showOverflow: false` + platform grid 布局）；自由文本列（如备注）须列级 `showOverflow: true` 单行省略，避免撑高行挤掉 `fixed: 'right'` 操作列；整页滚动而非表体内滚。
 6. 无「刷新列表」类无意义按钮；主操作（如添加）放在工具栏。
 
 ## 1. 强制组件栈（Vben）
@@ -66,7 +66,32 @@ Element Plus 仅允许作为 **单元格内控件**（如 `ElButton` link、`ElS
 
 - **金标准（强制）**：`admin-platform/src/views/ecrm/merchant/list.vue`
 - 共享列/分页：`admin-platform/src/constants/platform-list-grid.ts`
-- 既有 Vxe 范例（迁移中）：`admin-platform/src/views/role/index.vue`、`admin-platform/src/views/ecrm/user/label.vue`
+- 筛选默认值：`#/utils/list-form-defaults`（`listFormOptionsDefaults` / `LIST_DATE_RANGE_FIELD`）
+- 迁移台账与筛选项矩阵：`docs/acceptance/LIST-LAYOUT-MIGRATION.md`
+- 既有 Vxe 范例：`admin-platform/src/views/role/index.vue`、`admin-platform/src/views/ecrm/user/label.vue`
+
+### 1.4 多 Tab 设置类页面（强制分区）
+
+适用范围：协议 / 说明提示 / 多 Tab 配置编辑等（非列表页）。
+
+| 分区 | 强制要求 |
+| --- | --- |
+| 顶栏 | 横向 Tabs，贴顶；不在此区塞说明文案 |
+| 中间 | 可滚动内容区；主编辑区放居中卡片（`max-width` + 左右边距） |
+| 底栏 | **固定**操作条（预览 / 提交等），横向拉满内容区宽度，按钮居中 |
+
+共享壳：`admin-platform/src/components/settings/SettingsTabLayout.vue`  
+样板页：`admin-platform/src/views/ecrm/merchant/description.vue`（说明提示）
+
+```vue
+<Page auto-content-height content-class="!p-0">
+  <SettingsTabLayout>
+    <template #tabs><!-- ElTabs --></template>
+    <!-- 中间：编辑器 / 表单 -->
+    <template #actions><!-- 预览 / 提交 --></template>
+  </SettingsTabLayout>
+</Page>
+```
 
 ### 1.3 店铺侧栏
 

@@ -24,6 +24,7 @@ export interface PlatformOrder {
   pay_time?: string;
   pay_type: number;
   products?: PlatformOrderProduct[];
+  real_name?: string;
   status: number;
   total_num: number;
   total_price: number;
@@ -38,7 +39,20 @@ export interface PlatformOrderPage {
   total: number;
 }
 
-export function listPlatformOrdersApi(params: { limit: number; page: number; paid?: number; status?: number }) {
+export function listPlatformOrdersApi(params: {
+  limit: number;
+  page: number;
+  paid?: number;
+  status?: number;
+  keyword?: string;
+  order_sn?: string;
+  mer_id?: number;
+  pay_type?: number;
+  phone?: string;
+  real_name?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<PlatformOrderPage>('/orders', { params });
 }
 

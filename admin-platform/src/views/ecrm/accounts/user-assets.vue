@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { ElAlert, ElCard, ElCol, ElRow } from 'element-plus';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
   getPlatformUserAssetSummaryApi,
@@ -11,27 +16,24 @@ import {
   type UserAssetSummary,
   type UserAssetType,
 } from '#/api/core/platform-user-assets';
-import { EcrmListPage } from '#/components/ecrm';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const rows = ref<UserAssetLedgerRow[]>([]);
-const total = ref(0);
-const summary = ref<UserAssetSummary[]>([]);
 const canRead = ref(false);
-const query = reactive({
-  asset_type: undefined as UserAssetType | undefined,
-  limit: 20,
-  page: 1,
-  user_id: undefined as number | undefined,
-});
-
-const summaryByType = computed(() => new Map(summary.value.map((item) => [item.asset_type, item])));
+const summary = ref<UserAssetSummary[]>([]);
 
 const assetLabels: Record<UserAssetType, string> = {
   balance: '余额',
   commission: '佣金',
   points: '积分',
 };
+
+const summaryByType = computed(
+  () => new Map(summary.value.map((item) => [item.asset_type, item])),
+);
 
 function formatAmount(row: UserAssetLedgerRow) {
   const prefix = row.amount > 0 ? '+' : '';
@@ -44,47 +46,143 @@ function summaryText(type: UserAssetType) {
   return `入账 ${item.income.toFixed(2)} · 支出 ${item.expense.toFixed(2)} · ${item.count} 笔`;
 }
 
-async function load() {
-  if (!canRead.value) return;
-  loading.value = true;
-  try {
-    const [pageData, summaryData] = await Promise.all([
-      listPlatformUserAssetsApi(query),
-      getPlatformUserAssetSummaryApi(),
-    ]);
-    rows.value = pageData.list || [];
-    total.value = pageData.total || 0;
-    summary.value = summaryData.list || [];
-  } finally {
-    loading.value = false;
-  }
+function buildQueryParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
+  const userIdRaw = String(formValues?.user_id ?? '').trim();
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    asset_type: (String(formValues?.asset_type ?? '').trim() ||
+      undefined) as UserAssetType | undefined,
+    user_id: userIdRaw ? Number(userIdRaw) : undefined,
+    keyword: String(formValues?.keyword ?? '').trim() || undefined,
+    date_from: range[0],
+    date_to: range[1],
+  };
 }
 
-function search() {
-  query.page = 1;
-  void load();
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '用户 ID' },
+    fieldName: 'user_id',
+    label: '用户 ID',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(assetLabels).map(([value, label]) => ({
+        label,
+        value,
+      })),
+      placeholder: '全部类型',
+    },
+    fieldName: 'asset_type',
+    label: '资产类型',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '业务单号 / 参考类型关键词',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+]);
 
-function reset() {
-  query.asset_type = undefined;
-  query.user_id = undefined;
-  query.page = 1;
-  void load();
-}
+const gridOptions: VxeGridProps<UserAssetLedgerRow> = {
+  columns: [
+    { field: 'id', title: '流水 ID', width: 100 },
+    { field: 'user_id', title: '用户 ID', width: 100 },
+    {
+      field: 'asset_type',
+      formatter: ({ cellValue }) =>
+        assetLabels[cellValue as UserAssetType] || cellValue,
+      title: '资产类型',
+      width: 100,
+    },
+    {
+      field: 'amount',
+      slots: { default: 'amount' },
+      title: '变动金额',
+      width: 130,
+    },
+    {
+      field: 'reference_type',
+      minWidth: 150,
+      showOverflow: false,
+      title: '业务来源',
+    },
+    {
+      field: 'reference_id',
+      minWidth: 160,
+      showOverflow: false,
+      title: '业务引用',
+    },
+    {
+      field: 'created_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 180,
+      title: '创建时间',
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const params = buildQueryParams(page, formValues);
+        const [pageData, summaryData] = await Promise.all([
+          listPlatformUserAssetsApi(params),
+          getPlatformUserAssetSummaryApi({
+            asset_type: params.asset_type,
+            user_id: params.user_id,
+            keyword: params.keyword,
+            date_from: params.date_from,
+            date_to: params.date_to,
+          }),
+        ]);
+        summary.value = summaryData.list || [];
+        return {
+          items: pageData.list || [],
+          total: pageData.total || 0,
+        };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 onMounted(async () => {
-  const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
-  canRead.value = profile.roles.includes('platform') && permissions.includes('accounts.user_assets.read');
-  await load();
+  const [profile, permissions] = await Promise.all([
+    getUserInfoApi(),
+    getAccessCodesApi(),
+  ]);
+  canRead.value =
+    profile.roles.includes('platform') &&
+    permissions.includes('accounts.user_assets.read');
+  if (canRead.value) gridApi.reload();
 });
 </script>
 
 <template>
-  <Page
-    title="用户资产流水"
-    description="仅平台角色可查看业务库不可变资产流水；页面不展示用户姓名、手机号、收款账户或外部支付凭据。"
-  >
-    <el-alert
+  <Page auto-content-height>
+    <ElAlert
       v-if="!canRead"
       class="mb-4"
       title="当前账号没有查看用户资产流水的权限"
@@ -92,74 +190,26 @@ onMounted(async () => {
       :closable="false"
     />
     <template v-else>
-      <el-row :gutter="16" class="mb-4">
-        <el-col
+      <ElRow :gutter="16" class="mb-4">
+        <ElCol
           v-for="type in (['balance', 'points', 'commission'] as UserAssetType[])"
           :key="type"
           :md="8"
           :xs="24"
         >
-          <el-card shadow="never">
+          <ElCard shadow="never">
             <div class="text-sm text-gray-500">{{ assetLabels[type] }}</div>
             <div class="mt-2 text-sm">{{ summaryText(type) }}</div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <EcrmListPage title="资产流水">
-        <template #filters>
-          <el-form class="flex flex-wrap gap-x-4" label-width="72px" @submit.prevent="search">
-            <el-form-item label="用户 ID">
-              <el-input-number v-model="query.user_id" :min="1" controls-position="right" />
-            </el-form-item>
-            <el-form-item label="资产类型">
-              <el-select v-model="query.asset_type" clearable class="w-32" placeholder="全部">
-                <el-option
-                  v-for="(label, type) in assetLabels"
-                  :key="type"
-                  :label="label"
-                  :value="type"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="search">查询</el-button>
-              <el-button @click="reset">重置</el-button>
-            </el-form-item>
-          </el-form>
+          </ElCard>
+        </ElCol>
+      </ElRow>
+      <Grid>
+        <template #amount="{ row }">
+          <span :class="row.amount < 0 ? 'text-red-500' : 'text-green-600'">
+            {{ formatAmount(row) }}
+          </span>
         </template>
-
-        <el-table v-loading="loading" :data="rows" row-key="id">
-          <el-table-column label="流水 ID" prop="id" width="100" />
-          <el-table-column label="用户 ID" prop="user_id" width="100" />
-          <el-table-column label="资产类型" width="100">
-            <template #default="{ row }">{{ assetLabels[row.asset_type] }}</template>
-          </el-table-column>
-          <el-table-column label="变动金额" width="130">
-            <template #default="{ row }">
-              <span :class="row.amount < 0 ? 'text-red-500' : 'text-green-600'">
-                {{ formatAmount(row) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="业务来源" min-width="150" prop="reference_type" />
-          <el-table-column label="业务引用" min-width="160" prop="reference_id" />
-          <el-table-column label="创建时间" min-width="180" prop="created_at" />
-        </el-table>
-
-        <template #pager>
-          <el-pagination
-            :current-page="query.page"
-            :page-size="query.limit"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            background
-            layout="total, sizes, prev, pager, next"
-            @current-change="(page: number) => { query.page = page; load(); }"
-            @size-change="(limit: number) => { query.limit = limit; query.page = 1; load(); }"
-          />
-        </template>
-      </EcrmListPage>
+      </Grid>
     </template>
   </Page>
 </template>

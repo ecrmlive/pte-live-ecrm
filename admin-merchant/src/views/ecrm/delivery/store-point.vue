@@ -1,88 +1,194 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { createStorePickupPointApi, deleteStorePickupPointApi, listStorePickupPointsApi, updateStorePickupPointApi, type StorePickupPoint } from '#/api/core/merchant-pickup-point';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-const rows = ref<StorePickupPoint[]>([]);
-const loading = ref(false);
-const open = ref(false);
+import { ref } from 'vue';
+
+import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElMessage,
+  ElSwitch,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  createStorePickupPointApi,
+  deleteStorePickupPointApi,
+  listStorePickupPointsApi,
+  updateStorePickupPointApi,
+  type StorePickupPoint,
+} from '#/api/core/merchant-pickup-point';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+
 const saving = ref(false);
 const editID = ref<number>();
-const form = ref<Omit<StorePickupPoint, 'id'>>({ contact_name: '', mobile: '', region_code: '', detail: '', is_default: 0 });
+const form = ref<Omit<StorePickupPoint, 'id'>>({
+  contact_name: '',
+  mobile: '',
+  region_code: '',
+  detail: '',
+  is_default: 0,
+});
 
-async function load() {
-  loading.value = true;
-  try {
-    rows.value = (await listStorePickupPointsApi()).list ?? [];
-  } finally {
-    loading.value = false;
-  }
-}
-
-function reset() {
+function resetForm() {
   editID.value = undefined;
-  form.value = { contact_name: '', mobile: '', region_code: '', detail: '', is_default: 0 };
+  form.value = {
+    contact_name: '',
+    mobile: '',
+    region_code: '',
+    detail: '',
+    is_default: 0,
+  };
 }
 
-function create() {
-  reset();
-  open.value = true;
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '联系人 / 手机号 / 地址',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+]);
+
+const gridOptions: VxeGridProps<StorePickupPoint> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'id', title: 'ID', width: 80 },
+    { field: 'contact_name', title: '联系人', width: 120 },
+    { field: 'mobile', title: '手机号', width: 140 },
+    { field: 'detail', minWidth: 220, showOverflow: true, title: '地址' },
+    {
+      field: 'is_default',
+      title: '默认',
+      width: 80,
+      formatter: ({ cellValue }) => (cellValue ? '是' : '否'),
+    },
+    merchantListActionColumn({ width: 130 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const data = await listStorePickupPointsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [PointModal, pointModalApi] = useVbenModal({
+  onConfirm: async () => {
+    saving.value = true;
+    pointModalApi.lock();
+    try {
+      if (editID.value) {
+        await updateStorePickupPointApi(editID.value, form.value);
+      } else {
+        await createStorePickupPointApi(form.value);
+      }
+      ElMessage.success('自提点已保存');
+      pointModalApi.close();
+      gridApi.reload();
+    } finally {
+      saving.value = false;
+      pointModalApi.unlock();
+    }
+  },
+});
+
+function openCreate() {
+  resetForm();
+  pointModalApi.setState({ title: '新增自提点' }).open();
 }
 
-function edit(row: StorePickupPoint) {
+function openEdit(row: StorePickupPoint) {
   editID.value = row.id;
-  form.value = { contact_name: row.contact_name, mobile: row.mobile, region_code: row.region_code, detail: row.detail, is_default: row.is_default };
-  open.value = true;
-}
-
-async function save() {
-  saving.value = true;
-  try {
-    if (editID.value) await updateStorePickupPointApi(editID.value, form.value);
-    else await createStorePickupPointApi(form.value);
-    open.value = false;
-    await load();
-    ElMessage.success('自提点已保存');
-  } finally {
-    saving.value = false;
-  }
+  form.value = {
+    contact_name: row.contact_name,
+    mobile: row.mobile,
+    region_code: row.region_code,
+    detail: row.detail,
+    is_default: row.is_default,
+  };
+  pointModalApi.setState({ title: '编辑自提点' }).open();
 }
 
 async function remove(row: StorePickupPoint) {
   try {
-    await ElMessageBox.confirm(`确定删除自提点“${row.contact_name}”吗？`, '删除确认', { type: 'warning' });
+    await confirm({
+      content: `确定删除自提点“${row.contact_name}”吗？`,
+      icon: 'warning',
+      title: '删除确认',
+    });
     await deleteStorePickupPointApi(row.id);
-    await load();
     ElMessage.success('自提点已删除');
-  } catch {}
+    gridApi.reload();
+  } catch {
+    // cancelled
+  }
 }
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <Page title="自提点管理" description="维护本店到店自提地址。">
-    <template #extra><el-button type="primary" @click="create">新增自提点</el-button></template>
-    <el-card v-loading="loading" shadow="never">
-      <el-table :data="rows">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="contact_name" label="联系人" width="120" />
-        <el-table-column prop="mobile" label="手机号" width="140" />
-        <el-table-column prop="detail" label="地址" min-width="220" />
-        <el-table-column label="默认" width="80"><template #default="{ row }">{{ row.is_default ? '是' : '否' }}</template></el-table-column>
-        <el-table-column label="操作" width="130" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
-      </el-table>
-    </el-card>
-    <el-dialog v-model="open" :title="editID ? '编辑自提点' : '新增自提点'" width="520px">
-      <el-form label-width="88px">
-        <el-form-item label="联系人" required><el-input v-model="form.contact_name" /></el-form-item>
-        <el-form-item label="手机号" required><el-input v-model="form.mobile" /></el-form-item>
-        <el-form-item label="区划代码"><el-input v-model="form.region_code" /></el-form-item>
-        <el-form-item label="详细地址" required><el-input v-model="form.detail" type="textarea" :rows="2" /></el-form-item>
-        <el-form-item label="默认"><el-switch v-model="form.is_default" :active-value="1" :inactive-value="0" /></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存</el-button></template>
-    </el-dialog>
+  <Page auto-content-height>
+    <template #extra>
+      <ElButton type="primary" @click="openCreate">新增自提点</ElButton>
+    </template>
+
+    <Grid>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
+
+    <PointModal class="w-[520px] max-w-[96vw]">
+      <ElForm label-width="88px">
+        <ElFormItem label="联系人" required>
+          <ElInput v-model="form.contact_name" />
+        </ElFormItem>
+        <ElFormItem label="手机号" required>
+          <ElInput v-model="form.mobile" />
+        </ElFormItem>
+        <ElFormItem label="区划代码">
+          <ElInput v-model="form.region_code" />
+        </ElFormItem>
+        <ElFormItem label="详细地址" required>
+          <ElInput v-model="form.detail" :rows="2" type="textarea" />
+        </ElFormItem>
+        <ElFormItem label="默认">
+          <ElSwitch
+            v-model="form.is_default"
+            :active-value="1"
+            :inactive-value="0"
+          />
+        </ElFormItem>
+      </ElForm>
+    </PointModal>
   </Page>
 </template>

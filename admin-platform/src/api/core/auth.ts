@@ -1,4 +1,4 @@
-import { requestClient } from '#/api/request';
+import { publicRequestClient, requestClient } from '#/api/request';
 
 export namespace AuthApi {
   export interface LoginParams {
@@ -46,7 +46,9 @@ export async function loginApi(data: {
 }
 
 export async function logoutApi() {
-  return requestClient.post<null>('/auth/logout', {}).catch(() => null);
+  // 使用 publicRequestClient：退出接口缺失/失败时不应弹全局 Toast；
+  // 本地 token 清理由 authStore.logout 保证。
+  return publicRequestClient.post<null>('/auth/logout', {}).catch(() => null);
 }
 
 export async function getAccessCodesApi() {

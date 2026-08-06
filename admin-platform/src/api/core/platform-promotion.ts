@@ -32,7 +32,14 @@ export interface PlatformCouponSaveInput {
   use_min_price: number;
 }
 
-export function listPlatformCouponsApi(params: { limit: number; page: number }) {
+export function listPlatformCouponsApi(params: {
+  limit: number;
+  page: number;
+  keyword?: string;
+  status?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<PlatformCouponPage>('/coupons', { params });
 }
 

@@ -2,15 +2,17 @@ package profitsharing
 
 import (
 	"errors"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Handler struct{ db *gorm.DB }
@@ -38,17 +40,37 @@ type row struct {
 const tab = "qixi_crm_a_merchant_profitsharing_application"
 
 func (h *Handler) List(c *gin.Context) {
-	var rows []row
-	q := h.db.WithContext(c.Request.Context()).Table(tab).Order("id DESC")
+	page, limit := queryfilter.Page(c)
+	q := h.db.WithContext(c.Request.Context()).Table(tab)
 	if s := strings.TrimSpace(c.Query("status")); s != "" {
 		q = q.Where("status=?", s)
 	}
-	if e := q.Find(&rows).Error; e != nil {
+	if raw := strings.TrimSpace(c.Query("merchant_id")); raw != "" {
+		merchantID, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil || merchantID == 0 {
+			response.Fail(c, http.StatusBadRequest, "商户 ID 参数错误")
+			return
+		}
+		q = q.Where("merchant_id=?", merchantID)
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("application_no LIKE ? OR description LIKE ?", like, like)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
+	var total int64
+	if e := q.Count(&total).Error; e != nil {
 		fail(c, e)
 		return
 	}
-	response.OK(c, gin.H{"list": rows})
+	var rows []row
+	if e := q.Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; e != nil {
+		fail(c, e)
+		return
+	}
+	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
 }
+
 func (h *Handler) Get(c *gin.Context) {
 	id, ok := id(c)
 	if !ok {
@@ -61,6 +83,7 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 	response.OK(c, v)
 }
+
 func (h *Handler) Review(c *gin.Context) {
 	id, ok := id(c)
 	if !ok {
@@ -107,6 +130,7 @@ func (h *Handler) Review(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"ok": true, "status": to})
 }
+
 func (h *Handler) Note(c *gin.Context) {
 	id, ok := id(c)
 	if !ok {
@@ -130,6 +154,7 @@ func (h *Handler) Note(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"ok": true})
 }
+
 func id(c *gin.Context) (uint, bool) {
 	n, e := strconv.ParseUint(c.Param("id"), 10, 64)
 	if e != nil || n == 0 {

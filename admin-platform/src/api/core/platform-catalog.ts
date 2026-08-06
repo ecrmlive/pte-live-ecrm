@@ -26,7 +26,15 @@ export interface PlatformProductPage {
   total: number;
 }
 
-export function listPlatformProductsApi(params: { keyword?: string; limit: number; mer_id?: number; page: number; status?: number }) {
+export function listPlatformProductsApi(params: {
+  keyword?: string;
+  limit: number;
+  mer_id?: number;
+  page: number;
+  status?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<PlatformProductPage>('/products', { params });
 }
 

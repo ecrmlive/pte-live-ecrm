@@ -1,9 +1,23 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { reactive, ref } from 'vue';
 
+import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import {
+  ElAlert,
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createMerchantCouponApi,
   deleteMerchantCouponApi,
@@ -14,16 +28,19 @@ import {
   type MerchantCoupon,
   type MerchantCouponSaveInput,
 } from '#/api/core/merchant-promotion';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
 const saving = ref(false);
-const rows = ref<MerchantCoupon[]>([]);
-const total = ref(0);
-const dialogOpen = ref(false);
-const sendOpen = ref(false);
 const editingID = ref<number>();
 const sendingCoupon = ref<MerchantCoupon>();
-const query = reactive({ limit: 20, page: 1 });
 const form = reactive<MerchantCouponSaveInput>({
   coupon_price: 0,
   coupon_time: 30,
@@ -38,12 +55,193 @@ const sendForm = reactive({ mark: '', uidsText: '' });
 
 function resetForm() {
   editingID.value = undefined;
-  Object.assign(form, { coupon_price: 0, coupon_time: 30, is_limited: 0, sort: 1, status: 1, title: '', total_count: 0, use_min_price: 0 });
+  Object.assign(form, {
+    coupon_price: 0,
+    coupon_time: 30,
+    is_limited: 0,
+    sort: 1,
+    status: 1,
+    title: '',
+    total_count: 0,
+    use_min_price: 0,
+  });
 }
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '优惠券名称' },
+    fieldName: 'keyword',
+    label: '优惠券搜索',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '已启用', value: 1 },
+        { label: '已停用', value: 0 },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<MerchantCoupon> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'coupon_id', title: 'ID', width: 80 },
+    { field: 'title', minWidth: 180, showOverflow: false, title: '优惠券名称' },
+    {
+      field: 'coupon_price',
+      title: '面额',
+      width: 104,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    {
+      field: 'use_min_price',
+      minWidth: 130,
+      title: '使用门槛',
+      formatter: ({ cellValue }) => `满 ¥${Number(cellValue || 0).toFixed(2)} 可用`,
+    },
+    {
+      field: 'coupon_time',
+      title: '有效期',
+      width: 108,
+      formatter: ({ cellValue }) => `领取后 ${cellValue} 天`,
+    },
+    {
+      field: 'remain_count',
+      minWidth: 112,
+      showOverflow: false,
+      slots: { default: 'quota' },
+      title: '发放数量',
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 88,
+    },
+    {
+      field: 'create_time',
+      minWidth: 170,
+      title: '创建时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+    merchantListActionColumn({ width: 222 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const status = formValues?.status;
+        const data = await listMerchantCouponsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          status: status === 0 || status === 1 ? Number(status) : undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'coupon_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [CouponModal, couponModalApi] = useVbenModal({
+  onConfirm: async () => {
+    if (!form.title.trim()) {
+      ElMessage.warning('请填写优惠券名称');
+      return;
+    }
+    if (
+      form.coupon_price <= 0 ||
+      form.use_min_price < 0 ||
+      form.coupon_time <= 0
+    ) {
+      ElMessage.warning('请检查优惠金额、使用门槛和有效天数');
+      return;
+    }
+    if (form.is_limited === 1 && form.total_count <= 0) {
+      ElMessage.warning('限量发放时必须填写发放总数');
+      return;
+    }
+    saving.value = true;
+    couponModalApi.lock();
+    try {
+      const body = {
+        ...form,
+        title: form.title.trim(),
+        total_count: form.is_limited === 1 ? form.total_count : 0,
+      };
+      if (editingID.value) {
+        await updateMerchantCouponApi(editingID.value, body);
+      } else {
+        await createMerchantCouponApi(body);
+      }
+      ElMessage.success(editingID.value ? '优惠券已更新' : '优惠券已创建');
+      couponModalApi.close();
+      gridApi.reload();
+    } finally {
+      saving.value = false;
+      couponModalApi.unlock();
+    }
+  },
+});
+
+const [SendModal, sendModalApi] = useVbenModal({
+  onConfirm: async () => {
+    if (!sendingCoupon.value) return;
+    const uids = [
+      ...new Set(
+        sendForm.uidsText
+          .split(/[，,\s]+/)
+          .map((value) => Number(value))
+          .filter((value) => Number.isSafeInteger(value) && value > 0),
+      ),
+    ];
+    if (uids.length === 0 || uids.length > 100) {
+      ElMessage.warning('请填写 1 至 100 个用户 ID，并用逗号或换行分隔');
+      return;
+    }
+    saving.value = true;
+    sendModalApi.lock();
+    try {
+      await sendMerchantCouponApi(sendingCoupon.value.coupon_id, {
+        mark: sendForm.mark.trim(),
+        uids,
+      });
+      ElMessage.success('优惠券已发送');
+      sendModalApi.close();
+      gridApi.reload();
+    } finally {
+      saving.value = false;
+      sendModalApi.unlock();
+    }
+  },
+});
 
 function openCreate() {
   resetForm();
-  dialogOpen.value = true;
+  couponModalApi.setState({ title: '新增优惠券' }).open();
 }
 
 function openEdit(row: MerchantCoupon) {
@@ -58,96 +256,158 @@ function openEdit(row: MerchantCoupon) {
     total_count: row.total_count,
     use_min_price: row.use_min_price,
   });
-  dialogOpen.value = true;
+  couponModalApi.setState({ title: '编辑优惠券' }).open();
 }
 
 function openSend(row: MerchantCoupon) {
   sendingCoupon.value = row;
   Object.assign(sendForm, { mark: '', uidsText: '' });
-  sendOpen.value = true;
-}
-
-async function load() {
-  loading.value = true;
-  try {
-    const result = await listMerchantCouponsApi(query);
-    rows.value = result.list;
-    total.value = result.total;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function save() {
-  if (!form.title.trim()) {
-    ElMessage.warning('请填写优惠券名称');
-    return;
-  }
-  if (form.coupon_price <= 0 || form.use_min_price < 0 || form.coupon_time <= 0) {
-    ElMessage.warning('请检查优惠金额、使用门槛和有效天数');
-    return;
-  }
-  if (form.is_limited === 1 && form.total_count <= 0) {
-    ElMessage.warning('限量发放时必须填写发放总数');
-    return;
-  }
-  saving.value = true;
-  try {
-    const body = { ...form, title: form.title.trim(), total_count: form.is_limited === 1 ? form.total_count : 0 };
-    if (editingID.value) await updateMerchantCouponApi(editingID.value, body);
-    else await createMerchantCouponApi(body);
-    dialogOpen.value = false;
-    ElMessage.success(editingID.value ? '优惠券已更新' : '优惠券已创建');
-    await load();
-  } finally {
-    saving.value = false;
-  }
+  sendModalApi.setState({ title: '定向发送优惠券' }).open();
 }
 
 async function toggle(row: MerchantCoupon) {
   const next = row.status === 1 ? 0 : 1;
   await setMerchantCouponStatusApi(row.coupon_id, next);
-  row.status = next;
   ElMessage.success(next === 1 ? '优惠券已启用' : '优惠券已停用');
+  gridApi.reload();
 }
 
 async function remove(row: MerchantCoupon) {
   try {
-    await ElMessageBox.confirm(`删除优惠券“${row.title}”后不可恢复，是否继续？`, '删除确认', { type: 'warning' });
+    await confirm({
+      content: `删除优惠券“${row.title}”后不可恢复，是否继续？`,
+      icon: 'warning',
+      title: '删除确认',
+    });
     await deleteMerchantCouponApi(row.coupon_id);
     ElMessage.success('优惠券已删除');
-    await load();
+    gridApi.reload();
   } catch {
-    // 用户取消或接口错误时由统一请求层处理。
+    // cancelled
   }
 }
-
-async function send() {
-  if (!sendingCoupon.value) return;
-  const uids = [...new Set(sendForm.uidsText.split(/[，,\s]+/).map((value) => Number(value)).filter((value) => Number.isSafeInteger(value) && value > 0))];
-  if (uids.length === 0 || uids.length > 100) {
-    ElMessage.warning('请填写 1 至 100 个用户 ID，并用逗号或换行分隔');
-    return;
-  }
-  saving.value = true;
-  try {
-    await sendMerchantCouponApi(sendingCoupon.value.coupon_id, { mark: sendForm.mark.trim(), uids });
-    sendOpen.value = false;
-    ElMessage.success('优惠券已发送');
-    await load();
-  } finally {
-    saving.value = false;
-  }
-}
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <Page title="店铺优惠券" description="管理本店券模板，并可向已有支付订单的本店用户定向发送优惠券。">
-    <template #extra><el-button type="primary" @click="openCreate">新增优惠券</el-button></template>
-    <el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="coupon_id"><el-table-column label="ID" prop="coupon_id" width="80" /><el-table-column label="优惠券名称" min-width="180" prop="title" /><el-table-column label="面额" width="104"><template #default="{ row }">¥{{ Number(row.coupon_price).toFixed(2) }}</template></el-table-column><el-table-column label="使用门槛" width="120"><template #default="{ row }">满 ¥{{ Number(row.use_min_price).toFixed(2) }} 可用</template></el-table-column><el-table-column label="有效期" width="108"><template #default="{ row }">领取后 {{ row.coupon_time }} 天</template></el-table-column><el-table-column label="发放数量" width="112"><template #default="{ row }">{{ row.is_limited === 1 ? `${row.remain_count}/${row.total_count}` : '不限量' }}</template></el-table-column><el-table-column label="状态" width="88"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已启用' : '已停用' }}</el-tag></template></el-table-column><el-table-column label="创建时间" min-width="170" prop="create_time" /><el-table-column fixed="right" label="操作" width="222"><template #default="{ row }"><el-button link type="success" :disabled="row.status !== 1" @click="openSend(row)">发券</el-button><el-button link type="primary" @click="openEdit(row)">编辑</el-button><el-button link type="warning" @click="toggle(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10, 20, 50, 100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div></el-card>
-    <el-dialog v-model="dialogOpen" :title="editingID ? '编辑优惠券' : '新增优惠券'" width="580px" destroy-on-close><el-form class="grid grid-cols-2 gap-x-4" label-width="90px"><el-form-item class="col-span-2" label="优惠券名称" required><el-input v-model="form.title" maxlength="40" show-word-limit /></el-form-item><el-form-item label="优惠金额" required><el-input-number v-model="form.coupon_price" :min="0.01" :precision="2" class="w-full" /></el-form-item><el-form-item label="使用门槛"><el-input-number v-model="form.use_min_price" :min="0" :precision="2" class="w-full" /></el-form-item><el-form-item label="有效天数" required><el-input-number v-model="form.coupon_time" :min="1" class="w-full" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" class="w-full" /></el-form-item><el-form-item label="限量发放"><el-switch v-model="form.is_limited" :active-value="1" :inactive-value="0" /></el-form-item><el-form-item v-if="form.is_limited === 1" label="发放总数" required><el-input-number v-model="form.total_count" :min="1" class="w-full" /></el-form-item><el-form-item label="初始状态"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="dialogOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="save">保存</el-button></template></el-dialog>
-    <el-dialog v-model="sendOpen" title="定向发送优惠券" width="540px" destroy-on-close><el-alert :closable="false" class="mb-4" title="仅允许向本商户存在已支付订单的用户发送；同一用户不可重复领取同一张券。" type="warning" /><el-form label-width="88px"><el-form-item label="优惠券"><span>{{ sendingCoupon?.title }}</span></el-form-item><el-form-item label="用户 ID" required><el-input v-model="sendForm.uidsText" :rows="4" placeholder="输入用户 ID，多个 ID 用逗号或换行分隔，最多 100 个" type="textarea" /></el-form-item><el-form-item label="发送说明"><el-input v-model="sendForm.mark" :rows="3" maxlength="200" show-word-limit type="textarea" /></el-form-item></el-form><template #footer><el-button @click="sendOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="send">确认发送</el-button></template></el-dialog>
+  <Page auto-content-height>
+    <template #extra>
+      <ElButton type="primary" @click="openCreate">新增优惠券</ElButton>
+    </template>
+
+    <Grid>
+      <template #quota="{ row }">
+        {{
+          row.is_limited === 1
+            ? `${row.remain_count}/${row.total_count}`
+            : '不限量'
+        }}
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="row.status === 1 ? 'success' : 'info'">
+          {{ row.status === 1 ? '已启用' : '已停用' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton
+          link
+          type="success"
+          :disabled="row.status !== 1"
+          @click="openSend(row)"
+        >
+          发券
+        </ElButton>
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="warning" @click="toggle(row)">
+          {{ row.status === 1 ? '停用' : '启用' }}
+        </ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+      </template>
+    </Grid>
+
+    <CouponModal class="w-[580px] max-w-[96vw]">
+      <ElForm class="grid grid-cols-2 gap-x-4" label-width="90px">
+        <ElFormItem class="col-span-2" label="优惠券名称" required>
+          <ElInput v-model="form.title" maxlength="40" show-word-limit />
+        </ElFormItem>
+        <ElFormItem label="优惠金额" required>
+          <ElInputNumber
+            v-model="form.coupon_price"
+            :min="0.01"
+            :precision="2"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="使用门槛">
+          <ElInputNumber
+            v-model="form.use_min_price"
+            :min="0"
+            :precision="2"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="有效天数" required>
+          <ElInputNumber v-model="form.coupon_time" :min="1" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="限量发放">
+          <ElSwitch
+            v-model="form.is_limited"
+            :active-value="1"
+            :inactive-value="0"
+          />
+        </ElFormItem>
+        <ElFormItem
+          v-if="form.is_limited === 1"
+          label="发放总数"
+          required
+        >
+          <ElInputNumber
+            v-model="form.total_count"
+            :min="1"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="初始状态">
+          <ElSwitch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+          />
+        </ElFormItem>
+      </ElForm>
+    </CouponModal>
+
+    <SendModal class="w-[540px] max-w-[96vw]">
+      <ElAlert
+        :closable="false"
+        class="mb-4"
+        title="仅允许向本商户存在已支付订单的用户发送；同一用户不可重复领取同一张券。"
+        type="warning"
+      />
+      <ElForm label-width="88px">
+        <ElFormItem label="优惠券">
+          <span>{{ sendingCoupon?.title }}</span>
+        </ElFormItem>
+        <ElFormItem label="用户 ID" required>
+          <ElInput
+            v-model="sendForm.uidsText"
+            :rows="4"
+            placeholder="输入用户 ID，多个 ID 用逗号或换行分隔，最多 100 个"
+            type="textarea"
+          />
+        </ElFormItem>
+        <ElFormItem label="发送说明">
+          <ElInput
+            v-model="sendForm.mark"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+            type="textarea"
+          />
+        </ElFormItem>
+      </ElForm>
+    </SendModal>
   </Page>
 </template>

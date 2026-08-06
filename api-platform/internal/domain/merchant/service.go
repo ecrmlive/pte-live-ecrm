@@ -19,7 +19,7 @@ type Store interface {
 	CreateMerchant(ctx context.Context, m *Merchant) error
 	UpsertMerchantView(ctx context.Context, m *Merchant) error
 
-	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) ([]Intention, int64, error)
+	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string) ([]Intention, int64, error)
 	GetIntention(ctx context.Context, id uint, regionIDs []uint) (*Intention, error)
 	SaveIntention(ctx context.Context, row *Intention) error
 	AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error)
@@ -355,8 +355,8 @@ func (s *Service) UpdateSvipConfig(ctx context.Context, merID uint, merge int8) 
 	return s.GetSvipConfig(ctx, merID)
 }
 
-func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int) (*PageResult[Intention], error) {
-	list, total, err := s.store.ListIntentions(ctx, keyword, status, regionIDs, page, limit)
+func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string) (*PageResult[Intention], error) {
+	list, total, err := s.store.ListIntentions(ctx, keyword, status, regionIDs, page, limit, dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}

@@ -32,7 +32,17 @@ export function getMerchantBalanceApi() {
   return requestClient.get<MerchantBalance>('/finance/balance');
 }
 
-export function listMerchantWithdrawsApi(params: { limit: number; page: number }) {
+export interface MerchantWithdrawListParams {
+  date_from?: string;
+  date_to?: string;
+  financial_sn?: string;
+  financial_status?: 0 | 1;
+  limit: number;
+  page: number;
+  status?: -1 | 0 | 1;
+}
+
+export function listMerchantWithdrawsApi(params: MerchantWithdrawListParams) {
   return requestClient.get<MerchantWithdrawPage>('/finance/withdraws', { params });
 }
 
@@ -83,11 +93,15 @@ export interface MerchantSettlementPage {
   total: number;
 }
 
-export function listMerchantSettlementsApi(params: {
+export interface MerchantSettlementListParams {
+  date_from?: string;
+  date_to?: string;
   limit: number;
   page: number;
   status?: MerchantSettlementStatus;
-}) {
+}
+
+export function listMerchantSettlementsApi(params: MerchantSettlementListParams) {
   return requestClient.get<MerchantSettlementPage>('/settlements', { params });
 }
 

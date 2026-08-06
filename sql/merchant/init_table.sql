@@ -26,8 +26,11 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_menu` (
   `component` varchar(255) NOT NULL DEFAULT '', `icon` varchar(128) NOT NULL DEFAULT '',
   `is_menu` tinyint NOT NULL DEFAULT 1, `is_route` tinyint NOT NULL DEFAULT 1,
   `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 已有库补列（local docker mysql 可重复执行）：
+-- ALTER TABLE `qixi_crm_m_menu` ADD COLUMN IF NOT EXISTS `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`;
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_role_menu` (
   `role_code` varchar(64) NOT NULL, `menu_id` bigint unsigned NOT NULL,
   PRIMARY KEY (`role_code`,`menu_id`)

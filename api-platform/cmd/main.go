@@ -86,6 +86,7 @@ import (
 	platformmerchant "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchant"
 	platformmerchantdeposit "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchantdeposit"
 	platformmerchanttype "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchanttype"
+	platformstoremenu "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storemenu"
 	nativecatalog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativecatalog"
 	platformnativeconfigitem "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeconfigitem"
 	platformnativediscount "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativediscount"
@@ -240,6 +241,7 @@ func main() {
 	platformMemberLevelH := platformmemberlevel.New(businessDB, gdb)
 	platformMerchantTypeH := platformmerchanttype.NewHandler(gdb)
 	platformMerchantDepositH := platformmerchantdeposit.NewHandler(gdb)
+	platformStoreMenuH := platformstoremenu.NewHandler(merchantDB)
 	platformProfitsharingH := platformprofitsharing.NewHandler(gdb)
 	platformStoreGroupH := platformstoregroup.NewHandler(gdb)
 	platformCircleH := platformcircle.NewHandler(circleSvc, gdb)
@@ -309,6 +311,7 @@ func main() {
 	platformMemberLevelH.Register(platformAuthed)
 	platformMerchantTypeH.Register(platformAuthed)
 	platformMerchantDepositH.Register(platformAuthed)
+	platformStoreMenuH.Register(platformAuthed)
 	platformProfitsharingH.Register(platformAuthed)
 	platformStoreGroupH.Register(platformAuthed)
 	platformCircleH.Register(platformAuthed)

@@ -1,7 +1,24 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi } from '#/api/core/auth';
 import {
   createArticleCategoryApi,
@@ -10,34 +27,85 @@ import {
   updateArticleCategoryApi,
   type ArticleCategoryOption,
 } from '#/api/core/plus-article';
-import { EcrmListPage } from '#/components/ecrm';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import {
+  LIST_ENABLE_STATUS_FIELD,
+  LIST_KEYWORD_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const rows = ref<ArticleCategoryOption[]>([]);
-const open = ref(false);
-const editing = ref<ArticleCategoryOption>();
 const canManage = ref(false);
+const editing = ref<ArticleCategoryOption>();
 const form = reactive({ sort: 0, status: 1, title: '' });
 
-async function load() {
-  loading.value = true;
-  try {
-    rows.value = (await getArticleCategoryListApi()).list || [];
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_KEYWORD_FIELD('分类名称'),
+  LIST_ENABLE_STATUS_FIELD('状态'),
+]);
 
-function add() {
+const gridOptions: VxeGridProps<ArticleCategoryOption> = {
+  columns: [
+    { field: 'cid', title: 'ID', width: 80 },
+    { field: 'title', minWidth: 180, title: '名称' },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 90,
+    },
+    platformListActionColumn({ width: 150 }),
+  ],
+  pagerConfig: { enabled: false },
+  proxyConfig: {
+    ajax: {
+      query: async (_ctx, formValues) => {
+        const keyword = String(formValues?.keyword ?? '')
+          .trim()
+          .toLowerCase();
+        const statusRaw = formValues?.status;
+        let list = (await getArticleCategoryListApi()).list || [];
+        if (keyword) {
+          list = list.filter((row) =>
+            row.title.toLowerCase().includes(keyword),
+          );
+        }
+        if (statusRaw === 0 || statusRaw === 1) {
+          list = list.filter((row) => row.status === Number(statusRaw));
+        }
+        return { items: list, total: list.length };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'cid' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [FormModal, formModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function resetForm() {
   editing.value = undefined;
   Object.assign(form, { sort: 0, status: 1, title: '' });
-  open.value = true;
 }
 
-function edit(row: ArticleCategoryOption) {
+function openCreate() {
+  resetForm();
+  formModalApi.setState({ title: '新增分类' }).open();
+}
+
+function openEdit(row: ArticleCategoryOption) {
   editing.value = row;
   Object.assign(form, { sort: 0, status: row.status, title: row.title });
-  open.value = true;
+  formModalApi.setState({ title: '编辑分类' }).open();
 }
 
 async function save() {
@@ -45,49 +113,72 @@ async function save() {
     ElMessage.warning('请填写分类名称');
     return;
   }
-  const payload = { sort: form.sort, status: form.status, title: form.title.trim() };
-  if (editing.value) await updateArticleCategoryApi(editing.value.cid, payload);
-  else await createArticleCategoryApi(payload);
-  open.value = false;
-  ElMessage.success('已保存');
-  await load();
+  formModalApi.lock();
+  try {
+    const payload = {
+      sort: form.sort,
+      status: form.status,
+      title: form.title.trim(),
+    };
+    if (editing.value) {
+      await updateArticleCategoryApi(editing.value.cid, payload);
+    } else {
+      await createArticleCategoryApi(payload);
+    }
+    formModalApi.close();
+    ElMessage.success('已保存');
+    gridApi.reload();
+  } finally {
+    formModalApi.unlock();
+  }
 }
 
 async function remove(row: ArticleCategoryOption) {
   try {
-    await ElMessageBox.confirm(`删除分类“${row.title}”后不可恢复，是否继续？`, '删除分类', { type: 'warning' });
+    await ElMessageBox.confirm(
+      `删除分类“${row.title}”后不可恢复，是否继续？`,
+      '删除分类',
+      { type: 'warning' },
+    );
     await deleteArticleCategoryApi(row.cid);
     ElMessage.success('已删除');
-    await load();
+    gridApi.reload();
   } catch {
-    // 取消
+    /* 取消 */
   }
 }
 
 onMounted(async () => {
-  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
+  const permissions = await getAccessCodesApi();
   canManage.value = permissions.includes('content.article_category.manage');
 });
 </script>
 
 <template>
-  <Page title="文章分类" description="维护 CMS 文章分类；写入经 article API，不含密钥。">
-    <EcrmListPage title="分类列表" description="分类供文章管理页引用。">
-      <template #actions><el-button v-if="canManage" type="primary" @click="add">新增分类</el-button></template>
-      <el-table v-loading="loading" :data="rows" row-key="cid">
-        <el-table-column label="ID" prop="cid" width="80" />
-        <el-table-column label="名称" min-width="180" prop="title" />
-        <el-table-column label="状态" width="90"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="150"><template #default="{ row }"><el-button v-if="canManage" link type="primary" @click="edit(row)">编辑</el-button><el-button v-if="canManage" link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
-      </el-table>
-    </EcrmListPage>
-    <el-dialog v-model="open" :title="editing ? '编辑分类' : '新增分类'" width="520px" destroy-on-close>
-      <el-form label-width="84px">
-        <el-form-item label="名称" required><el-input v-model="form.title" maxlength="64" show-word-limit /></el-form-item>
-        <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
-        <el-form-item label="启用"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="open = false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template>
-    </el-dialog>
+  <Page auto-content-height>
+    <Grid>
+      <template #toolbar-actions>
+        <ElButton
+          v-if="canManage"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          新增分类
+        </ElButton>
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="row.status === 1 ? 'success' : 'info'">
+          {{ row.status === 1 ? '启用' : '停用' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <template v-if="canManage">
+          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        </template>
+        <span v-else>—</span>
+      </template>
+    </Grid>
   </Page>
 </template>

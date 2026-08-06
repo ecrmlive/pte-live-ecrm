@@ -38,6 +38,8 @@ function applyPlatformToken(token: string, refreshToken?: string) {
   accessStore.setAccessToken(token);
   setEncryptedToken(token);
   if (refreshToken) {
+    // Pinia persist（DEV=localStorage）跨标签可读；sessionStorage 仅同标签。
+    accessStore.setRefreshToken(refreshToken);
     setEncryptedRefreshToken(refreshToken);
   }
   usePlatformUserStore().setToken(token);
@@ -46,7 +48,23 @@ function applyPlatformToken(token: string, refreshToken?: string) {
 function clearPlatformToken() {
   const accessStore = useAccessStore();
   accessStore.setAccessToken(null);
+  accessStore.setRefreshToken(null);
   clearEncryptedToken();
+}
+
+function resolveRefreshToken() {
+  const accessStore = useAccessStore();
+  const fromStore = String(accessStore.refreshToken || '').trim();
+  const fromSession = String(getDecryptedRefreshToken() || '').trim();
+  const refreshToken = fromStore || fromSession;
+  // 新标签 noopener 时 sessionStorage 为空，但 Pinia 可能仍有 refresh；回填避免后续再丢。
+  if (refreshToken && !fromSession) {
+    setEncryptedRefreshToken(refreshToken);
+  }
+  if (refreshToken && !fromStore) {
+    accessStore.setRefreshToken(refreshToken);
+  }
+  return refreshToken;
 }
 
 async function runPlatformStoredJwtRefresh(force = false) {
@@ -61,7 +79,7 @@ async function runPlatformStoredJwtRefresh(force = false) {
     force,
     onClear: clearPlatformToken,
     onToken: applyPlatformToken,
-    refreshToken: getDecryptedRefreshToken() || '',
+    refreshToken: resolveRefreshToken(),
   });
 }
 

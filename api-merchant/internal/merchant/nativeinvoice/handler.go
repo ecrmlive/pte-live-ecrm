@@ -44,6 +44,23 @@ func (h *Handler) list(c *gin.Context) {
 			}
 		}
 	}
+	if orderID, err := strconv.ParseUint(strings.TrimSpace(c.Query("order_id")), 10, 64); err == nil && orderID > 0 {
+		q = q.Where("i.order_id = ?", orderID)
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("i.title LIKE ? OR i.tax_no LIKE ? OR i.email LIKE ?", like, like, like)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("i.requested_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("i.requested_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c, "查询发票失败")

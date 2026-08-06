@@ -42,7 +42,16 @@ export interface MerchantAssistSaveInput {
   store_name?: string;
 }
 
-export function listMerchantAssistActivesApi(params: { limit: number; page: number }) {
+export interface MerchantAssistListParams {
+  date_from?: string;
+  date_to?: string;
+  is_show?: 0 | 1;
+  keyword?: string;
+  limit: number;
+  page: number;
+}
+
+export function listMerchantAssistActivesApi(params: MerchantAssistListParams) {
   return requestClient.get<MerchantAssistPage>('/assist/actives', { params });
 }
 

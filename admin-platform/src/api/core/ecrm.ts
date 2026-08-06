@@ -185,7 +185,18 @@ export function saveProductParameterTemplate(id: number | undefined, value: { na
 export function deleteProductParameterTemplate(id: number) { return requestClient.delete(`/product/parameter-templates/${id}`); }
 export type ProductCommentStatus = 'hidden' | 'pending' | 'published';
 export interface ProductCommentRow { id: number; product_id: number; store_id: number; score: number; content: string; media: string; reply_content: string; source: 'user' | 'virtual'; virtual_author_name: string; sort: number; status: ProductCommentStatus; created_at: string; product_title: string; }
-export function fetchProductComments(params: { page: number; limit: number; product_id?: number; status?: ProductCommentStatus }) { return requestClient.get<PageResult<ProductCommentRow>>('/product/comments', { params }); }
+export function fetchProductComments(params: {
+  page: number;
+  limit: number;
+  product_id?: number;
+  status?: ProductCommentStatus;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+  reply_status?: 'has_reply' | 'no_reply';
+}) {
+  return requestClient.get<PageResult<ProductCommentRow>>('/product/comments', { params });
+}
 export function fetchProductComment(id: number) { return requestClient.get<ProductCommentRow>(`/product/comments/${id}`); }
 export function moderateProductComment(id: number, input: { action: 'hide' | 'publish'; idempotency_key: string; note?: string }) { return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/moderate`, input); }
 export interface VirtualProductCommentInput { product_id?: number; score: number; content: string; virtual_author_name: string; sort: number; attachment_ids?: number[]; idempotency_key: string; }
@@ -194,7 +205,7 @@ export function updateVirtualProductComment(id: number, input: Omit<VirtualProdu
 export function sortVirtualProductComment(id: number, input: { sort: number; idempotency_key: string }) { return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/sort`, input); }
 export function deleteVirtualProductComment(id: number, input: { idempotency_key: string; note?: string }) { return requestClient.delete<{ comment_id: number; status: string }>(`/product/comments/${id}`, { data: input }); }
 export interface UserFeedbackRow { id:number; user_id:number; type:string; content:string; status:'pending'|'replied'|'closed'; reply:string; created_at:string; updated_at:string; }
-export function fetchUserFeedback(params:{page:number;limit:number;status?:string}) { return requestClient.get<PageResult<UserFeedbackRow>>('/user-feedback',{params}); }
+export function fetchUserFeedback(params:{page:number;limit:number;status?:string;keyword?:string;date_from?:string;date_to?:string}) { return requestClient.get<PageResult<UserFeedbackRow>>('/user-feedback',{params}); }
 export function replyUserFeedback(id:number,input:{reply:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/reply`,input); }
 export function closeUserFeedback(id:number,input:{reply?:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/close`,input); }
 export function deleteUserFeedback(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/${id}`,{data:input}); }
@@ -205,9 +216,9 @@ export function updateUserFeedbackCategory(id:number,input:{name:string;sort:num
 export function setUserFeedbackCategoryStatus(id:number,input:{status:0|1;idempotency_key:string}) { return requestClient.put(`/user-feedback/categories/${id}/status`,input); }
 export function deleteUserFeedbackCategory(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/categories/${id}`,{data:input}); }
 export interface PlatformUserRow { id:number; nickname:string; mobile:string; status:0|1; balance:number; points:number; level_name:string; created_at:string; }
-export function fetchPlatformUsers(params:{page:number;limit:number;id?:number;keyword?:string;status?:0|1}) { return requestClient.get<PageResult<PlatformUserRow>>('/user-list',{params}); }
+export function fetchPlatformUsers(params:{page:number;limit:number;id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string}) { return requestClient.get<PageResult<PlatformUserRow>>('/user-list',{params}); }
 export interface PlatformUserExport { file_name:string; content:string; row_count:number; truncated:boolean; }
-export function exportPlatformUsers(input:{id?:number;keyword?:string;status?:0|1;reason:string}) { return requestClient.post<PlatformUserExport>('/user-list/export',input); }
+export function exportPlatformUsers(input:{id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string;reason:string}) { return requestClient.post<PlatformUserExport>('/user-list/export',input); }
 export interface PlatformUserDetail { profile: PlatformUserRow & { commission:number }; assets: Array<{id:number;asset_type:'balance'|'points'|'commission';amount:number;reference_type:string;reference_id:string;created_at:string}>; membership_logs: Array<{id:number;level_name:string;previous_level_name:string;change_type:string;note:string;created_at:string}>; signs: Array<{id:number;sign_date:string;points:number;continuous_days:number;created_at:string}>; browse_history: Array<{id:number;product_id:number;store_id:number;store_name:string;title:string;viewed_at:string}>; orders: Array<{id:number;order_no:string;store_name:string;pay_amount:number;total_quantity:number;status:string;created_at:string}>; coupons:Array<{id:number;coupon_id:number;store_id:number;name:string;discount_type:'amount'|'rate';discount_value:number;min_amount:number;status:'unused'|'locked'|'used'|'expired';obtained_at:string;ends_at?:string}>; distribution:{parent_user_id:number;parent_nickname:string;direct_user_count:number;promoter_status:-1|0|1}; }
 export interface PlatformUserGroupOption { group_id:number; group_name:string; sort:number; }
 export function fetchPlatformUserGroupOptions() { return requestClient.get<{list:PlatformUserGroupOption[]}>('/user-list/groups'); }
@@ -234,12 +245,51 @@ export function issuePlatformUserCoupon(userId:number,couponId:number,input:{rea
 export function revokePlatformUserCoupon(userId:number,couponId:number,input:{reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/coupons/${couponId}/revoke`,input); }
 export function changePlatformUserReferrer(userId:number,input:{parent_user_id:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/referrer`,input); }
 export interface MerchantDepositRefund { id: number; merchant_id: number; amount: number; status: string; reason: string; review_note: string; payout_reference?: string; created_at: string; }
-export function fetchMerchantDeposits() { return requestClient.get<{ list: MerchantDepositAccount[] }>('/merchant-deposits'); }
+export function fetchMerchantDeposits(params?: {
+  merchant_id?: number;
+  keyword?: string;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return requestClient.get<{ list: MerchantDepositAccount[]; total?: number }>(
+    '/merchant-deposits',
+    { params },
+  );
+}
 export interface ProfitsharingApplication { id:number; merchant_id:number; application_no:string; status:string; description:string; review_note:string; created_at:string; }
-export function fetchProfitsharingApplications(status?:string){return requestClient.get<{list:ProfitsharingApplication[]}>('/merchant-profitsharing-applications',{params:{status}})}
+export function fetchProfitsharingApplications(params?: {
+  status?: string;
+  keyword?: string;
+  merchant_id?: number;
+  page?: number;
+  limit?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return requestClient.get<{ list: ProfitsharingApplication[]; total?: number }>(
+    '/merchant-profitsharing-applications',
+    { params },
+  );
+}
 export function reviewProfitsharingApplication(id:number,approved:boolean,note:string){return requestClient.post(`/merchant-profitsharing-applications/${id}/review`,{approved,note})}
 export function saveProfitsharingApplicationNote(id:number,note:string){return requestClient.put(`/merchant-profitsharing-applications/${id}/note`,{note})}
-export function fetchMerchantDepositRefunds(status?: string) { return requestClient.get<{ list: MerchantDepositRefund[] }>('/merchant-deposit-refunds', { params: { status } }); }
+export function fetchMerchantDepositRefunds(params?: {
+  status?: string;
+  merchant_id?: number;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return requestClient.get<{ list: MerchantDepositRefund[]; total?: number }>(
+    '/merchant-deposit-refunds',
+    { params },
+  );
+}
 export function deductMerchantDeposit(merchantId: number, input: { amount: number; reason: string; idempotency_key: string }) { return requestClient.post(`/merchant-deposits/${merchantId}/deduct`, input); }
 export function reviewMerchantDepositRefund(id: number, approved: boolean, note: string) { return requestClient.post(`/merchant-deposit-refunds/${id}/${approved ? 'approve' : 'reject'}`, { note }); }
 export function markMerchantDepositRefundPaid(id: number, input: { idempotency_key: string; payout_reference: string }) { return requestClient.post(`/merchant-deposit-refunds/${id}/mark-paid`, input); }
@@ -429,6 +479,8 @@ export function fetchMerchantIntentions(params: {
   limit: number;
   page: number;
   status?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<PageResult<MerchantIntentionRow>>(
     '/merchant-intentions',
@@ -693,6 +745,26 @@ export interface PlatformMenuRow {
   is_agent: number;
 }
 
+export interface MerchantStoreMenuRow extends PlatformMenuRow {
+  code: string;
+  component: string;
+  is_route: number;
+  created_at: string;
+}
+
+export type MerchantStoreMenuInput = {
+  parent_id?: number;
+  code: string;
+  name: string;
+  path: string;
+  component?: string;
+  icon?: string;
+  is_menu?: number;
+  is_route?: number;
+  sort?: number;
+  status?: number;
+};
+
 export async function fetchPlatformMenus() {
   const result = await requestClient.get<{ list: PlatformMenuRow[] }>('/setting/menus');
   return result.list || [];
@@ -700,4 +772,21 @@ export async function fetchPlatformMenus() {
 
 export function updatePlatformMenu(id: number, data: { menu_name?: string; sort?: number; is_show?: number }) {
   return requestClient.put<PlatformMenuRow>(`/setting/menus/${id}`, data);
+}
+
+export async function fetchMerchantStoreMenus() {
+  const result = await requestClient.get<{ list: MerchantStoreMenuRow[] }>('/merchant-menus');
+  return result.list || [];
+}
+
+export function createMerchantStoreMenu(data: MerchantStoreMenuInput) {
+  return requestClient.post<MerchantStoreMenuRow>('/merchant-menus', data);
+}
+
+export function updateMerchantStoreMenu(id: number, data: MerchantStoreMenuInput) {
+  return requestClient.put<MerchantStoreMenuRow>(`/merchant-menus/${id}`, data);
+}
+
+export function deleteMerchantStoreMenu(id: number) {
+  return requestClient.delete<{ menu_id: number }>(`/merchant-menus/${id}`);
 }

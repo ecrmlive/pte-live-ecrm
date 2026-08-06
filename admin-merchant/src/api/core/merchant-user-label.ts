@@ -14,16 +14,26 @@ export interface StoreAutoLabelRule {
   status: number;
 }
 
-export function listStoreUserLabelsApi() {
-  return requestClient.get<{ list: StoreUserLabel[] }>('/store-user-labels');
+export interface StoreUserLabelListParams {
+  keyword?: string;
+  status?: 0 | 1;
+}
+
+export function listStoreUserLabelsApi(params: StoreUserLabelListParams = {}) {
+  return requestClient.get<{ list: StoreUserLabel[] }>('/store-user-labels', { params });
 }
 
 export function saveStoreUserLabelsApi(body: { list: StoreUserLabel[] }) {
   return requestClient.post<{ list: StoreUserLabel[] }>('/store-user-labels', body);
 }
 
-export function listStoreAutoLabelRulesApi() {
-  return requestClient.get<{ list: StoreAutoLabelRule[] }>('/store-auto-label-rules');
+export interface StoreAutoLabelRuleListParams {
+  keyword?: string;
+  status?: 0 | 1;
+}
+
+export function listStoreAutoLabelRulesApi(params: StoreAutoLabelRuleListParams = {}) {
+  return requestClient.get<{ list: StoreAutoLabelRule[] }>('/store-auto-label-rules', { params });
 }
 
 export function saveStoreAutoLabelRulesApi(body: { list: StoreAutoLabelRule[] }) {

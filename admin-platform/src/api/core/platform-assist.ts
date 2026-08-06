@@ -27,8 +27,13 @@ export interface PlatformAssistPage {
 
 export function listPlatformAssistApi(params: {
   limit: number;
-  mer_id?: number;
   page: number;
+  mer_id?: number;
+  keyword?: string;
+  status?: number;
+  is_show?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   return requestClient.get<PlatformAssistPage>('/assist/actives', { params });
 }

@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { ElAlert, ElTag } from 'element-plus';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
-import { listPlatformInvoices, type PlatformInvoice } from '#/api/core/platform-invoice';
-import { EcrmListPage } from '#/components/ecrm';
+import {
+  listPlatformInvoices,
+  type PlatformInvoice,
+} from '#/api/core/platform-invoice';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const rows = ref<PlatformInvoice[]>([]);
-const total = ref(0);
-const loading = ref(false);
 const canRead = ref(false);
-const query = reactive({
-  limit: 20,
-  order_no: '',
-  page: 1,
-  status: undefined as PlatformInvoice['status'] | undefined,
-});
 
 const labels: Record<PlatformInvoice['status'], string> = {
   issued: '已开票',
@@ -25,102 +28,138 @@ const labels: Record<PlatformInvoice['status'], string> = {
   voided: '已作废',
 };
 
-async function load() {
-  if (!canRead.value) return;
-  loading.value = true;
-  try {
-    const result = await listPlatformInvoices({
-      limit: query.limit,
-      order_no: query.order_no.trim() || undefined,
-      page: query.page,
-      status: query.status,
-    });
-    rows.value = result.list || [];
-    total.value = result.total || 0;
-  } finally {
-    loading.value = false;
-  }
+function formatTime(value?: string) {
+  return value ? formatShanghaiDateTime(value) : '—';
 }
 
-function search() {
-  query.page = 1;
-  void load();
+function buildListParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
+  const keyword = String(formValues?.keyword ?? '').trim();
+  const orderNo = String(formValues?.order_no ?? '').trim();
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    status: (String(formValues?.status ?? '').trim() ||
+      undefined) as PlatformInvoice['status'] | undefined,
+    order_no: orderNo || keyword || undefined,
+    keyword: keyword || undefined,
+    date_from: range[0],
+    date_to: range[1],
+  };
 }
 
-function reset() {
-  Object.assign(query, { page: 1, status: undefined, order_no: '' });
-  void load();
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(labels).map(([value, label]) => ({ label, value })),
+      placeholder: '全部状态',
+    },
+    fieldName: 'status',
+    label: '开票状态',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      maxlength: 64,
+      placeholder: '订单号 / 抬头 / 发票号',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'Input',
+    componentProps: { clearable: true, maxlength: 64, placeholder: '精确订单号' },
+    fieldName: 'order_no',
+    label: '订单号',
+  },
+]);
+
+const gridOptions: VxeGridProps<PlatformInvoice> = {
+  columns: [
+    { field: 'id', title: '发票 ID', width: 110 },
+    { field: 'order_no', minWidth: 210, showOverflow: false, title: '订单号' },
+    {
+      field: 'merchant_name',
+      formatter: ({ row }) => `${row.merchant_name} / ${row.store_name}`,
+      minWidth: 180,
+      showOverflow: false,
+      title: '店铺',
+    },
+    { field: 'title', minWidth: 200, showOverflow: false, title: '抬头' },
+    { field: 'tax_no_masked', minWidth: 160, title: '税号（脱敏）' },
+    { field: 'email_masked', minWidth: 180, title: '邮箱（脱敏）' },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 110,
+    },
+    {
+      field: 'invoice_no',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 180,
+      title: '发票号',
+    },
+    {
+      field: 'requested_at',
+      formatter: ({ cellValue }) => formatTime(cellValue),
+      minWidth: 180,
+      title: '申请时间',
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const data = await listPlatformInvoices(buildListParams(page, formValues));
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 
 onMounted(async () => {
-  const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
-  canRead.value = profile.roles.includes('platform') && permissions.includes('accounts.invoice.read');
-  await load();
+  const [profile, permissions] = await Promise.all([
+    getUserInfoApi(),
+    getAccessCodesApi(),
+  ]);
+  canRead.value =
+    profile.roles.includes('platform') &&
+    permissions.includes('accounts.invoice.read');
 });
 </script>
 
 <template>
-  <Page
-    title="发票管理"
-    description="只读监管订单发票申请与开具事实。税号、邮箱已脱敏；平台不能在此人工开票、改号、改文件、作废或删除。"
-  >
-    <el-alert
+  <Page auto-content-height>
+    <ElAlert
       v-if="!canRead"
+      class="mb-4"
       title="当前账号没有发票监管权限"
       type="warning"
       :closable="false"
     />
-    <EcrmListPage v-else title="发票列表">
-      <template #filters>
-        <el-form class="flex flex-wrap gap-x-4" label-width="72px" @submit.prevent="search">
-          <el-form-item label="订单号">
-            <el-input v-model="query.order_no" maxlength="64" clearable />
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="query.status" clearable class="w-28" placeholder="全部">
-              <el-option
-                v-for="(label, status) in labels"
-                :key="status"
-                :label="label"
-                :value="status"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="search">查询</el-button>
-            <el-button @click="reset">重置</el-button>
-          </el-form-item>
-        </el-form>
+    <Grid v-else>
+      <template #status="{ row }">
+        <ElTag>{{ labels[row.status] }}</ElTag>
       </template>
-
-      <el-table v-loading="loading" :data="rows" row-key="id">
-        <el-table-column prop="id" label="发票 ID" width="110" />
-        <el-table-column prop="order_no" label="订单号" min-width="210" />
-        <el-table-column label="店铺" min-width="180">
-          <template #default="{ row }">{{ row.merchant_name }} / {{ row.store_name }}</template>
-        </el-table-column>
-        <el-table-column prop="title" label="抬头" min-width="200" />
-        <el-table-column prop="tax_no_masked" label="税号（脱敏）" min-width="160" />
-        <el-table-column prop="email_masked" label="邮箱（脱敏）" min-width="180" />
-        <el-table-column label="状态" width="110">
-          <template #default="{ row }"><el-tag>{{ labels[row.status] }}</el-tag></template>
-        </el-table-column>
-        <el-table-column prop="invoice_no" label="发票号" min-width="180" />
-        <el-table-column prop="requested_at" label="申请时间" min-width="180" />
-      </el-table>
-
-      <template #pager>
-        <el-pagination
-          :current-page="query.page"
-          :page-size="query.limit"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          background
-          layout="total, sizes, prev, pager, next"
-          @current-change="(page: number) => { query.page = page; load(); }"
-          @size-change="(limit: number) => { query.limit = limit; query.page = 1; load(); }"
-        />
-      </template>
-    </EcrmListPage>
+    </Grid>
   </Page>
 </template>

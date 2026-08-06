@@ -1,78 +1,223 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { Page } from '@vben/common-ui';
-import { ElMessage } from 'element-plus';
-import { listMerchantProductCommentsApi, replyMerchantProductCommentApi, type MerchantProductComment } from '#/api/core/merchant-product-comment';
-import { EcrmListPage } from '#/components/ecrm';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-const loading = ref(false);
-const rows = ref<MerchantProductComment[]>([]);
-const total = ref(0);
-const query = reactive({ page: 1, limit: 20, product_id: undefined as number | undefined, status: undefined as string | undefined });
-const replyOpen = ref(false);
+import { ref } from 'vue';
+
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElMessage,
+  ElRate,
+  ElTag,
+} from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listMerchantProductCommentsApi,
+  replyMerchantProductCommentApi,
+  type MerchantProductComment,
+} from '#/api/core/merchant-product-comment';
+import {
+  MERCHANT_LIST_GRID_LAYOUT,
+  merchantListActionColumn,
+} from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
+
 const replySaving = ref(false);
 const current = ref<MerchantProductComment>();
 const replyContent = ref('');
 
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listMerchantProductCommentsApi({ ...query });
-    rows.value = data.list ?? [];
-    total.value = data.total ?? 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const statusLabels: Record<string, string> = {
+  hidden: '已隐藏',
+  pending: '待审核',
+  published: '已展示',
+};
+
+const statusTypes: Record<
+  string,
+  'danger' | 'info' | 'success' | 'warning'
+> = {
+  hidden: 'info',
+  pending: 'warning',
+  published: 'success',
+};
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '评论内容 / 商品名称',
+    },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'InputNumber',
+    componentProps: { clearable: true, min: 1, placeholder: '商品 ID' },
+    fieldName: 'product_id',
+    label: '商品 ID',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '待审核', value: 'pending' },
+        { label: '已展示', value: 'published' },
+        { label: '已隐藏', value: 'hidden' },
+      ],
+      placeholder: '全部',
+    },
+    fieldName: 'status',
+    label: '状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<MerchantProductComment> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'id', title: 'ID', width: 80 },
+    {
+      field: 'product_title',
+      minWidth: 180,
+      showOverflow: false,
+      slots: { default: 'product' },
+      title: '商品',
+    },
+    { field: 'user_id', title: '用户 ID', width: 90 },
+    {
+      field: 'score',
+      slots: { default: 'score' },
+      title: '评分',
+      width: 120,
+    },
+    { field: 'content', minWidth: 220, showOverflow: true, title: '评论' },
+    { field: 'reply_content', minWidth: 160, showOverflow: true, title: '回复' },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 96,
+    },
+    {
+      field: 'created_at',
+      minWidth: 170,
+      title: '时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+    merchantListActionColumn({ width: 76 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const productId = formValues?.product_id;
+        const status = String(formValues?.status ?? '').trim();
+        const data = await listMerchantProductCommentsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          keyword: String(formValues?.keyword ?? '').trim() || undefined,
+          product_id:
+            typeof productId === 'number' && productId > 0
+              ? Number(productId)
+              : undefined,
+          status: (status || undefined) as
+            | 'hidden'
+            | 'pending'
+            | 'published'
+            | undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [ReplyModal, replyModalApi] = useVbenModal({
+  onConfirm: async () => {
+    if (!current.value || !replyContent.value.trim()) {
+      ElMessage.warning('请填写回复内容');
+      return;
+    }
+    replySaving.value = true;
+    replyModalApi.lock();
+    try {
+      await replyMerchantProductCommentApi(current.value.id, {
+        reply_content: replyContent.value.trim(),
+      });
+      ElMessage.success('商家回复已保存');
+      replyModalApi.close();
+      gridApi.reload();
+    } finally {
+      replySaving.value = false;
+      replyModalApi.unlock();
+    }
+  },
+});
 
 function openReply(row: MerchantProductComment) {
   current.value = row;
   replyContent.value = row.reply_content || '';
-  replyOpen.value = true;
+  replyModalApi.setState({ title: '商家回复' }).open();
 }
-
-async function saveReply() {
-  if (!current.value || !replyContent.value.trim()) {
-    ElMessage.warning('请填写回复内容');
-    return;
-  }
-  replySaving.value = true;
-  try {
-    await replyMerchantProductCommentApi(current.value.id, { reply_content: replyContent.value.trim() });
-    replyOpen.value = false;
-    ElMessage.success('商家回复已保存');
-    await load();
-  } finally {
-    replySaving.value = false;
-  }
-}
-
-onMounted(() => void load());
 </script>
 
 <template>
-  <Page title="商品评论" description="查看本店商品评论并回复买家。">
-    <EcrmListPage title="评论列表">
-      <template #filters>
-        <el-form inline @submit.prevent="query.page = 1; load()">
-          <el-form-item label="商品 ID"><el-input-number v-model="query.product_id" :min="1" /></el-form-item>
-          <el-form-item label="状态"><el-select v-model="query.status" clearable><el-option label="待审核" value="pending" /><el-option label="已展示" value="published" /><el-option label="已隐藏" value="hidden" /></el-select></el-form-item>
-        </el-form>
+  <Page auto-content-height>
+    <Grid>
+      <template #product="{ row }">
+        {{ row.product_title || `#${row.product_id}` }}
       </template>
-      <template #actions><el-button type="primary" @click="query.page = 1; load()">查询</el-button></template>
-      <el-table v-loading="loading" :data="rows">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column label="商品" min-width="180"><template #default="{ row }">{{ row.product_title || `#${row.product_id}` }}</template></el-table-column>
-        <el-table-column prop="user_id" label="用户 ID" width="90" />
-        <el-table-column label="评分" width="120"><template #default="{ row }"><el-rate :model-value="row.score" disabled /></template></el-table-column>
-        <el-table-column prop="content" label="评论" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="reply_content" label="回复" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="90" />
-        <el-table-column prop="created_at" label="时间" width="170" />
-        <el-table-column label="操作" width="90" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="openReply(row)">回复</el-button></template></el-table-column>
-      </el-table>
-      <template #pager><el-pagination :current-page="query.page" :page-size="query.limit" :total="total" layout="total,prev,pager,next" @current-change="(page) => { query.page = page; load(); }" /></template>
-    </EcrmListPage>
-    <el-dialog v-model="replyOpen" title="商家回复" width="520px"><el-input v-model="replyContent" type="textarea" :rows="4" maxlength="500" show-word-limit /><template #footer><el-button @click="replyOpen = false">取消</el-button><el-button type="primary" :loading="replySaving" @click="saveReply">保存</el-button></template></el-dialog>
+      <template #score="{ row }">
+        <ElRate :model-value="row.score" disabled />
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="statusTypes[row.status] || 'info'">
+          {{ statusLabels[row.status] || row.status }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <ElButton link type="primary" @click="openReply(row)">回复</ElButton>
+      </template>
+    </Grid>
+
+    <ReplyModal class="w-[520px] max-w-[96vw]">
+      <ElForm label-width="72px">
+        <ElFormItem label="回复内容" required>
+          <ElInput
+            v-model="replyContent"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            type="textarea"
+          />
+        </ElFormItem>
+      </ElForm>
+    </ReplyModal>
   </Page>
 </template>

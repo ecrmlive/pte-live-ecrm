@@ -1,10 +1,138 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { onMounted, ref } from 'vue';
+
 import { Page } from '@vben/common-ui';
+import { ElAlert, ElTag } from 'element-plus';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
-import { listPlatformLoginLogs, type PlatformLoginLog } from '#/api/core/platform-operation-log';
-const rows=ref<PlatformLoginLog[]>([]),total=ref(0),loading=ref(false),canRead=ref(false);const query=reactive({page:1,limit:20,username:'',success:undefined as 0|1|undefined,dates:[] as string[]});
-async function load(){if(!canRead.value)return;loading.value=true;try{const r=await listPlatformLoginLogs({page:query.page,limit:query.limit,username:query.username.trim()||undefined,success:query.success,start_date:query.dates[0],end_date:query.dates[1]});rows.value=r.list||[];total.value=r.total||0}finally{loading.value=false}}
-function reset(){Object.assign(query,{page:1,username:'',success:undefined,dates:[]});void load()}onMounted(async()=>{const[p,c]=await Promise.all([getUserInfoApi(),getAccessCodesApi()]);canRead.value=p.roles.includes('platform')&&c.includes('setting.operation_log.read');await load()});
+import {
+  listPlatformLoginLogs,
+  type PlatformLoginLog,
+} from '#/api/core/platform-operation-log';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
+
+const canRead = ref(false);
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Input',
+    componentProps: { clearable: true, maxlength: 64, placeholder: '登录账号' },
+    fieldName: 'username',
+    label: '账号',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '成功', value: 1 },
+        { label: '失败', value: 0 },
+      ],
+      placeholder: '全部结果',
+    },
+    fieldName: 'success',
+    label: '结果',
+  },
+]);
+
+const gridOptions: VxeGridProps<PlatformLoginLog> = {
+  columns: [
+    { field: 'id', title: '日志 ID', width: 100 },
+    { field: 'admin_user_id', title: '管理员 ID', width: 120 },
+    { field: 'username', minWidth: 160, title: '账号' },
+    { field: 'role_code', title: '角色', width: 130 },
+    {
+      field: 'success',
+      slots: { default: 'success' },
+      title: '结果',
+      width: 100,
+    },
+    { field: 'ip', title: 'IP', width: 150 },
+    {
+      field: 'user_agent',
+      minWidth: 220,
+      showOverflow: false,
+      title: '客户端标识',
+    },
+    {
+      field: 'created_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 180,
+      title: '时间',
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const successRaw = formValues?.success;
+        const result = await listPlatformLoginLogs({
+          page: page.currentPage,
+          limit: page.pageSize,
+          username: String(formValues?.username ?? '').trim() || undefined,
+          success:
+            successRaw === 0 || successRaw === 1
+              ? (Number(successRaw) as 0 | 1)
+              : undefined,
+          start_date: range[0],
+          end_date: range[1],
+        });
+        return { items: result.list || [], total: result.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+onMounted(async () => {
+  const [profile, codes] = await Promise.all([
+    getUserInfoApi(),
+    getAccessCodesApi(),
+  ]);
+  canRead.value =
+    profile.roles.includes('platform') &&
+    codes.includes('setting.operation_log.read');
+  if (canRead.value) gridApi.reload();
+});
 </script>
-<template><Page title="登录日志" description="只读展示统一后台登录结果。日志不含密码、令牌或请求体；仅平台安全审计账号可查看。"><el-alert v-if="!canRead" title="当前账号没有登录日志查看权限" type="warning" :closable="false"/><template v-else><el-card shadow="never"><el-form inline @submit.prevent="query.page=1;load()"><el-form-item label="账号"><el-input v-model="query.username" maxlength="64" clearable/></el-form-item><el-form-item label="结果"><el-select v-model="query.success" clearable class="w-28"><el-option label="成功" :value="1"/><el-option label="失败" :value="0"/></el-select></el-form-item><el-form-item label="日期"><el-date-picker v-model="query.dates" type="daterange" value-format="YYYY-MM-DD" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"/></el-form-item><el-button type="primary" @click="query.page=1;load()">查询</el-button><el-button @click="reset">重置</el-button></el-form></el-card><el-card class="mt-4" shadow="never"><el-table v-loading="loading" :data="rows"><el-table-column prop="id" label="日志 ID" width="100"/><el-table-column prop="admin_user_id" label="管理员 ID" width="120"/><el-table-column prop="username" label="账号" min-width="160"/><el-table-column prop="role_code" label="角色" width="130"/><el-table-column label="结果" width="100"><template #default="{row}"><el-tag :type="row.success?'success':'danger'">{{row.success?'成功':'失败'}}</el-tag></template></el-table-column><el-table-column prop="ip" label="IP" width="150"/><el-table-column prop="user_agent" label="客户端标识" min-width="220" show-overflow-tooltip/><el-table-column prop="created_at" label="时间" min-width="180"/></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10,20,50,100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(p)=>{query.page=p;load()}" @size-change="(l)=>{query.limit=l;query.page=1;load()}"/></div></el-card></template></Page></template>
+
+<template>
+  <Page auto-content-height>
+    <ElAlert
+      v-if="!canRead"
+      class="mb-4"
+      title="当前账号没有登录日志查看权限"
+      type="warning"
+      :closable="false"
+    />
+    <Grid v-else>
+      <template #success="{ row }">
+        <ElTag :type="row.success ? 'success' : 'danger'">
+          {{ row.success ? '成功' : '失败' }}
+        </ElTag>
+      </template>
+    </Grid>
+  </Page>
+</template>

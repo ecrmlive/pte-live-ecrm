@@ -2,6 +2,7 @@ package productmeta
 
 import (
 	"context"
+	"strings"
 
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/productmeta"
 	"gorm.io/gorm"
@@ -51,9 +52,15 @@ func (r *Repo) SoftDeleteLabel(ctx context.Context, merID, id uint) error {
 	return r.db.WithContext(ctx).Model(&productmeta.Label{}).Where("label_id = ? AND mer_id = ?", id, merID).Update("is_del", 1).Error
 }
 
-func (r *Repo) ListGuarantee(ctx context.Context, merID uint, page, limit int) ([]productmeta.Guarantee, int64, error) {
+func (r *Repo) ListGuarantee(ctx context.Context, merID uint, page, limit int, keyword string, status *int8) ([]productmeta.Guarantee, int64, error) {
 	var total int64
 	q := r.db.WithContext(ctx).Model(&productmeta.Guarantee{}).Where("mer_id = ? AND is_del = 0", merID)
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
+		q = q.Where("name LIKE ?", "%"+keyword+"%")
+	}
+	if status != nil {
+		q = q.Where("status = ?", *status)
+	}
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -91,9 +98,12 @@ func (r *Repo) SoftDeleteGuarantee(ctx context.Context, merID, id uint) error {
 	return r.db.WithContext(ctx).Model(&productmeta.Guarantee{}).Where("guarantee_id = ? AND mer_id = ?", id, merID).Update("is_del", 1).Error
 }
 
-func (r *Repo) ListAttrTemplate(ctx context.Context, merID uint, page, limit int) ([]productmeta.AttrTemplate, int64, error) {
+func (r *Repo) ListAttrTemplate(ctx context.Context, merID uint, page, limit int, keyword string) ([]productmeta.AttrTemplate, int64, error) {
 	var total int64
 	q := r.db.WithContext(ctx).Model(&productmeta.AttrTemplate{}).Where("mer_id = ? AND is_del = 0", merID)
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
+		q = q.Where("template_name LIKE ?", "%"+keyword+"%")
+	}
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}

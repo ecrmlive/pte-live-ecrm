@@ -16,6 +16,13 @@ export interface MerchantExpressPage {
   total: number;
 }
 
-export function listMerchantExpressApi(params: { limit: number; page: number }) {
+export interface MerchantExpressListParams {
+  keyword?: string;
+  is_show?: 0 | 1;
+  limit: number;
+  page: number;
+}
+
+export function listMerchantExpressApi(params: MerchantExpressListParams) {
   return requestClient.get<MerchantExpressPage>('/express', { params });
 }

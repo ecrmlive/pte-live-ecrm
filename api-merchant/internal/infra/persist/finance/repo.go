@@ -87,6 +87,22 @@ func (r *Repo) ListFinancials(ctx context.Context, filter finance.ListFilter) ([
 	if filter.Status != nil {
 		q = q.Where("status = ?", *filter.Status)
 	}
+	if filter.FinancialStatus != nil {
+		q = q.Where("financial_status = ?", *filter.FinancialStatus)
+	}
+	if filter.FinancialSN != "" {
+		q = q.Where("financial_sn LIKE ?", "%"+filter.FinancialSN+"%")
+	}
+	if filter.DateFrom != "" {
+		if t, err := time.ParseInLocation("2006-01-02", filter.DateFrom, time.Local); err == nil {
+			q = q.Where("create_time >= ?", t)
+		}
+	}
+	if filter.DateTo != "" {
+		if t, err := time.ParseInLocation("2006-01-02", filter.DateTo, time.Local); err == nil {
+			q = q.Where("create_time < ?", t.AddDate(0, 0, 1))
+		}
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err

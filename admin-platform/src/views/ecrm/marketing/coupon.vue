@@ -1,9 +1,24 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElSwitch,
+  ElTag,
+} from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createPlatformCouponApi,
   deletePlatformCouponApi,
@@ -14,41 +29,178 @@ import {
   type PlatformCouponSaveInput,
 } from '#/api/core/platform-promotion';
 import { getAccessCodesApi } from '#/api/core/auth';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_ENABLE_STATUS_FIELD,
+  LIST_KEYWORD_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
 const saving = ref(false);
-const rows = ref<PlatformCoupon[]>([]);
-const total = ref(0);
-const dialogOpen = ref(false);
 const editingID = ref<number>();
 const canManage = ref(false);
-const query = reactive({ limit: 20, page: 1 });
-const form = reactive<PlatformCouponSaveInput>({ coupon_price: 0, coupon_time: 30, is_limited: 0, sort: 1, status: 1, title: '', total_count: 0, use_min_price: 0 });
+
+const form = reactive<PlatformCouponSaveInput>({
+  coupon_price: 0,
+  coupon_time: 30,
+  is_limited: 0,
+  sort: 1,
+  status: 1,
+  title: '',
+  total_count: 0,
+  use_min_price: 0,
+});
+
+function formatTime(value?: string) {
+  return value ? formatShanghaiDateTime(value) : '—';
+}
+
+function buildListParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const statusRaw = formValues?.status;
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    keyword: String(formValues?.keyword ?? '').trim() || undefined,
+    status:
+      statusRaw === 0 || statusRaw === 1 ? Number(statusRaw) : undefined,
+  };
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '优惠券名称' },
+    fieldName: 'keyword',
+    label: '关键词',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '已启用', value: 1 },
+        { label: '已停用', value: 0 },
+      ],
+      placeholder: '全部状态',
+    },
+    fieldName: 'status',
+    label: '启用状态',
+  },
+]);
+
+const gridOptions: VxeGridProps<PlatformCoupon> = {
+  columns: [
+    { field: 'coupon_id', title: 'ID', width: 80 },
+    { field: 'title', minWidth: 180, showOverflow: false, title: '优惠券名称' },
+    {
+      field: 'coupon_price',
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+      title: '面额',
+      width: 108,
+    },
+    {
+      field: 'use_min_price',
+      formatter: ({ cellValue }) => `满 ¥${Number(cellValue || 0).toFixed(2)} 可用`,
+      title: '使用门槛',
+      width: 140,
+    },
+    {
+      field: 'coupon_time',
+      formatter: ({ cellValue }) => `领取后 ${cellValue} 天`,
+      title: '有效期',
+      width: 112,
+    },
+    {
+      field: 'remain_count',
+      formatter: ({ row }) =>
+        row.is_limited === 1 ? `${row.remain_count}/${row.total_count}` : '不限量',
+      title: '发放数量',
+      width: 112,
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 88,
+    },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatTime(cellValue),
+      minWidth: 170,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 166 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const data = await listPlatformCouponsApi(buildListParams(page, formValues));
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'coupon_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [FormModal, formModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
 
 function resetForm() {
   editingID.value = undefined;
-  Object.assign(form, { coupon_price: 0, coupon_time: 30, is_limited: 0, sort: 1, status: 1, title: '', total_count: 0, use_min_price: 0 });
+  Object.assign(form, {
+    coupon_price: 0,
+    coupon_time: 30,
+    is_limited: 0,
+    sort: 1,
+    status: 1,
+    title: '',
+    total_count: 0,
+    use_min_price: 0,
+  });
 }
 
-function openCreate() { resetForm(); dialogOpen.value = true; }
+function openCreate() {
+  resetForm();
+  formModalApi.setState({ title: '新增平台券' }).open();
+}
 
 function openEdit(row: PlatformCoupon) {
   editingID.value = row.coupon_id;
-  Object.assign(form, { coupon_price: row.coupon_price, coupon_time: row.coupon_time, is_limited: row.is_limited, sort: row.sort, status: row.status, title: row.title, total_count: row.total_count, use_min_price: row.use_min_price });
-  dialogOpen.value = true;
-}
-
-async function load() {
-  loading.value = true;
-  try {
-    const result = await listPlatformCouponsApi(query);
-    rows.value = result.list;
-    total.value = result.total;
-  } finally { loading.value = false; }
+  Object.assign(form, {
+    coupon_price: row.coupon_price,
+    coupon_time: row.coupon_time,
+    is_limited: row.is_limited,
+    sort: row.sort,
+    status: row.status,
+    title: row.title,
+    total_count: row.total_count,
+    use_min_price: row.use_min_price,
+  });
+  formModalApi.setState({ title: '编辑平台券' }).open();
 }
 
 async function save() {
-  if (!form.title.trim() || form.coupon_price <= 0 || form.use_min_price < 0 || form.coupon_time <= 0) {
+  if (
+    !form.title.trim() ||
+    form.coupon_price <= 0 ||
+    form.use_min_price < 0 ||
+    form.coupon_time <= 0
+  ) {
     ElMessage.warning('请完整填写优惠券名称、金额、门槛和有效天数');
     return;
   }
@@ -56,15 +208,23 @@ async function save() {
     ElMessage.warning('限量发放时必须填写发放总数');
     return;
   }
+  formModalApi.lock();
   saving.value = true;
   try {
-    const body = { ...form, title: form.title.trim(), total_count: form.is_limited === 1 ? form.total_count : 0 };
+    const body = {
+      ...form,
+      title: form.title.trim(),
+      total_count: form.is_limited === 1 ? form.total_count : 0,
+    };
     if (editingID.value) await updatePlatformCouponApi(editingID.value, body);
     else await createPlatformCouponApi(body);
-    dialogOpen.value = false;
+    formModalApi.close();
     ElMessage.success(editingID.value ? '平台券已更新' : '平台券已创建');
-    await load();
-  } finally { saving.value = false; }
+    gridApi.reload();
+  } finally {
+    saving.value = false;
+    formModalApi.unlock();
+  }
 }
 
 async function toggle(row: PlatformCoupon) {
@@ -76,25 +236,92 @@ async function toggle(row: PlatformCoupon) {
 
 async function remove(row: PlatformCoupon) {
   try {
-    await ElMessageBox.confirm(`删除平台券“${row.title}”后不可恢复，是否继续？`, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(
+      `删除平台券“${row.title}”后不可恢复，是否继续？`,
+      '删除确认',
+      { type: 'warning' },
+    );
     await deletePlatformCouponApi(row.coupon_id);
     ElMessage.success('平台券已删除');
-    await load();
+    gridApi.reload();
   } catch {
-    // 用户取消或接口错误时由统一请求层处理。
+    /* 用户取消或统一请求层处理 */
   }
 }
 
 onMounted(async () => {
-  const [permissions] = await Promise.all([getAccessCodesApi(), load()]);
+  const permissions = await getAccessCodesApi();
   canManage.value = permissions.includes('marketing.coupon.manage');
 });
 </script>
 
 <template>
-  <Page title="平台优惠券" description="平台券仅适用于普通订单；秒杀、拼团、助力等活动订单不参与平台券计价。">
-    <template #extra><el-button v-if="canManage" type="primary" @click="openCreate">新增平台券</el-button></template>
-    <el-card shadow="never"><el-table v-loading="loading" :data="rows" row-key="coupon_id"><el-table-column label="ID" prop="coupon_id" width="80" /><el-table-column label="优惠券名称" min-width="180" prop="title" /><el-table-column label="面额" width="108"><template #default="{ row }">¥{{ Number(row.coupon_price).toFixed(2) }}</template></el-table-column><el-table-column label="使用门槛" width="122"><template #default="{ row }">满 ¥{{ Number(row.use_min_price).toFixed(2) }} 可用</template></el-table-column><el-table-column label="有效期" width="112"><template #default="{ row }">领取后 {{ row.coupon_time }} 天</template></el-table-column><el-table-column label="发放数量" width="112"><template #default="{ row }">{{ row.is_limited === 1 ? `${row.remain_count}/${row.total_count}` : '不限量' }}</template></el-table-column><el-table-column label="状态" width="88"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已启用' : '已停用' }}</el-tag></template></el-table-column><el-table-column label="创建时间" min-width="170" prop="create_time" /><el-table-column fixed="right" label="操作" width="166"><template #default="{ row }"><el-button v-if="canManage" link type="primary" @click="openEdit(row)">编辑</el-button><el-button v-if="canManage" link type="warning" @click="toggle(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button><el-button v-if="canManage" link type="danger" @click="remove(row)">删除</el-button></template></el-table-column></el-table><div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :page-sizes="[10, 20, 50, 100]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" @size-change="(limit) => { query.limit = limit; query.page = 1; load(); }" /></div></el-card>
-    <el-dialog v-model="dialogOpen" :title="editingID ? '编辑平台券' : '新增平台券'" width="580px" destroy-on-close><el-form class="grid grid-cols-2 gap-x-4" label-width="90px"><el-form-item class="col-span-2" label="优惠券名称" required><el-input v-model="form.title" maxlength="40" show-word-limit /></el-form-item><el-form-item label="优惠金额" required><el-input-number v-model="form.coupon_price" :min="0.01" :precision="2" class="w-full" /></el-form-item><el-form-item label="使用门槛"><el-input-number v-model="form.use_min_price" :min="0" :precision="2" class="w-full" /></el-form-item><el-form-item label="有效天数" required><el-input-number v-model="form.coupon_time" :min="1" class="w-full" /></el-form-item><el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" class="w-full" /></el-form-item><el-form-item label="限量发放"><el-switch v-model="form.is_limited" :active-value="1" :inactive-value="0" /></el-form-item><el-form-item v-if="form.is_limited === 1" label="发放总数" required><el-input-number v-model="form.total_count" :min="1" class="w-full" /></el-form-item><el-form-item label="初始状态"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item></el-form><template #footer><el-button @click="dialogOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="save">保存</el-button></template></el-dialog>
+  <Page auto-content-height>
+    <Grid>
+      <template #toolbar-actions>
+        <ElButton
+          v-if="canManage"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          新增平台券
+        </ElButton>
+      </template>
+      <template #status="{ row }">
+        <ElTag :type="row.status === 1 ? 'success' : 'info'">
+          {{ row.status === 1 ? '已启用' : '已停用' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <template v-if="canManage">
+          <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+          <ElButton link type="warning" @click="toggle(row)">
+            {{ row.status === 1 ? '停用' : '启用' }}
+          </ElButton>
+          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        </template>
+        <span v-else>—</span>
+      </template>
+    </Grid>
+
+    <FormModal>
+      <ElForm class="grid grid-cols-2 gap-x-4" label-width="90px">
+        <ElFormItem class="col-span-2" label="优惠券名称" required>
+          <ElInput v-model="form.title" maxlength="40" show-word-limit />
+        </ElFormItem>
+        <ElFormItem label="优惠金额" required>
+          <ElInputNumber
+            v-model="form.coupon_price"
+            :min="0.01"
+            :precision="2"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="使用门槛">
+          <ElInputNumber
+            v-model="form.use_min_price"
+            :min="0"
+            :precision="2"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="有效天数" required>
+          <ElInputNumber v-model="form.coupon_time" :min="1" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="限量发放">
+          <ElSwitch v-model="form.is_limited" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+        <ElFormItem v-if="form.is_limited === 1" label="发放总数" required>
+          <ElInputNumber v-model="form.total_count" :min="1" class="w-full" />
+        </ElFormItem>
+        <ElFormItem label="初始状态">
+          <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </ElFormItem>
+      </ElForm>
+    </FormModal>
   </Page>
 </template>

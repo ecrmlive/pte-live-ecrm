@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { listFinanceLedgerApi, type FinanceLedgerEntry } from '#/api/core/merchant-ledger';
-import { EcrmListPage } from '#/components/ecrm';
+import { Page } from '@vben/common-ui';
 
-const loading = ref(false);
-const rows = ref<FinanceLedgerEntry[]>([]);
-const total = ref(0);
-const query = reactive({ page: 1, limit: 20 });
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  listFinanceLedgerApi,
+  type FinanceLedgerEntry,
+} from '#/api/core/merchant-ledger';
+import { MERCHANT_LIST_GRID_LAYOUT } from '#/constants/merchant-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
 const entryLabels: Record<string, string> = {
   test_seed: '夹具入账',
@@ -21,50 +28,86 @@ function entryLabel(type: string) {
   return entryLabels[type] || type;
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listFinanceLedgerApi({ ...query });
-    rows.value = data.list ?? [];
-    total.value = data.total ?? 0;
-  } finally {
-    loading.value = false;
-  }
-}
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: Object.entries(entryLabels).map(([value, label]) => ({
+        label,
+        value,
+      })),
+      placeholder: '全部类型',
+    },
+    fieldName: 'entry_type',
+    label: '流水类型',
+  },
+]);
 
-onMounted(() => void load());
+const gridOptions: VxeGridProps<FinanceLedgerEntry> = {
+  ...MERCHANT_LIST_GRID_LAYOUT,
+  columns: [
+    { field: 'id', title: 'ID', width: 80 },
+    {
+      field: 'entry_type',
+      title: '类型',
+      width: 140,
+      formatter: ({ cellValue }) => entryLabel(String(cellValue || '')),
+    },
+    {
+      field: 'amount',
+      title: '金额',
+      width: 120,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    { field: 'reference_type', title: '关联类型', width: 120 },
+    {
+      field: 'reference_id',
+      minWidth: 140,
+      showOverflow: false,
+      title: '关联 ID',
+    },
+    {
+      field: 'created_at',
+      title: '时间',
+      width: 180,
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+    },
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const data = await listFinanceLedgerApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          entry_type: String(formValues?.entry_type ?? '').trim() || undefined,
+          date_from: range[0],
+          date_to: range[1],
+        });
+        return { items: data.list ?? [], total: data.total ?? 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
 </script>
 
 <template>
-  <EcrmListPage title="资金流水" description="本店资金账本流水明细；数据来自 qixi_crm_m_finance_ledger，按 store_id 隔离。">
-    <template #filters>
-      <div class="flex flex-wrap items-center gap-2">
-        <el-button @click="load">刷新</el-button>
-      </div>
-    </template>
-
-    <el-table v-loading="loading" :data="rows" row-key="id">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column label="类型" width="140">
-        <template #default="{ row }">{{ entryLabel(row.entry_type) }}</template>
-      </el-table-column>
-      <el-table-column label="金额" width="120">
-        <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
-      </el-table-column>
-      <el-table-column prop="reference_type" label="关联类型" width="120" />
-      <el-table-column prop="reference_id" label="关联 ID" min-width="140" />
-      <el-table-column prop="created_at" label="时间" width="180" />
-    </el-table>
-    <el-empty v-if="!loading && !rows.length" description="暂无资金流水" />
-
-    <template #pager>
-      <el-pagination
-        :current-page="query.page"
-        :page-size="query.limit"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="(page: number) => { query.page = page; load(); }"
-      />
-    </template>
-  </EcrmListPage>
+  <Page auto-content-height>
+    <Grid />
+  </Page>
 </template>

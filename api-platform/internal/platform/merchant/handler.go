@@ -439,7 +439,7 @@ func (h *Handler) ListIntentions(c *gin.Context) {
 		response.Fail(c, http.StatusForbidden, "当前角色无商户入驻审核范围")
 		return
 	}
-	res, err := h.svc.ListIntentions(c.Request.Context(), c.Query("keyword"), statusPtr, regionIDs, page, limit)
+	res, err := h.svc.ListIntentions(c.Request.Context(), c.Query("keyword"), statusPtr, regionIDs, page, limit, strings.TrimSpace(c.Query("date_from")), strings.TrimSpace(c.Query("date_to")))
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

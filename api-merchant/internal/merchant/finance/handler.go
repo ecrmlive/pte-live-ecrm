@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-merchant/internal/domain/finance"
@@ -36,7 +37,22 @@ func (h *Handler) Balance(c *gin.Context) {
 func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListMerchant(c.Request.Context(), middleware.MerID(c), page, limit)
+	merID := middleware.MerID(c)
+	filter := finance.ListFilter{MerID: &merID, Page: page, Limit: limit}
+	if raw := strings.TrimSpace(c.Query("status")); raw != "" {
+		if value, err := strconv.Atoi(raw); err == nil {
+			filter.Status = &value
+		}
+	}
+	if raw := strings.TrimSpace(c.Query("financial_status")); raw != "" {
+		if value, err := strconv.Atoi(raw); err == nil {
+			filter.FinancialStatus = &value
+		}
+	}
+	filter.FinancialSN = strings.TrimSpace(c.Query("financial_sn"))
+	filter.DateFrom = strings.TrimSpace(c.Query("date_from"))
+	filter.DateTo = strings.TrimSpace(c.Query("date_to"))
+	res, err := h.svc.ListMerchant(c.Request.Context(), filter)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

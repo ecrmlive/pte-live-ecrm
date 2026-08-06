@@ -63,7 +63,18 @@ export interface MerchantRecycleProductPage {
   total: number;
 }
 
-export function listMerchantProductsApi(params: { keyword?: string; limit: number; page: number; status?: number }) {
+export interface MerchantProductListQuery {
+  cate_id?: number;
+  date_from?: string;
+  date_to?: string;
+  is_show?: number;
+  keyword?: string;
+  limit: number;
+  page: number;
+  status?: number;
+}
+
+export function listMerchantProductsApi(params: MerchantProductListQuery) {
   return requestClient.get<MerchantProductPage>('/products', { params });
 }
 

@@ -479,7 +479,8 @@ const gridOptions: VxeGridProps<PlatformMerchantRow> = {
       field: 'mark',
       formatter: ({ cellValue }) => cellValue || '—',
       minWidth: 140,
-      showOverflow: false,
+      // 长备注单行省略 + tooltip，避免撑高行导致 fixed 操作列错位
+      showOverflow: true,
       title: '备注',
     },
     platformListActionColumn({ width: 168 }),

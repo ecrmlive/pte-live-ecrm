@@ -36,10 +36,24 @@ export function getDistributionSummaryApi() {
   return requestClient.get<DistributionSummary>('/distribution/summary');
 }
 
-export function listDistributionPromotersApi(params: { limit: number; page: number; status?: 0 | 1; user_id?: number }) {
+export function listDistributionPromotersApi(params: {
+  limit: number;
+  page: number;
+  status?: 0 | 1;
+  user_id?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<DistributionPage<DistributionPromoter>>('/distribution/promoters', { params });
 }
 
-export function listDistributionCommissionsApi(params: { limit: number; page: number; status?: CommissionStatus; user_id?: number }) {
+export function listDistributionCommissionsApi(params: {
+  limit: number;
+  page: number;
+  status?: CommissionStatus;
+  user_id?: number;
+  date_from?: string;
+  date_to?: string;
+}) {
   return requestClient.get<DistributionPage<DistributionCommission>>('/distribution/commissions', { params });
 }

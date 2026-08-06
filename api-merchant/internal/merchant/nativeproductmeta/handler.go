@@ -50,6 +50,14 @@ type tagInput struct {
 func (h *Handler) listLabels(c *gin.Context) {
 	page, limit := pagination(c)
 	q := h.db.WithContext(c.Request.Context()).Model(&tag{}).Where("store_id = ?", middleware.StoreID(c))
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		q = q.Where("name LIKE ?", "%"+keyword+"%")
+	}
+	if statusRaw := strings.TrimSpace(c.Query("status")); statusRaw != "" {
+		if status, err := strconv.Atoi(statusRaw); err == nil && (status == 0 || status == 1) {
+			q = q.Where("status = ?", status)
+		}
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询商品标签失败")

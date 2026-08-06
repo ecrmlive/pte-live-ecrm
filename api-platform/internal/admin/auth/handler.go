@@ -74,10 +74,17 @@ func (h *Handler) Register(public, authed gin.IRoutes) {
 	// 未登录状态将“无验证码”误判为接口故障。
 	public.POST("/admin/index/base", h.LoginBase)
 	public.POST("/auth/refresh", h.Refresh)
+	authed.POST("/auth/logout", h.Logout)
 	authed.GET("/auth/me", h.Me)
 	authed.GET("/auth/menus", h.Menus)
 	authed.GET("/auth/permissions", h.Permissions)
 	authed.PUT("/auth/password", h.ChangePassword)
+}
+
+// Logout 供前端退出时调用。令牌失效由客户端清缓存完成；此处返回成功即可，
+// 避免 Vben logoutApi 命中 Gin 默认 404 并弹出 axios 原始错误文案。
+func (h *Handler) Logout(c *gin.Context) {
+	response.OK(c, nil)
 }
 
 func (h *Handler) LoginBase(c *gin.Context) {

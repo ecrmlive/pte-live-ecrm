@@ -1,116 +1,280 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { Page, useVbenModal } from '@vben/common-ui';
+import {
+  ElAlert,
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElRadio,
+  ElRadioGroup,
+  ElTag,
+} from 'element-plus';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
-  listPlatformCombinationsApi,
-  getPlatformCombinationApi,
   deletePlatformCombinationApi,
+  getPlatformCombinationApi,
+  listPlatformCombinationsApi,
   updatePlatformCombinationApi,
   type PlatformCombination,
   type PlatformCombinationInput,
 } from '#/api/core/platform-combination';
+import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  buildStandardListParams,
+  LIST_DATE_RANGE_FIELD,
+  LIST_ENABLE_STATUS_FIELD,
+  LIST_KEYWORD_FIELD,
+  LIST_MER_ID_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const loading = ref(false);
-const rows = ref<PlatformCombination[]>([]);
-const total = ref(0);
-const canManage = ref(false);
-const query = reactive({ limit: 20, mer_id: undefined as number | undefined, page: 1 });
-const editOpen = ref(false);
 const saving = ref(false);
+const canManage = ref(false);
 const editingID = ref<number>();
-const form = reactive<Required<PlatformCombinationInput>>({ price: 0, buying_count_num: 2, time: 24, start_time: '', end_time: '', is_show: 1, status: 1 });
-
-async function load() {
-  loading.value = true;
-  try {
-    const data = await listPlatformCombinationsApi(query);
-    rows.value = data.list || [];
-    total.value = data.total || 0;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function setStatus(row: PlatformCombination, status: number) {
-  const action = status === 1 ? '启用' : '停用';
-  try {
-    await ElMessageBox.confirm(`确认${action}商品 #${row.product_id} 的拼团活动？`, `${action}确认`, {
-      cancelButtonText: '取消',
-      confirmButtonText: `确认${action}`,
-      type: 'warning',
-    });
-    await updatePlatformCombinationApi(row.product_group_id, { status });
-    ElMessage.success(`活动已${action}`);
-    await load();
-  } catch {
-    // 用户取消或接口错误由统一请求层提示。
-  }
-}
+const form = reactive<Required<PlatformCombinationInput>>({
+  price: 0,
+  buying_count_num: 2,
+  time: 24,
+  start_time: '',
+  end_time: '',
+  is_show: 1,
+  status: 1,
+});
 
 function dateTime(value: string) {
+  return value ? formatShanghaiDateTime(value) : '—';
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults([
+  LIST_DATE_RANGE_FIELD,
+  LIST_KEYWORD_FIELD('商品名称'),
+  LIST_MER_ID_FIELD,
+  LIST_ENABLE_STATUS_FIELD(),
+]);
+
+const gridOptions: VxeGridProps<PlatformCombination> = {
+  columns: [
+    { field: 'product_group_id', title: 'ID', width: 80 },
+    {
+      field: 'store_name',
+      minWidth: 180,
+      showOverflow: false,
+      title: '商品',
+      formatter: ({ row }) => row.store_name || `商品 #${row.product_id}`,
+    },
+    {
+      field: 'mer_name',
+      minWidth: 130,
+      showOverflow: false,
+      title: '商户',
+      formatter: ({ row }) => row.mer_name || `商户 #${row.mer_id}`,
+    },
+    {
+      field: 'price',
+      title: '拼团价',
+      width: 110,
+      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
+    },
+    { field: 'buying_count_num', title: '成团人数', width: 100 },
+    {
+      field: 'start_time',
+      minWidth: 220,
+      showOverflow: false,
+      title: '活动时间',
+      formatter: ({ row }) => `${dateTime(row.start_time)} 至 ${dateTime(row.end_time)}`,
+    },
+    {
+      field: 'status',
+      slots: { default: 'status' },
+      title: '状态',
+      width: 88,
+    },
+    platformListActionColumn({ width: 172 }),
+  ],
+  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        const data = await listPlatformCombinationsApi(buildStandardListParams(page, formValues));
+        return { items: data.list || [], total: data.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'product_group_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [EditModal, editModalApi] = useVbenModal({
+  onConfirm: async () => save(),
+});
+
+function toFormDateTime(value: string) {
   return value ? value.replace('T', ' ').slice(0, 19) : '';
 }
 
 async function edit(row: PlatformCombination) {
   const detail = await getPlatformCombinationApi(row.product_group_id);
   editingID.value = row.product_group_id;
-  Object.assign(form, { price: Number(detail.price), buying_count_num: detail.buying_count_num, time: detail.time || 24, start_time: dateTime(detail.start_time), end_time: dateTime(detail.end_time), is_show: detail.is_show, status: detail.status });
-  editOpen.value = true;
+  Object.assign(form, {
+    price: Number(detail.price),
+    buying_count_num: detail.buying_count_num,
+    time: detail.time || 24,
+    start_time: toFormDateTime(detail.start_time),
+    end_time: toFormDateTime(detail.end_time),
+    is_show: detail.is_show,
+    status: detail.status,
+  });
+  editModalApi.setState({ title: '编辑拼团活动' }).open();
 }
 
 async function save() {
-  if (!editingID.value || form.price <= 0 || form.buying_count_num < 2 || form.time < 1 || !form.start_time || !form.end_time || new Date(form.end_time).valueOf() < new Date(form.start_time).valueOf()) {
+  if (
+    !editingID.value ||
+    form.price <= 0 ||
+    form.buying_count_num < 2 ||
+    form.time < 1 ||
+    !form.start_time ||
+    !form.end_time ||
+    new Date(form.end_time).valueOf() < new Date(form.start_time).valueOf()
+  ) {
     ElMessage.warning('请填写正数拼团价、至少 2 人、有效时长和正确的活动时间');
     return;
   }
+  editModalApi.lock();
   saving.value = true;
   try {
     await updatePlatformCombinationApi(editingID.value, { ...form });
+    editModalApi.close();
     ElMessage.success('拼团活动已更新');
-    editOpen.value = false;
-    await load();
-  } finally { saving.value = false; }
+    gridApi.reload();
+  } finally {
+    saving.value = false;
+    editModalApi.unlock();
+  }
+}
+
+async function setStatus(row: PlatformCombination, status: number) {
+  const action = status === 1 ? '启用' : '停用';
+  try {
+    await ElMessageBox.confirm(
+      `确认${action}商品 #${row.product_id} 的拼团活动？`,
+      `${action}确认`,
+      { cancelButtonText: '取消', confirmButtonText: `确认${action}`, type: 'warning' },
+    );
+    await updatePlatformCombinationApi(row.product_group_id, { status });
+    ElMessage.success(`活动已${action}`);
+    gridApi.reload();
+  } catch {
+    /* 用户取消 */
+  }
 }
 
 async function remove(row: PlatformCombination) {
   try {
-    await ElMessageBox.confirm(`删除商品 #${row.product_id} 的拼团配置只会软删除活动，进行中或已完成团单不会被改写。是否继续？`, '删除拼团活动', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' });
+    await ElMessageBox.confirm(
+      `删除商品 #${row.product_id} 的拼团配置只会软删除活动，进行中或已完成团单不会被改写。是否继续？`,
+      '删除拼团活动',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    );
     await deletePlatformCombinationApi(row.product_group_id);
     ElMessage.success('拼团活动已软删除');
-    await load();
+    gridApi.reload();
   } catch {
-    // 取消不提示；统一请求层处理权限和业务错误。
+    /* 用户取消 */
   }
 }
 
 onMounted(async () => {
-  const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi(), load()]);
-  canManage.value = profile.roles.some((role) => role === 'platform' || role === 'operations') && permissions.includes('marketing.combination.manage');
+  const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
+  canManage.value =
+    profile.roles.some((role) => role === 'platform' || role === 'operations') &&
+    permissions.includes('marketing.combination.manage');
 });
 </script>
 
 <template>
-  <Page title="拼团监管" description="监管各商户拼团活动；运营可维护活动价格、人数与时间配置或软删除，商品归属与已产生团单不可在此变更。">
-    <el-card shadow="never">
-      <el-form inline @submit.prevent="query.page = 1; load()">
-        <el-form-item label="商户 ID"><el-input-number v-model="query.mer_id" :min="1" /></el-form-item>
-        <el-button type="primary" @click="query.page = 1; load()">查询</el-button>
-      </el-form>
-      <el-table v-loading="loading" :data="rows">
-        <el-table-column label="商品" min-width="180"><template #default="{ row }">{{ row.store_name || `商品 #${row.product_id}` }}</template></el-table-column>
-        <el-table-column label="商户" min-width="130"><template #default="{ row }">{{ row.mer_name || `商户 #${row.mer_id}` }}</template></el-table-column>
-        <el-table-column label="拼团价" width="110"><template #default="{ row }">¥{{ Number(row.price).toFixed(2) }}</template></el-table-column>
-        <el-table-column label="成团人数" prop="buying_count_num" width="100" />
-        <el-table-column label="活动时间" min-width="220"><template #default="{ row }">{{ row.start_time }} 至 {{ row.end_time }}</template></el-table-column>
-        <el-table-column label="状态" width="90"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag></template></el-table-column>
-        <el-table-column v-if="canManage" fixed="right" label="操作" width="172"><template #default="{ row }"><el-button link type="primary" @click="edit(row)">编辑</el-button><el-button link :type="row.status === 1 ? 'danger' : 'success'" @click="setStatus(row, row.status === 1 ? 0 : 1)">{{ row.status === 1 ? '停用' : '启用' }}</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
-      </el-table>
-      <div class="mt-4 flex justify-end"><el-pagination :current-page="query.page" :page-size="query.limit" :total="total" layout="total, prev, pager, next" @current-change="(page) => { query.page = page; load(); }" /></div>
-    </el-card>
-    <el-dialog v-model="editOpen" title="编辑拼团活动" width="620px" destroy-on-close><el-alert class="mb-4" type="warning" :closable="false" title="仅维护拼团配置；商品、商户与已产生团单的成员、价格快照不可在此修改。" /><el-form label-width="118px"><el-form-item label="拼团价" required><el-input-number v-model="form.price" :min="0.01" :precision="2" :step="1" /></el-form-item><el-form-item label="成团人数" required><el-input-number v-model="form.buying_count_num" :min="2" :max="9999" /></el-form-item><el-form-item label="成团时限（小时）" required><el-input-number v-model="form.time" :min="1" :max="720" /></el-form-item><el-form-item label="活动时间" required><el-date-picker v-model="form.start_time" value-format="YYYY-MM-DD HH:mm:ss" type="datetime" /><span class="mx-2">至</span><el-date-picker v-model="form.end_time" value-format="YYYY-MM-DD HH:mm:ss" type="datetime" /></el-form-item><el-form-item label="前台展示"><el-radio-group v-model="form.is_show"><el-radio :value="1">上架</el-radio><el-radio :value="0">下架</el-radio></el-radio-group></el-form-item><el-form-item label="活动状态"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">停用</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="editOpen = false">取消</el-button><el-button :loading="saving" type="primary" @click="save">保存</el-button></template></el-dialog>
+  <Page
+    auto-content-height
+    description="监管各商户拼团活动；运营可维护活动价格、人数与时间配置或软删除，商品归属与已产生团单不可在此变更。"
+    title="拼团监管"
+  >
+    <Grid>
+      <template #status="{ row }">
+        <ElTag :type="row.status === 1 ? 'success' : 'info'">
+          {{ row.status === 1 ? '启用' : '停用' }}
+        </ElTag>
+      </template>
+      <template #action="{ row }">
+        <template v-if="canManage">
+          <ElButton link type="primary" @click="edit(row)">编辑</ElButton>
+          <ElButton
+            link
+            :type="row.status === 1 ? 'danger' : 'success'"
+            @click="setStatus(row, row.status === 1 ? 0 : 1)"
+          >
+            {{ row.status === 1 ? '停用' : '启用' }}
+          </ElButton>
+          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        </template>
+        <span v-else>—</span>
+      </template>
+    </Grid>
+
+    <EditModal class="w-[620px]">
+      <ElAlert
+        class="mb-4"
+        type="warning"
+        :closable="false"
+        title="仅维护拼团配置；商品、商户与已产生团单的成员、价格快照不可在此修改。"
+      />
+      <ElForm label-width="118px">
+        <ElFormItem label="拼团价" required>
+          <ElInputNumber v-model="form.price" :min="0.01" :precision="2" :step="1" />
+        </ElFormItem>
+        <ElFormItem label="成团人数" required>
+          <ElInputNumber v-model="form.buying_count_num" :min="2" :max="9999" />
+        </ElFormItem>
+        <ElFormItem label="成团时限（小时）" required>
+          <ElInputNumber v-model="form.time" :min="1" :max="720" />
+        </ElFormItem>
+        <ElFormItem label="活动时间" required>
+          <ElInput v-model="form.start_time" class="!w-48" placeholder="YYYY-MM-DD HH:mm:ss" />
+          <span class="mx-2">至</span>
+          <ElInput v-model="form.end_time" class="!w-48" placeholder="YYYY-MM-DD HH:mm:ss" />
+        </ElFormItem>
+        <ElFormItem label="前台展示">
+          <ElRadioGroup v-model="form.is_show">
+            <ElRadio :value="1">上架</ElRadio>
+            <ElRadio :value="0">下架</ElRadio>
+          </ElRadioGroup>
+        </ElFormItem>
+        <ElFormItem label="活动状态">
+          <ElRadioGroup v-model="form.status">
+            <ElRadio :value="1">启用</ElRadio>
+            <ElRadio :value="0">停用</ElRadio>
+          </ElRadioGroup>
+        </ElFormItem>
+      </ElForm>
+    </EditModal>
   </Page>
 </template>

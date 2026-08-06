@@ -168,8 +168,20 @@ func (h *Handler) saveAutoLabels(c *gin.Context) {
 }
 
 func (h *Handler) listPickupPoints(c *gin.Context) {
+	page, limit := pagination(c)
+	q := h.merchantDB.WithContext(c.Request.Context()).Model(&pickupPoint{}).
+		Where("store_id = ? AND address_type = 'pickup'", middleware.StoreID(c))
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("(contact_name LIKE ? OR mobile LIKE ? OR detail LIKE ?)", like, like, like)
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询自提点失败")
+		return
+	}
 	var rows []pickupPoint
-	if err := h.merchantDB.WithContext(c.Request.Context()).Where("store_id = ? AND address_type = 'pickup'", middleware.StoreID(c)).Order("is_default DESC,id DESC").Find(&rows).Error; err != nil {
+	if err := q.Order("is_default DESC,id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询自提点失败")
 		return
 	}
@@ -177,7 +189,7 @@ func (h *Handler) listPickupPoints(c *gin.Context) {
 	for _, row := range rows {
 		items = append(items, pickupJSON(row))
 	}
-	response.OK(c, gin.H{"list": items})
+	response.OK(c, gin.H{"list": items, "total": total, "page": page, "limit": limit})
 }
 
 func (h *Handler) createPickupPoint(c *gin.Context) {
@@ -237,6 +249,22 @@ func (h *Handler) listSearchRecords(c *gin.Context) {
 		Select("h.id,h.user_id,h.product_id,h.viewed_at,COALESCE(p.title,'') AS product_title").
 		Joins("LEFT JOIN qixi_crm_b_product_view AS p ON p.product_id=h.product_id").
 		Where("h.store_id = ?", middleware.StoreID(c))
+	if userID, err := strconv.ParseUint(strings.TrimSpace(c.Query("user_id")), 10, 64); err == nil && userID > 0 {
+		q = q.Where("h.user_id = ?", userID)
+	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		q = q.Where("p.title LIKE ?", "%"+keyword+"%")
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {
+			q = q.Where("h.viewed_at >= ?", t)
+		}
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		if t, err := time.ParseInLocation("2006-01-02", to, time.Local); err == nil {
+			q = q.Where("h.viewed_at < ?", t.AddDate(0, 0, 1))
+		}
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询浏览记录失败")

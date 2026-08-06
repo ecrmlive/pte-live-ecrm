@@ -10,6 +10,7 @@ import (
 
 	commentcommand "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/commentmoderation"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/queryfilter"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -95,6 +96,11 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("pc.product_id=?", productID)
 	}
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("pc.content LIKE ? OR p.title LIKE ? OR CAST(pc.product_id AS CHAR) = ?", like, like, keyword)
+	}
+	q = queryfilter.ApplyCreatedAtRange(q, c, "pc.created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		failed(c)
