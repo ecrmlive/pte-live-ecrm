@@ -40,6 +40,12 @@ if [[ -f "${screen_demo_sql}" ]]; then
 	mysql_exec <"${screen_demo_sql}"
 fi
 
+product_stat_demo_sql="${ROOT_DIR}/sql/business/init_product_stat_demo.sql"
+if [[ -f "${product_stat_demo_sql}" ]]; then
+	echo ">> 导入 sql/business/init_product_stat_demo.sql"
+	mysql_exec <"${product_stat_demo_sql}"
+fi
+
 # CRMEB 商户菜单全量（is_mer=1）；须在 merchant/init_data 之后覆盖写入。
 merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 [[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }

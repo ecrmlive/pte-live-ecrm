@@ -90,6 +90,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/dashboard/summary", h.GetSummary)
 	r.GET("/dashboard/data-screen", h.GetDataScreen)
 	h.RegisterConsole(r)
+	h.RegisterProductAnalytics(r)
 }
 
 func (h *Handler) GetSummary(c *gin.Context) {

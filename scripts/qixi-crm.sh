@@ -262,6 +262,11 @@ initialize_databases() {
 		echo ">> 导入 sql/business/init_data_screen_demo.sql 到 pte_live_mysql"
 		shared_mysql <"${screen_demo_sql}"
 	fi
+	product_stat_demo_sql="${ROOT_DIR}/sql/business/init_product_stat_demo.sql"
+	if [[ -f "${product_stat_demo_sql}" ]]; then
+		echo ">> 导入 sql/business/init_product_stat_demo.sql 到 pte_live_mysql"
+		shared_mysql <"${product_stat_demo_sql}"
+	fi
 	merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 	[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
 	echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql 到 pte_live_mysql"
