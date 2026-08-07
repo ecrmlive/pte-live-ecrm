@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDatePicker,
@@ -138,7 +138,7 @@ const gridOptions: VxeGridProps<MerchantAssistActive> = {
     },
     merchantListActionColumn({ width: 190 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -170,7 +170,11 @@ const gridOptions: VxeGridProps<MerchantAssistActive> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.product_id || form.assist_price <= 0 || form.dates.length !== 2) {
       ElMessage.warning('请选择商品、填写助力价并设置活动时间');
@@ -189,7 +193,7 @@ const [EditModal, editModalApi] = useVbenModal({
       store_name: form.store_name.trim(),
     };
     saving.value = true;
-    editModalApi.lock();
+    editDrawerApi.lock();
     try {
       if (editingID.value) {
         await updateMerchantAssistActiveApi(editingID.value, body);
@@ -197,18 +201,18 @@ const [EditModal, editModalApi] = useVbenModal({
         await createMerchantAssistActiveApi(body);
       }
       ElMessage.success(editingID.value ? '助力活动已更新' : '助力活动已创建');
-      editModalApi.close();
+      editDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      editModalApi.unlock();
+      editDrawerApi.unlock();
     }
   },
 });
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新建助力活动' }).open();
+  editDrawerApi.setState({ title: '新建助力活动' }).open();
 }
 
 function openEdit(row: MerchantAssistActive) {
@@ -224,7 +228,7 @@ function openEdit(row: MerchantAssistActive) {
     store_info: row.store_info || '',
     store_name: row.store_name,
   });
-  editModalApi.setState({ title: '编辑助力活动' }).open();
+  editDrawerApi.setState({ title: '编辑助力活动' }).open();
 }
 
 async function toggleShow(row: MerchantAssistActive) {
@@ -286,7 +290,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[640px] max-w-[96vw]">
+    <EditDrawer class="w-[640px] max-w-[96vw]">
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="96px">
         <ElFormItem class="col-span-2" label="活动名称">
           <ElInput
@@ -367,6 +371,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

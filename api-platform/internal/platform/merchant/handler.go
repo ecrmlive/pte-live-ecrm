@@ -11,6 +11,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/merchant"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantonboarding"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/authjwt"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -22,11 +23,23 @@ type Handler struct {
 	svc        *merchant.Service
 	id         *identity.Service
 	adminDB    *gorm.DB
+	merchantDB *gorm.DB
+	storeJWT   *authjwt.Manager
 	onboarding *merchantonboarding.Client
 }
 
 func NewHandler(svc *merchant.Service, id *identity.Service, adminDB *gorm.DB, onboarding *merchantonboarding.Client) *Handler {
 	return &Handler{svc: svc, id: id, adminDB: adminDB, onboarding: onboarding}
+}
+
+// WithStoreLogin enables platform→store console handoff (read merchant DB, issue store_console JWT).
+func (h *Handler) WithStoreLogin(merchantDB *gorm.DB, storeJWT *authjwt.Manager) *Handler {
+	if h == nil {
+		return nil
+	}
+	h.merchantDB = merchantDB
+	h.storeJWT = storeJWT
+	return h
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
@@ -36,6 +49,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/merchants", h.ListMerchants)
 	r.GET("/merchants/:id", h.GetMerchant)
 	r.GET("/merchants/:id/operate-logs", h.ListMerchantOperateLogs)
+	r.POST("/merchants/:id/login", h.LoginMerchant)
 	r.POST("/merchants", platformOnly, statusManage, h.CreateMerchant)
 	r.PUT("/merchants/:id", platformOnly, statusManage, h.UpdateMerchant)
 	r.PUT("/merchants/:id/status", platformOnly, statusManage, h.SetMerchantStatus)
@@ -45,6 +59,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/merchant-intentions/:id", h.GetIntention)
 	r.POST("/merchant-intentions/:id/assign-region", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.assign_region"), h.AssignIntentionRegion)
 	r.POST("/merchant-intentions/:id/audit", middleware.RequireAdminRoles("platform", "region"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.audit"), h.AuditIntention)
+	r.DELETE("/merchant-intentions/:id", middleware.RequireAdminRoles("platform", "region"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.delete"), h.DeleteIntention)
 
 	r.GET("/merchant-categories", platformOnly, h.ListCategories)
 	r.POST("/merchant-categories", platformOnly, categoryManage, h.CreateCategory)
@@ -54,7 +69,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 
 func (h *Handler) ListMerchants(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	filter := merchant.ListFilter{
 		Keyword:  strings.TrimSpace(c.Query("keyword")),
 		DateFrom: strings.TrimSpace(c.Query("date_from")),
@@ -99,10 +114,118 @@ func (h *Handler) ListMerchants(c *gin.Context) {
 	}
 	res, err := h.svc.ListMerchants(c.Request.Context(), filter, scope)
 	if err != nil {
+		c.Error(err)
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
 	}
 	response.OK(c, res)
+}
+
+type storeOwnerAccount struct {
+	AccountID    uint64 `gorm:"column:account_id"`
+	StoreID      uint64 `gorm:"column:store_id"`
+	MerchantID   uint64 `gorm:"column:merchant_id"`
+	StoreAppID   string `gorm:"column:store_app_id"`
+	IMSDKAppID   string `gorm:"column:im_sdk_app_id"`
+	Username     string `gorm:"column:username"`
+	RoleCode     string `gorm:"column:role_code"`
+	AuthVersion  uint64 `gorm:"column:auth_version"`
+	StoreName    string `gorm:"column:store_name"`
+	MerchantName string `gorm:"column:merchant_name"`
+}
+
+// LoginMerchant issues a store_console session for the shop owner (CRMEB system/merchant/login/:id).
+// Platform never writes qixi_crm_m_*; it only reads the owner account and signs with the store JWT secret.
+func (h *Handler) LoginMerchant(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	if id == 0 {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	if h.merchantDB == nil || h.storeJWT == nil {
+		response.Fail(c, http.StatusServiceUnavailable, "店铺一键登录未配置")
+		return
+	}
+	scope, ok := h.merchantScope(c)
+	if !ok {
+		response.Fail(c, http.StatusForbidden, "未配置商户监管数据范围")
+		return
+	}
+	if err := h.svc.RequireMerchantScope(c.Request.Context(), uint(id), scope); err != nil {
+		writeErr(c, err)
+		return
+	}
+	m, err := h.svc.GetMerchant(c.Request.Context(), uint(id))
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	owner, err := h.findStoreOwner(c, uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Fail(c, http.StatusNotFound, "店铺账号不存在或尚未开通")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "查询店铺账号失败")
+		return
+	}
+	if owner.StoreAppID == "" {
+		response.Fail(c, http.StatusConflict, "店铺缺少 AppId，无法签发后台会话")
+		return
+	}
+	pair, err := h.storeJWT.IssueStoreConsoleWithIdentityVersion(
+		uint(owner.AccountID),
+		uint(owner.MerchantID),
+		uint(owner.StoreID),
+		owner.StoreAppID,
+		owner.IMSDKAppID,
+		owner.Username,
+		owner.RoleCode,
+		owner.AuthVersion,
+	)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "签发令牌失败")
+		return
+	}
+	response.OK(c, gin.H{
+		"token":        pair,
+		"mer_id":       owner.MerchantID,
+		"store_id":     owner.StoreID,
+		"account":      owner.Username,
+		"mer_name":     firstNonEmpty(owner.MerchantName, m.MerName),
+		"store_name":   firstNonEmpty(owner.StoreName, m.MerName),
+		"store_app_id": owner.StoreAppID,
+		"path":         "/auth/login",
+	})
+}
+
+func (h *Handler) findStoreOwner(c *gin.Context, merchantID uint) (*storeOwnerAccount, error) {
+	var row storeOwnerAccount
+	// Prefer owner; fall back to any enabled account on the merchant's unique store.
+	err := h.merchantDB.WithContext(c.Request.Context()).
+		Table("qixi_crm_m_account AS a").
+		Select(`a.id AS account_id, a.store_id, a.username, a.role_code, a.auth_version,
+			s.merchant_id, s.app_id AS store_app_id, s.name AS store_name, m.name AS merchant_name,
+			COALESCE(im.sdk_app_id, '') AS im_sdk_app_id`).
+		Joins("INNER JOIN qixi_crm_m_store AS s ON s.id = a.store_id AND s.status = 1").
+		Joins("INNER JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id AND m.status = 1").
+		Joins("LEFT JOIN qixi_crm_m_im_sdk_app AS im ON im.merchant_id = s.merchant_id AND im.status = 'enabled' AND im.is_active = 1").
+		Where("s.merchant_id = ? AND a.status = 1", merchantID).
+		Order("CASE WHEN a.role_code = 'owner' THEN 0 ELSE 1 END, a.id ASC").
+		Take(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func (h *Handler) GetMerchant(c *gin.Context) {
@@ -427,19 +550,34 @@ func (h *Handler) merchantScope(c *gin.Context) (merchant.MerchantScope, bool) {
 
 func (h *Handler) ListIntentions(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	var statusPtr *int8
 	if s := c.Query("status"); s != "" {
 		v, _ := strconv.ParseInt(s, 10, 8)
 		st := int8(v)
 		statusPtr = &st
 	}
+	var categoryID, typeID *uint
+	if raw := strings.TrimSpace(c.Query("category_id")); raw != "" {
+		v, err := strconv.ParseUint(raw, 10, 64)
+		if err == nil && v > 0 {
+			id := uint(v)
+			categoryID = &id
+		}
+	}
+	if raw := strings.TrimSpace(c.Query("type_id")); raw != "" {
+		v, err := strconv.ParseUint(raw, 10, 64)
+		if err == nil && v > 0 {
+			id := uint(v)
+			typeID = &id
+		}
+	}
 	regionIDs, ok := h.intentionScope(c)
 	if !ok {
 		response.Fail(c, http.StatusForbidden, "当前角色无商户入驻审核范围")
 		return
 	}
-	res, err := h.svc.ListIntentions(c.Request.Context(), c.Query("keyword"), statusPtr, regionIDs, page, limit, strings.TrimSpace(c.Query("date_from")), strings.TrimSpace(c.Query("date_to")))
+	res, err := h.svc.ListIntentions(c.Request.Context(), c.Query("keyword"), statusPtr, regionIDs, page, limit, strings.TrimSpace(c.Query("date_from")), strings.TrimSpace(c.Query("date_to")), categoryID, typeID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
@@ -498,25 +636,53 @@ func (h *Handler) AuditIntention(c *gin.Context) {
 		return
 	}
 	if req.Status == merchant.IntentionApproved {
-		if req.RegionID == 0 || strings.TrimSpace(req.Account) == "" || len(req.Password) < 8 {
-			response.Fail(c, http.StatusBadRequest, "通过入驻必须填写区域、账号和至少 8 位初始密码")
-			return
-		}
 		row, err := h.svc.GetIntention(c.Request.Context(), uint(id), regionIDs)
 		if err != nil {
 			writeErr(c, err)
 			return
 		}
-		if regionIDs != nil && req.RegionID != row.CircleID {
+		// 对齐 CRMEB：账号=申请人手机，初始密码=手机号后六位（不足 8 位时左侧补 Qx），区域=申请已分配 region。
+		account := strings.TrimSpace(row.Phone)
+		if account == "" {
+			response.Fail(c, http.StatusBadRequest, "申请缺少联系手机，无法开通商户管理账号")
+			return
+		}
+		password := account
+		if len(account) >= 6 {
+			password = account[len(account)-6:]
+		}
+		if len(password) < 8 {
+			password = "Qx" + password
+			if len(password) < 8 {
+				password = (password + "00000000")[:8]
+			}
+		}
+		regionID := row.CircleID
+		if regionID == 0 {
+			response.Fail(c, http.StatusBadRequest, "请先为该入驻申请分配所属区域后再审核通过")
+			return
+		}
+		if regionIDs != nil && regionID != row.CircleID {
 			response.Fail(c, http.StatusForbidden, "区域审核只能开通分配给本区域的申请")
 			return
 		}
-		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		req.Account = account
+		req.Password = password
+		req.RegionID = regionID
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "初始密码处理失败")
 			return
 		}
-		provisioned, err := h.onboarding.Provision(c.Request.Context(), merchantonboarding.Request{ApplicationID: uint(id), RegionID: req.RegionID, MerchantName: row.MerName, ContactName: row.Name, ContactMobile: row.Phone, Account: strings.TrimSpace(req.Account), PasswordHash: string(hash)})
+		provisioned, err := h.onboarding.Provision(c.Request.Context(), merchantonboarding.Request{
+			ApplicationID: uint(id),
+			RegionID:      regionID,
+			MerchantName:  row.MerName,
+			ContactName:   row.Name,
+			ContactMobile: row.Phone,
+			Account:       account,
+			PasswordHash:  string(hash),
+		})
 		if err != nil {
 			response.Fail(c, http.StatusServiceUnavailable, err.Error())
 			return
@@ -535,6 +701,20 @@ func (h *Handler) AuditIntention(c *gin.Context) {
 		return
 	}
 	response.OK(c, res)
+}
+
+func (h *Handler) DeleteIntention(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	regionIDs, ok := h.intentionScope(c)
+	if !ok {
+		response.Fail(c, http.StatusForbidden, "当前角色无商户入驻审核范围")
+		return
+	}
+	if err := h.svc.DeleteIntention(c.Request.Context(), uint(id), regionIDs); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) intentionScope(c *gin.Context) ([]uint, bool) {

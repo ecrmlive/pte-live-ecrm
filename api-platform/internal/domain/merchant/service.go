@@ -19,9 +19,10 @@ type Store interface {
 	CreateMerchant(ctx context.Context, m *Merchant) error
 	UpsertMerchantView(ctx context.Context, m *Merchant) error
 
-	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string) ([]Intention, int64, error)
+	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string, categoryID, typeID *uint) ([]Intention, int64, error)
 	GetIntention(ctx context.Context, id uint, regionIDs []uint) (*Intention, error)
 	SaveIntention(ctx context.Context, row *Intention) error
+	DeleteIntention(ctx context.Context, id uint, regionIDs []uint) (bool, error)
 	AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error)
 
 	ListCategories(ctx context.Context) ([]Category, error)
@@ -78,7 +79,7 @@ func (s *Service) ListMerchants(ctx context.Context, filter ListFilter, scope Me
 		page = 1
 	}
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 	return &PageResult[Merchant]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
@@ -159,6 +160,7 @@ type ShopProfileInput struct {
 	GoodsTypes       []int   `json:"goods_types"`
 	PlatformCategoryIDs []uint `json:"platform_category_ids"`
 	MerStar          *int8   `json:"mer_star"`
+	MerAvatar        string  `json:"mer_avatar"`
 	Sort             *int    `json:"sort"`
 	Status           *bool   `json:"status"`
 	StoreGroupIDs    []uint  `json:"store_group_ids"`
@@ -166,6 +168,9 @@ type ShopProfileInput struct {
 
 func (s *Service) UpdateShopProfile(ctx context.Context, merID uint, in ShopProfileInput) (*Merchant, error) {
 	if merID == 0 {
+		return nil, ErrBadParam
+	}
+	if strings.TrimSpace(in.MerAvatar) == "" {
 		return nil, ErrBadParam
 	}
 	m, err := s.GetMerchant(ctx, merID)
@@ -182,6 +187,9 @@ func (s *Service) UpdateShopProfile(ctx context.Context, merID uint, in ShopProf
 func (s *Service) CreateMerchant(ctx context.Context, in ShopProfileInput) (*Merchant, error) {
 	name := strings.TrimSpace(in.MerName)
 	if name == "" {
+		return nil, ErrBadParam
+	}
+	if strings.TrimSpace(in.MerAvatar) == "" {
 		return nil, ErrBadParam
 	}
 	m := &Merchant{
@@ -260,6 +268,7 @@ func applyProfile(m *Merchant, in ShopProfileInput) {
 	if in.MerStar != nil {
 		m.MerStar = *in.MerStar
 	}
+	m.MerAvatar = strings.TrimSpace(in.MerAvatar)
 	if in.GoodsTypes != nil {
 		m.GoodsTypes = append([]int(nil), in.GoodsTypes...)
 		m.GoodsType = joinInts(in.GoodsTypes)
@@ -355,8 +364,8 @@ func (s *Service) UpdateSvipConfig(ctx context.Context, merID uint, merge int8) 
 	return s.GetSvipConfig(ctx, merID)
 }
 
-func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string) (*PageResult[Intention], error) {
-	list, total, err := s.store.ListIntentions(ctx, keyword, status, regionIDs, page, limit, dateFrom, dateTo)
+func (s *Service) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string, categoryID, typeID *uint) (*PageResult[Intention], error) {
+	list, total, err := s.store.ListIntentions(ctx, keyword, status, regionIDs, page, limit, dateFrom, dateTo, categoryID, typeID)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +373,7 @@ func (s *Service) ListIntentions(ctx context.Context, keyword string, status *in
 		page = 1
 	}
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 	return &PageResult[Intention]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
@@ -415,6 +424,23 @@ func (s *Service) AssignIntentionRegion(ctx context.Context, id, regionID uint) 
 	}
 	row.CircleID = regionID
 	return row, nil
+}
+
+func (s *Service) DeleteIntention(ctx context.Context, id uint, regionIDs []uint) error {
+	if id == 0 {
+		return ErrBadParam
+	}
+	if _, err := s.GetIntention(ctx, id, regionIDs); err != nil {
+		return err
+	}
+	deleted, err := s.store.DeleteIntention(ctx, id, regionIDs)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // FinalizeIntentionApproval records a store that has already been created by

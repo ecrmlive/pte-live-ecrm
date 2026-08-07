@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -76,7 +76,7 @@ const gridOptions: VxeGridProps<StorePickupPoint> = {
     },
     merchantListActionColumn({ width: 130 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -101,10 +101,14 @@ const gridOptions: VxeGridProps<StorePickupPoint> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [PointModal, pointModalApi] = useVbenModal({
+const [PointDrawer, pointDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     saving.value = true;
-    pointModalApi.lock();
+    pointDrawerApi.lock();
     try {
       if (editID.value) {
         await updateStorePickupPointApi(editID.value, form.value);
@@ -112,18 +116,18 @@ const [PointModal, pointModalApi] = useVbenModal({
         await createStorePickupPointApi(form.value);
       }
       ElMessage.success('自提点已保存');
-      pointModalApi.close();
+      pointDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      pointModalApi.unlock();
+      pointDrawerApi.unlock();
     }
   },
 });
 
 function openCreate() {
   resetForm();
-  pointModalApi.setState({ title: '新增自提点' }).open();
+  pointDrawerApi.setState({ title: '新增自提点' }).open();
 }
 
 function openEdit(row: StorePickupPoint) {
@@ -135,7 +139,7 @@ function openEdit(row: StorePickupPoint) {
     detail: row.detail,
     is_default: row.is_default,
   };
-  pointModalApi.setState({ title: '编辑自提点' }).open();
+  pointDrawerApi.setState({ title: '编辑自提点' }).open();
 }
 
 async function remove(row: StorePickupPoint) {
@@ -167,7 +171,7 @@ async function remove(row: StorePickupPoint) {
       </template>
     </Grid>
 
-    <PointModal class="w-[520px] max-w-[96vw]">
+    <PointDrawer class="w-[520px] max-w-[96vw]">
       <ElForm label-width="88px">
         <ElFormItem label="联系人" required>
           <ElInput v-model="form.contact_name" />
@@ -189,6 +193,6 @@ async function remove(row: StorePickupPoint) {
           />
         </ElFormItem>
       </ElForm>
-    </PointModal>
+    </PointDrawer>
   </Page>
 </template>

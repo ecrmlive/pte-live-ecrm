@@ -16,7 +16,8 @@ export const PLATFORM_LIST_PAGER_LAYOUTS = [
 export const PLATFORM_LIST_PAGER_DEFAULTS = {
   background: true,
   layouts: [...PLATFORM_LIST_PAGER_LAYOUTS],
-  pageSize: 15,
+  /** 列表金标准：默认每页 10 条（店铺列表及所有继承 pager 的列表） */
+  pageSize: 10,
   pageSizes: [...PLATFORM_LIST_PAGE_SIZES],
   size: 'mini' as const,
 };

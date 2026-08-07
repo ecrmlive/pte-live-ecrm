@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -37,8 +37,6 @@ import {
 import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { LIST_KEYWORD_FIELD, listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-const merchantsOpen = ref(false);
-const resetOpen = ref(false);
 const merchantRows = ref<
   Array<{
     merchant_id: number;
@@ -130,7 +128,7 @@ const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
     },
     platformListActionColumn({ minWidth: 270 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -160,7 +158,27 @@ const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [MerchantsDrawer, merchantsDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
+  title: '代理关联商户',
+});
+
+const [ResetDrawer, resetDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '确认重置',
+  cancelText: '取消',
+  placement: 'right',
+  title: '重置区域代理后台密码',
+  onConfirm: async () => submitPasswordReset(),
+});
+
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -186,7 +204,7 @@ function resetForm() {
 function openCreate() {
   editingID.value = undefined;
   resetForm();
-  formModalApi.setState({ title: dialogTitle.value }).open();
+  formDrawerApi.setState({ title: dialogTitle.value }).open();
 }
 
 function openEdit(row: BusinessZoneAgentRow) {
@@ -211,7 +229,7 @@ function openEdit(row: BusinessZoneAgentRow) {
     business_store_category: 0,
     business_store_type: 0,
   });
-  formModalApi.setState({ title: dialogTitle.value }).open();
+  formDrawerApi.setState({ title: dialogTitle.value }).open();
 }
 
 async function save() {
@@ -219,18 +237,18 @@ async function save() {
     ElMessage.warning('代理姓名和手机号必填');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     if (editingID.value) {
       await updateBusinessZoneAgent(editingID.value, form);
     } else {
       await createBusinessZoneAgent(form);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('已保存，新增申请需在代理审核中处理');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -259,13 +277,13 @@ async function revoke(row: BusinessZoneAgentRow) {
 }
 
 async function openMerchants(row: BusinessZoneAgentRow) {
-  merchantsOpen.value = true;
+  merchantsDrawerApi.open();
   merchantRows.value = [];
   try {
     merchantRows.value =
       (await fetchBusinessZoneAgentMerchants(row.circle_agent_id)).list || [];
   } catch {
-    merchantsOpen.value = false;
+    merchantsDrawerApi.close();
   }
 }
 
@@ -276,7 +294,7 @@ function openPasswordReset(row: BusinessZoneAgentRow) {
   }
   resetTarget.value = row;
   Object.assign(passwordReset, { password: '', confirmPassword: '', reason: '' });
-  resetOpen.value = true;
+  resetDrawerApi.open();
 }
 
 async function submitPasswordReset() {
@@ -301,7 +319,7 @@ async function submitPasswordReset() {
     idempotency_key: `agent-password-${target.circle_agent_id}-${crypto.randomUUID()}`,
   });
   ElMessage.success('后台密码已重置，该代理旧后台会话已失效');
-  resetOpen.value = false;
+  resetDrawerApi.close();
 }
 </script>
 
@@ -345,7 +363,7 @@ async function submitPasswordReset() {
       </template>
     </Grid>
 
-    <FormModal :title="dialogTitle">
+    <FormDrawer :title="dialogTitle">
       <ElForm label-width="110px">
         <ElFormItem label="关联用户ID">
           <ElInputNumber v-model="form.uid" :min="0" />
@@ -398,20 +416,13 @@ async function submitPasswordReset() {
           <ElInput v-model="form.remark" type="textarea" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
 
-    <ElDialog v-model="merchantsOpen" title="代理关联商户" width="640px">
-      <ElAlert
-        class="mb-3"
-        :closable="false"
-        type="info"
-        title="仅展示监管所需的店铺名称、区域与状态；不展示联系人、地址或账户资料。"
-      />
-      <ElTable :data="merchantRows">
-        <ElTableColumn prop="merchant_id" label="商户 ID" width="110" />
-        <ElTableColumn prop="merchant_name" label="商户名称" min-width="180" />
-        <ElTableColumn prop="region_id" label="区域 ID" width="100" />
-        <ElTableColumn label="状态" width="90">
+    <MerchantsDrawer>
+      <ElTable :data="merchantRows" border>
+        <ElTableColumn label="商户ID" prop="mer_id" width="100" />
+        <ElTableColumn label="商户名称" min-width="180" prop="mer_name" />
+        <ElTableColumn label="状态" width="100">
           <template #default="{ row }">
             <ElTag :type="row.status === 1 ? 'success' : 'info'">
               {{ row.status === 1 ? '启用' : '停用' }}
@@ -419,14 +430,11 @@ async function submitPasswordReset() {
           </template>
         </ElTableColumn>
       </ElTable>
-    </ElDialog>
+    </MerchantsDrawer>
 
-    <ElDialog
-      v-model="resetOpen"
-      title="重置区域代理后台密码"
-      width="560px"
-      :close-on-click-modal="false"
-    >
+    
+
+    <ResetDrawer>
       <ElAlert
         class="mb-4"
         type="warning"
@@ -463,10 +471,6 @@ async function submitPasswordReset() {
           />
         </ElFormItem>
       </ElForm>
-      <template #footer>
-        <ElButton @click="resetOpen = false">取消</ElButton>
-        <ElButton type="primary" @click="submitPasswordReset">确认重置</ElButton>
-      </template>
-    </ElDialog>
+    </ResetDrawer>
   </Page>
 </template>

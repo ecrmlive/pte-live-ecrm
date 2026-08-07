@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeliveryAreaNode } from '#/api/core/shop-setting';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { ElButton } from 'element-plus';
 import { ref, watch } from 'vue';
 
@@ -200,7 +200,9 @@ function confirmArea() {
   emit('confirm', options.value);
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

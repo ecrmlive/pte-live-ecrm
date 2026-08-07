@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref, watch } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDatePicker,
@@ -151,7 +151,7 @@ const gridOptions: VxeGridProps<MerchantPresellActive> = {
     },
     merchantListActionColumn({ width: 190 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -183,7 +183,11 @@ const gridOptions: VxeGridProps<MerchantPresellActive> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     const selectedProduct = products.value.find(
       (item) => item.product_id === form.product_id,
@@ -225,7 +229,7 @@ const [EditModal, editModalApi] = useVbenModal({
       start_time: form.activity_dates[0]!,
     };
     saving.value = true;
-    editModalApi.lock();
+    editDrawerApi.lock();
     try {
       if (editingID.value) {
         await updateMerchantPresellActiveApi(editingID.value, body);
@@ -233,11 +237,11 @@ const [EditModal, editModalApi] = useVbenModal({
         await createMerchantPresellActiveApi(body);
       }
       ElMessage.success(editingID.value ? '预售活动已更新' : '预售活动已创建');
-      editModalApi.close();
+      editDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      editModalApi.unlock();
+      editDrawerApi.unlock();
     }
   },
 });
@@ -252,7 +256,7 @@ function validDeposit() {
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新建预售活动' }).open();
+  editDrawerApi.setState({ title: '新建预售活动' }).open();
 }
 
 function openEdit(row: MerchantPresellActive) {
@@ -273,7 +277,7 @@ function openEdit(row: MerchantPresellActive) {
     store_info: row.store_info,
     store_name: row.store_name,
   });
-  editModalApi.setState({ title: '编辑预售活动' }).open();
+  editDrawerApi.setState({ title: '编辑预售活动' }).open();
 }
 
 function selectedProductChanged(productID: number) {
@@ -359,7 +363,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[720px] max-w-[96vw]">
+    <EditDrawer class="w-[720px] max-w-[96vw]">
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="96px">
         <ElFormItem class="col-span-2" label="预售名称" required>
           <ElInput v-model="form.store_name" maxlength="120" show-word-limit />
@@ -454,6 +458,6 @@ onMounted(async () => {
           <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

@@ -6,6 +6,8 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { CaretBottom, CaretTop } from '@element-plus/icons-vue';
+import { ElDatePicker } from 'element-plus';
+import 'element-plus/es/components/date-picker/style/css';
 import dayjs from 'dayjs';
 
 import {
@@ -279,17 +281,19 @@ onMounted(() => {
       <div class="filter-card">
         <div class="filter-row">
           <span class="filter-label">时间选择：</span>
-          <el-date-picker
-            :model-value="timeVal.length === 2 ? timeVal : undefined"
-            type="daterange"
-            format="YYYY/MM/DD"
-            value-format="YYYY/MM/DD"
-            range-separator="-"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-            class="filter-date"
-            @update:model-value="onRangeChange"
-          />
+          <div class="filter-date-wrap">
+            <ElDatePicker
+              :model-value="timeVal.length === 2 ? timeVal : undefined"
+              type="daterange"
+              format="YYYY/MM/DD"
+              value-format="YYYY/MM/DD"
+              range-separator="-"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              teleported
+              @update:model-value="onRangeChange"
+            />
+          </div>
           <div class="quick-tabs">
             <button
               v-for="tab in quickTabs"
@@ -357,7 +361,7 @@ onMounted(() => {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 8px;
 }
 
 .filter-label {
@@ -367,46 +371,54 @@ onMounted(() => {
   line-height: 32px;
 }
 
-/* 覆盖 EP daterange：默认 350px + text-align:center + separator flex:1 导致左侧大空 */
-.filter-date.el-date-editor {
-  --el-date-editor-daterange-width: 246px;
-  --el-date-editor-width: 246px;
-  box-sizing: border-box;
+/* 仅锁输入框宽度；弹层 teleported 到 body，勿用 :deep 碰 .el-picker-panel */
+.filter-date-wrap {
   flex-shrink: 0;
+  width: 300px;
+}
+
+.filter-date-wrap :deep(.el-date-editor.el-input__wrapper),
+.filter-date-wrap :deep(.el-date-editor) {
+  --el-date-editor-daterange-width: 300px;
+  --el-date-editor-width: 300px;
+  box-sizing: border-box;
   height: 32px;
   justify-content: flex-start;
+  max-width: 300px;
   padding: 0 8px;
-  width: 246px;
+  width: 300px !important;
 }
 
-.filter-date :deep(.el-range__icon) {
+.filter-date-wrap :deep(.el-date-editor .el-range__icon) {
+  float: none;
   flex-shrink: 0;
-  margin-inline-end: 6px;
+  margin-inline-end: 4px;
 }
 
-.filter-date :deep(.el-range-input) {
-  flex: 1 1 0;
-  min-width: 0;
+.filter-date-wrap :deep(.el-date-editor .el-range-input) {
+  flex: 0 0 auto;
   text-align: left;
-  width: auto;
+  width: 5.6em;
 }
 
-.filter-date :deep(.el-range-separator) {
+.filter-date-wrap :deep(.el-date-editor .el-range-separator) {
   flex: 0 0 auto;
   padding: 0 4px;
   width: auto;
 }
 
-.filter-date :deep(.el-range__close-icon) {
+.filter-date-wrap :deep(.el-date-editor .el-range__close-icon) {
   flex-shrink: 0;
-  margin-inline-start: 4px;
+  margin-inline-start: 2px;
 }
 
+/* 与日期框间距约 14px（row gap 8px + 此处 6px） */
 .quick-tabs {
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-inline-start: 6px;
 }
 
 .quick-tab {

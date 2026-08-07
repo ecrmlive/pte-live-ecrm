@@ -104,11 +104,11 @@ func TestProfitsharingReviewIntegrationConcurrencyAndAudit(t *testing.T) {
 	if err := db.Table(tab).Where("id = ?", applicationID).Take(&application).Error; err != nil {
 		t.Fatal(err)
 	}
-	if application.Status != "approved" || application.ReviewNote != "中文模拟审核通过：资料完整" || application.ReviewedBy != 987680013 {
+	if application.Status != "auditing" || application.ReviewNote != "中文模拟审核通过：资料完整" || application.ReviewedBy != 987680013 {
 		t.Fatalf("application=%+v", application)
 	}
 	var auditCount int64
-	if err := db.Table("qixi_crm_a_merchant_profitsharing_audit").Where("application_id = ? AND from_status = 'applied' AND to_status = 'approved' AND note = ?", applicationID, "中文模拟审核通过：资料完整").Count(&auditCount).Error; err != nil || auditCount != 1 {
+	if err := db.Table("qixi_crm_a_merchant_profitsharing_audit").Where("application_id = ? AND from_status = 'applied' AND to_status = 'auditing' AND note = ?", applicationID, "中文模拟审核通过：资料完整").Count(&auditCount).Error; err != nil || auditCount != 1 {
 		t.Fatalf("audit=%d err=%v", auditCount, err)
 	}
 	if w := call(http.MethodPut, "/applications/"+strconv.FormatUint(uint64(applicationID), 10)+"/note", gin.H{"note": "中文模拟内部备注：已归档"}); w.Code != http.StatusOK {

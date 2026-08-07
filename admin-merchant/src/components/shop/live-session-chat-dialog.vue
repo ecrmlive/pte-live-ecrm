@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LiveStreamLogItem } from '#/api/core/live';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { computed, watch } from 'vue';
 
 import LiveSessionChatPanel from '#/components/shop/live-session-chat-panel.vue';
@@ -31,7 +31,9 @@ const headerText = computed(() => {
   return `${name} · ${start} ~ ${end}`;
 });
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

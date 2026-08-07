@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -95,7 +95,7 @@ const gridOptions: VxeGridProps<PlatformAdminRow> = {
     },
     platformListActionColumn({ width: 130 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -141,7 +141,11 @@ const gridOptions: VxeGridProps<PlatformAdminRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -167,7 +171,7 @@ function resetForm() {
 function openCreate() {
   editing.value = undefined;
   resetForm();
-  formModalApi.setState({ title: '新增管理员' }).open();
+  formDrawerApi.setState({ title: '新增管理员' }).open();
 }
 
 function openEdit(row: PlatformAdminRow) {
@@ -184,7 +188,7 @@ function openEdit(row: PlatformAdminRow) {
     service_store_ids: row.service_store_ids,
     circle_agent_id: row.circle_agent_id,
   });
-  formModalApi.setState({ title: '编辑管理员' }).open();
+  formDrawerApi.setState({ title: '编辑管理员' }).open();
 }
 
 async function save() {
@@ -223,7 +227,7 @@ async function save() {
     ElMessage.warning('客服账号必须填写授权店铺 ID，多个以逗号分隔');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     const payload = {
       ...form,
@@ -240,11 +244,11 @@ async function save() {
     } else {
       await createPlatformAdmin(payload);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('管理员已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -292,7 +296,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal :title="modalTitle">
+    <FormDrawer :title="modalTitle">
       <ElForm label-width="120px">
         <ElFormItem label="登录账号" required>
           <ElInput v-model="form.account" :disabled="!!editing" />
@@ -376,6 +380,6 @@ onMounted(async () => {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

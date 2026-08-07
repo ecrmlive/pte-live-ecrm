@@ -2,7 +2,7 @@
 import type { VbenFormSchema } from '#/adapter/form';
 import type { ProductSpecFormData } from '#/utils/product-spec';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElInput,
@@ -253,7 +253,9 @@ function cancel() {
   open.value = false;
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

@@ -55,7 +55,10 @@
 
 .merchant-vxe-grid .vxe-table--fixed-right-wrapper,
 .merchant-vxe-grid .vxe-table--fixed-left-wrapper {
+  /* 不透明底 + 高于主表，避免相邻列 overflow:visible 文字穿透遮挡操作 */
+  z-index: 10;
   overflow: hidden;
+  background-color: var(--vxe-ui-layout-background-color, hsl(var(--background)));
 }
 
 .merchant-vxe-grid .vxe-grid--pager-wrapper {
@@ -75,11 +78,28 @@
   padding-bottom: 10px;
 }
 
-/* 列级 showOverflow: true — 单行省略，避免长文本撑高行挤掉 fixed 操作列 */
-.merchant-vxe-grid .vxe-body--column.col--ellipsis .vxe-cell {
-  overflow: hidden;
-  white-space: nowrap;
+/*
+ * 列级 showOverflow: true — 单行省略 + tooltip。
+ * vxe 默认给 .vxe-cell--wrapper 设 display:flex，会导致 text-overflow 失效、
+ * 长备注多行撑开并盖住 fixed 操作列；此处强制 block + nowrap。
+ */
+.merchant-vxe-grid .vxe-body--column.col--ellipsis > .vxe-cell {
+  max-width: 100%;
+  overflow: hidden !important;
+  white-space: nowrap !important;
   text-overflow: ellipsis;
+  word-break: normal;
+}
+
+.merchant-vxe-grid
+  .vxe-body--column.col--ellipsis
+  > .vxe-cell
+  > .vxe-cell--wrapper {
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
   word-break: normal;
 }
 

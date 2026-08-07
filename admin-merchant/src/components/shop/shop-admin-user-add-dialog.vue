@@ -2,7 +2,7 @@
 import type { ShopAdminUserForm, ShopAdminUserRoleOption } from '#/api/core/shop-auth';
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { ElButton, ElMessage } from 'element-plus';
 import { computed, reactive, ref, watch } from 'vue';
 
@@ -112,7 +112,9 @@ function resetForm() {
   void formApi.resetForm();
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
     if (isOpen) {

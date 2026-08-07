@@ -9,7 +9,6 @@ import {
   ElButton,
   ElDescriptions,
   ElDescriptionsItem,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -36,7 +35,6 @@ import {
 
 const current = ref<PlatformProduct>();
 const detailLoading = ref(false);
-const rejectOpen = ref(false);
 const rejecting = ref(false);
 const canAudit = ref(false);
 const rejectForm = reactive({ refusal: '' });
@@ -165,7 +163,7 @@ const gridOptions: VxeGridProps<PlatformProduct> = {
     },
     platformListActionColumn({ width: 162 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -187,10 +185,19 @@ const gridOptions: VxeGridProps<PlatformProduct> = {
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
-  class: 'w-[560px] max-w-[96vw]',
+  class: 'w-[1000px] max-w-[96vw]',
   showConfirmButton: false,
   cancelText: '关闭',
   placement: 'right',
+});
+
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '确认驳回',
+  cancelText: '取消',
+  placement: 'right',
+  title: '驳回商品',
+  onConfirm: async () => submitReject(),
 });
 
 async function openDetail(row: PlatformProduct) {
@@ -225,7 +232,7 @@ async function approve(row: PlatformProduct) {
 function openReject(row: PlatformProduct) {
   current.value = row;
   rejectForm.refusal = '';
-  rejectOpen.value = true;
+  rejectDrawerApi.open();
 }
 
 async function submitReject() {
@@ -241,7 +248,7 @@ async function submitReject() {
       status: -1,
       refusal,
     });
-    rejectOpen.value = false;
+    rejectDrawerApi.close();
     ElMessage.success('商品已驳回');
     await reloadGrid();
   } finally {
@@ -320,12 +327,7 @@ onMounted(async () => {
       </ElSkeleton>
     </DetailDrawer>
 
-    <ElDialog
-      v-model="rejectOpen"
-      title="驳回商品"
-      width="480px"
-      destroy-on-close
-    >
+    <RejectDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="驳回原因" required>
           <ElInput
@@ -338,12 +340,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-      <template #footer>
-        <ElButton @click="rejectOpen = false">取消</ElButton>
-        <ElButton :loading="rejecting" type="danger" @click="submitReject">
-          确认驳回
-        </ElButton>
-      </template>
-    </ElDialog>
+    </RejectDrawer>
   </Page>
 </template>

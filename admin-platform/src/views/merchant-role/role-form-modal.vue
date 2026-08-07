@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -15,15 +14,15 @@ import MerchantRoleApi from '#/api/core/merchant-role';
 import type { MerchantTemplateRoleForm, MerchantTemplateRoleRow } from '#/api/core/merchant-role';
 import type { AccessNode } from '#/views/access/types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   mode: 'add' | 'edit';
-  open: boolean;
   role?: MerchantTemplateRoleRow;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const loading = ref(false);
@@ -50,6 +49,11 @@ const treeProps = {
 const dialogTitle = computed(() =>
   props.mode === 'edit' ? '编辑角色' : '添加角色',
 );
+
+async function nextTickSetChecked() {
+  await new Promise((r) => setTimeout(r, 0));
+  treeRef.value?.setCheckedKeys(checkedKeys.value, false);
+}
 
 async function loadFormData() {
   loading.value = true;
@@ -87,28 +91,50 @@ async function loadFormData() {
   }
 }
 
-async function nextTickSetChecked() {
-  await new Promise((r) => setTimeout(r, 0));
-  treeRef.value?.setCheckedKeys(checkedKeys.value, false);
-}
-
 function handleCheck(_: unknown, state: { checkedKeys: number[]; halfCheckedKeys: number[] }) {
   formData.access_id = [...state.checkedKeys, ...state.halfCheckedKeys];
 }
 
-watch(
-  () => [props.open, props.mode, props.role?.role_id] as const,
-  ([open]) => {
-    if (open) {
-      loadFormData();
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      void loadFormData();
     }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: dialogTitle.value }).open();
+      return;
+    }
+    drawerApi.close();
   },
   { immediate: true },
 );
 
-function handleClose() {
-  emit('update:open', false);
-}
+watch(dialogTitle, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
+
+watch(
+  () => [props.mode, props.role?.role_id] as const,
+  () => {
+    if (open.value) {
+      void loadFormData();
+    }
+  },
+);
 
 async function handleSubmit() {
   if (!formData.role_name.trim()) {
@@ -120,6 +146,7 @@ async function handleSubmit() {
     return;
   }
   loading.value = true;
+  drawerApi.setState({ confirmLoading: true });
   try {
     const payload = JSON.stringify(formData);
     const res =
@@ -128,23 +155,22 @@ async function handleSubmit() {
         : await MerchantRoleApi.roleAdd(payload, true);
     if (res.code === 1) {
       ElMessage.success(res.msg || '保存成功');
-      emit('update:open', false);
+      open.value = false;
       emit('success');
     }
   } finally {
     loading.value = false;
+    drawerApi.setState({ confirmLoading: false });
   }
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     :title="dialogTitle"
-    width="720px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm v-loading="loading" :model="formData" :rules="formRules" label-width="100px">
       <ElFormItem label="角色名称" prop="role_name">
@@ -168,9 +194,5 @@ async function handleSubmit() {
         <ElInput v-model="formData.remark" type="textarea" />
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">保存</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

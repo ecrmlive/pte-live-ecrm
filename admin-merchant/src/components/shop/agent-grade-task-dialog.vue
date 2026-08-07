@@ -3,7 +3,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { AgentTaskItem, AgentTaskTypeOption } from '#/api/core/plus-agent';
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@element-plus/icons-vue';
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
@@ -143,7 +143,7 @@ const gridOptions = reactive<VxeGridProps<AgentTaskItem>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 20,
+    pageSize: 10,
     pageSizes: [10, 20, 50],
   },
   proxyConfig: {
@@ -175,13 +175,17 @@ const gridOptions = reactive<VxeGridProps<AgentTaskItem>>({
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },
 });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormModal, formModalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     formOpen.value = isOpen;
   },

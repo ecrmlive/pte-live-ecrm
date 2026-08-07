@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -163,7 +163,11 @@ const gridOptions: VxeGridProps<SvipPlan> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -182,7 +186,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增会员类型' }).open();
+  formDrawerApi.setState({ title: '新增会员类型' }).open();
 }
 
 function openEdit(row: SvipPlan) {
@@ -196,7 +200,7 @@ function openEdit(row: SvipPlan) {
     status: row.status,
     sort: row.sort,
   });
-  formModalApi.setState({ title: '编辑会员类型' }).open();
+  formDrawerApi.setState({ title: '编辑会员类型' }).open();
 }
 
 async function save() {
@@ -213,17 +217,17 @@ async function save() {
     return;
   }
   if (form.plan_type === 'lifetime') form.duration_days = 0;
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     if (editingId.value) await updateSvipPlan(editingId.value, form);
     else await createSvipPlan(form);
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('会员类型已保存');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -269,7 +273,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="98px">
         <ElFormItem label="名称">
           <ElInput v-model="form.name" maxlength="64" />
@@ -320,6 +324,6 @@ onMounted(async () => {
           <ElInputNumber v-model="form.sort" :min="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

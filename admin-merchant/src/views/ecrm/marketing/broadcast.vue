@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -171,7 +171,7 @@ const gridOptions: VxeGridProps<MerchantBroadcastRoom> = {
     },
     merchantListActionColumn({ width: 250 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -206,21 +206,27 @@ const gridOptions: VxeGridProps<MerchantBroadcastRoom> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: saveRoom,
 });
 
-const [GoodsModal, goodsModalApi] = useVbenModal({
+const [GoodsDrawer, goodsDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: saveGoods,
 });
 
-const [LiveModal, liveModalApi] = useVbenModal({
+const [LiveDrawer, liveDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: saveLive,
 });
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新建直播间' }).open();
+  editDrawerApi.setState({ title: '新建直播间' }).open();
 }
 
 async function openEdit(row: MerchantBroadcastRoom) {
@@ -242,7 +248,7 @@ async function openEdit(row: MerchantBroadcastRoom) {
     star: room.star || 1,
     start_time: room.start_time || '',
   });
-  editModalApi.setState({ title: '编辑直播间' }).open();
+  editDrawerApi.setState({ title: '编辑直播间' }).open();
 }
 
 function dateRangeChanged(value: string[]) {
@@ -256,7 +262,7 @@ async function saveRoom() {
     return;
   }
   saving.value = true;
-  editModalApi.lock();
+  editDrawerApi.lock();
   try {
     const body: MerchantBroadcastRoomInput = {
       ...form,
@@ -269,7 +275,7 @@ async function saveRoom() {
     } else {
       await createMerchantBroadcastRoomApi(body);
     }
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success(
       editingID.value
         ? '直播间已更新，已重新提交平台审核'
@@ -278,55 +284,55 @@ async function saveRoom() {
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
 function openGoods(row: MerchantBroadcastRoom) {
   goodsRoom.value = row;
   selectedGoods.value = (row.goods || []).map((item) => item.product_id);
-  goodsModalApi.setState({ title: '直播挂货' }).open();
+  goodsDrawerApi.setState({ title: '直播挂货' }).open();
 }
 
 async function saveGoods() {
   if (!goodsRoom.value) return;
   saving.value = true;
-  goodsModalApi.lock();
+  goodsDrawerApi.lock();
   try {
     await setMerchantBroadcastGoodsApi(
       goodsRoom.value.broadcast_room_id,
       selectedGoods.value,
     );
-    goodsModalApi.close();
+    goodsDrawerApi.close();
     ElMessage.success('挂货已更新，直播间已重新提交平台审核');
     gridApi.reload();
   } finally {
     saving.value = false;
-    goodsModalApi.unlock();
+    goodsDrawerApi.unlock();
   }
 }
 
 function openLive(row: MerchantBroadcastRoom) {
   liveRoom.value = row;
   selectedLiveStatus.value = row.live_status;
-  liveModalApi.setState({ title: '更新直播状态' }).open();
+  liveDrawerApi.setState({ title: '更新直播状态' }).open();
 }
 
 async function saveLive() {
   if (!liveRoom.value) return;
   saving.value = true;
-  liveModalApi.lock();
+  liveDrawerApi.lock();
   try {
     await setMerchantBroadcastLiveApi(
       liveRoom.value.broadcast_room_id,
       selectedLiveStatus.value,
     );
-    liveModalApi.close();
+    liveDrawerApi.close();
     ElMessage.success('直播状态已更新，直播间已重新提交平台审核');
     gridApi.reload();
   } finally {
     saving.value = false;
-    liveModalApi.unlock();
+    liveDrawerApi.unlock();
   }
 }
 
@@ -387,7 +393,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[760px] max-w-[96vw]">
+    <EditDrawer class="w-[760px] max-w-[96vw]">
       <ElAlert
         class="mb-4"
         :closable="false"
@@ -471,9 +477,9 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
 
-    <GoodsModal class="w-[620px] max-w-[96vw]">
+    <GoodsDrawer class="w-[620px] max-w-[96vw]">
       <ElAlert
         class="mb-4"
         :closable="false"
@@ -496,9 +502,9 @@ onMounted(async () => {
           :value="item.product_id"
         />
       </ElSelect>
-    </GoodsModal>
+    </GoodsDrawer>
 
-    <LiveModal class="w-[420px] max-w-[96vw]">
+    <LiveDrawer class="w-[420px] max-w-[96vw]">
       <ElAlert
         class="mb-4"
         :closable="false"
@@ -510,6 +516,6 @@ onMounted(async () => {
         <ElRadio :value="101">直播中</ElRadio>
         <ElRadio :value="103">已结束</ElRadio>
       </ElRadioGroup>
-    </LiveModal>
+    </LiveDrawer>
   </Page>
 </template>

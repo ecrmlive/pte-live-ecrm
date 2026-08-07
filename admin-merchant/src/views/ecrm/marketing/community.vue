@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -152,7 +152,7 @@ const gridOptions: VxeGridProps<MerchantCommunityPost> = {
     },
     merchantListActionColumn({ width: 180 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -187,7 +187,11 @@ const gridOptions: VxeGridProps<MerchantCommunityPost> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: savePost,
 });
 
@@ -200,7 +204,7 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '发布帖子' }).open();
+  editDrawerApi.setState({ title: '发布帖子' }).open();
 }
 
 async function openEdit(row: MerchantCommunityPost) {
@@ -214,7 +218,7 @@ async function openEdit(row: MerchantCommunityPost) {
     title: detail.title,
     topic_id: detail.topic_id,
   });
-  editModalApi.setState({ title: '编辑帖子' }).open();
+  editDrawerApi.setState({ title: '编辑帖子' }).open();
 }
 
 function categoryChanged() {
@@ -232,7 +236,7 @@ async function savePost() {
     return;
   }
   saving.value = true;
-  editModalApi.lock();
+  editDrawerApi.lock();
   try {
     const body: MerchantCommunityPostInput = {
       category_id: form.category_id,
@@ -247,14 +251,14 @@ async function savePost() {
     } else {
       await createMerchantCommunityPostApi(body);
     }
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success(
       editingID.value ? '帖子已更新，已重新提交平台审核' : '帖子已提交平台审核',
     );
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -346,7 +350,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[720px] max-w-[96vw]">
+    <EditDrawer class="w-[720px] max-w-[96vw]">
       <ElAlert
         class="mb-4"
         :closable="false"
@@ -428,7 +432,7 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
 
     <DetailDrawer>
       <template v-if="current">

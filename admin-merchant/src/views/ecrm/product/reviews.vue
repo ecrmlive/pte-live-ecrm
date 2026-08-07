@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -117,7 +117,7 @@ const gridOptions: VxeGridProps<MerchantProductComment> = {
     },
     merchantListActionColumn({ width: 76 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -158,24 +158,28 @@ const gridOptions: VxeGridProps<MerchantProductComment> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [ReplyModal, replyModalApi] = useVbenModal({
+const [ReplyDrawer, replyDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!current.value || !replyContent.value.trim()) {
       ElMessage.warning('请填写回复内容');
       return;
     }
     replySaving.value = true;
-    replyModalApi.lock();
+    replyDrawerApi.lock();
     try {
       await replyMerchantProductCommentApi(current.value.id, {
         reply_content: replyContent.value.trim(),
       });
       ElMessage.success('商家回复已保存');
-      replyModalApi.close();
+      replyDrawerApi.close();
       gridApi.reload();
     } finally {
       replySaving.value = false;
-      replyModalApi.unlock();
+      replyDrawerApi.unlock();
     }
   },
 });
@@ -183,7 +187,7 @@ const [ReplyModal, replyModalApi] = useVbenModal({
 function openReply(row: MerchantProductComment) {
   current.value = row;
   replyContent.value = row.reply_content || '';
-  replyModalApi.setState({ title: '商家回复' }).open();
+  replyDrawerApi.setState({ title: '商家回复' }).open();
 }
 </script>
 
@@ -206,7 +210,7 @@ function openReply(row: MerchantProductComment) {
       </template>
     </Grid>
 
-    <ReplyModal class="w-[520px] max-w-[96vw]">
+    <ReplyDrawer class="w-[520px] max-w-[96vw]">
       <ElForm label-width="72px">
         <ElFormItem label="回复内容" required>
           <ElInput
@@ -218,6 +222,6 @@ function openReply(row: MerchantProductComment) {
           />
         </ElFormItem>
       </ElForm>
-    </ReplyModal>
+    </ReplyDrawer>
   </Page>
 </template>

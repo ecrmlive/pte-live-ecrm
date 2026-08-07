@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -117,7 +117,7 @@ const gridOptions: VxeGridProps<PlatformSvipUser> = {
     },
     platformListActionColumn({ width: 76 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -165,7 +165,11 @@ const gridOptions: VxeGridProps<PlatformSvipUser> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -176,7 +180,7 @@ function openEdit(row: PlatformSvipUser) {
     svip_endtime:
       row.svip_endtime?.slice(0, 19).replace('T', ' ') || '',
   });
-  formModalApi.setState({ title: '设置付费会员' }).open();
+  formDrawerApi.setState({ title: '设置付费会员' }).open();
 }
 
 async function save() {
@@ -185,19 +189,19 @@ async function save() {
     ElMessage.warning('有效期会员必须填写到期时间');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     await setPlatformUserSvipApi(editing.value.uid, {
       is_svip: form.is_svip,
       ...(form.is_svip === 2 ? { svip_endtime: form.svip_endtime } : {}),
     });
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('会员状态已更新');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -239,7 +243,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="96px">
         <ElFormItem label="用户">
           <span>{{
@@ -269,6 +273,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

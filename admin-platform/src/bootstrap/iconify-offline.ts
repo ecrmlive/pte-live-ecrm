@@ -22,13 +22,15 @@ export async function setupOfflineIconify() {
   }
 
   const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-  const [ep, lucide] = await Promise.all([
+  const [ep, lucide, antDesign] = await Promise.all([
     loadCollection(`${base}iconify/ep.json`),
     loadCollection(`${base}iconify/lucide.json`),
+    loadCollection(`${base}iconify/ant-design.json`),
   ]);
 
   addCollection(ep);
   addCollection(lucide);
+  addCollection(antDesign);
 
   _api.setFetch(async () => {
     throw new Error('Iconify 公网 API 已禁用，请使用本地 iconify 资源');

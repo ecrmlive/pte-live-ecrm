@@ -7,6 +7,16 @@ INSERT INTO `qixi_crm_m_store` (`id`,`merchant_id`,`app_id`,`name`,`status`) VAL
   (1,1,'qixi.store.demo.1','七禧演示茶铺',1),(2,2,'qixi.store.demo.2','七禧居家优选店',1),(3,3,'qixi.store.demo.3','七禧数码生活店',1)
 ON DUPLICATE KEY UPDATE `merchant_id`=VALUES(`merchant_id`),`app_id`=VALUES(`app_id`),`name`=VALUES(`name`),`status`=VALUES(`status`);
 
+-- 店铺后台 owner：平台「店铺列表 → 登录」依赖 qixi_crm_m_account；密码演示值 123456m（仅本地夹具）。
+INSERT INTO `qixi_crm_m_account` (`id`,`store_id`,`username`,`password_hash`,`role_code`,`display_name`,`phone`,`status`,`auth_version`) VALUES
+  (1,1,'demo_store_1','$2a$10$7e1OmptO8l5P3lJ7ziIfOeC0GXY0MGUNNY/QS6LQKgXLNq2Z6TFJe','owner','演示店长','13900000000',1,1),
+  (2,2,'demo_store_2','$2a$10$7e1OmptO8l5P3lJ7ziIfOeC0GXY0MGUNNY/QS6LQKgXLNq2Z6TFJe','owner','居家店长','13900000001',1,1),
+  (3,3,'demo_store_3','$2a$10$7e1OmptO8l5P3lJ7ziIfOeC0GXY0MGUNNY/QS6LQKgXLNq2Z6TFJe','owner','数码店长','13900000002',1,1)
+ON DUPLICATE KEY UPDATE
+  `store_id`=VALUES(`store_id`),`username`=VALUES(`username`),`password_hash`=VALUES(`password_hash`),
+  `role_code`=VALUES(`role_code`),`display_name`=VALUES(`display_name`),`phone`=VALUES(`phone`),
+  `status`=VALUES(`status`);
+
 -- 平台商品监管中文夹具：区域 10 对应商户 1、3，区域 20 对应商户 2；不含真实个人或商户资料。
 INSERT INTO `qixi_crm_m_product` (`id`,`store_id`,`title`,`category_id`,`status`,`version`) VALUES
   (5001,1,'七禧春日茉莉花茶礼盒',101,'on_sale',1),

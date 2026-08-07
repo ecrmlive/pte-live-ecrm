@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LiveRoomListItem, LiveStreamInfo } from '#/api/core/live';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { ElButton, ElMessage } from 'element-plus';
 import { computed, reactive, ref, watch } from 'vue';
 
@@ -121,7 +121,9 @@ async function copyText(text?: string) {
   }
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

@@ -82,7 +82,7 @@ const gridOptions: VxeGridProps<PlatformAdminUserRow> = {
       width: 120,
     },
   ],
-  pagerConfig: { enabled: true, pageSize: 15, pageSizes: [10, 15, 20, 30, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 15, 20, 30, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {

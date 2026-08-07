@@ -16,7 +16,8 @@ export const MERCHANT_LIST_PAGER_LAYOUTS = [
 export const MERCHANT_LIST_PAGER_DEFAULTS = {
   background: true,
   layouts: [...MERCHANT_LIST_PAGER_LAYOUTS],
-  pageSize: 20,
+  /** 与 platform-admin 列表金标准一致：默认每页 10 条 */
+  pageSize: 10,
   pageSizes: [...MERCHANT_LIST_PAGE_SIZES],
   size: 'mini' as const,
 };

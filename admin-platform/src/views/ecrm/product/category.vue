@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -128,7 +128,11 @@ const gridOptions: VxeGridProps<PlatformCategory> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -139,7 +143,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增分类' }).open();
+  formDrawerApi.setState({ title: '新增分类' }).open();
 }
 
 function openEdit(row: PlatformCategory) {
@@ -150,7 +154,7 @@ function openEdit(row: PlatformCategory) {
     pid: row.pid,
     sort: row.sort,
   });
-  formModalApi.setState({ title: '编辑分类' }).open();
+  formDrawerApi.setState({ title: '编辑分类' }).open();
 }
 
 async function save() {
@@ -158,7 +162,7 @@ async function save() {
     ElMessage.warning('请填写分类名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     if (editing.value) {
       await updatePlatformCategoryApi(editing.value.store_category_id, {
@@ -174,11 +178,11 @@ async function save() {
         sort: form.sort,
       });
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('分类已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -217,7 +221,7 @@ async function remove(row: PlatformCategory) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="96px">
         <ElFormItem label="上级分类">
           <ElSelect v-model="form.pid" class="w-full">
@@ -241,6 +245,6 @@ async function remove(row: PlatformCategory) {
           <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

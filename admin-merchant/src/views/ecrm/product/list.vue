@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -217,7 +217,7 @@ const gridOptions: VxeGridProps<MerchantProduct> = {
     },
     merchantListActionColumn({ width: 248 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -262,14 +262,16 @@ const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions,
 });
 
-const [ProductModal, productModalApi] = useVbenModal({
+const [ProductDrawer, productDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.store_name.trim()) {
       ElMessage.warning('请填写商品名称');
       return;
     }
     if (!form.cate_id) {
-      ElMessage.warning('请选择平台分类');
+      ElMessage.warning('请选择商品分类');
       return;
     }
     if (form.price < 0 || form.stock < 0) {
@@ -277,7 +279,7 @@ const [ProductModal, productModalApi] = useVbenModal({
       return;
     }
     saving.value = true;
-    productModalApi.lock();
+    productDrawerApi.lock();
     try {
       if (editingID.value) {
         await updateMerchantProductApi(editingID.value, form);
@@ -287,34 +289,38 @@ const [ProductModal, productModalApi] = useVbenModal({
       ElMessage.success(
         editingID.value ? '商品已更新，可能需重新审核' : '商品已创建',
       );
-      productModalApi.close();
+      productDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      productModalApi.unlock();
+      productDrawerApi.unlock();
     }
   },
 });
 
-const [StockModal, stockModalApi] = useVbenModal({
+const [StockDrawer, stockDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   title: '调整库存',
   confirmText: '保存',
   onConfirm: async () => {
     if (!stockRow.value || stockValue.value < 0) return;
-    stockModalApi.lock();
+    stockDrawerApi.lock();
     try {
       await setMerchantProductStockApi(stockRow.value.product_id, stockValue.value);
       stockRow.value.stock = stockValue.value;
       ElMessage.success('库存已更新');
-      stockModalApi.close();
+      stockDrawerApi.close();
       gridApi.reload();
     } finally {
-      stockModalApi.unlock();
+      stockDrawerApi.unlock();
     }
   },
 });
 
-const [RecycleModal, recycleModalApi] = useVbenModal({
+const [RecycleDrawer, recycleDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   title: '商品回收站',
   showConfirmButton: false,
   cancelText: '关闭',
@@ -322,8 +328,8 @@ const [RecycleModal, recycleModalApi] = useVbenModal({
 
 function openCreate() {
   resetForm();
-  productModalApi.setState({ title: '新增商品' });
-  productModalApi.open();
+  productDrawerApi.setState({ title: '新增商品' });
+  productDrawerApi.open();
 }
 
 function openEdit(row: MerchantProduct) {
@@ -344,8 +350,8 @@ function openEdit(row: MerchantProduct) {
     type: 0,
     unit_name: row.unit_name || '件',
   });
-  productModalApi.setState({ title: '编辑商品' });
-  productModalApi.open();
+  productDrawerApi.setState({ title: '编辑商品' });
+  productDrawerApi.open();
 }
 
 async function loadCategories() {
@@ -362,7 +368,7 @@ async function loadRecycleBin() {
 async function openRecycleBin() {
   recycleQuery.page = 1;
   await loadRecycleBin();
-  recycleModalApi.open();
+  recycleDrawerApi.open();
 }
 
 async function restore(row: MerchantRecycleProduct) {
@@ -386,7 +392,7 @@ async function changeShow(row: MerchantProduct) {
 function openStock(row: MerchantProduct) {
   stockRow.value = row;
   stockValue.value = row.stock;
-  stockModalApi.open();
+  stockDrawerApi.open();
 }
 
 async function remove(row: MerchantProduct) {
@@ -459,12 +465,12 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <ProductModal class="w-[760px] max-w-[96vw]">
+    <ProductDrawer class="w-[760px] max-w-[96vw]">
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="88px">
         <ElFormItem label="商品名称" required>
           <ElInput v-model="form.store_name" />
         </ElFormItem>
-        <ElFormItem label="平台分类" required>
+        <ElFormItem label="商品分类" required>
           <ElSelect v-model="form.cate_id" filterable class="w-full">
             <ElOption
               v-for="item in categoryOptions"
@@ -516,9 +522,9 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </ProductModal>
+    </ProductDrawer>
 
-    <StockModal class="w-[380px] max-w-[96vw]">
+    <StockDrawer class="w-[380px] max-w-[96vw]">
       <ElForm label-width="72px">
         <ElFormItem label="商品">
           <span>{{ stockRow?.store_name }}</span>
@@ -527,9 +533,9 @@ onMounted(async () => {
           <ElInputNumber v-model="stockValue" :min="0" class="w-full" />
         </ElFormItem>
       </ElForm>
-    </StockModal>
+    </StockDrawer>
 
-    <RecycleModal class="w-[760px] max-w-[96vw]">
+    <RecycleDrawer class="w-[760px] max-w-[96vw]">
       <ElAlert
         class="mb-4"
         :closable="false"
@@ -565,6 +571,6 @@ onMounted(async () => {
           @current-change="(page: number) => { recycleQuery.page = page; loadRecycleBin(); }"
         />
       </div>
-    </RecycleModal>
+    </RecycleDrawer>
   </Page>
 </template>

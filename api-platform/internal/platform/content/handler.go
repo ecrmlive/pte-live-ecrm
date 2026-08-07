@@ -38,6 +38,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	shopManage := middleware.RequireAdminMenu(h.adminDB, "setting.shop.manage")
 	r.GET("/setting/shop", shopSetting, shopManage, h.GetShop)
 	r.PUT("/setting/shop", shopSetting, shopManage, h.SaveShop)
+	marginSetting := middleware.RequireAdminRoles("platform")
+	marginManage := middleware.RequireAdminMenu(h.adminDB, "store.margin_config.manage")
+	r.GET("/setting/margin", marginSetting, marginManage, h.GetMargin)
+	r.PUT("/setting/margin", marginSetting, marginManage, h.SaveMargin)
 	paySetting := middleware.RequireAdminRoles("platform")
 	payManage := middleware.RequireAdminMenu(h.adminDB, "setting.pay.manage")
 	r.GET("/setting/pay", paySetting, payManage, h.GetPay)
@@ -216,6 +220,32 @@ func (h *Handler) SaveShop(c *gin.Context) {
 		return
 	}
 	raw, err := h.svc.SaveShopConfig(c.Request.Context(), req.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"config": raw})
+}
+
+func (h *Handler) GetMargin(c *gin.Context) {
+	raw, err := h.svc.GetMarginConfig(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, gin.H{
+		"config": raw,
+		"note":   "对齐 CRMEB 保证金补缴提醒：开关开启后按天数连续提醒；期满未补足则自动关闭店铺（定时关店任务待接入）",
+	})
+}
+
+func (h *Handler) SaveMargin(c *gin.Context) {
+	var req jsonConfigSaveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	raw, err := h.svc.SaveMarginConfig(c.Request.Context(), req.Config)
 	if err != nil {
 		writeErr(c, err)
 		return

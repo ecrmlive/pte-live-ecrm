@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -135,7 +135,7 @@ const gridOptions: VxeGridProps<PlatformCoupon> = {
     },
     platformListActionColumn({ width: 166 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -156,7 +156,11 @@ const gridOptions: VxeGridProps<PlatformCoupon> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -176,7 +180,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增平台券' }).open();
+  formDrawerApi.setState({ title: '新增平台券' }).open();
 }
 
 function openEdit(row: PlatformCoupon) {
@@ -191,7 +195,7 @@ function openEdit(row: PlatformCoupon) {
     total_count: row.total_count,
     use_min_price: row.use_min_price,
   });
-  formModalApi.setState({ title: '编辑平台券' }).open();
+  formDrawerApi.setState({ title: '编辑平台券' }).open();
 }
 
 async function save() {
@@ -208,7 +212,7 @@ async function save() {
     ElMessage.warning('限量发放时必须填写发放总数');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const body = {
@@ -218,12 +222,12 @@ async function save() {
     };
     if (editingID.value) await updatePlatformCouponApi(editingID.value, body);
     else await createPlatformCouponApi(body);
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success(editingID.value ? '平台券已更新' : '平台券已创建');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -285,7 +289,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="90px">
         <ElFormItem class="col-span-2" label="优惠券名称" required>
           <ElInput v-model="form.title" maxlength="40" show-word-limit />
@@ -322,6 +326,6 @@ onMounted(async () => {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

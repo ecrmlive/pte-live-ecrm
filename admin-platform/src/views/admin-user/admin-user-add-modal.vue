@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -14,14 +14,14 @@ import {
 
 import PlatformAdminUserApi from '#/api/core/platform-admin-user';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
-  open: boolean;
   roleOptions: { role_id: number; role_name: string }[];
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -33,25 +33,44 @@ const form = reactive({
   user_name: '',
 });
 
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return;
-    form.user_name = '';
-    form.password = '';
-    form.role_ids = [];
-  },
-);
-
-function handleClose() {
-  emit('update:open', false);
+function resetForm() {
+  form.user_name = '';
+  form.password = '';
+  form.role_ids = [];
 }
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      resetForm();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '新增平台账号' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
 
 async function handleSubmit() {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res = await PlatformAdminUserApi.userAdd(
         {
@@ -63,24 +82,23 @@ async function handleSubmit() {
       );
       if (res.code === 1) {
         ElMessage.success(res.msg || '添加成功');
-        emit('update:open', false);
+        open.value = false;
         emit('success');
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="新增平台账号"
-    width="520px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm ref="formRef" :model="form" label-width="100px">
       <ElFormItem
@@ -106,7 +124,7 @@ async function handleSubmit() {
       <ElFormItem label="角色">
         <ElSelect v-model="form.role_ids" class="w-full" multiple placeholder="可选">
           <ElOption
-            v-for="item in roleOptions"
+            v-for="item in props.roleOptions"
             :key="item.role_id"
             :label="item.role_name"
             :value="item.role_id"
@@ -114,9 +132,5 @@ async function handleSubmit() {
         </ElSelect>
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">保存</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

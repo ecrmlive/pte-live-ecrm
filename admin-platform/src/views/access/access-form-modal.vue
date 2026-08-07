@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue';
 
+import { IconPicker, useVbenDrawer } from '@vben/common-ui';
 import {
-  ElButton,
   ElCascader,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -14,23 +13,22 @@ import {
 } from 'element-plus';
 
 import AccessApi from '#/api/core/access';
-import { IconPicker } from '@vben/common-ui';
 import { PLATFORM_LUCIDE_ICONS } from '#/constants/platform-lucide-icons';
 import { deepClone, formatModel } from '#/utils/base';
 
 import type { AccessAddType, AccessFormModel, AccessNode } from './types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   addType?: AccessAddType;
   mode: 'add' | 'edit';
-  open: boolean;
   rawData: AccessNode[];
   selectModel?: AccessNode;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -113,19 +111,46 @@ function initForm() {
   }
 }
 
-watch(
-  () => [props.open, props.mode, props.addType, props.selectModel?.access_id] as const,
-  ([open]) => {
-    if (open) {
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
       initForm();
     }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: dialogTitle.value }).open();
+      return;
+    }
+    drawerApi.close();
   },
   { immediate: true },
 );
 
-function handleClose() {
-  emit('update:open', false);
-}
+watch(dialogTitle, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
+
+watch(
+  () => [props.mode, props.addType, props.selectModel?.access_id] as const,
+  () => {
+    if (open.value) {
+      initForm();
+    }
+  },
+);
 
 async function handleSubmit() {
   if (!formRef.value) return;
@@ -139,6 +164,7 @@ async function handleSubmit() {
       params.is_menu = 0;
     }
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res =
         props.mode === 'edit'
@@ -146,25 +172,23 @@ async function handleSubmit() {
           : await AccessApi.addAccess(params, true);
       if (res.code === 1) {
         ElMessage.success(res.msg || '操作成功');
-        emit('update:open', false);
+        open.value = false;
         emit('success');
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     :title="dialogTitle"
-    width="640px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="120px">
       <ElFormItem label="菜单名称" prop="name">
@@ -242,10 +266,5 @@ async function handleSubmit() {
         <ElInput v-model.number="formData.sort" placeholder="请输入排序" type="number" />
       </ElFormItem>
     </ElForm>
-
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

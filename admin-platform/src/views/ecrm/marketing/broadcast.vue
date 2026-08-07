@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDescriptions,
@@ -127,7 +127,7 @@ const gridOptions: VxeGridProps<Room> = {
     },
     platformListActionColumn({ width: 238 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -155,7 +155,9 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   placement: 'right',
 });
 
-const [RejectModal, rejectModalApi] = useVbenModal({
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => reject(),
 });
 
@@ -185,7 +187,7 @@ async function approve(row: Room) {
 function openReject(row: Room) {
   current.value = row;
   rejectForm.refusal = '';
-  rejectModalApi.setState({ title: '驳回直播间' }).open();
+  rejectDrawerApi.setState({ title: '驳回直播间' }).open();
 }
 
 async function reject() {
@@ -195,7 +197,7 @@ async function reject() {
     return;
   }
   if (!current.value) return;
-  rejectModalApi.lock();
+  rejectDrawerApi.lock();
   saving.value = true;
   try {
     await auditPlatformBroadcastApi(current.value.broadcast_room_id, {
@@ -203,12 +205,12 @@ async function reject() {
       refusal,
       status: -1,
     });
-    rejectModalApi.close();
+    rejectDrawerApi.close();
     ElMessage.success('直播间已驳回');
     gridApi.reload();
   } finally {
     saving.value = false;
-    rejectModalApi.unlock();
+    rejectDrawerApi.unlock();
   }
 }
 
@@ -328,7 +330,7 @@ onMounted(async () => {
       </template>
     </DetailDrawer>
 
-    <RejectModal class="w-[480px]">
+    <RejectDrawer class="w-[480px]">
       <ElForm label-width="84px">
         <ElFormItem label="驳回原因" required>
           <ElInput
@@ -341,6 +343,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </RejectModal>
+    </RejectDrawer>
   </Page>
 </template>

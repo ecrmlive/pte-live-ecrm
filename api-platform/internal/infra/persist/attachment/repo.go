@@ -29,11 +29,30 @@ func (r *Repo) UpdateCategory(ctx context.Context, c *attachment.Category) error
 		Updates(map[string]interface{}{
 			"pid": c.PID, "attachment_category_name": c.AttachmentCategoryName,
 			"attachment_category_enname": c.AttachmentCategoryEnname, "sort": c.Sort,
+			"is_system": c.IsSystem,
 		}).Error
+}
+
+func (r *Repo) GetCategoryByEnname(ctx context.Context, merID uint, enname string) (*attachment.Category, error) {
+	var row attachment.Category
+	err := r.db.WithContext(ctx).
+		Where("mer_id = ? AND attachment_category_enname = ?", merID, enname).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
 }
 
 func (r *Repo) DeleteCategory(ctx context.Context, id, merID uint) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var row attachment.Category
+		if err := tx.Where("attachment_category_id = ? AND mer_id = ?", id, merID).First(&row).Error; err != nil {
+			return err
+		}
+		if row.IsSystem == 1 {
+			return attachment.ErrSystemCategory
+		}
 		if err := tx.Model(&attachment.Attachment{}).
 			Where("attachment_category_id = ? AND user_type = ?", id, int(merID)).
 			Update("attachment_category_id", 0).Error; err != nil {
@@ -53,10 +72,15 @@ func (r *Repo) GetCategory(ctx context.Context, id uint) (*attachment.Category, 
 	return &row, nil
 }
 
-func (r *Repo) List(ctx context.Context, userType int, cateID uint, attachmentType *int8, page, limit int) ([]attachment.Attachment, int64, error) {
+func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) ([]attachment.Attachment, int64, error) {
 	q := r.db.WithContext(ctx).Model(&attachment.Attachment{}).Where("user_type = ?", userType)
 	if cateID > 0 {
 		q = q.Where("attachment_category_id = ?", cateID)
+	} else if systemOnly {
+		q = q.Where(
+			"attachment_category_id IN (?)",
+			r.db.Model(&attachment.Category{}).Select("attachment_category_id").Where("is_system = ?", 1),
+		)
 	}
 	if attachmentType != nil {
 		q = q.Where("attachment_type = ?", *attachmentType)

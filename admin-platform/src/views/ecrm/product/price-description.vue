@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -114,7 +114,11 @@ const gridOptions: VxeGridProps<ProductCacheListItem & { _index: number }> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -125,13 +129,13 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增价格说明' }).open();
+  formDrawerApi.setState({ title: '新增价格说明' }).open();
 }
 
 function openEdit(row: ProductCacheListItem & { _index: number }) {
   editingIndex.value = row._index;
   Object.assign(form, row);
-  formModalApi.setState({ title: '编辑价格说明' }).open();
+  formDrawerApi.setState({ title: '编辑价格说明' }).open();
 }
 
 async function save() {
@@ -140,7 +144,7 @@ async function save() {
     ElMessage.warning('请填写名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     const next = allRows.value.map((item) => ({ ...item }));
     const payload: ProductCacheListItem = {
@@ -153,11 +157,11 @@ async function save() {
     else next[editingIndex.value] = payload;
     const result = await savePriceDescriptions(next);
     allRows.value = result.list || [];
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -197,7 +201,7 @@ async function remove(index: number, name: string) {
         </ElButton>
       </template>
     </Grid>
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="名称" required>
           <ElInput v-model="form.name" maxlength="64" show-word-limit />
@@ -221,6 +225,6 @@ async function remove(index: number, name: string) {
           <ElSwitch v-model="form.enabled" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

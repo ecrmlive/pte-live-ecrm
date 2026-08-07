@@ -247,7 +247,7 @@ type menu struct {
 
 func (h *Handler) menuTree(c *gin.Context, role string) ([]*menu, error) {
 	var rows []*menu
-	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_m_menu AS m").Select("m.id,m.parent_id,m.name,m.path,m.component,m.icon,m.is_menu,m.is_route").Joins("INNER JOIN qixi_crm_m_role_menu AS rm ON rm.menu_id = m.id").Where("rm.role_code = ? AND m.status = 1", role).Order("m.sort,m.id").Scan(&rows).Error
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_m_menu AS m").Select("m.id,m.parent_id,m.name,m.path,m.component,m.icon,m.is_menu,m.is_route").Joins("INNER JOIN qixi_crm_m_role_menu AS rm ON rm.menu_id = m.id").Where("rm.role_code = ? AND m.status = 1", role).Order("m.sort DESC, m.id ASC").Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,7 @@ import type {
   AgentPosterFormPayload,
 } from '#/api/core/plus-agent';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { User } from '@element-plus/icons-vue';
 import { ElButton, ElMessage } from 'element-plus';
 import { computed,  markRaw, reactive, ref, watch } from 'vue';
@@ -246,7 +246,9 @@ async function submit() {
   await formApi.validateAndSubmitForm();
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
     if (isOpen) {

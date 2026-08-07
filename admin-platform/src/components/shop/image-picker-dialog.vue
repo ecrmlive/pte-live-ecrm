@@ -2,7 +2,7 @@
 import type { AttachmentCategory, AttachmentItem } from '#/api/core/attachment';
 
 import { ElButton, ElDialog, ElEmpty, ElMessage, ElPagination, ElUpload } from 'element-plus';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import {
   listAttachmentCategoriesApi,
@@ -12,8 +12,18 @@ import {
 
 type PickerItem = AttachmentItem & { file_id: number; file_path: string };
 
+/** 侧栏「系统素材」根入口（非真实分类 id） */
+const SYSTEM_ROOT_ID = -1;
+
 const open = defineModel<boolean>('open', { default: false });
-const props = withDefaults(defineProps<{ defaultLibrary?: 'merchant' | 'system'; kind?: 'image' | 'video'; limit?: number }>(), { defaultLibrary: 'merchant', kind: 'image', limit: 1 });
+const props = withDefaults(
+  defineProps<{
+    defaultLibrary?: 'merchant' | 'system';
+    kind?: 'image' | 'video';
+    limit?: number;
+  }>(),
+  { defaultLibrary: 'merchant', kind: 'image', limit: 1 },
+);
 const emit = defineEmits<{ select: [PickerItem[]] }>();
 
 const categories = ref<AttachmentCategory[]>([]);
@@ -23,7 +33,48 @@ const selected = ref<number[]>([]);
 const loading = ref(false);
 const page = ref(1);
 const total = ref(0);
-const pageSize = 18;
+const pageSize = 24;
+/** 图片上传上限 10MB（与后端 upload 包一致） */
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+/** 与后端 SystemCategories enname 对齐，作 is_system 缺失时的兜底 */
+const SYSTEM_CATEGORY_ENNAMES = new Set([
+  'store_cover',
+  'pay_icon',
+  'logistics_icon',
+  'service_icon',
+  'product_image',
+  'background_image',
+  'list_icon',
+  'other_image',
+]);
+/** 「全部素材」下上传时默认落入系统分类「其他图片」 */
+const DEFAULT_UPLOAD_CATEGORY_ENNAME = 'other_image';
+
+function isSystemCategory(row: AttachmentCategory) {
+  return (
+    Number(row.is_system) === 1 ||
+    SYSTEM_CATEGORY_ENNAMES.has(row.attachment_category_enname ?? '')
+  );
+}
+
+/** 当前选中分类；「全部素材」/「系统素材」根入口时回退到系统「其他图片」 */
+function resolveUploadCategoryID() {
+  if (categoryID.value > 0) return categoryID.value;
+  const other = categories.value.find(
+    (row) => row.attachment_category_enname === DEFAULT_UPLOAD_CATEGORY_ENNAME,
+  );
+  return other?.attachment_category_id ?? 0;
+}
+
+const systemCategories = computed(() =>
+  categories.value.filter((row) => isSystemCategory(row)),
+);
+const customCategories = computed(() =>
+  categories.value.filter((row) => !isSystemCategory(row)),
+);
+
+const mediaLabel = computed(() => (props.kind === 'image' ? '图片' : '视频'));
 
 async function loadCategories() {
   const result = await listAttachmentCategoriesApi();
@@ -33,46 +84,367 @@ async function loadCategories() {
 async function loadFiles() {
   loading.value = true;
   try {
-    const result = await listAttachmentsApi({ category_id: categoryID.value || undefined, limit: pageSize, page: page.value, type: props.kind });
-    files.value = (result.list ?? []).map((item) => ({ ...item, file_id: item.attachment_id, file_path: item.attachment_src }));
+    const systemRoot = categoryID.value === SYSTEM_ROOT_ID;
+    const result = await listAttachmentsApi({
+      category_id: categoryID.value > 0 ? categoryID.value : undefined,
+      is_system: systemRoot ? 1 : undefined,
+      limit: pageSize,
+      page: page.value,
+      type: props.kind,
+    });
+    files.value = (result.list ?? []).map((item) => ({
+      ...item,
+      file_id: item.attachment_id,
+      file_path: item.attachment_src,
+    }));
     total.value = result.total ?? 0;
-  } finally { loading.value = false; }
+  } finally {
+    loading.value = false;
+  }
 }
 
-function selectCategory(id: number) { categoryID.value = id; page.value = 1; selected.value = []; void loadFiles(); }
+function selectCategory(id: number) {
+  categoryID.value = id;
+  page.value = 1;
+  selected.value = [];
+  void loadFiles();
+}
+
 function toggle(row: PickerItem) {
   const index = selected.value.indexOf(row.attachment_id);
-  if (index >= 0) { selected.value.splice(index, 1); return; }
-  if (selected.value.length >= props.limit) { ElMessage.warning(`最多选择 ${props.limit} 张图片`); return; }
+  if (index >= 0) {
+    selected.value.splice(index, 1);
+    return;
+  }
+  if (selected.value.length >= props.limit) {
+    ElMessage.warning(`最多选择 ${props.limit} 张${mediaLabel.value}`);
+    return;
+  }
   selected.value.push(row.attachment_id);
 }
+
 async function upload({ file }: { file: File }) {
-  if (props.kind === 'image' ? !file.type.startsWith('image/') : !file.type.startsWith('video/')) { ElMessage.warning(props.kind === 'image' ? '请选择图片文件' : '请选择视频文件'); return; }
-  await uploadAttachmentApi(file, categoryID.value);
+  const ok =
+    props.kind === 'image'
+      ? file.type.startsWith('image/')
+      : file.type.startsWith('video/');
+  if (!ok) {
+    ElMessage.warning(`请选择${mediaLabel.value}文件`);
+    return;
+  }
+  if (props.kind === 'image' && file.size > IMAGE_MAX_BYTES) {
+    ElMessage.error('图片不能超过 10MB');
+    return;
+  }
+  await uploadAttachmentApi(file, resolveUploadCategoryID());
+  page.value = 1;
   await loadFiles();
-  ElMessage.success(props.kind === 'image' ? '图片已上传' : '视频已上传');
+  ElMessage.success(`${mediaLabel.value}已上传`);
 }
+
 function confirm() {
-  const rows = files.value.filter((item) => selected.value.includes(item.attachment_id));
-  if (!rows.length) { ElMessage.warning('请选择图片'); return; }
+  const rows = files.value.filter((item) =>
+    selected.value.includes(item.attachment_id),
+  );
+  if (!rows.length) {
+    ElMessage.warning(`请选择${mediaLabel.value}`);
+    return;
+  }
   emit('select', rows);
   open.value = false;
 }
-async function initialize() { selected.value = []; await Promise.all([loadCategories(), loadFiles()]); }
-watch(open, (visible) => { if (visible) void initialize(); });
-onMounted(() => { if (open.value) void initialize(); });
+
+async function initialize() {
+  selected.value = [];
+  categoryID.value = 0;
+  page.value = 1;
+  await loadCategories();
+  // 装修等场景可默认落在系统素材根入口
+  if (props.defaultLibrary === 'system' && systemCategories.value.length) {
+    categoryID.value = SYSTEM_ROOT_ID;
+  }
+  await loadFiles();
+}
+
+watch(open, (visible) => {
+  if (visible) void initialize();
+});
+onMounted(() => {
+  if (open.value) void initialize();
+});
 </script>
 
 <template>
-  <ElDialog v-model="open" :title="`选择${props.kind === 'image' ? '图片' : '视频'}素材`" width="900px" destroy-on-close append-to-body>
+  <ElDialog
+    v-model="open"
+    :title="`选择${mediaLabel}素材`"
+    width="960px"
+    destroy-on-close
+    append-to-body
+    class="image-picker-dialog"
+  >
     <div class="picker">
-      <aside class="picker__categories"><button :class="{ active: categoryID === 0 }" @click="selectCategory(0)">全部素材</button><button v-for="row in categories" :key="row.attachment_category_id" :class="{ active: categoryID === row.attachment_category_id }" @click="selectCategory(row.attachment_category_id)">{{ row.attachment_category_name }}</button></aside>
-      <section class="picker__content"><div class="picker__toolbar"><span>从平台素材库选择{{ props.kind === 'image' ? '图片' : '视频' }}</span><ElUpload :accept="props.kind === 'image' ? 'image/jpeg,image/png,image/webp,image/gif' : 'video/mp4,video/quicktime,video/webm'" :http-request="upload" :show-file-list="false"><ElButton type="primary">上传{{ props.kind === 'image' ? '图片' : '视频' }}</ElButton></ElUpload></div><div v-loading="loading" class="picker__grid"><ElEmpty v-if="!loading && files.length === 0" :description="`暂无${props.kind === 'image' ? '图片' : '视频'}素材`" /><button v-for="row in files" :key="row.attachment_id" class="picker__item" :class="{ selected: selected.includes(row.attachment_id) }" @click="toggle(row)"><img v-if="props.kind === 'image'" :src="row.attachment_src" :alt="row.attachment_name" /><video v-else :src="row.attachment_src" preload="metadata" /><span>{{ row.attachment_name }}</span></button></div><ElPagination v-if="total > pageSize" v-model:current-page="page" :page-size="pageSize" :total="total" small background layout="prev, pager, next" @current-change="loadFiles" /></section>
+      <aside class="picker__sidebar">
+        <button
+          type="button"
+          class="picker__cat"
+          :class="{ active: categoryID === 0 }"
+          @click="selectCategory(0)"
+        >
+          全部素材
+        </button>
+
+        <div class="picker__scroll">
+          <template v-if="customCategories.length">
+            <div class="picker__section">自定义分类</div>
+            <button
+              v-for="row in customCategories"
+              :key="row.attachment_category_id"
+              type="button"
+              class="picker__cat"
+              :class="{ active: categoryID === row.attachment_category_id }"
+              @click="selectCategory(row.attachment_category_id)"
+            >
+              {{ row.attachment_category_name }}
+            </button>
+          </template>
+          <button
+            v-for="row in systemCategories"
+            :key="row.attachment_category_id"
+            type="button"
+            class="picker__cat"
+            :class="{ active: categoryID === row.attachment_category_id }"
+            @click="selectCategory(row.attachment_category_id)"
+          >
+            {{ row.attachment_category_name }}
+          </button>
+        </div>
+
+        <div v-if="systemCategories.length" class="picker__footer">
+          <button
+            type="button"
+            class="picker__cat"
+            :class="{ active: categoryID === SYSTEM_ROOT_ID }"
+            @click="selectCategory(SYSTEM_ROOT_ID)"
+          >
+            系统素材
+          </button>
+        </div>
+      </aside>
+
+      <section class="picker__main">
+        <div class="picker__toolbar">
+          <span class="picker__hint">从平台素材库选择{{ mediaLabel }}</span>
+          <ElUpload
+            :accept="
+              props.kind === 'image'
+                ? 'image/jpeg,image/png,image/webp,image/gif'
+                : 'video/mp4,video/quicktime,video/webm'
+            "
+            :http-request="upload"
+            :show-file-list="false"
+          >
+            <ElButton type="primary">上传{{ mediaLabel }}</ElButton>
+          </ElUpload>
+        </div>
+
+        <div
+          v-loading="loading"
+          class="picker__grid"
+          :class="{ 'picker__grid--empty': !loading && files.length === 0 }"
+        >
+          <ElEmpty
+            v-if="!loading && files.length === 0"
+            :description="`暂无${mediaLabel}素材`"
+          />
+          <button
+            v-for="row in files"
+            :key="row.attachment_id"
+            type="button"
+            class="picker__item"
+            :class="{ selected: selected.includes(row.attachment_id) }"
+            @click="toggle(row)"
+          >
+            <img
+              v-if="props.kind === 'image'"
+              :src="row.attachment_src"
+              :alt="row.attachment_name"
+            />
+            <video v-else :src="row.attachment_src" preload="metadata" />
+          </button>
+        </div>
+
+        <div class="picker__pager">
+          <ElPagination
+            v-model:current-page="page"
+            :page-size="pageSize"
+            :total="total"
+            background
+            layout="total, prev, pager, next"
+            @current-change="loadFiles"
+          />
+        </div>
+      </section>
     </div>
-    <template #footer><ElButton @click="open = false">取消</ElButton><ElButton type="primary" @click="confirm">确定</ElButton></template>
+
+    <template #footer>
+      <ElButton @click="open = false">取消</ElButton>
+      <ElButton type="primary" @click="confirm">确定</ElButton>
+    </template>
   </ElDialog>
 </template>
 
 <style scoped lang="scss">
-.picker { display: flex; min-height: 420px; border: 1px solid hsl(var(--border)); }.picker__categories { width: 170px; padding: 8px; border-right: 1px solid hsl(var(--border)); }.picker__categories button { display: block; width: 100%; padding: 8px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; }.picker__categories button.active, .picker__categories button:hover { color: hsl(var(--primary)); background: hsl(var(--accent)); }.picker__content { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; padding: 12px; }.picker__toolbar { display: flex; align-items: center; justify-content: space-between; }.picker__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; min-height: 330px; align-content: start; }.picker__item { overflow: hidden; border: 2px solid transparent; border-radius: 4px; text-align: left; }.picker__item.selected { border-color: hsl(var(--primary)); }.picker__item img, .picker__item video { display: block; width: 100%; height: 92px; object-fit: cover; }.picker__item span { display: block; overflow: hidden; padding: 4px; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.picker {
+  display: flex;
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--background));
+}
+
+.picker__sidebar {
+  display: flex;
+  flex: 0 0 180px;
+  flex-direction: column;
+  gap: 2px;
+  width: 180px;
+  padding: 12px 8px;
+  border-right: 1px solid hsl(var(--border));
+  overflow: hidden;
+}
+
+.picker__scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.picker__footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.picker__section {
+  margin: 10px 8px 4px;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.picker__cat {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  color: hsl(var(--foreground));
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  cursor: pointer;
+}
+
+.picker__cat:hover,
+.picker__cat.active {
+  color: hsl(var(--primary));
+  background: hsl(var(--accent));
+}
+
+.picker__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.picker__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.picker__hint {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+}
+
+.picker__grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+  min-height: 320px;
+  min-width: 0;
+}
+
+.picker__grid--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picker__item {
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  text-align: left;
+  background: hsl(var(--muted));
+  cursor: pointer;
+}
+
+.picker__item.selected {
+  border-color: hsl(var(--primary));
+}
+
+.picker__item img,
+.picker__item video {
+  display: block;
+  width: 100%;
+  height: 96px;
+  object-fit: contain;
+  object-position: center;
+  background: hsl(var(--muted));
+}
+
+.picker__pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .picker {
+    display: block;
+  }
+
+  .picker__sidebar {
+    width: auto;
+    flex-basis: auto;
+    border-right: 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .picker__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 </style>

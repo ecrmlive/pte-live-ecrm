@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -134,7 +134,7 @@ const gridOptions: VxeGridProps<MerchantCoupon> = {
     },
     merchantListActionColumn({ width: 222 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -166,7 +166,9 @@ const gridOptions: VxeGridProps<MerchantCoupon> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [CouponModal, couponModalApi] = useVbenModal({
+const [CouponDrawer, couponDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.title.trim()) {
       ElMessage.warning('请填写优惠券名称');
@@ -185,7 +187,7 @@ const [CouponModal, couponModalApi] = useVbenModal({
       return;
     }
     saving.value = true;
-    couponModalApi.lock();
+    couponDrawerApi.lock();
     try {
       const body = {
         ...form,
@@ -198,16 +200,18 @@ const [CouponModal, couponModalApi] = useVbenModal({
         await createMerchantCouponApi(body);
       }
       ElMessage.success(editingID.value ? '优惠券已更新' : '优惠券已创建');
-      couponModalApi.close();
+      couponDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      couponModalApi.unlock();
+      couponDrawerApi.unlock();
     }
   },
 });
 
-const [SendModal, sendModalApi] = useVbenModal({
+const [SendDrawer, sendDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => {
     if (!sendingCoupon.value) return;
     const uids = [
@@ -223,25 +227,25 @@ const [SendModal, sendModalApi] = useVbenModal({
       return;
     }
     saving.value = true;
-    sendModalApi.lock();
+    sendDrawerApi.lock();
     try {
       await sendMerchantCouponApi(sendingCoupon.value.coupon_id, {
         mark: sendForm.mark.trim(),
         uids,
       });
       ElMessage.success('优惠券已发送');
-      sendModalApi.close();
+      sendDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      sendModalApi.unlock();
+      sendDrawerApi.unlock();
     }
   },
 });
 
 function openCreate() {
   resetForm();
-  couponModalApi.setState({ title: '新增优惠券' }).open();
+  couponDrawerApi.setState({ title: '新增优惠券' }).open();
 }
 
 function openEdit(row: MerchantCoupon) {
@@ -256,13 +260,13 @@ function openEdit(row: MerchantCoupon) {
     total_count: row.total_count,
     use_min_price: row.use_min_price,
   });
-  couponModalApi.setState({ title: '编辑优惠券' }).open();
+  couponDrawerApi.setState({ title: '编辑优惠券' }).open();
 }
 
 function openSend(row: MerchantCoupon) {
   sendingCoupon.value = row;
   Object.assign(sendForm, { mark: '', uidsText: '' });
-  sendModalApi.setState({ title: '定向发送优惠券' }).open();
+  sendDrawerApi.setState({ title: '定向发送优惠券' }).open();
 }
 
 async function toggle(row: MerchantCoupon) {
@@ -324,7 +328,7 @@ async function remove(row: MerchantCoupon) {
       </template>
     </Grid>
 
-    <CouponModal class="w-[580px] max-w-[96vw]">
+    <CouponDrawer class="w-[580px] max-w-[96vw]">
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="90px">
         <ElFormItem class="col-span-2" label="优惠券名称" required>
           <ElInput v-model="form.title" maxlength="40" show-word-limit />
@@ -377,9 +381,9 @@ async function remove(row: MerchantCoupon) {
           />
         </ElFormItem>
       </ElForm>
-    </CouponModal>
+    </CouponDrawer>
 
-    <SendModal class="w-[540px] max-w-[96vw]">
+    <SendDrawer class="w-[540px] max-w-[96vw]">
       <ElAlert
         :closable="false"
         class="mb-4"
@@ -408,6 +412,6 @@ async function remove(row: MerchantCoupon) {
           />
         </ElFormItem>
       </ElForm>
-    </SendModal>
+    </SendDrawer>
   </Page>
 </template>

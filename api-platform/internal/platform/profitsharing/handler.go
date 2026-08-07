@@ -27,22 +27,36 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.PUT("/merchant-profitsharing-applications/:id/note", p, m, h.Note)
 }
 
+// row aligns with CRMEB merchant applyments list cells (no channel secrets).
 type row struct {
 	ID            uint      `json:"id"`
 	MerchantID    uint      `gorm:"column:merchant_id" json:"merchant_id"`
+	MerchantName  string    `gorm:"column:merchant_name" json:"merchant_name"`
 	ApplicationNo string    `gorm:"column:application_no" json:"application_no"`
+	ApplymentID   string    `gorm:"column:applyment_id" json:"applyment_id"`
 	Status        string    `json:"status"`
 	Description   string    `json:"description"`
+	Message       string    `json:"message"`
 	ReviewNote    string    `gorm:"column:review_note" json:"review_note"`
 	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 const tab = "qixi_crm_a_merchant_profitsharing_application"
 
+var allowedStatuses = map[string]struct{}{
+	"applied": {}, "approved": {}, "rejected": {},
+	"platform_rejected": {}, "auditing": {}, "shop_verify": {},
+	"completed": {}, "frozen": {}, "wechat_rejected": {},
+}
+
 func (h *Handler) List(c *gin.Context) {
 	page, limit := queryfilter.Page(c)
 	q := h.db.WithContext(c.Request.Context()).Table(tab)
 	if s := strings.TrimSpace(c.Query("status")); s != "" {
+		if _, ok := allowedStatuses[s]; !ok {
+			response.Fail(c, http.StatusBadRequest, "审核状态参数错误")
+			return
+		}
 		q = q.Where("status=?", s)
 	}
 	if raw := strings.TrimSpace(c.Query("merchant_id")); raw != "" {
@@ -55,7 +69,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
 		like := "%" + keyword + "%"
-		q = q.Where("application_no LIKE ? OR description LIKE ?", like, like)
+		q = q.Where("merchant_name LIKE ? OR application_no LIKE ? OR applyment_id LIKE ? OR description LIKE ?", like, like, like, like)
 	}
 	q = queryfilter.ApplyCreatedAtRange(q, c, "created_at")
 	var total int64
@@ -90,16 +104,36 @@ func (h *Handler) Review(c *gin.Context) {
 		return
 	}
 	var q struct {
-		Approved bool   `json:"approved"`
+		Approved *bool  `json:"approved"`
+		Status   string `json:"status"`
 		Note     string `json:"note"`
 	}
-	if c.ShouldBindJSON(&q) != nil || !validReviewNote(q.Note) {
+	if c.ShouldBindJSON(&q) != nil {
 		response.Fail(c, 400, "审核参数错误")
 		return
 	}
-	to := "rejected"
-	if q.Approved {
-		to = "approved"
+	to := strings.TrimSpace(q.Status)
+	if to == "" && q.Approved != nil {
+		if *q.Approved {
+			to = "auditing"
+		} else {
+			to = "platform_rejected"
+		}
+	}
+	switch to {
+	case "platform_rejected", "auditing", "shop_verify", "completed", "frozen", "wechat_rejected":
+	default:
+		response.Fail(c, 400, "审核状态参数错误")
+		return
+	}
+	message := strings.TrimSpace(q.Note)
+	if (to == "platform_rejected" || to == "wechat_rejected") && message == "" {
+		response.Fail(c, 400, "驳回时必须填写审核说明")
+		return
+	}
+	if len([]rune(message)) > 500 {
+		response.Fail(c, 400, "审核说明不能超过 500 个字符")
+		return
 	}
 	e := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		var v row
@@ -109,14 +143,26 @@ func (h *Handler) Review(c *gin.Context) {
 		if v.Status != "applied" {
 			return errors.New("分账申请状态已变化")
 		}
-		res := tx.Table(tab).Where("id=? AND status='applied'", id).Updates(map[string]any{"status": to, "review_note": strings.TrimSpace(q.Note), "reviewed_by": middleware.AdminID(c), "reviewed_at": time.Now()})
+		res := tx.Table(tab).Where("id=? AND status='applied'", id).Updates(map[string]any{
+			"status":      to,
+			"message":     message,
+			"review_note": message,
+			"reviewed_by": middleware.AdminID(c),
+			"reviewed_at": time.Now(),
+		})
 		if res.Error != nil {
 			return res.Error
 		}
 		if res.RowsAffected != 1 {
 			return errors.New("分账申请状态已变化")
 		}
-		return tx.Table("qixi_crm_a_merchant_profitsharing_audit").Create(map[string]any{"application_id": id, "from_status": "applied", "to_status": to, "note": strings.TrimSpace(q.Note), "operator_admin_id": middleware.AdminID(c)}).Error
+		return tx.Table("qixi_crm_a_merchant_profitsharing_audit").Create(map[string]any{
+			"application_id":    id,
+			"from_status":       "applied",
+			"to_status":         to,
+			"note":              message,
+			"operator_admin_id": middleware.AdminID(c),
+		}).Error
 	})
 	if e != nil {
 		if errors.Is(e, gorm.ErrRecordNotFound) {
@@ -165,7 +211,8 @@ func id(c *gin.Context) (uint, bool) {
 }
 
 func validReviewNote(note string) bool {
-	return len([]rune(strings.TrimSpace(note))) <= 500
+	n := len([]rune(strings.TrimSpace(note)))
+	return n > 0 && n <= 500
 }
 
 func fail(c *gin.Context, e error) {

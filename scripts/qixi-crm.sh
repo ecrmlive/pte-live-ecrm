@@ -267,10 +267,30 @@ initialize_databases() {
 		echo ">> 导入 sql/business/init_product_stat_demo.sql 到 pte_live_mysql"
 		shared_mysql <"${product_stat_demo_sql}"
 	fi
+	order_stat_demo_sql="${ROOT_DIR}/sql/business/init_order_stat_demo.sql"
+	if [[ -f "${order_stat_demo_sql}" ]]; then
+		echo ">> 导入 sql/business/init_order_stat_demo.sql 到 pte_live_mysql"
+		shared_mysql <"${order_stat_demo_sql}"
+	fi
+	user_stat_demo_sql="${ROOT_DIR}/sql/business/init_user_stat_demo.sql"
+	if [[ -f "${user_stat_demo_sql}" ]]; then
+		echo ">> 导入 sql/business/init_user_stat_demo.sql 到 pte_live_mysql"
+		shared_mysql <"${user_stat_demo_sql}"
+	fi
+	product_category_seed_sql="${ROOT_DIR}/sql/admin/seed_default_product_categories.sql"
+	if [[ -f "${product_category_seed_sql}" ]]; then
+		echo ">> 导入 sql/admin/seed_default_product_categories.sql 到 pte_live_mysql"
+		shared_mysql <"${product_category_seed_sql}"
+	fi
 	merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 	[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
 	echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql 到 pte_live_mysql"
 	shared_mysql <"${merchant_menu_sql}"
+	store_login_demo_sql="${ROOT_DIR}/sql/merchant/init_store_login_demo.sql"
+	if [[ -f "${store_login_demo_sql}" ]]; then
+		echo ">> 导入 sql/merchant/init_store_login_demo.sql 到 pte_live_mysql"
+		shared_mysql <"${store_login_demo_sql}"
+	fi
 	provision_shared_database_user
 	echo "七禧三库已导入共享 MySQL：qixi_crm_admin、qixi_crm_business、qixi_crm_merchant。"
 }

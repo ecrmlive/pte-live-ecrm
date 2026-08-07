@@ -3,7 +3,7 @@ import type { ProductListItem } from '#/api/core/product';
 import type { LiveWxProductForm } from '#/api/core/plus-live-wx-product';
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { ElButton, ElMessage } from 'element-plus';
 import { computed, defineComponent, h, markRaw, reactive, ref, watch } from 'vue';
 
@@ -193,7 +193,9 @@ function resetForm() {
   void formApi.resetForm();
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

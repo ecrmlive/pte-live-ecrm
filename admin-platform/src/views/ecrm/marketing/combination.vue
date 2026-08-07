@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -103,7 +103,7 @@ const gridOptions: VxeGridProps<PlatformCombination> = {
     },
     platformListActionColumn({ width: 172 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -124,7 +124,11 @@ const gridOptions: VxeGridProps<PlatformCombination> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -144,7 +148,7 @@ async function edit(row: PlatformCombination) {
     is_show: detail.is_show,
     status: detail.status,
   });
-  editModalApi.setState({ title: '编辑拼团活动' }).open();
+  editDrawerApi.setState({ title: '编辑拼团活动' }).open();
 }
 
 async function save() {
@@ -160,16 +164,16 @@ async function save() {
     ElMessage.warning('请填写正数拼团价、至少 2 人、有效时长和正确的活动时间');
     return;
   }
-  editModalApi.lock();
+  editDrawerApi.lock();
   saving.value = true;
   try {
     await updatePlatformCombinationApi(editingID.value, { ...form });
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success('拼团活动已更新');
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -240,7 +244,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[620px]">
+    <EditDrawer class="w-[620px]">
       <ElAlert
         class="mb-4"
         type="warning"
@@ -275,6 +279,6 @@ onMounted(async () => {
           </ElRadioGroup>
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

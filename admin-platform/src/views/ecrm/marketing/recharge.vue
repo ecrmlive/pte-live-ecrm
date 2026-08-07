@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -154,7 +154,7 @@ const orderGridOptions: VxeGridProps<RechargeOrder> = {
       formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
     },
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -184,7 +184,11 @@ const [OrderGrid] = useVbenVxeGrid({
   gridOptions: orderGridOptions,
 });
 
-const [PlanModal, planModalApi] = useVbenModal({
+const [PlanDrawer, planDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -196,7 +200,7 @@ function edit(row?: RechargePlan) {
   form.status = Number(row?.status ?? 1);
   form.sort = Number(row?.sort ?? 0);
   form.version = Number(row?.version ?? 0);
-  planModalApi.setState({ title: editing.value ? '编辑充值计划' : '新增充值计划' }).open();
+  planDrawerApi.setState({ title: editing.value ? '编辑充值计划' : '新增充值计划' }).open();
 }
 
 async function save() {
@@ -204,17 +208,17 @@ async function save() {
     ElMessage.warning('请填写计划名称和有效金额');
     return;
   }
-  planModalApi.lock();
+  planDrawerApi.lock();
   saving.value = true;
   try {
     if (editing.value) await updateRechargePlan(editing.value, { ...form });
     else await createRechargePlan({ ...form });
-    planModalApi.close();
+    planDrawerApi.close();
     ElMessage.success('充值计划已保存');
     planGridApi.reload();
   } finally {
     saving.value = false;
-    planModalApi.unlock();
+    planDrawerApi.unlock();
   }
 }
 
@@ -259,7 +263,7 @@ onMounted(async () => {
       <div class="mb-2 mt-6 text-base font-medium">充值订单（仅监管）</div>
       <OrderGrid />
 
-      <PlanModal class="w-[480px]">
+      <PlanDrawer class="w-[480px]">
         <ElForm label-width="100px">
           <ElFormItem label="计划名称">
             <ElInput v-model="form.name" />
@@ -280,7 +284,7 @@ onMounted(async () => {
             <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
           </ElFormItem>
         </ElForm>
-      </PlanModal>
+      </PlanDrawer>
     </template>
   </Page>
 </template>

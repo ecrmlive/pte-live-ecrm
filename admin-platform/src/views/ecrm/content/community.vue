@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDescriptions,
@@ -117,7 +117,7 @@ const gridOptions: VxeGridProps<CommunityPost> = {
     },
     platformListActionColumn({ minWidth: 290 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -152,7 +152,9 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   title: '社区帖子详情',
 });
 
-const [RejectModal, rejectModalApi] = useVbenModal({
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => reject(),
 });
 
@@ -203,7 +205,7 @@ async function approve(row: CommunityPost) {
 function openReject(row: CommunityPost) {
   current.value = row;
   rejectForm.refusal = '';
-  rejectModalApi.open();
+  rejectDrawerApi.open();
 }
 
 async function reject() {
@@ -219,7 +221,7 @@ async function reject() {
       refusal,
       status: -1,
     });
-    rejectModalApi.close();
+    rejectDrawerApi.close();
     ElMessage.success('帖子已驳回');
     gridApi.reload();
     return true;
@@ -459,7 +461,7 @@ onMounted(async () => {
       </template>
     </DetailDrawer>
 
-    <RejectModal title="驳回帖子">
+    <RejectDrawer title="驳回帖子">
       <ElForm label-width="84px">
         <ElFormItem label="驳回原因" required>
           <ElInput
@@ -472,6 +474,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </RejectModal>
+    </RejectDrawer>
   </Page>
 </template>

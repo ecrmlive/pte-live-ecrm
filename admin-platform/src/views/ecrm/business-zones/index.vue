@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -90,7 +90,7 @@ const gridOptions: VxeGridProps<BusinessZoneRow> = {
     },
     platformListActionColumn({ width: 150 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -118,7 +118,11 @@ const gridOptions: VxeGridProps<BusinessZoneRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -140,7 +144,7 @@ function resetForm() {
 function openCreate() {
   editingID.value = undefined;
   resetForm();
-  formModalApi.setState({ title: '新建区域' }).open();
+  formDrawerApi.setState({ title: '新建区域' }).open();
 }
 
 function openEdit(row: BusinessZoneRow) {
@@ -157,7 +161,7 @@ function openEdit(row: BusinessZoneRow) {
     type: row.type,
     role_id: row.role_id,
   });
-  formModalApi.setState({ title: '编辑区域' }).open();
+  formDrawerApi.setState({ title: '编辑区域' }).open();
 }
 
 async function save() {
@@ -165,18 +169,18 @@ async function save() {
     ElMessage.warning('请填写商圈名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     if (editingID.value) {
       await updateBusinessZone(editingID.value, form);
     } else {
       await createBusinessZone(form);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('保存成功');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -214,7 +218,7 @@ async function remove(row: BusinessZoneRow) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="110px">
         <ElFormItem label="上级区域ID">
           <ElInputNumber v-model="form.pid" :min="0" />
@@ -252,6 +256,6 @@ async function remove(row: BusinessZoneRow) {
           <ElInput v-model="form.remark" type="textarea" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

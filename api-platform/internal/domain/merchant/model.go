@@ -34,6 +34,7 @@ type Merchant struct {
 	GoodsType         string    `gorm:"column:goods_type" json:"goods_type"`
 	PlatformCategoryIDs string  `gorm:"column:platform_category_ids" json:"platform_category_ids"`
 	MerStar           int8      `gorm:"column:mer_star" json:"mer_star"`
+	MerAvatar         string    `gorm:"column:mer_avatar" json:"mer_avatar"`
 	Sort              int       `gorm:"column:sort" json:"sort"`
 	SvipCouponMerge   int8      `gorm:"column:svip_coupon_merge" json:"svip_coupon_merge"`
 	RegionID          uint      `gorm:"column:region_id" json:"region_id"`
@@ -63,9 +64,10 @@ type SvipConfig struct {
 func (Merchant) TableName() string { return "qixi_crm_a_merchant_view" }
 
 type Category struct {
-	MerchantCategoryID uint    `gorm:"column:merchant_category_id;primaryKey" json:"merchant_category_id"`
-	CommissionRate     float64 `gorm:"column:commission_rate" json:"commission_rate"`
-	CategoryName       string  `gorm:"column:category_name" json:"category_name"`
+	MerchantCategoryID uint      `gorm:"column:merchant_category_id;primaryKey" json:"merchant_category_id"`
+	CommissionRate     float64   `gorm:"column:commission_rate" json:"commission_rate"`
+	CategoryName       string    `gorm:"column:category_name" json:"category_name"`
+	CreateTime         time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
 func (Category) TableName() string { return "qixi_crm_a_merchant_category" }
@@ -84,6 +86,8 @@ type Intention struct {
 	Mark                string     `gorm:"column:mark" json:"mark"`
 	MerID               uint       `gorm:"column:mer_id" json:"mer_id"`
 	Images              string     `gorm:"column:images" json:"images"`
+	CategoryName        string     `gorm:"column:category_name" json:"category_name"`
+	TypeName            string     `gorm:"column:type_name" json:"type_name"`
 	MerchantCategoryID  uint       `gorm:"column:merchant_category_id" json:"merchant_category_id"`
 	MerTypeID           uint       `gorm:"column:mer_type_id" json:"mer_type_id"`
 	CircleID            uint       `gorm:"column:circle_id" json:"circle_id"`

@@ -45,7 +45,10 @@ export const PLATFORM_LIST_GRID_CLASS = 'platform-vxe-grid';
  * 列表 Grid 通用布局。
  * - height: 'auto'：配置保留；实际表体行为由 platform-list-page.scss 覆盖（Page 整页滚动，非 tbody 内滚）。
  * - showOverflow: false：行高随单元格内容增高（多行 slot）。
- * - 自由文本列（备注等）须列级 showOverflow: true，单行省略，避免撑高行挤掉 fixed 操作列。
+ * - 备注等自由文本：列级 showOverflow: 'tooltip' + className `col--remark`
+ *   （单行 nowrap、合理 minWidth + width/maxWidth 上限、表头居中/内容靠左、ellipsis；禁止 width:'auto'）；
+ *   其它需单行省略的列仍可用 showOverflow: true|'tooltip' + `.col--ellipsis`。
+ * - 操作列 fixed:right 须不透明底 + 高 z-index（见 platform-list-page.scss），双列窄内容区也必须始终可见可点。
  * - cellConfig.verticalAlign: 'top'：多行 slot 顶对齐。
  *
  * 所有 useVbenVxeGrid 调用会自动合并本常量（见 adapter/vxe-table.ts）。
@@ -59,6 +62,6 @@ export const PLATFORM_LIST_GRID_LAYOUT = {
   cellConfig: {
     verticalAlign: 'top' as const,
   },
-  /** 有 fixed 列时需开启横向滚动容器 */
+  /** 有 fixed 列时开启横向滚动；固定列由 vxe 叠在可视区右侧，勿把 overflow-x 加在会卷走 fixed 的外层 */
   scrollX: { enabled: true, gt: 0 },
 };

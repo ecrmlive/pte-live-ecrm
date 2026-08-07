@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -132,13 +132,17 @@ const gridOptions: VxeGridProps<SvipInterest> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增会员权益' }).open();
+  formDrawerApi.setState({ title: '新增会员权益' }).open();
 }
 
 function openEdit(row: SvipInterest) {
@@ -151,7 +155,7 @@ function openEdit(row: SvipInterest) {
     sort: row.sort,
     version: row.version,
   });
-  formModalApi.setState({ title: '编辑会员权益' }).open();
+  formDrawerApi.setState({ title: '编辑会员权益' }).open();
 }
 
 async function save() {
@@ -163,7 +167,7 @@ async function save() {
     ElMessage.warning('请填写权益名称；图标仅允许 /demo/ 或 https:// 地址');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const data = {
@@ -174,12 +178,12 @@ async function save() {
     };
     if (editing.value) await updateSvipInterest(editing.value.id, data);
     else await createSvipInterest(data);
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('会员权益已保存；套餐只能选择启用权益');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -236,7 +240,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="88px">
         <ElFormItem label="权益名称" required>
           <ElInput v-model="form.name" maxlength="64" />
@@ -267,6 +271,6 @@ onMounted(async () => {
           <ElInputNumber v-model="form.sort" :min="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

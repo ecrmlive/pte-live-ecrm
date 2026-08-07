@@ -2,9 +2,8 @@
 import { computed, reactive, ref, watch } from 'vue';
 
 import type { FormRules } from 'element-plus';
+import { useVbenDrawer } from '@vben/common-ui';
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -23,15 +22,15 @@ import {
   type RegionRow,
 } from './types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   mode: 'add' | 'edit';
-  open: boolean;
   region?: RegionRow;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const loading = ref(false);
@@ -183,24 +182,53 @@ watch(
   },
 );
 
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      void loadFormData();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
 watch(
-  () => [props.open, props.mode, props.region?.id] as const,
-  ([open]) => {
-    if (open) {
-      loadFormData();
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: dialogTitle.value }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
+
+watch(dialogTitle, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
+
+watch(
+  () => [props.mode, props.region?.id] as const,
+  () => {
+    if (open.value) {
+      void loadFormData();
     }
   },
 );
-
-function handleClose() {
-  emit('update:open', false);
-}
 
 async function handleSubmit() {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const payload = {
         ...form,
@@ -216,33 +244,31 @@ async function handleSubmit() {
         const res = await RegionApi.editRegion({ ...payload, id }, true);
         if (res.code === 1) {
           ElMessage.success(res.msg || '修改成功');
-          emit('update:open', false);
+          open.value = false;
           emit('success');
         }
       } else {
         const res = await RegionApi.addRegion(payload, true);
         if (res.code === 1) {
           ElMessage.success(res.msg || '添加成功');
-          emit('update:open', false);
+          open.value = false;
           emit('success');
         }
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     :title="dialogTitle"
-    width="560px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm
       ref="formRef"
@@ -337,11 +363,5 @@ async function handleSubmit() {
         <div class="text-xs text-[#999]">数字越小越靠前</div>
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">
-        保存
-      </ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -204,7 +204,7 @@ const gridOptions: VxeGridProps<ProductCommentRow> = {
     },
     platformListActionColumn({ width: 205 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -225,7 +225,11 @@ const gridOptions: VxeGridProps<ProductCommentRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -252,7 +256,7 @@ function open(row?: ProductCommentRow) {
           attachment_ids: [] as number[],
         },
   );
-  formModalApi
+  formDrawerApi
     .setState({ title: row ? '编辑虚拟评论' : '新增虚拟评论' })
     .open();
 }
@@ -262,7 +266,7 @@ async function save() {
     ElMessage.warning('请填写商品 ID、显示昵称和评论内容');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const value = {
@@ -284,12 +288,12 @@ async function save() {
         idempotency_key: key('create'),
       });
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success(editing.value ? '虚拟评论已更新' : '虚拟评论已新增并展示');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -440,7 +444,7 @@ function onImageSelect(items: AttachmentItem[]) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElAlert
         class="mb-4"
         type="warning"
@@ -495,7 +499,7 @@ function onImageSelect(items: AttachmentItem[]) {
           />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
 
     <ImagePickerDialog
       v-model:open="picker"

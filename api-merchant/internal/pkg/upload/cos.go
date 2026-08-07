@@ -70,12 +70,14 @@ func (c COS) Save(scope string, fh *multipart.FileHeader) (publicURL, name strin
 	default:
 		return "", "", fmt.Errorf("unsupported type %s", ext)
 	}
-	maxSize := int64(5 << 20)
+	maxSize := int64(10 << 20)
+	errMsg := "图片不能超过 10MB"
 	if ext == ".mp4" || ext == ".mov" || ext == ".webm" {
 		maxSize = 100 << 20
+		errMsg = "视频不能超过 100MB"
 	}
 	if fh.Size > maxSize {
-		return "", "", fmt.Errorf("file too large")
+		return "", "", fmt.Errorf("%s", errMsg)
 	}
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {

@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
 import {
-  ElButton,
   ElCheckbox,
   ElDatePicker,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -18,14 +17,14 @@ import { validateBEndPassword } from '#/utils/b-end-password';
 
 import type { ShopRow } from './types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
-  open: boolean;
   shop?: ShopRow;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -100,44 +99,71 @@ const rules = {
   ],
 };
 
-watch(
-  () => [props.open, props.shop?.app_id] as const,
-  ([open]) => {
-    if (!open || !props.shop) return;
-    Object.assign(form, props.shop);
+function syncForm() {
+  if (!props.shop) return;
+  Object.assign(form, props.shop);
+}
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      syncForm();
+    }
   },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '编辑小程序商城' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
 );
 
-function handleClose() {
-  emit('update:open', false);
-}
+watch(
+  () => props.shop?.app_id,
+  () => {
+    if (open.value) {
+      syncForm();
+    }
+  },
+);
 
 async function handleSubmit() {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       await ShopApi.editShop({ ...form }, true);
       ElMessage.success('恭喜你，修改成功');
-      emit('update:open', false);
+      open.value = false;
       emit('success');
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="编辑小程序商城"
-    width="520px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <div style="height: 0; overflow: hidden">
       <input type="password" />
@@ -181,9 +207,5 @@ async function handleSubmit() {
         <ElCheckbox v-model="form.weixin_service">开启</ElCheckbox>
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -83,7 +83,7 @@ const gridOptions: VxeGridProps<ProductLabel> = {
     },
     merchantListActionColumn({ width: 128 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -110,7 +110,11 @@ const gridOptions: VxeGridProps<ProductLabel> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: save,
 });
 
@@ -124,7 +128,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新增商品标签' }).open();
+  editDrawerApi.setState({ title: '新增商品标签' }).open();
 }
 
 function openEdit(row: ProductLabel) {
@@ -133,7 +137,7 @@ function openEdit(row: ProductLabel) {
   form.info = row.info;
   form.sort = row.sort;
   form.status = row.status;
-  editModalApi.setState({ title: '编辑商品标签' }).open();
+  editDrawerApi.setState({ title: '编辑商品标签' }).open();
 }
 
 async function save() {
@@ -142,19 +146,19 @@ async function save() {
     return;
   }
   saving.value = true;
-  editModalApi.lock();
+  editDrawerApi.lock();
   try {
     if (editingID.value) {
       await updateProductLabelApi(editingID.value, form);
     } else {
       await createProductLabelApi(form);
     }
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success('保存成功');
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -209,7 +213,7 @@ async function changeStatus(row: ProductLabel) {
       </template>
     </Grid>
 
-    <EditModal class="w-[520px] max-w-[96vw]">
+    <EditDrawer class="w-[520px] max-w-[96vw]">
       <ElForm label-width="88px">
         <ElFormItem label="标签名称" required>
           <ElInput v-model="form.name" maxlength="32" />
@@ -230,6 +234,6 @@ async function changeStatus(row: ProductLabel) {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

@@ -3,28 +3,28 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+import { Plus } from '@element-plus/icons-vue';
 import {
   ElButton,
   ElCheckbox,
-  ElDialog,
   ElInput,
   ElMessage,
 } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import MessageApi from '#/api/core/message';
 
 import type { MessageFieldRow, MessageItem } from './types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   message?: MessageItem;
-  open: boolean;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const loading = ref(true);
@@ -96,15 +96,6 @@ watch(loading, (value) => {
   gridApi.setLoading(value);
 });
 
-watch(
-  () => [props.open, props.message?.message_id] as const,
-  async ([open, messageId]) => {
-    if (!open || !messageId) return;
-    deleteIds.value = [];
-    await loadFields(messageId);
-  },
-);
-
 async function loadFields(messageId: number) {
   loading.value = true;
   try {
@@ -117,6 +108,48 @@ async function loadFields(messageId: number) {
     loading.value = false;
   }
 }
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen && props.message?.message_id) {
+      deleteIds.value = [];
+      void loadFields(props.message.message_id);
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: title.value }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
+
+watch(title, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
+
+watch(
+  () => props.message?.message_id,
+  async (messageId) => {
+    if (!open.value || !messageId) return;
+    deleteIds.value = [];
+    await loadFields(messageId);
+  },
+);
 
 function addField() {
   if (!props.message?.message_id) return;
@@ -144,13 +177,10 @@ function checkRow(checked: boolean, row: MessageFieldRow) {
   row.is_var = checked ? 1 : 0;
 }
 
-function handleClose() {
-  emit('update:open', false);
-}
-
 async function handleSubmit() {
   if (!props.message?.message_id) return;
   loading.value = true;
+  drawerApi.setState({ confirmLoading: true });
   try {
     await MessageApi.saveField(
       {
@@ -161,23 +191,21 @@ async function handleSubmit() {
       true,
     );
     ElMessage.success('恭喜你，修改成功');
-    emit('update:open', false);
+    open.value = false;
     emit('success');
   } finally {
     loading.value = false;
+    drawerApi.setState({ confirmLoading: false });
   }
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     :title="title"
-    width="760px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <div class="mb-3">
       <ElButton :icon="Plus" type="primary" @click="addField">添加字段</ElButton>
@@ -206,10 +234,5 @@ async function handleSubmit() {
         <ElButton link type="primary" @click="deleteField(row)">删除</ElButton>
       </template>
     </Grid>
-
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

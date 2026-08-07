@@ -3,21 +3,22 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { ref, watch } from 'vue';
 
-import { ElButton, ElDialog, ElMessage } from 'element-plus';
+import { useVbenDrawer } from '@vben/common-ui';
+import { ElButton, ElMessage } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import PlugsApi from '#/api/core/plugs';
 
 import type { PlugCandidate, PlugCategory } from './types';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   category: null | PlugCategory;
-  open: boolean;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const submitting = ref(false);
@@ -50,16 +51,6 @@ const gridOptions: VxeGridProps<PlugCandidate> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
-watch(
-  () => [props.open, props.category?.plus_category_id] as const,
-  ([open]) => {
-    if (open && props.category) {
-      void loadCandidates();
-    }
-  },
-  { immediate: true },
-);
-
 async function loadCandidates() {
   if (!props.category) return;
   gridApi.setLoading(true);
@@ -79,6 +70,39 @@ async function loadCandidates() {
   }
 }
 
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen && props.category) {
+      void loadCandidates();
+    }
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '添加插件' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.category?.plus_category_id,
+  () => {
+    if (open.value && props.category) {
+      void loadCandidates();
+    }
+  },
+);
+
 async function handleAdd(row: PlugCandidate) {
   if (!props.category || submitting.value) return;
   submitting.value = true;
@@ -92,28 +116,21 @@ async function handleAdd(row: PlugCandidate) {
     );
     if (res.code === 1) {
       ElMessage.success('添加成功');
-      emit('update:open', false);
+      open.value = false;
       emit('success');
     }
   } finally {
     submitting.value = false;
   }
 }
-
-function handleClose() {
-  emit('update:open', false);
-}
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :destroy-on-close="true"
+    :footer="false"
     title="添加插件"
-    width="520px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <Grid>
       <template #action="{ row }">
@@ -127,5 +144,5 @@ function handleClose() {
         </ElButton>
       </template>
     </Grid>
-  </ElDialog>
+  </Drawer>
 </template>

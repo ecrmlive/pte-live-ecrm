@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/merchant"
 	merchantapplicationevent "github.com/crmlive/pte-live-ecrm/api-platform/internal/event/merchantapplication"
@@ -67,6 +68,7 @@ const merchantListSelect = `v.merchant_id AS mer_id,
             COALESCE(v.goods_type, '') AS goods_type,
             COALESCE(v.platform_category_ids, '') AS platform_category_ids,
             COALESCE(v.mer_star, 5) AS mer_star,
+            COALESCE(v.mer_avatar, '') AS mer_avatar,
             COALESCE(v.sort, 0) AS sort,
             0 AS svip_coupon_merge,
             COALESCE(v.region_id, 0) AS region_id,
@@ -153,7 +155,10 @@ func (r *Repo) ListMerchants(ctx context.Context, f ListMerchantsFilter) ([]merc
 	}
 	page, limit := normalizePage(f.Page, f.Limit)
 	var rows []merchant.Merchant
-	err := q.Order("v.sort ASC, v.merchant_id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error
+	// 店铺列表默认排序：创建时间最新 → 开启优先(status=1) → 推荐优先(is_best=1)；同值再按 merchant_id 稳定倒序。
+	// COALESCE 避免个别空 created_at 导致 ORDER BY 异常；列均来自 qixi_crm_a_merchant_view 别名 v。
+	err := q.Order("COALESCE(v.created_at, '1970-01-01') DESC, v.status DESC, COALESCE(v.is_best, 0) DESC, v.merchant_id DESC").
+		Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error
 	return rows, total, err
 }
 
@@ -219,6 +224,7 @@ func (r *Repo) UpdateMerchant(ctx context.Context, m *merchant.Merchant) error {
 			"goods_type":             m.GoodsType,
 			"platform_category_ids":  m.PlatformCategoryIDs,
 			"mer_star":               m.MerStar,
+			"mer_avatar":             m.MerAvatar,
 			"sort":                   m.Sort,
 			"status":                 m.Status,
 		}).Error; err != nil {
@@ -245,11 +251,11 @@ func (r *Repo) CreateMerchant(ctx context.Context, m *merchant.Merchant) error {
 		`INSERT INTO qixi_crm_a_merchant_view
 		 (merchant_id, merchant_name, owner_name, contact_name, contact_mobile, address, category_id, type_id, business_id, region_id, status,
 		  is_best, offline_pay, is_trader, is_audit, is_bro_room, is_bro_goods, commission_switch, commission_rate,
-		  mer_keyword, mer_info, mer_account, sub_mchid, applyment_id, care_count, care_ficti, goods_type, platform_category_ids, mer_star, sort, mark, created_at)
-		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())`,
+		  mer_keyword, mer_info, mer_account, sub_mchid, applyment_id, care_count, care_ficti, goods_type, platform_category_ids, mer_star, mer_avatar, sort, mark, created_at)
+		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())`,
 		id, m.MerName, m.OwnerName, m.RealName, m.MerPhone, m.MerAddress, m.CategoryID, m.TypeID, m.BusinessID, nullableUint(m.RegionID),
 		m.Status, m.IsBest, m.OfflinePay, m.IsTrader, m.IsAudit, m.IsBroRoom, m.IsBroGoods, m.CommissionSwitch, m.CommissionRate,
-		m.MerKeyword, m.MerInfo, m.MerAccount, m.SubMchid, m.ApplymentID, m.CareCount, m.CareFicti, m.GoodsType, m.PlatformCategoryIDs, m.MerStar, m.Sort, m.Mark,
+		m.MerKeyword, m.MerInfo, m.MerAccount, m.SubMchid, m.ApplymentID, m.CareCount, m.CareFicti, m.GoodsType, m.PlatformCategoryIDs, m.MerStar, m.MerAvatar, m.Sort, m.Mark,
 	).Error; err != nil {
 		return err
 	}
@@ -375,25 +381,34 @@ func (r *Repo) UpsertMerchantView(ctx context.Context, m *merchant.Merchant) err
 }
 
 type ListIntentionFilter struct {
-	Status    *int8
-	Keyword   string
-	DateFrom  string
-	DateTo    string
-	RegionIDs []uint
-	Page      int
-	Limit     int
+	Status     *int8
+	Keyword    string
+	DateFrom   string
+	DateTo     string
+	CategoryID *uint
+	TypeID     *uint
+	RegionIDs  []uint
+	Page       int
+	Limit      int
 }
 
-func (r *Repo) ListIntentions(ctx context.Context, f ListIntentionFilter) ([]merchant.Intention, int64, error) {
-	q := r.adminDB.WithContext(ctx).
-		Table("qixi_crm_a_merchant_application").
-		Select(`id AS mer_intention_id, COALESCE(source_application_id, 0) AS source_application_id, COALESCE(applicant_user_id, 0) AS uid,
+const intentionListSelect = `id AS mer_intention_id, COALESCE(source_application_id, 0) AS source_application_id, COALESCE(applicant_user_id, 0) AS uid,
             contact_mobile AS phone, merchant_name AS mer_name, contact_name AS name,
             created_at AS create_time,
             CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 ELSE 0 END AS status,
             review_note AS fail_msg, review_note AS mark,
             COALESCE(region_id, 0) AS circle_id,
-            0 AS mer_id, 0 AS merchant_category_id, 0 AS mer_type_id, '' AS images`)
+            0 AS mer_id,
+            COALESCE(category_name, '') AS category_name,
+            COALESCE(merchant_type, '') AS type_name,
+            COALESCE((SELECT c.id FROM qixi_crm_a_merchant_category c WHERE c.name = category_name LIMIT 1), 0) AS merchant_category_id,
+            COALESCE((SELECT t.id FROM qixi_crm_a_merchant_type t WHERE t.name = merchant_type LIMIT 1), 0) AS mer_type_id,
+            COALESCE(NULLIF(license_url, ''), license_key, '') AS images`
+
+func (r *Repo) ListIntentions(ctx context.Context, f ListIntentionFilter) ([]merchant.Intention, int64, error) {
+	q := r.adminDB.WithContext(ctx).
+		Table("qixi_crm_a_merchant_application").
+		Select(intentionListSelect)
 	if f.Status != nil {
 		status := map[int8]string{
 			merchant.IntentionPending:  "pending",
@@ -407,13 +422,19 @@ func (r *Repo) ListIntentions(ctx context.Context, f ListIntentionFilter) ([]mer
 	}
 	if f.Keyword != "" {
 		like := "%" + f.Keyword + "%"
-		q = q.Where("merchant_name LIKE ? OR contact_mobile LIKE ? OR contact_name LIKE ?", like, like, like)
+		q = q.Where("merchant_name LIKE ? OR contact_mobile LIKE ?", like, like)
 	}
 	if f.DateFrom != "" {
 		q = q.Where("created_at >= ?", f.DateFrom+" 00:00:00")
 	}
 	if f.DateTo != "" {
 		q = q.Where("created_at < ?", f.DateTo+" 23:59:59")
+	}
+	if f.CategoryID != nil && *f.CategoryID > 0 {
+		q = q.Where("category_name = (SELECT name FROM qixi_crm_a_merchant_category WHERE id = ? LIMIT 1)", *f.CategoryID)
+	}
+	if f.TypeID != nil && *f.TypeID > 0 {
+		q = q.Where("merchant_type = (SELECT name FROM qixi_crm_a_merchant_type WHERE id = ? LIMIT 1)", *f.TypeID)
 	}
 	if f.RegionIDs != nil {
 		if len(f.RegionIDs) == 0 {
@@ -435,13 +456,7 @@ func (r *Repo) ListIntentions(ctx context.Context, f ListIntentionFilter) ([]mer
 func (r *Repo) GetIntention(ctx context.Context, id uint, regionIDs []uint) (*merchant.Intention, error) {
 	var row merchant.Intention
 	q := r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_application").
-		Select(`id AS mer_intention_id, COALESCE(source_application_id, 0) AS source_application_id, COALESCE(applicant_user_id, 0) AS uid,
-            contact_mobile AS phone, merchant_name AS mer_name, contact_name AS name,
-            created_at AS create_time,
-            CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 ELSE 0 END AS status,
-            review_note AS fail_msg, review_note AS mark,
-            COALESCE(region_id, 0) AS circle_id,
-            0 AS mer_id, 0 AS merchant_category_id, 0 AS mer_type_id, '' AS images`).
+		Select(intentionListSelect).
 		Where("id = ?", id)
 	if regionIDs != nil {
 		if len(regionIDs) == 0 {
@@ -487,24 +502,40 @@ func (r *Repo) AssignIntentionRegion(ctx context.Context, id, regionID uint) (bo
 	return result.RowsAffected == 1, result.Error
 }
 
+func (r *Repo) DeleteIntention(ctx context.Context, id uint, regionIDs []uint) (bool, error) {
+	q := r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_application").Where("id = ?", id)
+	if regionIDs != nil {
+		if len(regionIDs) == 0 {
+			return false, nil
+		}
+		q = q.Where("region_id IN ?", regionIDs)
+	}
+	result := q.Delete(nil)
+	return result.RowsAffected == 1, result.Error
+}
+
 func (r *Repo) ListCategories(ctx context.Context) ([]merchant.Category, error) {
 	var rows []merchant.Category
 	err := r.adminDB.WithContext(ctx).Order("id ASC").
 		Table("qixi_crm_a_merchant_category").
-		Select("id AS merchant_category_id, name AS category_name, commission_rate").Scan(&rows).Error
+		Select("id AS merchant_category_id, name AS category_name, commission_rate, created_at AS create_time").
+		Scan(&rows).Error
 	return rows, err
 }
 
 func (r *Repo) CreateCategory(ctx context.Context, c *merchant.Category) error {
+	now := time.Now()
 	row := struct {
-		ID             uint    `gorm:"column:id"`
-		Name           string  `gorm:"column:name"`
-		CommissionRate float64 `gorm:"column:commission_rate"`
-	}{Name: c.CategoryName, CommissionRate: c.CommissionRate}
+		ID             uint      `gorm:"column:id"`
+		Name           string    `gorm:"column:name"`
+		CommissionRate float64   `gorm:"column:commission_rate"`
+		CreatedAt      time.Time `gorm:"column:created_at"`
+	}{Name: c.CategoryName, CommissionRate: c.CommissionRate, CreatedAt: now}
 	if err := r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_category").Create(&row).Error; err != nil {
 		return normalizeCategoryError(err)
 	}
 	c.MerchantCategoryID = row.ID
+	c.CreateTime = now
 	return nil
 }
 
@@ -556,7 +587,7 @@ func normalizePage(page, limit int) (int, int) {
 		page = 1
 	}
 	if limit <= 0 || limit > 100 {
-		limit = 20
+		limit = 10
 	}
 	return page, limit
 }

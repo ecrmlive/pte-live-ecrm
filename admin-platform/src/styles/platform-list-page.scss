@@ -9,8 +9,16 @@
 }
 
 .platform-vxe-grid.vxe-grid {
+  width: 100%;
+  min-width: 0;
   height: auto !important;
   min-height: 0 !important;
+}
+
+/* 双列等窄内容区：允许 grid 在 flex 布局下收缩，避免表宽把操作列顶出视口 */
+.platform-vxe-grid .vxe-grid--layout-body-content-wrapper {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .platform-vxe-grid .vxe-grid--layout-body-content-wrapper,
@@ -21,16 +29,25 @@
   min-height: 0 !important;
 }
 
+/*
+ * 不要在 table-container 上设 overflow-x:auto：会把 fixed-right 一并卷走。
+ * 横向滚动交给 vxe scrollX + body/header wrapper；fixed 列叠在可视区右侧。
+ */
 .platform-vxe-grid .vxe-grid--table-container {
   max-height: none !important;
   height: auto !important;
   min-height: 0 !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow: visible !important;
+}
+
+.platform-vxe-grid .vxe-table--render-wrapper {
+  position: relative;
+  overflow: hidden !important;
 }
 
 .platform-vxe-grid .vxe-table--body-wrapper,
-.platform-vxe-grid .vxe-table--body-inner-wrapper {
+.platform-vxe-grid .vxe-table--body-inner-wrapper,
+.platform-vxe-grid .vxe-table--header-wrapper {
   max-height: none !important;
   height: auto !important;
   min-height: 0 !important;
@@ -40,7 +57,39 @@
 
 .platform-vxe-grid .vxe-table--fixed-right-wrapper,
 .platform-vxe-grid .vxe-table--fixed-left-wrapper {
+  /* 不透明底 + 高于主表，避免相邻列文字穿透遮挡操作（双列窄内容区尤甚） */
+  z-index: 20;
   overflow: hidden;
+  background-color: var(--vxe-ui-layout-background-color, hsl(var(--background)));
+}
+
+.platform-vxe-grid .vxe-table--fixed-right-wrapper .vxe-header--column,
+.platform-vxe-grid .vxe-table--fixed-right-wrapper .vxe-body--column,
+.platform-vxe-grid .vxe-table--fixed-left-wrapper .vxe-header--column,
+.platform-vxe-grid .vxe-table--fixed-left-wrapper .vxe-body--column {
+  background-color: var(--vxe-ui-layout-background-color, hsl(var(--background)));
+}
+
+.platform-vxe-grid
+  .vxe-table--fixed-right-wrapper
+  .vxe-body--row.row--hover
+  .vxe-body--column,
+.platform-vxe-grid
+  .vxe-table--fixed-right-wrapper
+  .vxe-body--row:hover
+  .vxe-body--column,
+.platform-vxe-grid
+  .vxe-table--fixed-left-wrapper
+  .vxe-body--row.row--hover
+  .vxe-body--column,
+.platform-vxe-grid
+  .vxe-table--fixed-left-wrapper
+  .vxe-body--row:hover
+  .vxe-body--column {
+  background-color: var(
+    --vxe-ui-table-row-hover-background-color,
+    hsl(var(--accent-hover))
+  );
 }
 
 .platform-vxe-grid .vxe-grid--pager-wrapper {
@@ -60,11 +109,66 @@
   padding-bottom: 10px;
 }
 
-/* 列级 showOverflow: true — 单行省略，避免长文本撑高行挤掉 fixed 操作列 */
-.platform-vxe-grid .vxe-body--column.col--ellipsis .vxe-cell {
-  overflow: hidden;
+/*
+ * 备注列：单行 nowrap + ellipsis + tooltip；width/maxWidth 有上限，禁止内容无限撑宽；
+ * 表头居中、内容靠左；单元格 overflow:hidden，禁止渗入 fixed:right 操作列。
+ * vxe 默认 .vxe-cell--wrapper 为 flex，需改为 block 才能 text-overflow 生效。
+ */
+.platform-vxe-grid .vxe-header--column.col--remark,
+.platform-vxe-grid .vxe-body--column.col--remark {
+  max-width: 350px;
+  overflow: hidden !important;
+}
+
+.platform-vxe-grid .vxe-header--column.col--remark > .vxe-cell {
+  overflow: hidden !important;
+  text-align: center;
   white-space: nowrap;
+}
+
+.platform-vxe-grid .vxe-body--column.col--remark > .vxe-cell {
+  max-width: 100%;
+  overflow: hidden !important;
+  text-align: left;
   text-overflow: ellipsis;
+  white-space: nowrap !important;
+  word-break: normal;
+}
+
+.platform-vxe-grid
+  .vxe-body--column.col--remark
+  > .vxe-cell
+  > .vxe-cell--wrapper {
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden !important;
+  text-align: left;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: normal;
+}
+
+/*
+ * 列级 showOverflow: true — 单行省略 + tooltip。
+ * vxe 默认给 .vxe-cell--wrapper 设 display:flex，会导致 text-overflow 失效。
+ */
+.platform-vxe-grid .vxe-body--column.col--ellipsis > .vxe-cell {
+  max-width: 100%;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+.platform-vxe-grid
+  .vxe-body--column.col--ellipsis
+  > .vxe-cell
+  > .vxe-cell--wrapper {
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
   word-break: normal;
 }
 

@@ -7,7 +7,7 @@ import type {
   LiveStreamInfo,
 } from '#/api/core/live';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { ElButton, ElMessage } from 'element-plus';
 import { reactive, ref, watch } from 'vue';
 
@@ -42,7 +42,9 @@ const streamInfo = ref<LiveStreamInfo>({});
 
 const form = reactive<LiveRoomForm & ReturnType<typeof defaultLiveRoomForm>>(defaultLiveRoomForm());
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

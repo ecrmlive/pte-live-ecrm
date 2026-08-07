@@ -82,6 +82,15 @@ func Catalog() []GroupMeta {
 			{Key: "enabled", Label: "启用 COS"}, {Key: "bucket", Label: "存储桶"}, {Key: "region", Label: "地域"},
 			{Key: "base_url", Label: "CDN / 自定义域名"}, {Key: "key_prefix", Label: "对象键前缀"},
 		}},
+		{Key: "amap", Label: "高德地图", Fields: []FieldMeta{
+			{Key: "amap_web_js_key", Label: "Web JS API Key", Secret: true, Required: true, Hint: "JS API 2.0，平台后台地图取点"},
+			{Key: "amap_web_js_security_code", Label: "Web JS 安全密钥", Secret: true, Required: true, Hint: "securityJsCode，加载脚本前注入"},
+			{Key: "amap_web_service_key", Label: "Web 服务 Key", Secret: true, Hint: "仅服务端地理编码等代理使用，不下发前端"},
+			{Key: "amap_mp_weixin_key", Label: "微信小程序 Key", Secret: true, Hint: "预留，本次未接 C 端"},
+			{Key: "amap_ios_key", Label: "iOS Key", Secret: true, Hint: "预留"},
+			{Key: "amap_android_key", Label: "Android Key", Secret: true, Hint: "预留"},
+			{Key: "amap_harmony_key", Label: "HarmonyOS Key", Secret: true, Hint: "预留"},
+		}},
 		{Key: "lvb", Label: "腾讯云 LVB 直播", Fields: []FieldMeta{
 			{Key: "push_domain", Label: "推流域名"}, {Key: "play_domain", Label: "拉流域名"}, {Key: "push_key", Label: "推流鉴权 Key", Secret: true},
 			{Key: "pull_auth_key", Label: "拉流鉴权 Key", Secret: true}, {Key: "app_name", Label: "应用名称", Hint: "默认 live"},

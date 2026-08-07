@@ -77,7 +77,7 @@ func (h *Handler) List(c *gin.Context) {
 	var rows []dbMenuRow
 	if err := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_menu").
 		Select("id,parent_id,code,name,path,component,icon,is_menu,is_route,sort,status,created_at").
-		Order("sort ASC, id ASC").Scan(&rows).Error; err != nil {
+		Order("sort DESC, id ASC").Scan(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询店铺菜单失败")
 		return
 	}

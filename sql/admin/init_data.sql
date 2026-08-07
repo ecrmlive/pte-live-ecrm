@@ -221,6 +221,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (20938,14,'merchant.group.manage','维护店铺分组、关联店铺与装修模板','','merchant/grouping','button',1)
   ,(20939,15,'merchant.type.manage','维护店铺类型、保证金规则与授权菜单','','merchant/types','button',1)
   ,(20940,16,'merchant.deposit.review','维护保证金、扣减、退款审核及打款登记','','merchant/deposits','button',1)
+  ,(21001,213,'store.margin_config.manage','维护保证金补缴提醒配置','','systemForm/Basics/margin','button',1)
   ,(20941,17,'merchant.profitsharing.review','审核店铺分账申请及维护审核备注','','merchant/applyments','button',1)
   ,(20942,44,'product.label.manage','维护平台商品标签','','product/label','button',1)
   ,(20943,45,'product.guarantee.manage','维护平台保障服务','','product/guarantee','button',1)
@@ -280,6 +281,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20997,206,'app.wechat_news.manage','维护图文消息开关','','app/wechat/newsCategory','button',1)
   ,(20998,77,'user.setup.manage','维护用户注册设置','','user/setup_user','button',4)
   ,(20999,101,'accounts.transfer_settings.manage','维护转账监管设置','','accounts/settings','button',2)
+  ,(21000,12,'merchant.intention.delete','删除商户入驻申请','','merchant/audit','button',3)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
 
 -- v1 初始化曾用的临时扁平入口。它们会与新的目录结构重复，且没有 icon，
@@ -326,7 +328,7 @@ WHERE r.code = 'platform'
       'home','dashboard','data.screen','statistic.product','statistic.order','statistic.user',
       'store','store.manage','merchant.list','merchant.audit',
       'product','product.audit','order','order.list','order.refund','order.cancellation',
-      'accounts','accounts.merchant_settlement','accounts.merchant_settlement.read','merchant.intention.audit'))
+      'accounts','accounts.merchant_settlement','accounts.merchant_settlement.read','merchant.intention.audit','merchant.intention.delete'))
    OR (r.code = 'customer_service' AND m.code IN (
       'home','dashboard','service',
       'user','user.feedback','user.feedback.list','user.feedback.read','user.feedback.manage'))
@@ -345,3 +347,23 @@ WHERE r.code = 'platform'
       'operations.diy.manage','marketing.seckill.manage','marketing.combination.manage','marketing.presell.manage','marketing.coupon.manage','marketing.assist.manage','marketing.points.manage','marketing.recharge.manage',
       'maintain','maintain.cache','maintain.cache.manage','maintain.backup','maintain.backup.manage','maintain.group_data','maintain.group_data.manage','maintain.hot_search','maintain.hot_search.manage',
       'content.attachment.manage','content.community.audit','content.community.delete','marketing.broadcast.audit'));
+
+-- 平台素材库系统预设分类（不可增删改；侧栏「全部素材」为虚拟入口不落库）
+-- 用途：客户端（H5/小程序/App）与装修页常用的图标、图片、背景
+INSERT INTO `qixi_crm_a_attachment_category`
+  (`attachment_category_id`,`pid`,`path`,`attachment_category_name`,`attachment_category_enname`,`sort`,`mer_id`,`is_system`,`create_time`)
+VALUES
+  (5101,0,'','店铺封面','store_cover',90,0,1,NOW()),
+  (5102,0,'','支付图标','pay_icon',80,0,1,NOW()),
+  (5103,0,'','物流图标','logistics_icon',70,0,1,NOW()),
+  (5104,0,'','客服图标','service_icon',60,0,1,NOW()),
+  (5105,0,'','商品图片','product_image',50,0,1,NOW()),
+  (5106,0,'','背景图片','background_image',40,0,1,NOW()),
+  (5107,0,'','列表图标','list_icon',30,0,1,NOW()),
+  (5108,0,'','其他图片','other_image',20,0,1,NOW())
+ON DUPLICATE KEY UPDATE
+  `attachment_category_name`=VALUES(`attachment_category_name`),
+  `attachment_category_enname`=VALUES(`attachment_category_enname`),
+  `sort`=VALUES(`sort`),
+  `mer_id`=VALUES(`mer_id`),
+  `is_system`=VALUES(`is_system`);

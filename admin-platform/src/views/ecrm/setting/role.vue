@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -127,7 +127,11 @@ const gridOptions: VxeGridProps<PlatformRoleRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -149,7 +153,7 @@ async function openCreate() {
     circle_id: 0,
   });
   await ensureMenus();
-  formModalApi.setState({ title: '新增角色' }).open();
+  formDrawerApi.setState({ title: '新增角色' }).open();
   requestAnimationFrame(() => menuTree.value?.setCheckedKeys([]));
 }
 
@@ -163,7 +167,7 @@ async function openEdit(row: PlatformRoleRow) {
     circle_id: row.circle_id,
   });
   await ensureMenus();
-  formModalApi.setState({ title: '编辑角色' }).open();
+  formDrawerApi.setState({ title: '编辑角色' }).open();
   requestAnimationFrame(() => menuTree.value?.setCheckedKeys(roleIDs(row)));
 }
 
@@ -175,7 +179,7 @@ async function save() {
     ElMessage.warning('请填写角色名称和小写角色代码');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     const menu_ids = menuTree.value?.getCheckedKeys(false) || [];
     if (editing.value) {
@@ -192,11 +196,11 @@ async function save() {
         menu_ids,
       });
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('角色权限已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 </script>
@@ -224,7 +228,7 @@ async function save() {
       </template>
     </Grid>
 
-    <FormModal :title="modalTitle">
+    <FormDrawer :title="modalTitle">
       <ElForm label-width="110px">
         <ElFormItem label="角色代码" required>
           <ElInput
@@ -253,6 +257,6 @@ async function save() {
           </div>
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

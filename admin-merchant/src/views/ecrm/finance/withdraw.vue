@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDescriptions,
@@ -159,7 +159,7 @@ const gridOptions: VxeGridProps<MerchantWithdraw> = {
     },
     merchantListActionColumn({ width: 76 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -208,7 +208,11 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   placement: 'right',
 });
 
-const [ApplyModal, applyModalApi] = useVbenModal({
+const [ApplyDrawer, applyDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   title: '申请提现',
   confirmText: '提交申请',
   onConfirm: async () => {
@@ -225,7 +229,7 @@ const [ApplyModal, applyModalApi] = useVbenModal({
       return;
     }
     saving.value = true;
-    applyModalApi.lock();
+    applyDrawerApi.lock();
     try {
       await applyMerchantWithdrawApi({
         ...form,
@@ -233,11 +237,11 @@ const [ApplyModal, applyModalApi] = useVbenModal({
         mark: form.mark.trim(),
       });
       ElMessage.success('提现申请已提交，等待平台审核');
-      applyModalApi.close();
+      applyDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      applyModalApi.unlock();
+      applyDrawerApi.unlock();
     }
   },
 });
@@ -249,7 +253,7 @@ function openApply() {
     financial_type: 1,
     mark: '',
   });
-  applyModalApi.open();
+  applyDrawerApi.open();
 }
 
 async function openDetail(row: MerchantWithdraw) {
@@ -331,7 +335,7 @@ onMounted(() => void refreshBalance());
       </template>
     </DetailDrawer>
 
-    <ApplyModal>
+    <ApplyDrawer>
       <ElForm label-width="96px">
         <ElFormItem label="可用余额">
           <span>¥{{ Number(balance).toFixed(2) }}</span>
@@ -367,6 +371,6 @@ onMounted(() => void refreshBalance());
           />
         </ElFormItem>
       </ElForm>
-    </ApplyModal>
+    </ApplyDrawer>
   </Page>
 </template>

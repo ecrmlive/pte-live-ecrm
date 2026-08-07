@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { reactive, ref, watch } from 'vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -40,7 +40,7 @@ const gridOptions = reactive<VxeGridProps<FanRow>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 20,
+    pageSize: 10,
     pageSizes: [10, 20, 50],
   },
   proxyConfig: {
@@ -76,7 +76,9 @@ function onLevelChange() {
   void gridApi.reload();
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

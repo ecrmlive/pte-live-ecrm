@@ -120,3 +120,32 @@ func TestWechatAppConfigCanonicalizesChineseValues(t *testing.T) {
 		t.Fatalf("canonical wechat app config = %q, stored = %#v", got, store.cache)
 	}
 }
+
+func TestMarginConfigRejectsUnknownKeys(t *testing.T) {
+	svc := NewService(&mallSettingStore{})
+	_, err := svc.SaveMarginConfig(context.Background(), `{"margin_remind_switch":true,"secret_key":"not-allowed"}`)
+	if !errors.Is(err, ErrBadParam) {
+		t.Fatalf("unknown margin key error = %v, want ErrBadParam", err)
+	}
+}
+
+func TestMarginConfigCanonicalizesAndDefaults(t *testing.T) {
+	store := &mallSettingStore{}
+	svc := NewService(store)
+	got, err := svc.SaveMarginConfig(context.Background(), `{"margin_remind_switch":true,"margin_remind_day":30}`)
+	if err != nil {
+		t.Fatalf("save margin config: %v", err)
+	}
+	want := `{"margin_remind_switch":true,"margin_remind_day":30}`
+	if got != want || store.cache == nil || store.cache.Result != want {
+		t.Fatalf("canonical margin config = %q, stored = %#v", got, store.cache)
+	}
+	store.cache = &Cache{Key: marginConfigKey, Result: `{"margin_remind_switch":true,"unknown":1}`}
+	safe, err := svc.GetMarginConfig(context.Background())
+	if err != nil {
+		t.Fatalf("get margin config: %v", err)
+	}
+	if safe == store.cache.Result || safe != marshalMarginConfig(defaultMarginConfig()) {
+		t.Fatalf("legacy malformed margin config must not be returned, got %q", safe)
+	}
+}

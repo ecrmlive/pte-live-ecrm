@@ -16,8 +16,10 @@ const resolved = computed(() => normalizePlatformMenuIcon(props.icon));
 <template>
   <IconifyIcon
     v-if="resolved"
+    :height="size ?? 18"
     :icon="resolved"
-    :style="{ fontSize: `${size ?? 18}px`, verticalAlign: 'middle' }"
+    :style="{ verticalAlign: 'middle' }"
+    :width="size ?? 18"
     class="text-foreground/80"
   />
   <span v-else class="text-muted-foreground">—</span>

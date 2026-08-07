@@ -155,6 +155,7 @@ func RestrictRegionConsole() gin.HandlerFunc {
 		}
 		if strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/auth/") ||
 			strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/dashboard/") ||
+			strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/analytics/") ||
 			strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/merchants") ||
 			strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/merchant-intentions") ||
 			strings.HasPrefix(c.Request.URL.Path, "/api/platform/v1/products") ||
@@ -191,7 +192,7 @@ func RestrictRoleConsole() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		if hasRole(claims.Roles, "merchant") && (strings.HasPrefix(path, "/api/platform/v1/dashboard/") || strings.HasPrefix(path, "/api/platform/v1/merchants") || strings.HasPrefix(path, "/api/platform/v1/products") || strings.HasPrefix(path, "/api/platform/v1/orders") || strings.HasPrefix(path, "/api/platform/v1/refunds")) {
+		if hasRole(claims.Roles, "merchant") && (strings.HasPrefix(path, "/api/platform/v1/dashboard/") || strings.HasPrefix(path, "/api/platform/v1/analytics/") || strings.HasPrefix(path, "/api/platform/v1/merchants") || strings.HasPrefix(path, "/api/platform/v1/products") || strings.HasPrefix(path, "/api/platform/v1/orders") || strings.HasPrefix(path, "/api/platform/v1/refunds")) {
 			c.Next()
 			return
 		}

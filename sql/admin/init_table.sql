@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_view` (
   `care_count` int NOT NULL DEFAULT 0, `care_ficti` int NOT NULL DEFAULT 0,
   `goods_type` varchar(64) NOT NULL DEFAULT '', `platform_category_ids` varchar(500) NOT NULL DEFAULT '',
   `mer_star` tinyint NOT NULL DEFAULT 5,
+  `mer_avatar` varchar(1024) NOT NULL DEFAULT '',
   `sort` int NOT NULL DEFAULT 0, `mark` varchar(500) NOT NULL DEFAULT '',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`merchant_id`), KEY `idx_region_status` (`region_id`,`status`),
@@ -164,6 +165,14 @@ SET @qixi_ddl := (
   )
 );
 PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_view' AND COLUMN_NAME='mer_avatar')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_view` ADD COLUMN `mer_avatar` varchar(1024) NOT NULL DEFAULT '''' AFTER `mer_star`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 平台侧的店铺结算监管投影。结算事实由店铺库产生并通过事件同步，平台不能直连
 -- qixi_crm_merchant；本表只承担监管查询，不承担扣款、审批或打款。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_settlement_view` (
@@ -185,8 +194,10 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_category` (
   `attachment_category_id` bigint unsigned NOT NULL AUTO_INCREMENT, `pid` bigint unsigned NOT NULL DEFAULT 0,
   `path` varchar(1000) NOT NULL DEFAULT '', `attachment_category_name` varchar(128) NOT NULL,
   `attachment_category_enname` varchar(128) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0,
-  `mer_id` bigint unsigned NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`attachment_category_id`), KEY `idx_owner_sort` (`mer_id`,`sort`)
+  `mer_id` bigint unsigned NOT NULL DEFAULT 0, `is_system` tinyint NOT NULL DEFAULT 0,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`attachment_category_id`), KEY `idx_owner_sort` (`mer_id`,`sort`),
+  KEY `idx_owner_enname` (`mer_id`,`attachment_category_enname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_asset` (
   `attachment_id` bigint unsigned NOT NULL AUTO_INCREMENT, `attachment_category_id` bigint unsigned NOT NULL DEFAULT 0,
@@ -402,15 +413,34 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_deposit_refund` (
   `paid_by` bigint unsigned NOT NULL DEFAULT 0, `paid_at` datetime DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_payout_idempotency` (`merchant_id`,`payout_idempotency_key`), KEY `idx_merchant_status` (`merchant_id`,`status`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 商户分账申请为平台审核投影；仅记录申请标识、状态、说明和审核轨迹，不存渠道密钥或收款账户。
+-- 商户分账申请为平台审核投影；对齐 CRMEB eb_merchant_applyments 列表字段，不存渠道密钥或收款账户。
+-- status: applied 待审核 / platform_rejected 平台驳回 / auditing 审核中 / shop_verify 店铺验证 /
+--         completed 已完成 / frozen 已冻结 / wechat_rejected 微信驳回（保留 approved/rejected 兼容旧夹具）
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_profitsharing_application` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `merchant_id` bigint unsigned NOT NULL,
-  `application_no` varchar(64) NOT NULL, `status` enum('applied','approved','rejected') NOT NULL DEFAULT 'applied',
-  `description` varchar(500) NOT NULL DEFAULT '', `review_note` varchar(500) NOT NULL DEFAULT '',
+  `merchant_name` varchar(128) NOT NULL DEFAULT '',
+  `application_no` varchar(64) NOT NULL COMMENT '业务申请编号',
+  `applyment_id` varchar(100) NOT NULL DEFAULT '' COMMENT '微信支付申请单号',
+  `status` enum('applied','approved','rejected','platform_rejected','auditing','shop_verify','completed','frozen','wechat_rejected') NOT NULL DEFAULT 'applied',
+  `description` varchar(500) NOT NULL DEFAULT '',
+  `message` varchar(1000) NOT NULL DEFAULT '' COMMENT '审核结果',
+  `review_note` varchar(500) NOT NULL DEFAULT '' COMMENT '备注',
   `reviewed_by` bigint unsigned NOT NULL DEFAULT 0, `reviewed_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), UNIQUE KEY `uk_application_no` (`application_no`), KEY `idx_merchant_status` (`merchant_id`,`status`,`id`)
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_application_no` (`application_no`), KEY `idx_merchant_status` (`merchant_id`,`status`,`id`),
+  KEY `idx_merchant_name` (`merchant_name`), KEY `idx_applyment_id` (`applyment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 幂等补齐旧库列与状态枚举（CREATE IF NOT EXISTS 不会改已有表）。
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_merchant_profitsharing_application' AND COLUMN_NAME='applyment_id')=0,
+    'ALTER TABLE `qixi_crm_a_merchant_profitsharing_application` ADD COLUMN `merchant_name` varchar(128) NOT NULL DEFAULT '''' AFTER `merchant_id`, ADD COLUMN `applyment_id` varchar(100) NOT NULL DEFAULT '''' AFTER `application_no`, ADD COLUMN `message` varchar(1000) NOT NULL DEFAULT '''' AFTER `description`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+ALTER TABLE `qixi_crm_a_merchant_profitsharing_application`
+  MODIFY COLUMN `status` enum('applied','approved','rejected','platform_rejected','auditing','shop_verify','completed','frozen','wechat_rejected') NOT NULL DEFAULT 'applied';
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_profitsharing_audit` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `application_id` bigint unsigned NOT NULL,
   `from_status` varchar(16) NOT NULL, `to_status` varchar(16) NOT NULL, `note` varchar(500) NOT NULL DEFAULT '',

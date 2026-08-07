@@ -22,6 +22,12 @@ export interface PlatformWechatAppConfig {
   remark: string;
 }
 
+/** 对齐 CRMEB margin_remind_switch / margin_remind_day */
+export interface PlatformMarginConfig {
+  margin_remind_switch: boolean;
+  margin_remind_day: number;
+}
+
 function parseConfig<T>(raw: string): T {
   return JSON.parse(raw) as T;
 }
@@ -73,4 +79,19 @@ export function savePlatformWechatAppConfigApi(config: PlatformWechatAppConfig) 
   return requestClient
     .put<{ config: string }>('/setting/wechat-app', { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformWechatAppConfig>(data.config));
+}
+
+export function getPlatformMarginConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/margin')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformMarginConfig>(data.config),
+    }));
+}
+
+export function savePlatformMarginConfigApi(config: PlatformMarginConfig) {
+  return requestClient
+    .put<{ config: string }>('/setting/margin', { config: stringifyConfig(config) })
+    .then((data) => parseConfig<PlatformMarginConfig>(data.config));
 }

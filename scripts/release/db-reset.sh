@@ -46,11 +46,35 @@ if [[ -f "${product_stat_demo_sql}" ]]; then
 	mysql_exec <"${product_stat_demo_sql}"
 fi
 
+order_stat_demo_sql="${ROOT_DIR}/sql/business/init_order_stat_demo.sql"
+if [[ -f "${order_stat_demo_sql}" ]]; then
+	echo ">> 导入 sql/business/init_order_stat_demo.sql"
+	mysql_exec <"${order_stat_demo_sql}"
+fi
+
+user_stat_demo_sql="${ROOT_DIR}/sql/business/init_user_stat_demo.sql"
+if [[ -f "${user_stat_demo_sql}" ]]; then
+	echo ">> 导入 sql/business/init_user_stat_demo.sql"
+	mysql_exec <"${user_stat_demo_sql}"
+fi
+
+product_category_seed_sql="${ROOT_DIR}/sql/admin/seed_default_product_categories.sql"
+if [[ -f "${product_category_seed_sql}" ]]; then
+	echo ">> 导入 sql/admin/seed_default_product_categories.sql"
+	mysql_exec <"${product_category_seed_sql}"
+fi
+
 # CRMEB 商户菜单全量（is_mer=1）；须在 merchant/init_data 之后覆盖写入。
 merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 [[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }
 echo ">> 导入 sql/merchant/init_menu_crmeb_full.sql"
 mysql_exec <"${merchant_menu_sql}"
+
+store_login_demo_sql="${ROOT_DIR}/sql/merchant/init_store_login_demo.sql"
+if [[ -f "${store_login_demo_sql}" ]]; then
+	echo ">> 导入 sql/merchant/init_store_login_demo.sql"
+	mysql_exec <"${store_login_demo_sql}"
+fi
 
 for pair in "qixi_crm_admin:qixi_crm_a_%" "qixi_crm_business:qixi_crm_b_%" "qixi_crm_merchant:qixi_crm_m_%"; do
 	database_name="${pair%%:*}"

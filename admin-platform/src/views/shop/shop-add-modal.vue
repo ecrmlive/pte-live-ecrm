@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
 import {
-  ElButton,
   ElCheckbox,
   ElDatePicker,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -22,13 +21,10 @@ import LiveTrafficApi from '#/api/core/live-traffic';
 import { hasSpace, isAllSpace, replaceSpace } from '#/utils/form-text';
 import { validateBEndPassword } from '#/utils/b-end-password';
 
-const props = defineProps<{
-  open: boolean;
-}>();
+const open = defineModel<boolean>('open', { default: false });
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -128,35 +124,54 @@ async function loadRoleOptions() {
   }
 }
 
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return;
-    Object.assign(form, {
-      app_name: '',
-      expire_time: '',
-      no_expire: false,
-      user_name: '',
-      password: '',
-      password_confirm: '',
-      weixin_service: false,
-      initial_traffic_gb: 0,
-      initial_amount_yuan: 0,
-      merchant_role_id: undefined,
-    });
-    loadRoleOptions();
-  },
-);
-
-function handleClose() {
-  emit('update:open', false);
+function resetForm() {
+  Object.assign(form, {
+    app_name: '',
+    expire_time: '',
+    no_expire: false,
+    user_name: '',
+    password: '',
+    password_confirm: '',
+    weixin_service: false,
+    initial_traffic_gb: 0,
+    initial_amount_yuan: 0,
+    merchant_role_id: undefined,
+  });
+  void loadRoleOptions();
 }
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      resetForm();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '新增小程序商城' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
 
 async function handleSubmit() {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res = await ShopApi.addShop({ ...form }, true);
       if (res.code === 1) {
@@ -165,7 +180,7 @@ async function handleSubmit() {
         const initialAmount = Number(form.initial_amount_yuan || 0);
         const finish = () => {
           ElMessage.success('恭喜你，添加成功');
-          emit('update:open', false);
+          open.value = false;
           emit('success');
         };
         if (appId && initialGb > 0) {
@@ -185,20 +200,18 @@ async function handleSubmit() {
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="新增小程序商城"
-    width="520px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <div style="height: 0; overflow: hidden">
       <input type="password" />
@@ -259,9 +272,5 @@ async function handleSubmit() {
         <ElInputNumber v-model="form.initial_amount_yuan" :min="0" :precision="2" />
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

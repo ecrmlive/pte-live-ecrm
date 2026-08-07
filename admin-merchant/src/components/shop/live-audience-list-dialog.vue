@@ -10,7 +10,7 @@ import type { VbenFormSchema } from '#/adapter/form';
 
 import { computed, reactive, ref, watch } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -192,7 +192,7 @@ const audienceGridOptions = reactive<VxeGridProps<LiveAudienceListItem>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 20,
+    pageSize: 10,
     pageSizes: [10, 20, 50, 100],
   },
   proxyConfig: {
@@ -261,7 +261,7 @@ const statsGridOptions = reactive<VxeGridProps<LiveInviteStatsItem>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 20,
+    pageSize: 10,
     pageSizes: [10, 20, 50, 100],
   },
   proxyConfig: {
@@ -319,7 +319,9 @@ async function resetSearch() {
   }
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

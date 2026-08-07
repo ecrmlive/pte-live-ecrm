@@ -12,8 +12,8 @@
 | --- | --- |
 | 参考页 | **仅以** `admin-platform/src/views/ecrm/merchant/list.vue` 为 100% 布局样板 |
 | 适用范围 | `admin-platform`、`admin-merchant` 所有列表页、筛选、工具栏、分页、添加/编辑/详情 Drawer |
-| 共享工具 | `platformListActionColumn` / `platformListPagerConfig` / `PLATFORM_LIST_GRID_CLASS`（`#/constants/platform-list-grid`）及对应 SCSS |
-| 禁止 | 新建 `EcrmListPage` + 手写 `el-table` / `el-pagination` 作为列表骨架；Modal 代替本应侧滑的宽表单/详情（除非 CRMEB 本身是居中弹窗） |
+| 共享工具 | `platformListActionColumn` / `platformListPagerConfig` / `PLATFORM_LIST_GRID_CLASS`（`#/constants/platform-list-grid`）及对应 SCSS；**默认每页 10 条**（`platform-list-pager.ts` / `merchant-list-pager.ts`） |
+| 禁止 | 新建 `EcrmListPage` + 手写 `el-table` / `el-pagination` 作为列表骨架；用 `ElDialog` / `useVbenModal` / `ElMessageBox.prompt` 做添加、编辑、详情（选择器弹层除外） |
 | Agent / 开发 | 改任何列表页前先打开店铺列表对照；偏离金标准视为未完成 |
 
 店铺列表已落地、且后续页必须复刻的要点：
@@ -22,7 +22,7 @@
 2. `useVbenVxeGrid`：`formOptions` 筛选 → 状态 Tab / 工具栏 → 表格 → 底部分页。
 3. 操作列 `fixed: 'right'`（`platformListActionColumn`）；单元格可用 `ElButton` link / `ElSwitch` / `ElTag`。
 4. 添加 / 编辑 / 详情使用 `useVbenDrawer`（宽抽屉 ~1000px）；详情只读描述 + 可切编辑；确认用 `confirm()`。
-5. 表格行高自适应（默认 `showOverflow: false` + platform grid 布局）；自由文本列（如备注）须列级 `showOverflow: true` 单行省略，避免撑高行挤掉 `fixed: 'right'` 操作列；整页滚动而非表体内滚。
+5. 表格行高自适应（默认 `showOverflow: false` + platform grid 布局）；备注等自由文本用 `col--remark`（单行 ellipsis + tooltip、合理 `minWidth` + `width`/`maxWidth` 上限，禁止 `width: 'auto'`），操作列 `fixed: 'right'` 不透明 + 高 z-index，双列菜单下也必须始终可见可点；整页滚动而非表体内滚。
 6. 无「刷新列表」类无意义按钮；主操作（如添加）放在工具栏。
 
 ## 1. 强制组件栈（Vben）

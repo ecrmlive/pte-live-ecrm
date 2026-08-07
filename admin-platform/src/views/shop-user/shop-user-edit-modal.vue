@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -16,15 +16,15 @@ import PlatformShopUserApi from '#/api/core/platform-shop-user';
 import type { ShopUserRoleOption } from '#/api/core/platform-shop-user';
 import { validateBEndPassword } from '#/utils/b-end-password';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   appId: number;
-  open: boolean;
   shopUserId?: number;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -66,36 +66,65 @@ const rules = {
   role_id: [{ message: '请选择所属角色', required: true, trigger: 'change', type: 'array' }],
 };
 
+async function loadForm() {
+  if (!props.shopUserId || props.appId <= 0) return;
+  loading.value = true;
+  try {
+    const res = await PlatformShopUserApi.editInfo(props.appId, props.shopUserId, true);
+    if (res.code !== 1) return;
+    const info = res.data?.info;
+    roleOptions.value = res.data?.roleList ?? [];
+    form.user_name = info?.user_name ?? '';
+    form.real_name = info?.real_name ?? '';
+    form.password = '';
+    form.confirm_password = '';
+    form.role_id = res.data?.role_arr ?? [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      void loadForm();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
 watch(
-  () => props.open,
-  async (open) => {
-    if (!open || !props.shopUserId || props.appId <= 0) return;
-    loading.value = true;
-    try {
-      const res = await PlatformShopUserApi.editInfo(props.appId, props.shopUserId, true);
-      if (res.code !== 1) return;
-      const info = res.data?.info;
-      roleOptions.value = res.data?.roleList ?? [];
-      form.user_name = info?.user_name ?? '';
-      form.real_name = info?.real_name ?? '';
-      form.password = '';
-      form.confirm_password = '';
-      form.role_id = res.data?.role_arr ?? [];
-    } finally {
-      loading.value = false;
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '编辑商城管理员' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.shopUserId,
+  () => {
+    if (open.value) {
+      void loadForm();
     }
   },
 );
-
-function handleClose() {
-  emit('update:open', false);
-}
 
 async function handleSubmit() {
   if (!formRef.value || !props.shopUserId || props.appId <= 0) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res = await PlatformShopUserApi.edit(
         {
@@ -111,24 +140,23 @@ async function handleSubmit() {
       );
       if (res.code === 1) {
         ElMessage.success(res.msg || '更新成功');
-        emit('update:open', false);
+        open.value = false;
         emit('success');
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="编辑商城管理员"
-    width="560px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm ref="formRef" v-loading="loading" :model="form" :rules="rules" label-width="100px">
       <ElFormItem label="用户名" prop="user_name">
@@ -165,9 +193,5 @@ async function handleSubmit() {
         />
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

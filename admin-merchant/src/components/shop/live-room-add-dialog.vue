@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 
 import { watch } from 'vue';
 
@@ -11,7 +11,9 @@ const open = defineModel<boolean>('open', { default: false });
 
 const emit = defineEmits<{ success: [] }>();
 
-const [AddModal, addModalApi] = useVbenModal({
+const [AddModal, addModalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   connectedComponent: LiveRoomAddModal,
   onOpenChange(isOpen) {
     if (!isOpen) {

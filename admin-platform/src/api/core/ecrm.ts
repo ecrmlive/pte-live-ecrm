@@ -78,6 +78,7 @@ export interface PlatformMerchantRow {
   platform_category_ids?: string;
   platform_category_id_list?: number[];
   mer_star?: number;
+  mer_avatar?: string;
   create_time: string;
 }
 
@@ -114,6 +115,7 @@ export interface PlatformMerchantSaveInput {
   goods_types?: number[];
   platform_category_ids?: number[];
   mer_star?: number;
+  mer_avatar?: string;
 }
 
 
@@ -128,6 +130,9 @@ export interface MerchantIntentionRow {
   fail_msg: string;
   mark: string;
   mer_id: number;
+  images?: string;
+  category_name?: string;
+  type_name?: string;
   merchant_category_id: number;
   mer_type_id: number;
   circle_id: number;
@@ -136,7 +141,9 @@ export interface MerchantIntentionRow {
 export interface MerchantCategoryRow {
   merchant_category_id: number;
   category_name: string;
+  /** 平台佣金比例，业务语义等同手续费比例 */
   commission_rate: number;
+  create_time?: string;
 }
 
 export function fetchMerchantCategories() {
@@ -152,6 +159,9 @@ export interface MerchantTypeRow {
   description: string;
   remark: string;
   status: number;
+  store_count: number;
+  created_at?: string;
+  updated_at?: string;
   menu_codes: string[];
 }
 
@@ -162,15 +172,52 @@ export interface MerchantTypeSaveInput {
   margin: number;
   description: string;
   remark: string;
-  status: boolean;
+  status?: boolean;
   menu_codes: string[];
 }
 
-export function fetchMerchantTypes() {
-  return requestClient.get<{ list: MerchantTypeRow[] }>('/merchant-types');
+export function fetchMerchantTypes(params?: { keyword?: string }) {
+  return requestClient.get<{ list: MerchantTypeRow[] }>('/merchant-types', {
+    params,
+  });
 }
 
-export interface MerchantDepositAccount { merchant_id: number; required_amount: number; available_amount: number; state: string; }
+export interface MerchantDepositAccount {
+  merchant_id: number;
+  merchant_name?: string;
+  owner_name?: string;
+  type_name?: string;
+  category_name?: string;
+  required_amount: number;
+  available_amount: number;
+  payable_amount?: number;
+  state: string;
+  mark?: string;
+  is_trader?: number;
+  type_id?: number;
+  category_id?: number;
+  paid_at?: string | null;
+}
+export interface MerchantDepositLedger {
+  id: number;
+  merchant_id: number;
+  entry_type: string;
+  amount: number;
+  balance_after: number;
+  reason: string;
+  operator_admin_id: number;
+  operator_name?: string;
+  created_at: string;
+}
+export function fetchMerchantDepositLedgers(
+  merchantId: number,
+  params?: { page?: number; limit?: number },
+) {
+  return requestClient.get<{ list: MerchantDepositLedger[]; total?: number }>(
+    `/merchant-deposits/${merchantId}/ledgers`,
+    { params },
+  );
+}
 export interface ProductLabelRow { id: number; name: string; description: string; color: string; sort: number; status: number; created_at: string; }
 export interface ProductGuaranteeRow { id: number; name: string; content: string; icon_url: string; sort: number; status: number; created_at: string; }
 export interface ProductParameterTemplateRow { id: number; name: string; values_json: string; sort: number; status: number; created_at: string; }
@@ -244,11 +291,29 @@ export function fetchPlatformCouponTemplates() { return requestClient.get<{list:
 export function issuePlatformUserCoupon(userId:number,couponId:number,input:{reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/coupons/${couponId}/issue`,input); }
 export function revokePlatformUserCoupon(userId:number,couponId:number,input:{reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/coupons/${couponId}/revoke`,input); }
 export function changePlatformUserReferrer(userId:number,input:{parent_user_id:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/referrer`,input); }
-export interface MerchantDepositRefund { id: number; merchant_id: number; amount: number; status: string; reason: string; review_note: string; payout_reference?: string; created_at: string; }
+export interface MerchantDepositRefund {
+  id: number;
+  merchant_id: number;
+  merchant_name?: string;
+  owner_name?: string;
+  required_amount?: number;
+  available_amount?: number;
+  amount: number;
+  status: string;
+  reason: string;
+  review_note: string;
+  refund_method?: string;
+  payout_reference?: string;
+  created_at: string;
+}
 export function fetchMerchantDeposits(params?: {
+  tab?: 'pending' | 'funded' | string;
   merchant_id?: number;
   keyword?: string;
   status?: string;
+  type_id?: number;
+  category_id?: number;
+  is_trader?: number;
   date_from?: string;
   date_to?: string;
   page?: number;
@@ -259,7 +324,18 @@ export function fetchMerchantDeposits(params?: {
     { params },
   );
 }
-export interface ProfitsharingApplication { id:number; merchant_id:number; application_no:string; status:string; description:string; review_note:string; created_at:string; }
+export interface ProfitsharingApplication {
+  id: number;
+  merchant_id: number;
+  merchant_name: string;
+  application_no: string;
+  applyment_id: string;
+  status: string;
+  description: string;
+  message: string;
+  review_note: string;
+  created_at: string;
+}
 export function fetchProfitsharingApplications(params?: {
   status?: string;
   keyword?: string;
@@ -274,12 +350,29 @@ export function fetchProfitsharingApplications(params?: {
     { params },
   );
 }
-export function reviewProfitsharingApplication(id:number,approved:boolean,note:string){return requestClient.post(`/merchant-profitsharing-applications/${id}/review`,{approved,note})}
-export function saveProfitsharingApplicationNote(id:number,note:string){return requestClient.put(`/merchant-profitsharing-applications/${id}/note`,{note})}
+export function fetchProfitsharingApplication(id: number) {
+  return requestClient.get<ProfitsharingApplication>(
+    `/merchant-profitsharing-applications/${id}`,
+  );
+}
+export function reviewProfitsharingApplication(
+  id: number,
+  data: { status: string; note: string },
+) {
+  return requestClient.post(`/merchant-profitsharing-applications/${id}/review`, data);
+}
+export function saveProfitsharingApplicationNote(id: number, note: string) {
+  return requestClient.put(`/merchant-profitsharing-applications/${id}/note`, {
+    note,
+  });
+}
 export function fetchMerchantDepositRefunds(params?: {
   status?: string;
   merchant_id?: number;
   keyword?: string;
+  type_id?: number;
+  category_id?: number;
+  is_trader?: number;
   date_from?: string;
   date_to?: string;
   page?: number;
@@ -291,7 +384,16 @@ export function fetchMerchantDepositRefunds(params?: {
   );
 }
 export function deductMerchantDeposit(merchantId: number, input: { amount: number; reason: string; idempotency_key: string }) { return requestClient.post(`/merchant-deposits/${merchantId}/deduct`, input); }
+export function fundMerchantDepositOffline(
+  merchantId: number,
+  input: { amount?: number; mark?: string; idempotency_key: string },
+) {
+  return requestClient.post(`/merchant-deposits/${merchantId}/fund-offline`, input);
+}
 export function reviewMerchantDepositRefund(id: number, approved: boolean, note: string) { return requestClient.post(`/merchant-deposit-refunds/${id}/${approved ? 'approve' : 'reject'}`, { note }); }
+export function markMerchantDepositRefundNote(id: number, note: string) {
+  return requestClient.post(`/merchant-deposit-refunds/${id}/mark`, { note });
+}
 export function markMerchantDepositRefundPaid(id: number, input: { idempotency_key: string; payout_reference: string }) { return requestClient.post(`/merchant-deposit-refunds/${id}/mark-paid`, input); }
 
 export function fetchMerchantType(id: number) {
@@ -335,6 +437,8 @@ export interface StoreGroupRow {
   sort: number;
   status: number;
   diy_page_id: number;
+  /** 列表/详情由后端按 diy_page_id 关联装修页名称 */
+  diy_page_name?: string;
   positioning_status: number;
   longitude?: number | null;
   latitude?: number | null;
@@ -347,6 +451,8 @@ export interface StoreGroupRow {
 export interface StoreGroupMerchantRow {
   merchant_id: number;
   merchant_name: string;
+  contact_name?: string;
+  contact_mobile?: string;
   region_id: number;
   status: number;
 }
@@ -368,6 +474,7 @@ export interface DiyPageOption {
   id: number;
   name: string;
   status: number;
+  add_time?: string;
 }
 
 export function fetchStoreGroups(keyword?: string) {
@@ -400,8 +507,18 @@ export function fetchStoreGroupMerchants(id: number) {
   return requestClient.get<{ list: StoreGroupMerchantRow[] }>(`/store-groups/${id}/merchants`);
 }
 
-export function fetchPlatformDiyPages() {
-  return requestClient.get<PageResult<DiyPageOption>>('/diy/pages', { params: { page: 1, limit: 100 } });
+export function fetchPlatformDiyPages(params?: {
+  page?: number;
+  limit?: number;
+  name?: string;
+}) {
+  return requestClient.get<PageResult<DiyPageOption>>('/diy/pages', {
+    params: {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 10,
+      name: params?.name || undefined,
+    },
+  });
 }
 
 export function fetchPlatformMerchants(params: {
@@ -474,11 +591,31 @@ export function updatePlatformMerchantRecommend(id: number, enabled: boolean) {
   });
 }
 
+/** 平台一键登录店铺：签发 store_console JWT，前端新开店铺管理系统。 */
+export function loginPlatformMerchant(id: number) {
+  return requestClient.post<{
+    token: {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    };
+    mer_id: number;
+    store_id: number;
+    account: string;
+    mer_name: string;
+    store_name: string;
+    store_app_id: string;
+    path: string;
+  }>(`/merchants/${id}/login`);
+}
+
 export function fetchMerchantIntentions(params: {
   keyword?: string;
   limit: number;
   page: number;
   status?: number;
+  category_id?: number;
+  type_id?: number;
   date_from?: string;
   date_to?: string;
 }) {
@@ -504,6 +641,10 @@ export function auditMerchantIntention(
 
 export function assignMerchantIntentionRegion(id: number, region_id: number) {
   return requestClient.post<MerchantIntentionRow>(`/merchant-intentions/${id}/assign-region`, { region_id });
+}
+
+export function deleteMerchantIntention(id: number) {
+  return requestClient.delete<{ ok: boolean }>(`/merchant-intentions/${id}`);
 }
 
 export function fetchExpressList(params: { page: number; limit: number }) {

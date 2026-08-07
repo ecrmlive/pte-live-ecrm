@@ -501,6 +501,75 @@ func (s *Service) SaveWechatAppConfig(ctx context.Context, raw string) (string, 
 	return canonical, nil
 }
 
+// marginConfigKey 对齐 CRMEB systemConfig：margin_remind_switch / margin_remind_day。
+const marginConfigKey = "margin_remind_config"
+
+type marginConfig struct {
+	MarginRemindSwitch bool `json:"margin_remind_switch"`
+	MarginRemindDay    int  `json:"margin_remind_day"`
+}
+
+func defaultMarginConfig() marginConfig {
+	return marginConfig{
+		MarginRemindSwitch: false,
+		MarginRemindDay:    30,
+	}
+}
+
+func marshalMarginConfig(config marginConfig) string {
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+func parseMarginConfig(raw string) (marginConfig, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
+		return marginConfig{}, ErrBadParam
+	}
+	for key := range fields {
+		switch key {
+		case "margin_remind_switch", "margin_remind_day":
+		default:
+			return marginConfig{}, ErrBadParam
+		}
+	}
+	var config marginConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil {
+		return marginConfig{}, ErrBadParam
+	}
+	if config.MarginRemindDay < 0 || config.MarginRemindDay > 3650 {
+		return marginConfig{}, ErrBadParam
+	}
+	return config, nil
+}
+
+func (s *Service) GetMarginConfig(ctx context.Context) (string, error) {
+	row, err := s.store.GetCache(ctx, marginConfigKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return marshalMarginConfig(defaultMarginConfig()), nil
+		}
+		return "", err
+	}
+	config, err := parseMarginConfig(row.Result)
+	if err != nil {
+		return marshalMarginConfig(defaultMarginConfig()), nil
+	}
+	return marshalMarginConfig(config), nil
+}
+
+func (s *Service) SaveMarginConfig(ctx context.Context, raw string) (string, error) {
+	config, err := parseMarginConfig(raw)
+	if err != nil {
+		return "", err
+	}
+	canonical := marshalMarginConfig(config)
+	if err := s.store.UpsertCache(ctx, &Cache{Key: marginConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
+		return "", err
+	}
+	return canonical, nil
+}
+
 const (
 	PriceDescriptionCacheKey = "product_price_desc"
 	ActivityLabelCacheKey    = "product_activity_label"

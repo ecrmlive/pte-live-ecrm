@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -88,7 +88,11 @@ const gridOptions: VxeGridProps<ArticleCategoryOption> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -99,13 +103,13 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增分类' }).open();
+  formDrawerApi.setState({ title: '新增分类' }).open();
 }
 
 function openEdit(row: ArticleCategoryOption) {
   editing.value = row;
   Object.assign(form, { sort: 0, status: row.status, title: row.title });
-  formModalApi.setState({ title: '编辑分类' }).open();
+  formDrawerApi.setState({ title: '编辑分类' }).open();
 }
 
 async function save() {
@@ -113,7 +117,7 @@ async function save() {
     ElMessage.warning('请填写分类名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     const payload = {
       sort: form.sort,
@@ -125,11 +129,11 @@ async function save() {
     } else {
       await createArticleCategoryApi(payload);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 

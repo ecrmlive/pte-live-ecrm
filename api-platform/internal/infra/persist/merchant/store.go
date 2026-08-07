@@ -33,8 +33,18 @@ func (s *StoreAdapter) ListMerchants(ctx context.Context, filter merchant.ListFi
 	})
 }
 
-func (s *StoreAdapter) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string) ([]merchant.Intention, int64, error) {
-	return s.Repo.ListIntentions(ctx, ListIntentionFilter{Keyword: keyword, Status: status, DateFrom: dateFrom, DateTo: dateTo, RegionIDs: regionIDs, Page: page, Limit: limit})
+func (s *StoreAdapter) ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string, categoryID, typeID *uint) ([]merchant.Intention, int64, error) {
+	return s.Repo.ListIntentions(ctx, ListIntentionFilter{
+		Keyword:    keyword,
+		Status:     status,
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
+		CategoryID: categoryID,
+		TypeID:     typeID,
+		RegionIDs:  regionIDs,
+		Page:       page,
+		Limit:      limit,
+	})
 }
 
 func (s *StoreAdapter) GetIntention(ctx context.Context, id uint, regionIDs []uint) (*merchant.Intention, error) {
@@ -43,6 +53,10 @@ func (s *StoreAdapter) GetIntention(ctx context.Context, id uint, regionIDs []ui
 
 func (s *StoreAdapter) AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error) {
 	return s.Repo.AssignIntentionRegion(ctx, id, regionID)
+}
+
+func (s *StoreAdapter) DeleteIntention(ctx context.Context, id uint, regionIDs []uint) (bool, error) {
+	return s.Repo.DeleteIntention(ctx, id, regionIDs)
 }
 
 func (s *StoreAdapter) UpsertMerchantView(ctx context.Context, row *merchant.Merchant) error {

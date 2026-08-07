@@ -78,20 +78,31 @@ func (h *Handler) RegisterMeta(r gin.IRoutes) {
 
 func (h *Handler) categories(c *gin.Context) {
 	var rows []platformCategory
-	if err := h.adminDB.WithContext(c.Request.Context()).Select("id,name,status").Order("id ASC").Find(&rows).Error; err != nil {
+	if err := h.adminDB.WithContext(c.Request.Context()).
+		Select("id,parent_id,name,sort,status").
+		Order("sort ASC,id ASC").
+		Find(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询商品分类失败")
 		return
 	}
 	byParent := map[uint64][]gin.H{}
 	for _, row := range rows {
-		byParent[row.ParentID] = append(byParent[row.ParentID], gin.H{"store_category_id": row.ID, "pid": row.ParentID, "cate_name": row.Name, "sort": row.Sort, "is_show": row.Status})
+		byParent[row.ParentID] = append(byParent[row.ParentID], gin.H{
+			"store_category_id": row.ID,
+			"pid":               row.ParentID,
+			"cate_name":         row.Name,
+			"sort":              row.Sort,
+			"is_show":           row.Status,
+		})
 	}
 	var build func(uint64) []gin.H
 	build = func(parent uint64) []gin.H {
 		items := byParent[parent]
 		for i := range items {
 			id := items[i]["store_category_id"].(uint64)
-			items[i]["children"] = build(id)
+			if children := build(id); len(children) > 0 {
+				items[i]["children"] = children
+			}
 		}
 		return items
 	}

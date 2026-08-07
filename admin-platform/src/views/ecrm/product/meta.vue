@@ -5,7 +5,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import { computed, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -224,7 +224,11 @@ const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: gridOptions.value,
 });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -244,7 +248,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: `新增${pageTitle.value}` }).open();
+  formDrawerApi.setState({ title: `新增${pageTitle.value}` }).open();
 }
 
 function openEdit(row: MetaRow) {
@@ -268,7 +272,7 @@ function openEdit(row: MetaRow) {
       form.values = '';
     }
   }
-  formModalApi.setState({ title: `编辑${pageTitle.value}` }).open();
+  formDrawerApi.setState({ title: `编辑${pageTitle.value}` }).open();
 }
 
 async function save() {
@@ -276,7 +280,7 @@ async function save() {
     ElMessage.warning('请填写名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     if (kind.value === 'label') {
       await saveProductLabel(editing.value, {
@@ -310,11 +314,11 @@ async function save() {
         status: form.status,
       });
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -386,7 +390,7 @@ watch(kind, () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="92px">
         <ElFormItem label="名称" required>
           <ElInput v-model="form.name" maxlength="64" show-word-limit />
@@ -446,7 +450,7 @@ watch(kind, () => {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
 
     <ImagePickerDialog
       v-model:open="iconPicker"

@@ -9,7 +9,6 @@ import {
   ElButton,
   ElDescriptions,
   ElDescriptionsItem,
-  ElDialog,
   ElEmpty,
   ElForm,
   ElFormItem,
@@ -72,8 +71,6 @@ const statusMap: Record<
 const current = ref<PlatformRefundOrder>();
 const detailLoading = ref(false);
 const events = ref<PlatformRefundEvent[]>([]);
-const logOpen = ref(false);
-const rejectOpen = ref(false);
 const rejecting = ref(false);
 const canApprove = ref(false);
 const canReject = ref(false);
@@ -209,7 +206,7 @@ const gridOptions: VxeGridProps<PlatformRefundOrder> = {
     },
     platformListActionColumn({ width: 220 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -231,6 +228,22 @@ const gridOptions: VxeGridProps<PlatformRefundOrder> = {
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '确认拒绝',
+  cancelText: '取消',
+  placement: 'right',
+  title: '拒绝退款',
+  onConfirm: async () => reject(),
+});
+
+const [LogDrawer, logDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
+  title: '退款操作日志',
+});
 
 const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   class: 'w-[900px] max-w-[96vw]',
@@ -254,12 +267,12 @@ async function openDetail(row: PlatformRefundOrder) {
 async function openLog(row: PlatformRefundOrder) {
   current.value = row;
   events.value = [];
-  logOpen.value = true;
+  logDrawerApi.open();
   try {
     const result = await listPlatformRefundEventsApi(row.refund_order_id);
     events.value = result.list || [];
   } catch {
-    logOpen.value = false;
+    logDrawerApi.close();
   }
 }
 
@@ -324,7 +337,7 @@ async function approve(row: PlatformRefundOrder) {
 function openReject(row: PlatformRefundOrder) {
   current.value = row;
   rejectForm.failMessage = '';
-  rejectOpen.value = true;
+  rejectDrawerApi.open();
 }
 
 async function reject() {
@@ -337,7 +350,7 @@ async function reject() {
   rejecting.value = true;
   try {
     await rejectPlatformRefundApi(current.value.refund_order_id, message);
-    rejectOpen.value = false;
+    rejectDrawerApi.close();
     ElMessage.success('退款申请已拒绝');
     gridApi.reload();
   } finally {
@@ -474,7 +487,7 @@ onMounted(async () => {
       </ElSkeleton>
     </DetailDrawer>
 
-    <ElDialog v-model="rejectOpen" destroy-on-close title="拒绝退款" width="480px">
+    <RejectDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="拒绝原因" required>
           <ElInput
@@ -487,20 +500,9 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-      <template #footer>
-        <ElButton @click="rejectOpen = false">取消</ElButton>
-        <ElButton :loading="rejecting" type="danger" @click="reject">
-          确认拒绝
-        </ElButton>
-      </template>
-    </ElDialog>
+    </RejectDrawer>
 
-    <ElDialog
-      v-model="logOpen"
-      destroy-on-close
-      title="退款操作日志"
-      width="760px"
-    >
+    <LogDrawer>
       <ElEmpty v-if="events.length === 0" description="暂无状态流转日志" />
       <ElTable v-else :data="events" border>
         <ElTableColumn label="时间" min-width="166">
@@ -534,6 +536,6 @@ onMounted(async () => {
           show-overflow-tooltip
         />
       </ElTable>
-    </ElDialog>
+    </LogDrawer>
   </Page>
 </template>

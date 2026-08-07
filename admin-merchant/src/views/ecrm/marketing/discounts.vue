@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -121,7 +121,7 @@ const gridOptions: VxeGridProps<MerchantDiscount> = {
     },
     merchantListActionColumn({ width: 200 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -152,7 +152,11 @@ const gridOptions: VxeGridProps<MerchantDiscount> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     const productIDs = parseProductIDs();
     if (
@@ -164,7 +168,7 @@ const [EditModal, editModalApi] = useVbenModal({
       return;
     }
     saving.value = true;
-    editModalApi.lock();
+    editDrawerApi.lock();
     try {
       const body = {
         ends_at: form.ends_at || undefined,
@@ -183,11 +187,11 @@ const [EditModal, editModalApi] = useVbenModal({
         await createMerchantDiscountApi(body);
         ElMessage.success('优惠套餐已创建');
       }
-      editModalApi.close();
+      editDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      editModalApi.unlock();
+      editDrawerApi.unlock();
     }
   },
 });
@@ -211,7 +215,7 @@ function openCreate() {
     starts_at: '',
     status: 'draft',
   });
-  editModalApi.setState({ title: '新增优惠套餐' }).open();
+  editDrawerApi.setState({ title: '新增优惠套餐' }).open();
 }
 
 function openEdit(row: MerchantDiscount) {
@@ -226,7 +230,7 @@ function openEdit(row: MerchantDiscount) {
     starts_at: row.starts_at,
     status: row.status,
   });
-  editModalApi.setState({ title: '编辑优惠套餐' }).open();
+  editDrawerApi.setState({ title: '编辑优惠套餐' }).open();
 }
 
 async function toggleStatus(row: MerchantDiscount) {
@@ -293,7 +297,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <EditModal class="w-[560px] max-w-[96vw]">
+    <EditDrawer class="w-[560px] max-w-[96vw]">
       <ElForm label-width="96px">
         <ElFormItem label="名称" required>
           <ElInput v-model="form.name" maxlength="128" show-word-limit />
@@ -335,6 +339,6 @@ onMounted(async () => {
           <ElInput v-model="form.remark" :rows="2" maxlength="255" type="textarea" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

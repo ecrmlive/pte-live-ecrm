@@ -59,7 +59,11 @@ import {
   type PlatformCategory,
 } from '#/api/core/platform-catalog';
 import { getAccessCodesApi } from '#/api/core/auth';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import ImageField from '#/components/shop/image-field.vue';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 
 type DrawerMode = 'create' | 'edit' | 'view';
@@ -87,7 +91,22 @@ const types = ref<MerchantTypeRow[]>([]);
 const regions = ref<{ label: string; value: number }[]>([]);
 const businessOptions = ref<BusinessZoneOptionNode[]>([]);
 const storeGroupOptions = ref<{ label: string; value: number }[]>([]);
+/** Cascader 用标准 label/value/children，避免空 children[] 被当成可展开父节点。 */
+type PlatformCategoryCascaderOption = {
+  label: string;
+  value: number;
+  children?: PlatformCategoryCascaderOption[];
+};
+const platformCategoryTree = ref<PlatformCategoryCascaderOption[]>([]);
 const platformCategoryOptions = ref<{ label: string; value: number }[]>([]);
+const platformCategoryCascaderProps = {
+  multiple: true,
+  checkStrictly: false,
+  emitPath: false,
+  value: 'value',
+  label: 'label',
+  children: 'children',
+};
 const drawerMode = ref<DrawerMode>('create');
 const editingId = ref(0);
 const activeTab = ref('basic');
@@ -134,6 +153,7 @@ const form = reactive<
   goods_types: [] as number[],
   platform_category_ids: [] as number[],
   mer_star: 5,
+  mer_avatar: '',
 });
 
 const isReadonly = computed(() => drawerMode.value === 'view');
@@ -264,19 +284,58 @@ function flattenStoreGroups(
   return out;
 }
 
+function toPlatformCategoryCascaderOptions(
+  rows: PlatformCategory[] = [],
+): PlatformCategoryCascaderOption[] {
+  const out: PlatformCategoryCascaderOption[] = [];
+  for (const row of rows || []) {
+    const value = Number(row.store_category_id);
+    const label = String(row.cate_name || '').trim();
+    if (!Number.isFinite(value) || value <= 0 || !label) continue;
+    // 店铺表单只展示启用分类；隐藏节点仍保留其子树中已启用的后代。
+    const children = toPlatformCategoryCascaderOptions(row.children || []);
+    if (Number(row.is_show) === 0 && !children.length) continue;
+    const option: PlatformCategoryCascaderOption = { label, value };
+    if (children.length) option.children = children;
+    if (Number(row.is_show) !== 0) {
+      out.push(option);
+    } else {
+      out.push(...children);
+    }
+  }
+  return out;
+}
+
 function flattenPlatformCategories(
-  rows: PlatformCategory[],
+  rows: PlatformCategoryCascaderOption[],
   prefix = '',
 ): { label: string; value: number }[] {
   const out: { label: string; value: number }[] = [];
   for (const row of rows || []) {
-    const label = prefix ? `${prefix} / ${row.cate_name}` : row.cate_name;
-    out.push({ label, value: Number(row.store_category_id) });
+    const label = prefix ? `${prefix} / ${row.label}` : row.label;
+    out.push({ label, value: Number(row.value) });
     if (row.children?.length) {
       out.push(...flattenPlatformCategories(row.children, label));
     }
   }
   return out;
+}
+
+async function loadPlatformCategories() {
+  try {
+    const res = await listPlatformCategoriesApi();
+    const list = Array.isArray(res?.list)
+      ? res.list
+      : Array.isArray(res)
+        ? (res as PlatformCategory[])
+        : [];
+    platformCategoryTree.value = toPlatformCategoryCascaderOptions(list);
+    platformCategoryOptions.value = flattenPlatformCategories(
+      platformCategoryTree.value,
+    );
+  } catch {
+    // 保留已有选项；打开抽屉时会再试一次
+  }
 }
 
 function parseGoodsTypes(row?: PlatformMerchantRow): number[] {
@@ -328,23 +387,19 @@ function flattenZoneOptions(
 
 async function loadFilterOptions() {
   try {
-    const [cats, typeList, regionTree, businessTree, groups, platformCats] =
-      await Promise.all([
+    const [cats, typeList, regionTree, businessTree, groups] = await Promise.all([
       fetchMerchantCategories().catch(() => ({ list: [] as MerchantCategoryRow[] })),
       fetchMerchantTypes().catch(() => ({ list: [] as MerchantTypeRow[] })),
       fetchBusinessZoneOptions(0).catch(() => ({ list: [] as BusinessZoneOptionNode[] })),
       fetchBusinessZoneOptions(1).catch(() => ({ list: [] as BusinessZoneOptionNode[] })),
       fetchStoreGroups().catch(() => ({ list: [] as StoreGroupRow[] })),
-      listPlatformCategoriesApi().catch(() => ({ list: [] as PlatformCategory[] })),
+      loadPlatformCategories(),
     ]);
     categories.value = cats.list || [];
     types.value = typeList.list || [];
     regions.value = flattenZoneOptions(regionTree.list || []);
     businessOptions.value = businessTree.list || [];
     storeGroupOptions.value = flattenStoreGroups(groups.list || []);
-    platformCategoryOptions.value = flattenPlatformCategories(
-      platformCats.list || [],
-    );
   } catch {
     /* 筛选项失败不阻断列表 */
   }
@@ -427,7 +482,19 @@ const formOptions: VbenFormProps = {
 const gridOptions: VxeGridProps<PlatformMerchantRow> = {
   columns: [
     { field: 'mer_id', title: 'ID', width: 72 },
-    { field: 'mer_name', minWidth: 140, showOverflow: false, title: '店铺名称' },
+    {
+      field: 'mer_avatar',
+      slots: { default: 'cover' },
+      title: '封面',
+      width: 80,
+    },
+    {
+      field: 'mer_name',
+      minWidth: 140,
+      showOverflow: false,
+      slots: { default: 'mer_name' },
+      title: '店铺名称',
+    },
     {
       field: 'owner_name',
       formatter: ({ cellValue }) => cellValue || '—',
@@ -441,6 +508,13 @@ const gridOptions: VxeGridProps<PlatformMerchantRow> = {
       minWidth: 100,
       showOverflow: false,
       title: '联系人',
+    },
+    {
+      field: 'mer_phone',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 120,
+      showOverflow: false,
+      title: '联系手机号',
     },
     {
       field: 'type_name',
@@ -467,6 +541,7 @@ const gridOptions: VxeGridProps<PlatformMerchantRow> = {
       title: '开启/关闭',
       width: 100,
     },
+    { field: 'sort', title: '排序', width: 72 },
     {
       field: 'create_time',
       formatter: ({ cellValue }) => formatTime(cellValue),
@@ -474,22 +549,9 @@ const gridOptions: VxeGridProps<PlatformMerchantRow> = {
       showOverflow: false,
       title: '创建时间',
     },
-    { field: 'sort', title: '排序', width: 72 },
-    {
-      field: 'mark',
-      formatter: ({ cellValue }) => cellValue || '—',
-      minWidth: 140,
-      // 长备注单行省略 + tooltip，避免撑高行导致 fixed 操作列错位
-      showOverflow: true,
-      title: '备注',
-    },
     platformListActionColumn({ width: 168 }),
   ],
-  pagerConfig: {
-    enabled: true,
-    pageSize: 20,
-    pageSizes: [10, 20, 50, 100],
-  },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -550,6 +612,11 @@ const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
       activeTab.value = 'basic';
       return;
     }
+    if (!form.mer_avatar?.trim()) {
+      ElMessage.warning('请从素材库选择店铺封面');
+      activeTab.value = 'basic';
+      return;
+    }
     if (!form.category_id) {
       ElMessage.warning('请选择店铺分类');
       activeTab.value = 'basic';
@@ -566,7 +633,19 @@ const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
       return;
     }
     if (!form.platform_category_ids?.length) {
-      ElMessage.warning('请选择平台分类');
+      ElMessage.warning('请选择商品分类');
+      activeTab.value = 'basic';
+      return;
+    }
+    const platformCategoryIds = Array.from(
+      new Set(
+        (form.platform_category_ids || [])
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id > 0),
+      ),
+    );
+    if (!platformCategoryIds.length) {
+      ElMessage.warning('请选择商品分类');
       activeTab.value = 'basic';
       return;
     }
@@ -601,8 +680,9 @@ const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
       business_id: form.business_id ? Number(form.business_id) : 0,
       store_group_ids: [...(form.store_group_ids || [])],
       goods_types: [...(form.goods_types || [])],
-      platform_category_ids: [...(form.platform_category_ids || [])],
+      platform_category_ids: platformCategoryIds,
       mer_star: form.mer_star ?? 5,
+      mer_avatar: form.mer_avatar?.trim() || '',
     };
     shopDrawerApi.lock();
     try {
@@ -664,6 +744,7 @@ function resetForm(row?: PlatformMerchantRow) {
     goods_types: isCreate ? [] : parseGoodsTypes(row),
     platform_category_ids: isCreate ? [] : parsePlatformCategoryIds(row),
     mer_star: row?.mer_star ?? 5,
+    mer_avatar: row?.mer_avatar || '',
   });
 }
 
@@ -671,6 +752,7 @@ function openCreate() {
   drawerMode.value = 'create';
   activeTab.value = 'basic';
   resetForm();
+  void loadPlatformCategories();
   shopDrawerApi
     .setState({
       title: '添加店铺',
@@ -684,6 +766,7 @@ async function openEdit(row: PlatformMerchantRow) {
   drawerMode.value = 'edit';
   activeTab.value = 'basic';
   resetForm(row);
+  void loadPlatformCategories();
   shopDrawerApi
     .setState({
       loading: true,
@@ -786,10 +869,16 @@ function onOperateLogFilterChange() {
   void loadOperateLogs();
 }
 
-function openLogin(row: PlatformMerchantRow) {
-  ElMessage.info(
-    `「${row.mer_name}」店铺登录需签发商户后台会话，当前环境尚未接通一键登录。`,
-  );
+function openLogin(_row?: PlatformMerchantRow) {
+  const origin = String(import.meta.env.VITE_MERCHANT_ADMIN_URL || '')
+    .trim()
+    .replace(/\/+$/, '');
+  if (!origin) {
+    ElMessage.error('未配置 VITE_MERCHANT_ADMIN_URL（店铺管理系统域名）');
+    return;
+  }
+  // 新标签直接打开店铺后台登录页（hash），不带 from/token。
+  window.open(`${origin}/#/auth/login`, '_blank');
 }
 
 function onDetailMoreCommand(command: string) {
@@ -950,6 +1039,22 @@ onMounted(async () => {
         </div>
       </template>
 
+      <template #cover="{ row }">
+        <img
+          v-if="row.mer_avatar"
+          class="shop-list-cover"
+          :src="row.mer_avatar"
+          alt="店铺封面"
+        />
+        <span v-else>—</span>
+      </template>
+
+      <template #mer_name="{ row }">
+        <ElButton link type="primary" @click="openDetail(row)">
+          {{ row.mer_name || '—' }}
+        </ElButton>
+      </template>
+
       <template #recommend="{ row }">
         <ElSwitch
           v-if="canManage"
@@ -982,7 +1087,14 @@ onMounted(async () => {
         >
           编辑
         </ElButton>
-        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          :type="isEnabled(row) ? 'danger' : 'primary'"
+          @click="changeStatus(row, !isEnabled(row))"
+        >
+          {{ isEnabled(row) ? '关闭' : '开启' }}
+        </ElButton>
       </template>
     </Grid>
 
@@ -992,7 +1104,12 @@ onMounted(async () => {
           <div class="shop-drawer__brand-row">
             <div class="shop-drawer__brand">
               <div class="shop-drawer__avatar">
-                <Shop />
+                <img
+                  v-if="form.mer_avatar"
+                  :src="form.mer_avatar"
+                  alt="店铺封面"
+                />
+                <Shop v-else />
               </div>
               <div class="shop-drawer__titles">
                 <div class="shop-drawer__name-row">
@@ -1066,6 +1183,18 @@ onMounted(async () => {
                     <span class="label">店铺名称</span>
                     <span class="value">{{ displayOrDash(form.mer_name) }}</span>
                   </div>
+                  <div class="shop-desc shop-desc--full">
+                    <span class="label">店铺封面</span>
+                    <span class="value">
+                      <img
+                        v-if="form.mer_avatar"
+                        class="shop-cover-thumb"
+                        :src="form.mer_avatar"
+                        alt="店铺封面"
+                      />
+                      <template v-else>—</template>
+                    </span>
+                  </div>
                   <div class="shop-desc">
                     <span class="label">店铺类型</span>
                     <span class="value">{{ form.is_trader ? '自营' : '非自营' }}</span>
@@ -1106,7 +1235,7 @@ onMounted(async () => {
                     </span>
                   </div>
                   <div class="shop-desc">
-                    <span class="label">平台分类</span>
+                    <span class="label">商品分类</span>
                     <span class="value">{{ selectedPlatformCategoryLabels }}</span>
                   </div>
                   <div class="shop-desc">
@@ -1151,6 +1280,14 @@ onMounted(async () => {
                       支持中英文、数字与符号，将作为店铺展示名称
                     </div>
                   </ElFormItem>
+                  <ElFormItem label="店铺封面" required>
+                    <ImageField
+                      v-model="form.mer_avatar"
+                      :disabled="isReadonly"
+                      button-text="从素材库选择"
+                      :preview-size="120"
+                    />
+                  </ElFormItem>
                   <ElFormItem label="所属商户">
                     <ElCascader
                       v-model="form.business_id"
@@ -1181,23 +1318,19 @@ onMounted(async () => {
                       />
                     </ElSelect>
                   </ElFormItem>
-                  <ElFormItem label="平台分类" required>
-                    <ElSelect
+                  <ElFormItem label="商品分类" required>
+                    <ElCascader
                       v-model="form.platform_category_ids"
+                      :options="platformCategoryTree"
+                      :props="platformCategoryCascaderProps"
                       clearable
+                      filterable
                       collapse-tags
                       collapse-tags-tooltip
-                      multiple
                       class="w-full"
-                      placeholder="请选择平台分类"
-                    >
-                      <ElOption
-                        v-for="item in platformCategoryOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                      />
-                    </ElSelect>
+                      placeholder="请选择商品分类"
+                      separator=" / "
+                    />
                   </ElFormItem>
                   <ElFormItem label="商品类型" required>
                     <ElCheckboxGroup v-model="form.goods_types">
@@ -1727,10 +1860,36 @@ onMounted(async () => {
   height: 48px;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border-radius: 10px;
   background: hsl(var(--primary) / 12%);
   color: hsl(var(--primary));
   font-size: 22px;
+}
+
+.shop-drawer__avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-cover-thumb {
+  display: block;
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid hsl(var(--border));
+}
+
+.shop-list-cover {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid hsl(var(--border));
 }
 
 .shop-drawer__name-row {

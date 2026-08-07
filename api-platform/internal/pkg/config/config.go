@@ -117,9 +117,20 @@ type EtcdConfig struct {
 }
 
 type JWTConfig struct {
-	Secret          string `yaml:"secret"`
+	Secret string `yaml:"secret"`
+	// StoreSecret 用于平台「登录店铺」签发 store_console JWT，须与 api-merchant 的 jwt.secret 一致。
+	// 未配置时回退到 Secret（仅适合本地两套密钥碰巧相同的场景）。
+	StoreSecret     string `yaml:"store_secret"`
 	AccessTTLHours  int    `yaml:"access_ttl_hours"`
 	RefreshTTLHours int    `yaml:"refresh_ttl_hours"`
+}
+
+// StoreConsoleSecret 返回店铺后台 JWT 签名密钥。
+func (j JWTConfig) StoreConsoleSecret() string {
+	if s := strings.TrimSpace(j.StoreSecret); s != "" {
+		return s
+	}
+	return j.Secret
 }
 
 func (j JWTConfig) AccessTTL() time.Duration {

@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+
 import {
-  ElButton,
   ElCheckbox,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElMessage,
@@ -15,15 +15,15 @@ import {
 import PlatformAdminUserApi from '#/api/core/platform-admin-user';
 import type { PlatformAdminUserRow } from '#/api/core/platform-admin-user';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
-  open: boolean;
   roleOptions: { role_id: number; role_name: string }[];
   user?: PlatformAdminUserRow;
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const loading = ref(false);
@@ -32,37 +32,65 @@ const formData = reactive({
   role_ids: [] as number[],
 });
 
-watch(
-  () => [props.open, props.user?.admin_user_id] as const,
-  async ([open]) => {
-    if (!open || !props.user) return;
-    loading.value = true;
-    try {
-      const res = await PlatformAdminUserApi.userEditInfo(
-        props.user.admin_user_id,
-        true,
-      );
-      const data = res.data as {
-        is_super?: number;
-        role_ids?: number[];
-        user?: PlatformAdminUserRow;
-      };
-      formData.is_super = Number(data.user?.is_super ?? props.user.is_super) === 1;
-      formData.role_ids = data.role_ids ?? props.user.role_ids ?? [];
-    } finally {
-      loading.value = false;
+async function loadForm() {
+  if (!props.user) return;
+  loading.value = true;
+  try {
+    const res = await PlatformAdminUserApi.userEditInfo(
+      props.user.admin_user_id,
+      true,
+    );
+    const data = res.data as {
+      is_super?: number;
+      role_ids?: number[];
+      user?: PlatformAdminUserRow;
+    };
+    formData.is_super = Number(data.user?.is_super ?? props.user.is_super) === 1;
+    formData.role_ids = data.role_ids ?? props.user.role_ids ?? [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      void loadForm();
     }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '分配角色' }).open();
+      return;
+    }
+    drawerApi.close();
   },
   { immediate: true },
 );
 
-function handleClose() {
-  emit('update:open', false);
-}
+watch(
+  () => props.user?.admin_user_id,
+  () => {
+    if (open.value) {
+      void loadForm();
+    }
+  },
+);
 
 async function handleSubmit() {
   if (!props.user) return;
   loading.value = true;
+  drawerApi.setState({ confirmLoading: true });
   try {
     const res = await PlatformAdminUserApi.userEdit(
       props.user.admin_user_id,
@@ -74,23 +102,22 @@ async function handleSubmit() {
     );
     if (res.code === 1) {
       ElMessage.success(res.msg || '保存成功');
-      emit('update:open', false);
+      open.value = false;
       emit('success');
     }
   } finally {
     loading.value = false;
+    drawerApi.setState({ confirmLoading: false });
   }
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="分配角色"
-    width="520px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm v-loading="loading" label-width="100px">
       <ElFormItem label="用户名">
@@ -110,9 +137,5 @@ async function handleSubmit() {
         <ElCheckbox v-model="formData.is_super">设为超级管理员（全权限）</ElCheckbox>
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">保存</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

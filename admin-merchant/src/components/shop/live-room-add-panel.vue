@@ -3,7 +3,7 @@ import type { ProductChooseItem } from '#/api/core/product';
 import type { LiveVodVideoItem } from '#/api/core/live-vod';
 import type { LiveRoomForm } from '#/api/core/live';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { ElButton, ElMessage } from 'element-plus';
 import { reactive, ref, watch } from 'vue';
 
@@ -62,7 +62,9 @@ function onAnchorAdded() {
   void loadAnchors();
 }
 
-const [ProductAddDialog, productAddModalApi] = useVbenModal({
+const [ProductAddDialog, productAddModalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   connectedComponent: ProductAddModal,
 });
 

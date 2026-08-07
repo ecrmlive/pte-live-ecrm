@@ -2,7 +2,7 @@
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { LiveRoomProductItem } from '#/api/core/live';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@element-plus/icons-vue';
 import { ElButton, ElMessage, ElMessageBox, ElSwitch } from 'element-plus';
 import { reactive, ref, watch } from 'vue';
@@ -63,7 +63,7 @@ const gridOptions = reactive<VxeGridProps<LiveRoomProductItem>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 20,
+    pageSize: 10,
     pageSizes: [10, 20, 50],
   },
   proxyConfig: {
@@ -134,7 +134,9 @@ async function deleteRow(row: LiveRoomProductItem) {
   emit('success');
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },

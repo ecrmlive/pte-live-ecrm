@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
-	"github.com/gin-gonic/gin"
 	configdomain "github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/cloudconfig"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -34,6 +35,8 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/setting/cloud-configs", h.List)
 	r.GET("/setting/cloud-configs/:group", h.Get)
 	r.PUT("/setting/cloud-configs/:group", middleware.RequirePlatformMenu(h.id, identity.PlatPermCloudConfigWrite), h.Save)
+	// 高德 Web JS 需在浏览器侧使用 Key/安全密钥；云配置页对 Secret 字段掩码，故单独提供已鉴权只读接口。
+	r.GET("/setting/map-client-config", h.MapClientConfig)
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -43,6 +46,24 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"list": rows})
+}
+
+// MapClientConfig 返回平台后台地图取点所需的高德 Web JS 凭证（已登录管理员）。
+// 仅下发 Web JS Key / 安全密钥；Web 服务 Key 与各端 Key 不下发。
+func (h *Handler) MapClientConfig(c *gin.Context) {
+	values, err := h.svc.Values(c.Request.Context(), "amap")
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	key := strings.TrimSpace(values["amap_web_js_key"])
+	security := strings.TrimSpace(values["amap_web_js_security_code"])
+	response.OK(c, gin.H{
+		"provider":                  "amap",
+		"amap_web_js_key":           key,
+		"amap_web_js_security_code": security,
+		"configured":                key != "" && security != "",
+	})
 }
 func (h *Handler) Get(c *gin.Context) {
 	row, err := h.svc.Get(c.Request.Context(), c.Param("group"))

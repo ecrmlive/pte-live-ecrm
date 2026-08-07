@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -114,7 +114,11 @@ const gridOptions: VxeGridProps<MerchantCategory> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: save,
 });
 
@@ -125,7 +129,7 @@ function reset() {
 
 function create() {
   reset();
-  editModalApi.setState({ title: '新增商品分类' }).open();
+  editDrawerApi.setState({ title: '新增商品分类' }).open();
 }
 
 function edit(row: MerchantCategory) {
@@ -136,7 +140,7 @@ function edit(row: MerchantCategory) {
     sort: row.sort,
     status: row.status,
   });
-  editModalApi.setState({ title: '编辑商品分类' }).open();
+  editDrawerApi.setState({ title: '编辑商品分类' }).open();
 }
 
 async function save() {
@@ -145,7 +149,7 @@ async function save() {
     return;
   }
   saving.value = true;
-  editModalApi.lock();
+  editDrawerApi.lock();
   try {
     if (editID.value) {
       await updateMerchantCategoryApi(editID.value, {
@@ -155,12 +159,12 @@ async function save() {
     } else {
       await createMerchantCategoryApi({ ...form, name: form.name.trim() });
     }
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success('商品分类已保存');
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -215,7 +219,7 @@ async function remove(row: MerchantCategory) {
       </template>
     </Grid>
 
-    <EditModal class="w-[500px] max-w-[96vw]">
+    <EditDrawer class="w-[500px] max-w-[96vw]">
       <ElForm label-width="88px">
         <ElFormItem label="上级分类">
           <ElSelect v-model="form.parent_id" class="w-full">
@@ -239,6 +243,6 @@ async function remove(row: MerchantCategory) {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

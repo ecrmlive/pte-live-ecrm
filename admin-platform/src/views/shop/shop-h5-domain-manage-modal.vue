@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, watch } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 
 import ShopH5DomainPanel from '../shop-h5-domain/shop-h5-domain-panel.vue';
 
@@ -20,7 +20,10 @@ const title = computed(() => {
   return `域名管理 · app_id ${props.appId}`;
 });
 
-const [Modal, modalApi] = useVbenModal({
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },
@@ -30,40 +33,40 @@ watch(
   open,
   (visible) => {
     if (visible) {
-      modalApi.open();
+      drawerApi.setState({ title: title.value }).open();
       return;
     }
-    modalApi.close();
+    drawerApi.close();
   },
   { immediate: true },
 );
+
+watch(title, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
 </script>
 
 <template>
-  <Modal
+  <Drawer
     :close-on-click-modal="false"
     :destroy-on-close="true"
     :footer="false"
-    class="shop-h5-domain-manage-modal w-[1020px] max-w-[96vw]"
-    content-class="shop-h5-domain-manage-modal__content"
+    class="shop-h5-domain-manage-drawer"
+    content-class="shop-h5-domain-manage-drawer__content"
     :title="title"
   >
     <ShopH5DomainPanel v-if="open && appId > 0" :app-id="appId" :app-name="appName" />
-  </Modal>
+  </Drawer>
 </template>
 
 <style scoped>
-:global(.shop-h5-domain-manage-modal) {
-  max-height: min(92vh, calc(100dvh - 40px)) !important;
+:global(.shop-h5-domain-manage-drawer__content) {
+  min-height: 520px;
 }
 
 :global(.platform-overlay-message-box) {
   z-index: 10000 !important;
-}
-
-:global(.shop-h5-domain-manage-modal__content) {
-  min-height: 520px;
-  max-height: calc(100dvh - 132px);
-  overflow-y: auto;
 }
 </style>

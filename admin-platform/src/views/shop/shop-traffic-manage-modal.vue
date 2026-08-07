@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, watch } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 
 import TrafficPanel from './traffic-panel.vue';
 
@@ -20,7 +20,10 @@ const title = computed(() => {
   return `流量管理 · app_id ${props.appId}`;
 });
 
-const [Modal, modalApi] = useVbenModal({
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
   },
@@ -30,24 +33,30 @@ watch(
   open,
   (visible) => {
     if (visible) {
-      modalApi.open();
+      drawerApi.setState({ title: title.value }).open();
       return;
     }
-    modalApi.close();
+    drawerApi.close();
   },
   { immediate: true },
 );
+
+watch(title, (value) => {
+  if (open.value) {
+    drawerApi.setState({ title: value });
+  }
+});
 </script>
 
 <template>
-  <Modal
+  <Drawer
     :close-on-click-modal="false"
     :destroy-on-close="true"
     :footer="false"
-    class="shop-manage-modal w-[1080px] max-w-[96vw]"
-    content-class="shop-manage-modal__content"
+    class="shop-manage-drawer"
+    content-class="shop-manage-drawer__content"
     :title="title"
   >
     <TrafficPanel v-if="open && appId > 0" :app-id="appId" embedded />
-  </Modal>
+  </Drawer>
 </template>

@@ -3,7 +3,7 @@ import type { VbenFormSchema } from '#/adapter/form';
 import type { H5DomainRow } from '#/api/core/h5-domain';
 
 import { useAccess } from '@vben/access';
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@element-plus/icons-vue';
 import { ElButton, ElMessage, ElTag } from 'element-plus';
 import { computed, reactive, ref, watch } from 'vue';
@@ -171,7 +171,9 @@ const [AddForm, addFormApi] = useVbenForm(
   }),
 );
 
-const [AddModal, addModalApi] = useVbenModal({
+const [AddDrawer, addDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     addOpen.value = isOpen;
   },
@@ -249,10 +251,10 @@ async function submitAdd() {
 
 watch(addOpen, (visible) => {
   if (visible) {
-    addModalApi.open();
+    addDrawerApi.open();
     return;
   }
-  addModalApi.close();
+  addDrawerApi.close();
 });
 
 function actionKey(prefix: string, domainId: number) {
@@ -485,7 +487,7 @@ watch(
       </template>
     </Grid>
 
-    <AddModal
+    <AddDrawer
       :close-on-click-modal="false"
       :destroy-on-close="true"
       class="w-[640px]"
@@ -496,7 +498,7 @@ watch(
         <ElButton @click="addOpen = false">取消</ElButton>
         <ElButton :loading="saving" type="primary" @click="submitAdd">提交</ElButton>
       </template>
-    </AddModal>
+    </AddDrawer>
   </div>
 </template>
 

@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -166,7 +166,11 @@ const gridOptions: VxeGridProps<PlatformMenuRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -177,7 +181,7 @@ function openEdit(row: PlatformMenuRow) {
     sort: row.sort,
     is_show: row.is_show,
   });
-  formModalApi.setState({ title: '编辑菜单' }).open();
+  formDrawerApi.setState({ title: '编辑菜单' }).open();
 }
 
 async function save() {
@@ -185,19 +189,19 @@ async function save() {
     ElMessage.warning('菜单名称不能为空');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     await saveMenu(editing.value.menu_id, {
       menu_name: form.menu_name.trim(),
       sort: form.sort,
       is_show: form.is_show,
     });
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('菜单已保存');
     await loadMenus();
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -224,7 +228,7 @@ onMounted(() => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="100px">
         <ElFormItem label="菜单 ID">
           <ElInput :model-value="String(editing?.menu_id || '')" disabled />
@@ -239,6 +243,6 @@ onMounted(() => {
           <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDescriptions,
@@ -224,7 +224,7 @@ const gridOptions: VxeGridProps<MerchantRefundOrder> = {
     },
     merchantListActionColumn({ width: 240 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -252,7 +252,9 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   placement: 'right',
 });
 
-const [RejectModal, rejectModalApi] = useVbenModal({
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   title: '拒绝退款',
   confirmText: '确认拒绝',
   onConfirm: async () => {
@@ -263,20 +265,22 @@ const [RejectModal, rejectModalApi] = useVbenModal({
     }
     if (!current.value) return;
     rejecting.value = true;
-    rejectModalApi.lock();
+    rejectDrawerApi.lock();
     try {
       await rejectMerchantRefundApi(current.value.refund_order_id, message);
       ElMessage.success('退款申请已拒绝');
-      rejectModalApi.close();
+      rejectDrawerApi.close();
       gridApi.reload();
     } finally {
       rejecting.value = false;
-      rejectModalApi.unlock();
+      rejectDrawerApi.unlock();
     }
   },
 });
 
-const [LogModal, logModalApi] = useVbenModal({
+const [LogDrawer, logDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   title: '退款操作日志',
   showConfirmButton: false,
   cancelText: '关闭',
@@ -294,12 +298,12 @@ async function openDetail(row: MerchantRefundOrder) {
 async function openLog(row: MerchantRefundOrder) {
   current.value = row;
   events.value = [];
-  logModalApi.open();
+  logDrawerApi.open();
   try {
     const result = await listMerchantRefundEventsApi(row.refund_order_id);
     events.value = result.list || [];
   } catch {
-    logModalApi.close();
+    logDrawerApi.close();
   }
 }
 
@@ -316,7 +320,7 @@ async function exportRows() {
   try {
     const formValues = (await gridApi.formApi?.getValues()) || {};
     const result = await exportMerchantRefundsApi(
-      buildRefundQuery(formValues, { currentPage: 1, pageSize: 20 }),
+      buildRefundQuery(formValues, { currentPage: 1, pageSize: 10 }),
     );
     const blob = new Blob([result.content], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -422,7 +426,7 @@ async function confirmReturn(row: MerchantRefundOrder) {
 function openReject(row: MerchantRefundOrder) {
   current.value = row;
   rejectForm.failMessage = '';
-  rejectModalApi.open();
+  rejectDrawerApi.open();
 }
 
 onMounted(async () => {
@@ -580,7 +584,7 @@ onMounted(async () => {
       </template>
     </DetailDrawer>
 
-    <RejectModal>
+    <RejectDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="拒绝原因" required>
           <ElInput
@@ -593,9 +597,9 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </RejectModal>
+    </RejectDrawer>
 
-    <LogModal class="w-[760px] max-w-[96vw]">
+    <LogDrawer class="w-[760px] max-w-[96vw]">
       <ElTable v-if="events.length" :data="events" border>
         <ElTableColumn
           label="时间"
@@ -632,6 +636,6 @@ onMounted(async () => {
       <div v-else class="py-8 text-center text-muted-foreground">
         暂无状态流转日志
       </div>
-    </LogModal>
+    </LogDrawer>
   </Page>
 </template>

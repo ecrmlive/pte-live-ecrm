@@ -117,7 +117,7 @@ const gridOptions = reactive<VxeGridProps<MemberRow>>({
   ],
   minHeight: 360,
   pagerConfig: {
-    pageSize: 15,
+    pageSize: 10,
     pageSizes: [15, 30, 50],
   },
   proxyConfig: {

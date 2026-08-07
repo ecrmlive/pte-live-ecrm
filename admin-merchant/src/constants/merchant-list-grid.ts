@@ -38,7 +38,8 @@ export const MERCHANT_LIST_GRID_CLASS = 'merchant-vxe-grid';
  * 列表 Grid 通用布局。
  * - height: 'auto'：配置保留；实际表体行为由 merchant-list-page.scss 覆盖（Page 整页滚动，非 tbody 内滚）。
  * - showOverflow: false：允许行高随单元格内容增高（订单等多行 slot 必需）。
- * - 自由文本列（备注等）须列级 showOverflow: true，单行省略，避免撑高行挤掉 fixed 操作列。
+ * - 自由文本列（备注等）须列级 showOverflow: true|'tooltip'，并由 merchant-list-page.scss
+ *   强制 .col--ellipsis wrapper 为 block 单行省略（vxe 默认 flex 会破坏 ellipsis）。
  * - cellConfig.verticalAlign: 'top'：多行内容与操作列顶对齐。
  *
  * 所有 useVbenVxeGrid 调用会自动合并本常量（见 adapter/vxe-table.ts）。

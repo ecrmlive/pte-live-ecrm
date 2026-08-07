@@ -8,9 +8,19 @@ func TestDepositStateTransitionsFailClosed(t *testing.T) {
 			t.Fatalf("state %q must allow the configured deposit transition", state)
 		}
 	}
+	for _, state := range []string{"pending", "shortfall"} {
+		if !depositCanFundOffline(state) {
+			t.Fatalf("state %q must allow offline fund", state)
+		}
+	}
 	for _, state := range []string{"not_required", "pending", "refund_pending", "refunded", "unknown"} {
 		if depositCanDeduct(state) || depositCanApproveRefund(state) {
 			t.Fatalf("state %q must fail closed", state)
+		}
+	}
+	for _, state := range []string{"not_required", "funded", "refund_pending", "refunded", "unknown"} {
+		if depositCanFundOffline(state) {
+			t.Fatalf("state %q must not allow offline fund", state)
 		}
 	}
 	if got := depositStateAfterBalance(500, 500); got != "funded" {

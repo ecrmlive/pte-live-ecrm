@@ -8,6 +8,7 @@ export interface AttachmentCategory {
   attachment_category_enname: string;
   pid: number;
   sort: number;
+  is_system?: number;
 }
 
 export interface AttachmentItem {
@@ -57,6 +58,8 @@ export function deleteAttachmentCategoryApi(id: number) {
 
 export function listAttachmentsApi(params: {
   category_id?: number;
+  /** 1 = 仅系统分类素材（侧栏「系统素材」根入口） */
+  is_system?: 0 | 1;
   limit?: number;
   page?: number;
   type?: AttachmentKind;

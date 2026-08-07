@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -16,15 +16,15 @@ import PlatformShopUserApi from '#/api/core/platform-shop-user';
 import type { ShopUserRoleOption } from '#/api/core/platform-shop-user';
 import { validateBEndPassword } from '#/utils/b-end-password';
 
+const open = defineModel<boolean>('open', { default: false });
+
 const props = defineProps<{
   appId: number;
-  open: boolean;
   roleOptions: ShopUserRoleOption[];
 }>();
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -66,27 +66,46 @@ const rules = {
   role_id: [{ message: '请选择所属角色', required: true, trigger: 'change', type: 'array' }],
 };
 
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return;
-    form.user_name = '';
-    form.real_name = '';
-    form.password = '';
-    form.confirm_password = '';
-    form.role_id = [];
-  },
-);
-
-function handleClose() {
-  emit('update:open', false);
+function resetForm() {
+  form.user_name = '';
+  form.real_name = '';
+  form.password = '';
+  form.confirm_password = '';
+  form.role_id = [];
 }
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      resetForm();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '添加商城管理员' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
 
 async function handleSubmit() {
   if (!formRef.value || props.appId <= 0) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res = await PlatformShopUserApi.add(
         {
@@ -101,24 +120,23 @@ async function handleSubmit() {
       );
       if (res.code === 1) {
         ElMessage.success(res.msg || '添加成功');
-        emit('update:open', false);
+        open.value = false;
         emit('success');
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="添加商城管理员"
-    width="560px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="100px">
       <ElFormItem label="用户名" prop="user_name">
@@ -155,9 +173,5 @@ async function handleSubmit() {
         />
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

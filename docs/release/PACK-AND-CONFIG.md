@@ -34,6 +34,9 @@ JWT 规则：
 - PC、小程序、H5、iOS、Android、鸿蒙使用同一 C 端 JWT。
 - 平台、商户、区域、客服、运营使用同一统一后台 JWT。
 - 店铺系统使用独立 JWT。
+- 平台「店铺列表 → 登录」签发 `store_console` 时，`api-platform` 使用 `jwt.store_secret`（须与 `api-merchant` 的 `jwt.secret` 一致）；未配置则回退 `jwt.secret`。
+- 平台前端通过 `VITE_MERCHANT_ADMIN_URL` 打开店铺管理系统（local 示例 `http://127.0.0.1:5174`，test 按 Nginx 域名覆盖，见 `admin-platform/.env.development` / `.env.test`）。
+- 平台「店铺分组」区域定位地图使用高德 Web JS API：Key / 安全密钥写入被 Git 忽略的 `sql/admin/init_key.sql`（`provider=amap`），运行时由已鉴权接口 `GET /setting/map-client-config` 下发；勿再用 `VITE_TENCENT_MAP_KEY`。未配置时抽屉仍可手工编辑区域中心/经纬度。
 - local 与 test 在不同宿主机使用完全相同的上述配置值。
 
 七禧 API 复用 `pte_live_net` 的 MySQL、Redis、etcd、NATS 容器；但三套 API 只读写自己的 `qixi_crm_*` 数据库，绝不访问 pte-live-im 的数据库或表。MySQL 初始化通过 `pte_live_mysql` 容器内已有根凭证执行，七禧不复制该密码。

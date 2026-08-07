@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
@@ -16,6 +17,7 @@ import (
 
 const typeTable = "qixi_crm_a_merchant_type"
 const typeMenuTable = "qixi_crm_a_merchant_type_menu"
+const merchantViewTable = "qixi_crm_a_merchant_view"
 
 var errNotFound = errors.New("店铺类型不存在")
 var errInvalid = errors.New("店铺类型参数不合法")
@@ -28,7 +30,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	p := middleware.RequireAdminRoles("platform")
 	m := middleware.RequireAdminMenu(h.db, "merchant.type.manage")
 	r.GET("/merchant-types", p, h.List)
-	r.GET("/merchant-types/:id", p, m, h.Get)
+	r.GET("/merchant-types/:id", p, h.Get)
 	r.POST("/merchant-types", p, m, h.Create)
 	r.PUT("/merchant-types/:id", p, m, h.Update)
 	r.PUT("/merchant-types/:id/remark", p, m, h.UpdateRemark)
@@ -37,15 +39,20 @@ func (h *Handler) Register(r gin.IRoutes) {
 }
 
 type record struct {
-	ID          uint     `gorm:"column:id;primaryKey" json:"id"`
-	Name        string   `gorm:"column:name" json:"name"`
-	TypeInfo    string   `gorm:"column:type_info" json:"type_info"`
-	IsMargin    int8     `gorm:"column:is_margin" json:"is_margin"`
-	Margin      float64  `gorm:"column:margin" json:"margin"`
-	Description string   `gorm:"column:description" json:"description"`
-	Remark      string   `gorm:"column:remark" json:"remark"`
-	Status      int8     `gorm:"column:status" json:"status"`
-	MenuCodes   []string `gorm:"-" json:"menu_codes"`
+	ID          uint      `gorm:"column:id;primaryKey" json:"id"`
+	Name        string    `gorm:"column:name" json:"name"`
+	TypeInfo    string    `gorm:"column:type_info" json:"type_info"`
+	IsMargin    int8      `gorm:"column:is_margin" json:"is_margin"`
+	Margin      float64   `gorm:"column:margin" json:"margin"`
+	Description string    `gorm:"column:description" json:"description"`
+	Remark      string    `gorm:"column:remark" json:"remark"`
+	Status      int8      `gorm:"column:status" json:"status"`
+	CreatedAt   time.Time `gorm:"column:created_at" json:"-"`
+	UpdatedAt   time.Time `gorm:"column:updated_at" json:"-"`
+	CreatedAtS  string    `gorm:"-" json:"created_at"`
+	UpdatedAtS  string    `gorm:"-" json:"updated_at"`
+	StoreCount  int64     `gorm:"-" json:"store_count"`
+	MenuCodes   []string  `gorm:"-" json:"menu_codes"`
 }
 
 func (record) TableName() string { return typeTable }
@@ -87,14 +94,12 @@ func (h *Handler) Get(c *gin.Context) {
 		fail(c, err)
 		return
 	}
-	if err := h.fill(c, []record{row}); err != nil {
+	rows := []record{row}
+	if err := h.fill(c, rows); err != nil {
 		fail(c, err)
 		return
 	}
-	var codes []string
-	_ = h.db.WithContext(c.Request.Context()).Table(typeMenuTable).Where("merchant_type_id = ?", id).Pluck("menu_code", &codes).Error
-	row.MenuCodes = codes
-	response.OK(c, row)
+	response.OK(c, rows[0])
 }
 func (h *Handler) Create(c *gin.Context) {
 	var req saveReq
@@ -198,12 +203,14 @@ func (h *Handler) save(c *gin.Context, id uint, req saveReq) (record, error) {
 				return err
 			}
 		} else {
-			res := tx.Table(typeTable).Where("id = ?", id).Updates(values)
-			if res.Error != nil {
-				return res.Error
+			// MySQL 默认按「实际变更行数」回报 RowsAffected；仅改 menu_codes 时
+			// 类型字段可能完全相同 → RowsAffected=0，不能据此判「不存在」。
+			if err := tx.First(&out, id).Error; err != nil {
+				return err
 			}
-			if res.RowsAffected == 0 {
-				return errNotFound
+			values["updated_at"] = time.Now()
+			if err := tx.Table(typeTable).Where("id = ?", id).Updates(values).Error; err != nil {
+				return err
 			}
 			if err := tx.First(&out, id).Error; err != nil {
 				return err
@@ -218,6 +225,7 @@ func (h *Handler) save(c *gin.Context, id uint, req saveReq) (record, error) {
 			}
 		}
 		out.MenuCodes = unique(req.MenuCodes)
+		decorateTimes(&out)
 		return nil
 	})
 	return out, err
@@ -241,10 +249,35 @@ func (h *Handler) fill(c *gin.Context, rows []record) error {
 	for _, l := range links {
 		by[l.MerchantTypeID] = append(by[l.MerchantTypeID], l.MenuCode)
 	}
+	var counts []struct {
+		TypeID uint  `gorm:"column:type_id"`
+		Cnt    int64 `gorm:"column:cnt"`
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table(merchantViewTable).
+		Select("type_id, COUNT(*) AS cnt").
+		Where("type_id IN ?", ids).
+		Group("type_id").
+		Scan(&counts).Error; err != nil {
+		return err
+	}
+	countBy := map[uint]int64{}
+	for _, row := range counts {
+		countBy[row.TypeID] = row.Cnt
+	}
 	for i := range rows {
 		rows[i].MenuCodes = by[rows[i].ID]
+		rows[i].StoreCount = countBy[rows[i].ID]
+		decorateTimes(&rows[i])
 	}
 	return nil
+}
+func decorateTimes(row *record) {
+	if !row.CreatedAt.IsZero() {
+		row.CreatedAtS = row.CreatedAt.Format("2006-01-02 15:04:05")
+	}
+	if !row.UpdatedAt.IsZero() {
+		row.UpdatedAtS = row.UpdatedAt.Format("2006-01-02 15:04:05")
+	}
 }
 func validate(r *saveReq) error {
 	r.Name = strings.TrimSpace(r.Name)

@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -145,13 +145,17 @@ const gridOptions: VxeGridProps<MemberLevel> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增会员等级' }).open();
+  formDrawerApi.setState({ title: '新增会员等级' }).open();
 }
 
 function openEdit(row: MemberLevel) {
@@ -164,7 +168,7 @@ function openEdit(row: MemberLevel) {
     status: row.status,
     version: row.version,
   });
-  formModalApi.setState({ title: '编辑会员等级' }).open();
+  formDrawerApi.setState({ title: '编辑会员等级' }).open();
 }
 
 async function save() {
@@ -182,7 +186,7 @@ async function save() {
     );
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const data = {
@@ -193,14 +197,14 @@ async function save() {
     };
     if (editing.value) await updateMemberLevel(editing.value.id, data);
     else await createMemberLevel(data);
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success(
       '会员等级已保存；不会修改现有用户等级或历史变更记录',
     );
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -264,7 +268,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="98px">
         <ElFormItem label="等级名称" required>
           <ElInput v-model="form.name" maxlength="64" />
@@ -296,6 +300,6 @@ onMounted(async () => {
           </ElRadioGroup>
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

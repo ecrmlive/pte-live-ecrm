@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDescriptions,
@@ -176,7 +176,7 @@ const gridOptions: VxeGridProps<MerchantOrder> = {
     },
     merchantListActionColumn({ width: 180 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -231,7 +231,9 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   placement: 'right',
 });
 
-const [DeliveryModal, deliveryModalApi] = useVbenModal({
+const [DeliveryDrawer, deliveryDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   title: '订单发货',
   confirmText: '确认发货',
   onConfirm: async () => {
@@ -241,7 +243,7 @@ const [DeliveryModal, deliveryModalApi] = useVbenModal({
       return;
     }
     delivering.value = true;
-    deliveryModalApi.lock();
+    deliveryDrawerApi.lock();
     try {
       await deliverMerchantOrderApi(deliveryRow.value.order_id, {
         delivery_id: deliveryForm.delivery_id.trim(),
@@ -249,11 +251,11 @@ const [DeliveryModal, deliveryModalApi] = useVbenModal({
         delivery_type: deliveryForm.delivery_type,
       });
       ElMessage.success('订单已发货');
-      deliveryModalApi.close();
+      deliveryDrawerApi.close();
       gridApi.reload();
     } finally {
       delivering.value = false;
-      deliveryModalApi.unlock();
+      deliveryDrawerApi.unlock();
     }
   },
 });
@@ -274,7 +276,7 @@ function openDelivery(row: MerchantOrder) {
     delivery_name: '',
     delivery_type: 'express',
   });
-  deliveryModalApi.open();
+  deliveryDrawerApi.open();
 }
 
 async function verify(row: MerchantOrder) {
@@ -396,7 +398,7 @@ onMounted(async () => {
       </template>
     </DetailDrawer>
 
-    <DeliveryModal>
+    <DeliveryDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="物流类型">
           <ElSelect v-model="deliveryForm.delivery_type" class="w-full">
@@ -417,6 +419,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </DeliveryModal>
+    </DeliveryDrawer>
   </Page>
 </template>

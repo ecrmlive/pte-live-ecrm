@@ -15,8 +15,9 @@ type Store interface {
 	UpdateCategory(ctx context.Context, c *Category) error
 	DeleteCategory(ctx context.Context, id, merID uint) error
 	GetCategory(ctx context.Context, id uint) (*Category, error)
+	GetCategoryByEnname(ctx context.Context, merID uint, enname string) (*Category, error)
 
-	List(ctx context.Context, userType int, cateID uint, attachmentType *int8, page, limit int) ([]Attachment, int64, error)
+	List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) ([]Attachment, int64, error)
 	Get(ctx context.Context, id uint) (*Attachment, error)
 	Create(ctx context.Context, a *Attachment) error
 	Delete(ctx context.Context, id uint, userType int) error
@@ -27,7 +28,49 @@ type Service struct{ store Store }
 func NewService(store Store) *Service { return &Service{store: store} }
 
 func (s *Service) ListCategories(ctx context.Context, merID uint) ([]Category, error) {
+	if merID == 0 {
+		if err := s.EnsureSystemCategories(ctx); err != nil {
+			return nil, err
+		}
+	}
 	return s.store.ListCategories(ctx, merID)
+}
+
+// EnsureSystemCategories 幂等写入平台固定系统分类。
+func (s *Service) EnsureSystemCategories(ctx context.Context) error {
+	for _, spec := range SystemCategories {
+		row, err := s.store.GetCategoryByEnname(ctx, 0, spec.EnName)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			c := &Category{
+				AttachmentCategoryName:   spec.Name,
+				AttachmentCategoryEnname: spec.EnName,
+				Sort:                     spec.Sort,
+				MerID:                    0,
+				IsSystem:                 1,
+				CreateTime:               time.Now(),
+			}
+			if err := s.store.CreateCategory(ctx, c); err != nil {
+				return err
+			}
+			continue
+		}
+		needUpdate := row.AttachmentCategoryName != spec.Name ||
+			row.Sort != spec.Sort ||
+			row.IsSystem != 1
+		if !needUpdate {
+			continue
+		}
+		row.AttachmentCategoryName = spec.Name
+		row.Sort = spec.Sort
+		row.IsSystem = 1
+		if err := s.store.UpdateCategory(ctx, row); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) CreateCategory(ctx context.Context, merID uint, in CategoryInput) (*Category, error) {
@@ -39,9 +82,17 @@ func (s *Service) CreateCategory(ctx context.Context, merID uint, in CategoryInp
 	if en == "" {
 		en = "cate"
 	}
+	if merID == 0 && IsSystemCategoryEnname(en) {
+		return nil, ErrSystemCategory
+	}
+	for _, spec := range SystemCategories {
+		if merID == 0 && name == spec.Name {
+			return nil, ErrSystemCategory
+		}
+	}
 	c := &Category{
 		PID: in.PID, AttachmentCategoryName: name, AttachmentCategoryEnname: en,
-		Sort: in.Sort, MerID: merID, CreateTime: time.Now(),
+		Sort: in.Sort, MerID: merID, IsSystem: 0, CreateTime: time.Now(),
 	}
 	if err := s.store.CreateCategory(ctx, c); err != nil {
 		return nil, err
@@ -60,10 +111,16 @@ func (s *Service) UpdateCategory(ctx context.Context, merID, id uint, in Categor
 	if c.MerID != merID {
 		return nil, ErrForbidden
 	}
+	if c.IsSystem == 1 || IsSystemCategoryEnname(c.AttachmentCategoryEnname) {
+		return nil, ErrSystemCategory
+	}
 	if name := strings.TrimSpace(in.Name); name != "" {
 		c.AttachmentCategoryName = name
 	}
 	if en := strings.TrimSpace(in.EnName); en != "" {
+		if IsSystemCategoryEnname(en) {
+			return nil, ErrSystemCategory
+		}
 		c.AttachmentCategoryEnname = en
 	}
 	c.PID = in.PID
@@ -85,17 +142,20 @@ func (s *Service) DeleteCategory(ctx context.Context, merID, id uint) error {
 	if c.MerID != merID {
 		return ErrForbidden
 	}
+	if c.IsSystem == 1 || IsSystemCategoryEnname(c.AttachmentCategoryEnname) {
+		return ErrSystemCategory
+	}
 	return s.store.DeleteCategory(ctx, id, merID)
 }
 
-func (s *Service) List(ctx context.Context, userType int, cateID uint, attachmentType *int8, page, limit int) (*PageResult[Attachment], error) {
+func (s *Service) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) (*PageResult[Attachment], error) {
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	list, total, err := s.store.List(ctx, userType, cateID, attachmentType, page, limit)
+	list, total, err := s.store.List(ctx, userType, cateID, systemOnly, attachmentType, page, limit)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -26,17 +26,31 @@ import {
   updateMerchantStoreMenu,
   type MerchantStoreMenuRow,
 } from '#/api/core/ecrm';
-import { getAccessCodesApi } from '#/api/core/auth';
 import MenuIconPreview from '#/components/platform-menu/MenuIconPreview.vue';
+import { resolveStoreMenuIcon } from '#/constants/platform-lucide-icons';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 
 type FormMode = 'create' | 'create-child' | 'edit';
 
-const canManage = ref(true);
+/**
+ * 本页 CRUD 对已进入页面的管理员开放。
+ * 注意：/auth/permissions 只返回 button 码，不能用 page 码 store.menu 判断，
+ * 否则会把「添加菜单」和操作列全部隐藏。
+ */
+const canManage = true;
 const editing = ref<MerchantStoreMenuRow>();
 const formMode = ref<FormMode>('create');
 const parentId = ref(0);
+
+function displayMenuIcon(row: MerchantStoreMenuRow) {
+  return resolveStoreMenuIcon({
+    icon: row.icon,
+    name: row.menu_name,
+    isMenu: row.is_menu,
+    path: row.path,
+  });
+}
 
 const form = reactive({
   code: '',
@@ -67,11 +81,13 @@ const gridOptions: VxeGridProps<MerchantStoreMenuRow> = {
       title: '菜单地址',
     },
     {
+      align: 'center',
       field: 'icon',
-      minWidth: 180,
+      minWidth: 100,
       showOverflow: false,
       slots: { default: 'icon' },
       title: '菜单图标',
+      width: 120,
     },
     {
       field: 'created_at',
@@ -87,6 +103,10 @@ const gridOptions: VxeGridProps<MerchantStoreMenuRow> = {
     ajax: {
       query: async () => {
         const list = await fetchMerchantStoreMenus();
+        // 与 API / CRMEB 一致：sort DESC, id ASC（树 transform 保留扁平相对序）
+        list.sort(
+          (a, b) => b.sort - a.sort || a.menu_id - b.menu_id,
+        );
         return { items: list, total: list.length };
       },
     },
@@ -110,7 +130,11 @@ const gridOptions: VxeGridProps<MerchantStoreMenuRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -131,7 +155,7 @@ function openCreate() {
   parentId.value = 0;
   editing.value = undefined;
   resetForm();
-  formModalApi.setState({ title: '添加菜单' }).open();
+  formDrawerApi.setState({ title: '添加菜单' }).open();
 }
 
 function openCreateChild(row: MerchantStoreMenuRow) {
@@ -140,7 +164,7 @@ function openCreateChild(row: MerchantStoreMenuRow) {
   editing.value = undefined;
   resetForm();
   form.is_route = row.is_menu === 1 ? 1 : 0;
-  formModalApi.setState({ title: `添加子菜单：${row.menu_name}` }).open();
+  formDrawerApi.setState({ title: `添加子菜单：${row.menu_name}` }).open();
 }
 
 function openEdit(row: MerchantStoreMenuRow) {
@@ -156,7 +180,7 @@ function openEdit(row: MerchantStoreMenuRow) {
   form.is_route = row.is_route;
   form.sort = row.sort;
   form.status = row.is_show;
-  formModalApi.setState({ title: '编辑菜单' }).open();
+  formDrawerApi.setState({ title: '编辑菜单' }).open();
 }
 
 async function save() {
@@ -182,18 +206,18 @@ async function save() {
     sort: form.sort,
     status: form.status,
   };
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     if (formMode.value === 'edit' && editing.value) {
       await updateMerchantStoreMenu(editing.value.menu_id, payload);
     } else {
       await createMerchantStoreMenu(payload);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('菜单已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -211,15 +235,10 @@ async function onDelete(row: MerchantStoreMenuRow) {
   ElMessage.success('菜单已删除');
   gridApi.reload();
 }
-
-onMounted(async () => {
-  const permissions = await getAccessCodesApi();
-  canManage.value = permissions.includes('store.menu');
-});
 </script>
 
 <template>
-  <Page auto-content-height title="店铺菜单">
+  <Page auto-content-height>
     <Grid>
       <template #toolbar-actions>
         <ElButton
@@ -235,16 +254,15 @@ onMounted(async () => {
         <span>{{ row.menu_name }} [{{ row.menu_id }}]</span>
       </template>
       <template #icon="{ row }">
-        <span v-if="row.icon" class="inline-flex items-center gap-2">
-          <MenuIconPreview :icon="row.icon" :size="16" />
-          <span class="text-xs text-muted-foreground">{{ row.icon }}</span>
-        </span>
-        <span v-else class="text-muted-foreground">—</span>
+        <MenuIconPreview
+          v-if="displayMenuIcon(row)"
+          :icon="displayMenuIcon(row)!"
+          :size="18"
+        />
       </template>
       <template #action="{ row }">
         <template v-if="canManage">
           <ElButton
-            v-if="row.is_menu === 1"
             link
             type="primary"
             @click="openCreateChild(row)"
@@ -257,7 +275,7 @@ onMounted(async () => {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="100px">
         <ElFormItem v-if="parentId" label="父级 ID">
           <ElInput :model-value="String(parentId)" disabled />
@@ -278,7 +296,7 @@ onMounted(async () => {
           />
         </ElFormItem>
         <ElFormItem label="菜单图标">
-          <ElInput v-model="form.icon" placeholder="lucide:package" />
+          <ElInput v-model="form.icon" placeholder="ant-design:dashboard-outlined" />
         </ElFormItem>
         <ElFormItem label="菜单类型">
           <ElRadioGroup v-model="form.is_menu">
@@ -296,6 +314,6 @@ onMounted(async () => {
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

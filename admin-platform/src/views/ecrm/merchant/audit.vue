@@ -4,27 +4,36 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
   ElFormItem,
+  ElImage,
   ElInput,
-  ElInputNumber,
   ElMessage,
+  ElRadio,
+  ElRadioGroup,
   ElTag,
 } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
-  assignMerchantIntentionRegion,
   auditMerchantIntention,
+  fetchMerchantCategories,
   fetchMerchantIntentions,
+  fetchMerchantTypes,
+  type MerchantCategoryRow,
   type MerchantIntentionRow,
+  type MerchantTypeRow,
 } from '#/api/core/ecrm';
 import { getAccessCodesApi } from '#/api/core/auth';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 import {
   LIST_DATE_RANGE_FIELD,
   listFormOptionsDefaults,
@@ -33,24 +42,35 @@ import {
 const selected = ref<MerchantIntentionRow>();
 const submitting = ref(false);
 const canAudit = ref(false);
-const canAssignRegion = ref(false);
+const categories = ref<MerchantCategoryRow[]>([]);
+const types = ref<MerchantTypeRow[]>([]);
 
 const form = reactive({
-  account: '',
   fail_msg: '',
   mark: '',
-  password: '',
-  region_id: 0,
   status: 1,
 });
-const assignment = reactive({ region_id: 0 });
 
 const statusText = (status: number) =>
-  ({ 0: '待审核', 1: '已通过', 2: '已驳回' })[status] || '未知';
+  ({ 0: '待审核', 1: '审核通过', 2: '审核未通过' })[status] || '未知';
 const statusType = (status: number) =>
   ({ 0: 'warning', 1: 'success', 2: 'danger' })[status] || 'info';
 const formatTime = (value?: string | null) =>
   value ? formatShanghaiDateTime(value) : '—';
+const displayOrDash = (value?: string | number | null) => {
+  const text = String(value ?? '').trim();
+  return text || '—';
+};
+
+function imageUrls(raw?: string) {
+  const value = String(raw ?? '').trim();
+  if (!value) return [];
+  return value
+    .split(/[,;|]/)
+    .map((item) => resolveCosMediaUrl(item.trim()))
+    .filter(Boolean)
+    .slice(0, 6);
+}
 
 function buildListParams(
   page: { currentPage: number; pageSize: number },
@@ -58,6 +78,8 @@ function buildListParams(
 ) {
   const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
   const statusRaw = formValues?.status;
+  const categoryRaw = formValues?.category_id;
+  const typeRaw = formValues?.type_id;
   return {
     page: page.currentPage,
     limit: page.pageSize,
@@ -66,77 +88,120 @@ function buildListParams(
       statusRaw === 0 || statusRaw === 1 || statusRaw === 2
         ? Number(statusRaw)
         : undefined,
+    category_id: categoryRaw ? Number(categoryRaw) : undefined,
+    type_id: typeRaw ? Number(typeRaw) : undefined,
     date_from: range[0],
     date_to: range[1],
   };
 }
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '店铺名称 / 联系人 / 手机号',
-    },
-    fieldName: 'keyword',
-    label: '申请搜索',
-  },
   {
     component: 'Select',
     componentProps: {
       clearable: true,
       options: [
         { label: '待审核', value: 0 },
-        { label: '已通过', value: 1 },
-        { label: '已驳回', value: 2 },
+        { label: '审核通过', value: 1 },
+        { label: '审核未通过', value: 2 },
       ],
-      placeholder: '全部状态',
+      placeholder: '全部',
     },
     fieldName: 'status',
     label: '审核状态',
+  },
+  LIST_DATE_RANGE_FIELD,
+  {
+    component: 'Select',
+    componentProps: { clearable: true, options: [], placeholder: '请选择' },
+    fieldName: 'category_id',
+    label: '店铺分类',
+  },
+  {
+    component: 'Select',
+    componentProps: { clearable: true, options: [], placeholder: '请选择' },
+    fieldName: 'type_id',
+    label: '店铺类型',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '请输入店铺名称/联系方式',
+    },
+    fieldName: 'keyword',
+    label: '关键字',
   },
 ]);
 
 const gridOptions: VxeGridProps<MerchantIntentionRow> = {
   columns: [
-    { field: 'mer_intention_id', title: '申请 ID', width: 88 },
+    { field: 'mer_intention_id', title: 'ID', width: 72 },
     {
       field: 'mer_name',
-      minWidth: 150,
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 140,
       showOverflow: false,
       title: '店铺名称',
     },
-    { field: 'name', minWidth: 110, title: '联系人' },
-    { field: 'phone', minWidth: 130, title: '联系电话' },
     {
-      field: 'create_time',
-      formatter: ({ cellValue }) => formatTime(cellValue),
-      minWidth: 170,
-      title: '申请时间',
+      field: 'category_name',
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 110,
+      showOverflow: false,
+      title: '店铺分类',
+    },
+    {
+      field: 'type_name',
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 110,
+      showOverflow: false,
+      title: '店铺类型',
+    },
+    {
+      field: 'name',
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 100,
+      showOverflow: false,
+      title: '店铺姓名',
+    },
+    {
+      field: 'phone',
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 120,
+      showOverflow: false,
+      title: '联系方式',
+    },
+    {
+      field: 'images',
+      slots: { default: 'images' },
+      title: '资质图片',
+      width: 120,
     },
     {
       field: 'status',
       slots: { default: 'status' },
-      title: '状态',
-      width: 96,
-    },
-    {
-      field: 'circle_id',
-      formatter: ({ cellValue }) => cellValue || '未分配',
-      title: '分配区域',
+      title: '审核状态',
       width: 108,
     },
     {
-      field: 'fail_msg',
-      formatter: ({ cellValue }) => cellValue || '—',
-      minWidth: 160,
-      showOverflow: false,
-      title: '驳回原因',
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatTime(cellValue),
+      title: '申请时间',
+      width: 168,
     },
-    platformListActionColumn({ width: 205 }),
+    {
+      className: 'col--remark',
+      field: 'mark',
+      formatter: ({ cellValue }) => displayOrDash(cellValue),
+      minWidth: 140,
+      showOverflow: 'tooltip',
+      title: '审核备注',
+      width: 180,
+    },
+    platformListActionColumn({ width: 120 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -157,54 +222,56 @@ const gridOptions: VxeGridProps<MerchantIntentionRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [AuditModal, auditModalApi] = useVbenModal({
+const [AuditDrawer, auditDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onConfirm: async () => submitAudit(),
 });
 
-const [RegionModal, regionModalApi] = useVbenModal({
-  onConfirm: async () => assignRegion(),
-});
-
-function openAudit(row: MerchantIntentionRow, status: number) {
-  selected.value = row;
-  form.status = status;
-  form.mark = '';
-  form.fail_msg = '';
-  form.account = '';
-  form.password = '';
-  form.region_id = row.circle_id || 0;
-  auditModalApi
-    .setState({
-      title: status === 1 ? '通过店铺入驻' : '驳回店铺入驻',
-    })
-    .open();
+function syncFilterSelectOptions() {
+  gridApi.formApi?.updateSchema([
+    {
+      fieldName: 'category_id',
+      componentProps: {
+        clearable: true,
+        options: categories.value.map((c) => ({
+          label: c.category_name,
+          value: c.merchant_category_id,
+        })),
+        placeholder: '请选择',
+      },
+    },
+    {
+      fieldName: 'type_id',
+      componentProps: {
+        clearable: true,
+        options: types.value.map((t) => ({ label: t.name, value: t.id })),
+        placeholder: '请选择',
+      },
+    },
+  ]);
 }
 
-function openRegionAssignment(row: MerchantIntentionRow) {
-  selected.value = row;
-  assignment.region_id = row.circle_id || 0;
-  regionModalApi.setState({ title: '分配入驻审核区域' }).open();
-}
-
-async function assignRegion() {
-  if (!selected.value || assignment.region_id <= 0) {
-    ElMessage.warning('请填写有效区域 ID');
-    return;
-  }
-  regionModalApi.lock();
-  submitting.value = true;
+async function loadFilterOptions() {
   try {
-    await assignMerchantIntentionRegion(
-      selected.value.mer_intention_id,
-      assignment.region_id,
-    );
-    ElMessage.success('入驻申请已分配区域');
-    regionModalApi.close();
-    gridApi.reload();
-  } finally {
-    submitting.value = false;
-    regionModalApi.unlock();
+    const [cats, typeList] = await Promise.all([
+      fetchMerchantCategories().catch(() => ({ list: [] as MerchantCategoryRow[] })),
+      fetchMerchantTypes().catch(() => ({ list: [] as MerchantTypeRow[] })),
+    ]);
+    categories.value = cats.list || [];
+    types.value = typeList.list || [];
+    syncFilterSelectOptions();
+  } catch {
+    /* 筛选项失败不阻断列表 */
   }
+}
+
+function openAudit(row: MerchantIntentionRow) {
+  selected.value = row;
+  form.status = 1;
+  form.mark = row.mark || '';
+  form.fail_msg = '';
+  auditDrawerApi.setState({ title: '审核店铺入驻' }).open();
 }
 
 async function submitAudit() {
@@ -213,100 +280,76 @@ async function submitAudit() {
     ElMessage.warning('请填写驳回原因');
     return;
   }
-  if (form.status === 1 && (!form.account.trim() || !form.password)) {
-    ElMessage.warning('通过入驻时必须设置商户管理账号和初始密码');
-    return;
-  }
-  auditModalApi.lock();
+  auditDrawerApi.lock();
   submitting.value = true;
   try {
+    // 账号/初始密码/区域由申请资料自动带出（对齐 CRMEB：手机号作账号，区域用申请已分配 circle_id）
     await auditMerchantIntention(selected.value.mer_intention_id, {
-      account: form.account.trim(),
       fail_msg: form.fail_msg.trim(),
       mark: form.mark.trim(),
-      password: form.password,
-      region_id: form.region_id,
       status: form.status,
     });
     ElMessage.success(form.status === 1 ? '入驻审核已通过' : '入驻申请已驳回');
-    auditModalApi.close();
+    auditDrawerApi.close();
     gridApi.reload();
   } finally {
     submitting.value = false;
-    auditModalApi.unlock();
+    auditDrawerApi.unlock();
   }
 }
 
 onMounted(async () => {
   const permissions = await getAccessCodesApi();
   canAudit.value = permissions.includes('merchant.intention.audit');
-  canAssignRegion.value = permissions.includes('merchant.intention.assign_region');
+  await loadFilterOptions();
 });
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid>
+      <template #images="{ row }">
+        <template v-if="imageUrls(row.images).length">
+          <ElImage
+            v-for="url in imageUrls(row.images)"
+            :key="url"
+            :preview-src-list="imageUrls(row.images)"
+            :src="url"
+            class="mr-1 h-8 w-8"
+            fit="cover"
+            preview-teleported
+          />
+        </template>
+        <span v-else>—</span>
+      </template>
       <template #status="{ row }">
         <ElTag :type="statusType(row.status)">{{ statusText(row.status) }}</ElTag>
       </template>
       <template #action="{ row }">
-        <template v-if="row.status === 0">
-          <ElButton
-            v-if="canAssignRegion"
-            link
-            type="primary"
-            @click="openRegionAssignment(row)"
-          >
-            分配区域
-          </ElButton>
-          <ElButton
-            v-if="canAudit"
-            link
-            type="primary"
-            @click="openAudit(row, 1)"
-          >
-            通过
-          </ElButton>
-          <ElButton
-            v-if="canAudit"
-            link
-            type="danger"
-            @click="openAudit(row, 2)"
-          >
-            驳回
-          </ElButton>
-          <span v-if="!canAssignRegion && !canAudit">—</span>
-        </template>
+        <ElButton
+          v-if="canAudit && row.status === 0"
+          link
+          type="primary"
+          @click="openAudit(row)"
+        >
+          审核
+        </ElButton>
         <span v-else>—</span>
       </template>
     </Grid>
 
-    <AuditModal>
+    <AuditDrawer>
       <ElForm label-width="105px">
         <ElFormItem label="申请店铺">
           <span>{{ selected?.mer_name }}</span>
         </ElFormItem>
-        <template v-if="form.status === 1">
-          <ElFormItem label="商户管理账号" required>
-            <ElInput v-model="form.account" autocomplete="off" />
-          </ElFormItem>
-          <ElFormItem label="初始密码" required>
-            <ElInput
-              v-model="form.password"
-              autocomplete="new-password"
-              show-password
-              type="password"
-            />
-          </ElFormItem>
-          <ElFormItem label="所属区域ID">
-            <ElInputNumber v-model="form.region_id" :min="0" />
-            <div class="text-xs text-gray-500">
-              填写区域商圈对应的商户 region_id，区域管理员将按此范围管理商户。
-            </div>
-          </ElFormItem>
-        </template>
-        <ElFormItem v-else label="驳回原因" required>
+        <ElFormItem label="审核状态" required>
+          <ElRadioGroup v-model="form.status">
+            <ElRadio :value="1">同意</ElRadio>
+            <ElRadio :value="2">拒绝</ElRadio>
+          </ElRadioGroup>
+        </ElFormItem>
+        <ElFormItem v-if="form.status === 2" label="驳回原因" required>
           <ElInput
             v-model="form.fail_msg"
             :rows="3"
@@ -325,20 +368,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-    </AuditModal>
-
-    <RegionModal>
-      <ElForm label-width="100px">
-        <ElFormItem label="申请店铺">
-          <span>{{ selected?.mer_name }}</span>
-        </ElFormItem>
-        <ElFormItem label="区域 ID" required>
-          <ElInputNumber v-model="assignment.region_id" :min="1" />
-        </ElFormItem>
-        <p class="text-xs text-gray-500">
-          分配后仅对应区域管理员可查看和审核该申请。
-        </p>
-      </ElForm>
-    </RegionModal>
+    </AuditDrawer>
   </Page>
 </template>

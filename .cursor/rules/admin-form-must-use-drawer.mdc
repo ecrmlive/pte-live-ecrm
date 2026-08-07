@@ -1,0 +1,26 @@
+---
+description: 管理后台添加/编辑/详情必须使用 useVbenDrawer，禁止 Modal/Dialog 做表单或详情
+globs: admin-platform/src/views/**/*.{vue,ts,tsx},admin-merchant/src/views/**/*.{vue,ts,tsx}
+alwaysApply: true
+---
+
+# 管理后台：添加 / 编辑 / 详情 → 仅 Vben Drawer
+
+适用于 `admin-platform`、`admin-merchant` 全部页面。
+
+## 强制
+
+- **添加、编辑、详情（含只读详情）** 必须使用 `useVbenDrawer`（参考金标准 `admin-platform/src/views/ecrm/merchant/list.vue`）。
+- Drawer 建议：`class: 'w-[1000px] max-w-[96vw]'`，`placement: 'right'`。
+- 列表页 `Page` **禁止**传 `title` / `description`（由菜单/面包屑承担）。
+- 删除确认可用 `ElMessageBox.confirm` / `confirm()`。
+
+## 禁止
+
+- 用 `ElDialog`、`useVbenModal`、`ElMessageBox.prompt` 做 **添加 / 编辑 / 详情** 表单或只读详情壳。
+- 用页内大标题替代菜单标题。
+
+## 允许保留 Modal / Dialog 的例外
+
+仅限 **非实体增改详** 的选择器/轻量交互，例如：素材选择、选店铺、选模板、选商品。  
+业务实体表单（含线下付款、保证金补缴/扣除、审核表单等）→ **必须 Drawer**。

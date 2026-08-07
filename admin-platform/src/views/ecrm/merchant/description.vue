@@ -3,7 +3,7 @@ import type { ImageUploadOptions } from '@vben/plugins/tiptap';
 
 import { computed, onMounted, ref, watch } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import { VbenTiptap, VbenTiptapPreview } from '@vben/plugins/tiptap';
 import { ElButton, ElMessage, ElTabPane, ElTabs } from 'element-plus';
 
@@ -44,7 +44,9 @@ const imageUpload: ImageUploadOptions = {
   },
 };
 
-const [PreviewModal, previewModalApi] = useVbenModal({
+const [PreviewDrawer, previewDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   footer: false,
   onOpenChange(isOpen) {
     previewOpen.value = isOpen;
@@ -78,7 +80,7 @@ async function save() {
 }
 
 function openPreview() {
-  previewModalApi.setState({ title: currentTab.value.label }).open();
+  previewDrawerApi.setState({ title: currentTab.value.label }).open();
 }
 
 watch(activeName, () => {
@@ -131,12 +133,12 @@ onMounted(async () => {
       </template>
     </SettingsTabLayout>
 
-    <PreviewModal class="w-[720px]">
+    <PreviewDrawer class="w-[720px]">
       <VbenTiptapPreview
         v-if="previewOpen"
         :content="content"
         :min-height="240"
       />
-    </PreviewModal>
+    </PreviewDrawer>
   </Page>
 </template>

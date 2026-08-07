@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from 'vue';
 
+import { useVbenDrawer } from '@vben/common-ui';
+
 import {
-  ElButton,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -14,11 +14,10 @@ import {
 
 import MessageApi from '#/api/core/message';
 
-const props = defineProps<{ open: boolean }>();
+const open = defineModel<boolean>('open', { default: false });
 
 const emit = defineEmits<{
   success: [];
-  'update:open': [value: boolean];
 }>();
 
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -34,54 +33,71 @@ const form = reactive({
   status: 0,
 });
 
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return;
-    Object.assign(form, {
-      message_name: '',
-      message_ename: '',
-      message_to: 10,
-      message_type: 10,
-      sort: 100,
-      remark: '',
-      status: 0,
-    });
-  },
-);
-
-function handleClose() {
-  emit('update:open', false);
+function resetForm() {
+  Object.assign(form, {
+    message_name: '',
+    message_ename: '',
+    message_to: 10,
+    message_type: 10,
+    sort: 100,
+    remark: '',
+    status: 0,
+  });
 }
+
+const [Drawer, drawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  onOpenChange(isOpen) {
+    open.value = isOpen;
+    if (isOpen) {
+      resetForm();
+    }
+  },
+  onConfirm: () => {
+    void handleSubmit();
+  },
+});
+
+watch(
+  open,
+  (visible) => {
+    if (visible) {
+      drawerApi.setState({ title: '添加消息' }).open();
+      return;
+    }
+    drawerApi.close();
+  },
+  { immediate: true },
+);
 
 async function handleSubmit() {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
     loading.value = true;
+    drawerApi.setState({ confirmLoading: true });
     try {
       const res = await MessageApi.addMessage({ ...form }, true);
       if (res.code === 1) {
         ElMessage.success('恭喜你，添加成功');
-        emit('update:open', false);
+        open.value = false;
         emit('success');
       }
     } finally {
       loading.value = false;
+      drawerApi.setState({ confirmLoading: false });
     }
   });
 }
 </script>
 
 <template>
-  <ElDialog
+  <Drawer
     :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :model-value="open"
+    :confirm-loading="loading"
+    :destroy-on-close="true"
     title="添加消息"
-    width="480px"
-    @close="handleClose"
-    @update:model-value="emit('update:open', $event)"
   >
     <ElForm ref="formRef" :model="form" label-width="132px">
       <ElFormItem
@@ -118,9 +134,5 @@ async function handleSubmit() {
         <ElInput v-model="form.remark" autocomplete="off" placeholder="请输入备注" />
       </ElFormItem>
     </ElForm>
-    <template #footer>
-      <ElButton @click="handleClose">取消</ElButton>
-      <ElButton :loading="loading" type="primary" @click="handleSubmit">确定</ElButton>
-    </template>
-  </ElDialog>
+  </Drawer>
 </template>

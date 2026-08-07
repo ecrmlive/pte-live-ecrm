@@ -3,11 +3,10 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import { ElButton, ElForm, ElFormItem, ElInput, ElInputNumber, ElMessage, ElMessageBox, ElSwitch } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
-import { useVbenModal } from '@vben/common-ui';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createExpress,
@@ -25,7 +24,11 @@ const form = reactive({
 });
 const editingId = ref(0);
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.name.trim()) {
       ElMessage.warning('请填写名称');
@@ -43,7 +46,7 @@ const [FormModal, formModalApi] = useVbenModal({
       await createExpress(payload);
     }
     ElMessage.success('已保存');
-    formModalApi.close();
+    formDrawerApi.close();
     gridApi.reload();
   },
 });
@@ -64,7 +67,7 @@ const gridOptions: VxeGridProps<ExpressRow> = {
     { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 160 },
   ],
   height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 20 },
+  pagerConfig: { enabled: true, pageSize: 10 },
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
@@ -87,8 +90,8 @@ function openCreate() {
   form.code = '';
   form.sort = 0;
   form.show = true;
-  formModalApi.setState({ title: '新建快递' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '新建快递' });
+  formDrawerApi.open();
 }
 
 function openEdit(row: ExpressRow) {
@@ -97,8 +100,8 @@ function openEdit(row: ExpressRow) {
   form.code = row.code;
   form.sort = row.sort;
   form.show = row.is_show === 1;
-  formModalApi.setState({ title: '编辑快递' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '编辑快递' });
+  formDrawerApi.open();
 }
 
 async function onDelete(row: ExpressRow) {
@@ -127,7 +130,7 @@ async function onDelete(row: ExpressRow) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-position="top">
         <ElFormItem label="名称" required>
           <ElInput v-model="form.name" />
@@ -142,6 +145,6 @@ async function onDelete(row: ExpressRow) {
           <ElSwitch v-model="form.show" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

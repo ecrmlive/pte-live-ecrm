@@ -356,6 +356,7 @@ func TestMerchantStatusAndIntentionMutationsHaveRBACContract(t *testing.T) {
 		"merchant.status.manage",
 		"merchant.intention.audit",
 		"merchant.intention.assign_region",
+		"merchant.intention.delete",
 	} {
 		if !strings.Contains(string(menuSeed), required) {
 			t.Fatalf("merchant mutation menu contract missing %q", required)
@@ -369,6 +370,7 @@ func TestMerchantStatusAndIntentionMutationsHaveRBACContract(t *testing.T) {
 		"RequireAdminMenu(h.adminDB, \"merchant.status.manage\")",
 		"RequireAdminMenu(h.adminDB, \"merchant.intention.audit\")",
 		"RequireAdminMenu(h.adminDB, \"merchant.intention.assign_region\")",
+		"RequireAdminMenu(h.adminDB, \"merchant.intention.delete\")",
 	} {
 		if !strings.Contains(string(handler), required) {
 			t.Fatalf("merchant mutation handler missing RBAC guard %q", required)
@@ -960,12 +962,17 @@ func TestAttachmentDomainUsesUnifiedAdminTablesAndChineseFixture(t *testing.T) {
 	for _, required := range []string{
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_category`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_asset`",
+		"`is_system`",
+		"store_cover",
 		"INSERT INTO `qixi_crm_a_attachment_asset`",
 		"七禧商城中文演示封面.png",
 		"七禧商城中文演示短片.mp4",
 	} {
-		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) {
-			t.Fatalf("attachment admin schema or Chinese fixture missing %q", required)
+		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) && !strings.Contains(string(model), required) {
+			dataSQL, _ := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))
+			if !strings.Contains(string(dataSQL), required) {
+				t.Fatalf("attachment admin schema/fixture/data missing %q", required)
+			}
 		}
 	}
 }

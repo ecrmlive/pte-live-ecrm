@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -74,7 +74,7 @@ const gridOptions: VxeGridProps<ReservationProduct> = {
     },
     merchantListActionColumn({ width: 100 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -104,7 +104,11 @@ const gridOptions: VxeGridProps<ReservationProduct> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [ConfigModal, configModalApi] = useVbenModal({
+const [ConfigDrawer, configDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: saveConfig,
 });
 
@@ -140,13 +144,13 @@ async function openConfig(row: ReservationProduct) {
     result.config?.show_reservation_days ?? row.show_reservation_days ?? 7;
   slots.value = result.slots || [];
   form.slotText = slotsToText(slots.value);
-  configModalApi.setState({ title: '预约配置' }).open();
+  configDrawerApi.setState({ title: '预约配置' }).open();
 }
 
 async function saveConfig() {
   if (!current.value) return;
   saving.value = true;
-  configModalApi.lock();
+  configDrawerApi.lock();
   try {
     await saveReservationConfigApi(current.value.product_id, {
       reservation_type: form.reservation_type,
@@ -154,11 +158,11 @@ async function saveConfig() {
       slots: parseSlots(form.slotText),
     });
     ElMessage.success('预约配置已保存');
-    configModalApi.close();
+    configDrawerApi.close();
     gridApi.reload();
   } finally {
     saving.value = false;
-    configModalApi.unlock();
+    configDrawerApi.unlock();
   }
 }
 </script>
@@ -171,7 +175,7 @@ async function saveConfig() {
       </template>
     </Grid>
 
-    <ConfigModal class="w-[640px] max-w-[96vw]">
+    <ConfigDrawer class="w-[640px] max-w-[96vw]">
       <template v-if="current">
         <div class="mb-4 text-base font-medium">{{ current.store_name }}</div>
         <ElForm label-width="112px">
@@ -198,6 +202,6 @@ async function saveConfig() {
           </ElFormItem>
         </ElForm>
       </template>
-    </ConfigModal>
+    </ConfigDrawer>
   </Page>
 </template>

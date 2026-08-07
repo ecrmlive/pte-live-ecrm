@@ -1,5 +1,29 @@
 -- 示例：复制为 init_key.sql 后按本机需要填写（init_key.sql 禁止提交 Git）。
 --   cp sql/admin/init_key.sql.example sql/admin/init_key.sql
 -- 仓库不得保存任何真实支付、小程序、云服务或私钥材料。
--- 云服务配置应由具备权限的平台管理员在运行时配置中心加密保存。
+-- 云服务密钥仅允许写入被 Git 忽略的 init_key.sql，使用 bootstrap-local-v1 明文引导；
+-- 运行时由平台后台「云服务配置」加密保存（key_version=v1）。
+--
+-- 本地启用 COS 上传示例（把占位符换成真实值后导入）：
+-- INSERT INTO `qixi_crm_a_cloud_config` (`provider`,`config_key`,`ciphertext`,`key_version`,`updated_by`,`updated_at`) VALUES
+--   ('tencent_account','secret_id','YOUR_SECRET_ID','bootstrap-local-v1',NULL,NOW()),
+--   ('tencent_account','secret_key','YOUR_SECRET_KEY','bootstrap-local-v1',NULL,NOW()),
+--   ('tencent_account','region','ap-shanghai','bootstrap-local-v1',NULL,NOW()),
+--   ('cos','enabled','true','bootstrap-local-v1',NULL,NOW()),
+--   ('cos','bucket','your-bucket-1250000000','bootstrap-local-v1',NULL,NOW()),
+--   ('cos','region','ap-shanghai','bootstrap-local-v1',NULL,NOW()),
+--   ('cos','base_url','https://cos.example.com','bootstrap-local-v1',NULL,NOW()),
+--   ('cos','key_prefix','pte-live-ecrm','bootstrap-local-v1',NULL,NOW())
+-- ON DUPLICATE KEY UPDATE `ciphertext`=VALUES(`ciphertext`),`key_version`=VALUES(`key_version`),`updated_at`=VALUES(`updated_at`);
+--
+-- 本地启用高德地图示例（真实值只写 init_key.sql；空端填空串）：
+-- INSERT INTO `qixi_crm_a_cloud_config` (`provider`,`config_key`,`ciphertext`,`key_version`,`updated_by`,`updated_at`) VALUES
+--   ('amap','amap_web_js_key','YOUR_AMAP_WEB_JS_KEY','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_web_js_security_code','YOUR_AMAP_WEB_JS_SECURITY_CODE','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_web_service_key','YOUR_AMAP_WEB_SERVICE_KEY','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_mp_weixin_key','YOUR_AMAP_MP_WEIXIN_KEY','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_ios_key','','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_android_key','','bootstrap-local-v1',NULL,NOW()),
+--   ('amap','amap_harmony_key','','bootstrap-local-v1',NULL,NOW())
+-- ON DUPLICATE KEY UPDATE `ciphertext`=VALUES(`ciphertext`),`key_version`=VALUES(`key_version`),`updated_at`=VALUES(`updated_at`);
 USE `qixi_crm_admin`;

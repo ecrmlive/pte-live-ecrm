@@ -61,6 +61,7 @@ type group struct {
 	Sort              int      `gorm:"column:sort" json:"sort"`
 	Status            int8     `gorm:"column:status" json:"status"`
 	DiyPageID         uint     `gorm:"column:diy_page_id" json:"diy_page_id"`
+	DiyPageName       string   `gorm:"-" json:"diy_page_name"`
 	PositioningStatus int8     `gorm:"column:positioning_status" json:"positioning_status"`
 	Longitude         *float64 `gorm:"column:longitude" json:"longitude"`
 	Latitude          *float64 `gorm:"column:latitude" json:"latitude"`
@@ -99,6 +100,10 @@ func (h *Handler) List(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "查询关联店铺失败")
 		return
 	}
+	if err := h.fillDiyPageNames(c, rows); err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询装修模板失败")
+		return
+	}
 	response.OK(c, gin.H{"list": buildTree(rows)})
 }
 
@@ -123,6 +128,12 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 	row.MerchantIDs = ids
 	row.MerchantCount = int64(len(ids))
+	names, err := h.loadDiyPageNames(c, []uint{row.DiyPageID})
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询装修模板失败")
+		return
+	}
+	row.DiyPageName = names[row.DiyPageID]
 	response.OK(c, row)
 }
 
@@ -331,13 +342,15 @@ func (h *Handler) ListMerchants(c *gin.Context) {
 		return
 	}
 	var rows []struct {
-		MerchantID   uint   `json:"merchant_id"`
-		MerchantName string `json:"merchant_name"`
-		RegionID     uint   `json:"region_id"`
-		Status       int8   `json:"status"`
+		MerchantID    uint   `json:"merchant_id"`
+		MerchantName  string `json:"merchant_name"`
+		ContactName   string `json:"contact_name"`
+		ContactMobile string `json:"contact_mobile"`
+		RegionID      uint   `json:"region_id"`
+		Status        int8   `json:"status"`
 	}
 	err := h.adminDB.WithContext(c.Request.Context()).Table(groupMerchantTbl+" AS gm").
-		Select("m.merchant_id, m.merchant_name, m.region_id, m.status").
+		Select("m.merchant_id, m.merchant_name, m.contact_name, m.contact_mobile, m.region_id, m.status").
 		Joins("INNER JOIN qixi_crm_a_merchant_view AS m ON m.merchant_id = gm.merchant_id").
 		Where("gm.store_group_id = ?", id).Order("m.merchant_id ASC").Find(&rows).Error
 	if err != nil {
@@ -379,6 +392,47 @@ func (h *Handler) fillGroupMembers(c *gin.Context, rows []group) error {
 		rows[i].MerchantCount = byID[rows[i].ID]
 	}
 	return nil
+}
+
+func (h *Handler) fillDiyPageNames(c *gin.Context, rows []group) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	pageIDs := make([]uint, 0, len(rows))
+	for _, row := range rows {
+		pageIDs = append(pageIDs, row.DiyPageID)
+	}
+	names, err := h.loadDiyPageNames(c, pageIDs)
+	if err != nil {
+		return err
+	}
+	for i := range rows {
+		rows[i].DiyPageName = names[rows[i].DiyPageID]
+	}
+	return nil
+}
+
+func (h *Handler) loadDiyPageNames(c *gin.Context, pageIDs []uint) (map[uint]string, error) {
+	out := make(map[uint]string)
+	ids := uniqueIDs(pageIDs)
+	if len(ids) == 0 {
+		return out, nil
+	}
+	var pages []struct {
+		ID   uint   `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	if err := h.adminDB.WithContext(c.Request.Context()).
+		Table("qixi_crm_a_diy_page").
+		Select("id, name").
+		Where("id IN ?", ids).
+		Find(&pages).Error; err != nil {
+		return nil, err
+	}
+	for _, page := range pages {
+		out[page.ID] = page.Name
+	}
+	return out, nil
 }
 
 func validateRequest(req *saveRequest) error {

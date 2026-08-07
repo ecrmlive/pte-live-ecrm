@@ -8,7 +8,7 @@ import type {
 } from '#/api/core/message-setting';
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { useVbenModal } from '@vben/common-ui';
+import { useVbenDrawer } from '@vben/common-ui';
 import { ElButton, ElInput, ElMessage } from 'element-plus';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 
@@ -207,7 +207,9 @@ async function loadMeta() {
   }
 }
 
-const [Modal, modalApi] = useVbenModal({
+const [Modal, modalApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
   onOpenChange(isOpen) {
     open.value = isOpen;
     if (isOpen) {

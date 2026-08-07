@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElDatePicker,
@@ -157,7 +157,7 @@ const gridOptions: VxeGridProps<MerchantSeckillActive> = {
     },
     merchantListActionColumn({ width: 190 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -189,7 +189,11 @@ const gridOptions: VxeGridProps<MerchantSeckillActive> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     const selectedProduct = products.value.find(
       (item) => item.product_id === form.product_id,
@@ -218,7 +222,7 @@ const [EditModal, editModalApi] = useVbenModal({
       status: form.status,
     };
     saving.value = true;
-    editModalApi.lock();
+    editDrawerApi.lock();
     try {
       if (editingID.value) {
         await updateMerchantSeckillActiveApi(editingID.value, body);
@@ -226,18 +230,18 @@ const [EditModal, editModalApi] = useVbenModal({
         await createMerchantSeckillActiveApi(body);
       }
       ElMessage.success(editingID.value ? '秒杀活动已更新' : '秒杀活动已创建');
-      editModalApi.close();
+      editDrawerApi.close();
       gridApi.reload();
     } finally {
       saving.value = false;
-      editModalApi.unlock();
+      editDrawerApi.unlock();
     }
   },
 });
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新建秒杀活动' }).open();
+  editDrawerApi.setState({ title: '新建秒杀活动' }).open();
 }
 
 function openEdit(row: MerchantSeckillActive) {
@@ -254,7 +258,7 @@ function openEdit(row: MerchantSeckillActive) {
       .filter((id) => id > 0),
     status: row.status,
   });
-  editModalApi.setState({ title: '编辑秒杀活动' }).open();
+  editDrawerApi.setState({ title: '编辑秒杀活动' }).open();
 }
 
 async function toggle(row: MerchantSeckillActive) {
@@ -318,7 +322,7 @@ onMounted(loadOptions);
       </template>
     </Grid>
 
-    <EditModal class="w-[640px] max-w-[96vw]">
+    <EditDrawer class="w-[640px] max-w-[96vw]">
       <ElForm class="grid grid-cols-2 gap-x-4" label-width="88px">
         <ElFormItem class="col-span-2" label="活动名称" required>
           <ElInput v-model="form.name" maxlength="60" show-word-limit />
@@ -384,6 +388,6 @@ onMounted(loadOptions);
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

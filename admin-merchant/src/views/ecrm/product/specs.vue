@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, confirm, useVbenModal } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -67,7 +67,7 @@ const gridOptions: VxeGridProps<ProductAttrTemplate> = {
     },
     merchantListActionColumn({ width: 128 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -92,7 +92,11 @@ const gridOptions: VxeGridProps<ProductAttrTemplate> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: save,
 });
 
@@ -105,7 +109,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  editModalApi.setState({ title: '新增参数模板' }).open();
+  editDrawerApi.setState({ title: '新增参数模板' }).open();
 }
 
 function openEdit(row: ProductAttrTemplate) {
@@ -113,7 +117,7 @@ function openEdit(row: ProductAttrTemplate) {
   form.template_name = row.template_name;
   form.template_value = row.template_value || '[]';
   form.sort = row.sort;
-  editModalApi.setState({ title: '编辑参数模板' }).open();
+  editDrawerApi.setState({ title: '编辑参数模板' }).open();
 }
 
 function validateTemplate() {
@@ -135,19 +139,19 @@ async function save() {
     return;
   }
   saving.value = true;
-  editModalApi.lock();
+  editDrawerApi.lock();
   try {
     if (editingID.value) {
       await updateProductAttrTemplateApi(editingID.value, form);
     } else {
       await createProductAttrTemplateApi(form);
     }
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success('保存成功');
     gridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -180,7 +184,7 @@ async function remove(row: ProductAttrTemplate) {
       </template>
     </Grid>
 
-    <EditModal class="w-[680px] max-w-[96vw]">
+    <EditDrawer class="w-[680px] max-w-[96vw]">
       <ElForm label-width="92px">
         <ElFormItem label="模板名称" required>
           <ElInput v-model="form.template_name" maxlength="64" />
@@ -196,6 +200,6 @@ async function remove(row: ProductAttrTemplate) {
           <ElInputNumber v-model="form.sort" :min="0" />
         </ElFormItem>
       </ElForm>
-    </EditModal>
+    </EditDrawer>
   </Page>
 </template>

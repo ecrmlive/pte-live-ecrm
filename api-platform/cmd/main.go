@@ -194,6 +194,7 @@ func main() {
 	}
 
 	jwtMgr := authjwt.NewManager(cfg.JWT.Secret, cfg.JWT.AccessTTL(), cfg.JWT.RefreshTTL())
+	storeJWTMgr := authjwt.NewManager(cfg.JWT.StoreConsoleSecret(), cfg.JWT.AccessTTL(), cfg.JWT.RefreshTTL())
 	idSvc := identity.NewService(identitypersist.NewRepo(gdb))
 	merSvc := merchant.NewService(merchantpersist.NewStoreAdapter(merchantpersist.NewRepo(gdb)))
 	cartSvc := cart.NewService(cartpersist.NewStoreAdapter(cartpersist.NewRepo(gdb)))
@@ -237,7 +238,7 @@ func main() {
 	platformAuthH := adminauth.NewHandler(gdb, jwtMgr)
 	platformCustomerServiceH := admincustomerservice.NewHandler(gdb, businessDB)
 	platformDashboardH := admindashboard.NewHandler(gdb, businessDB, merchantDB)
-	platformMerH := platformmerchant.NewHandler(merSvc, idSvc, gdb, merchantOnboarding)
+	platformMerH := platformmerchant.NewHandler(merSvc, idSvc, gdb, merchantOnboarding).WithStoreLogin(merchantDB, storeJWTMgr)
 	platformMemberLevelH := platformmemberlevel.New(businessDB, gdb)
 	platformMerchantTypeH := platformmerchanttype.NewHandler(gdb)
 	platformMerchantDepositH := platformmerchantdeposit.NewHandler(gdb)

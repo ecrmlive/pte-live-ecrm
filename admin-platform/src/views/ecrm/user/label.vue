@@ -3,7 +3,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -35,7 +35,11 @@ const markForm = reactive<{ uid: number; label_ids: number[] }>({
 });
 const allLabels = ref<UserLabelRow[]>([]);
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.label_name.trim()) {
       ElMessage.warning('请填写标签名');
@@ -45,12 +49,16 @@ const [FormModal, formModalApi] = useVbenModal({
     if (editingId.value) await updateUserLabel(editingId.value, payload);
     else await createUserLabel(payload);
     ElMessage.success('已保存');
-    formModalApi.close();
+    formDrawerApi.close();
     gridApi.reload();
   },
 });
 
-const [MarkModal, markModalApi] = useVbenModal({
+const [MarkDrawer, markDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!markForm.uid) {
       ElMessage.warning('请填写用户 UID');
@@ -58,7 +66,7 @@ const [MarkModal, markModalApi] = useVbenModal({
     }
     await markUserLabels(markForm.uid, markForm.label_ids);
     ElMessage.success('已打标');
-    markModalApi.close();
+    markDrawerApi.close();
   },
 });
 
@@ -71,7 +79,7 @@ const gridOptions: VxeGridProps<UserLabelRow> = {
     { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 220 },
   ],
   height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 20 },
+  pagerConfig: { enabled: true, pageSize: 10 },
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
@@ -93,23 +101,23 @@ function openCreate() {
   editingId.value = 0;
   form.label_name = '';
   form.sort = 0;
-  formModalApi.setState({ title: '新建标签' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '新建标签' });
+  formDrawerApi.open();
 }
 
 function openEdit(row: UserLabelRow) {
   editingId.value = row.label_id;
   form.label_name = row.label_name;
   form.sort = row.sort;
-  formModalApi.setState({ title: '编辑标签' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '编辑标签' });
+  formDrawerApi.open();
 }
 
 function openMark(row: UserLabelRow) {
   markForm.uid = 1;
   markForm.label_ids = [row.label_id];
-  markModalApi.setState({ title: '给用户打标' });
-  markModalApi.open();
+  markDrawerApi.setState({ title: '给用户打标' });
+  markDrawerApi.open();
 }
 
 async function onDelete(row: UserLabelRow) {
@@ -138,7 +146,7 @@ async function onDelete(row: UserLabelRow) {
         <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
       </template>
     </Grid>
-    <FormModal>
+    <FormDrawer>
       <ElForm label-position="top">
         <ElFormItem label="标签名" required>
           <ElInput v-model="form.label_name" />
@@ -147,8 +155,8 @@ async function onDelete(row: UserLabelRow) {
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
-    <MarkModal>
+    </FormDrawer>
+    <MarkDrawer>
       <ElForm label-position="top">
         <ElFormItem label="用户 UID" required>
           <ElInputNumber v-model="markForm.uid" :min="1" class="w-full" />
@@ -164,6 +172,6 @@ async function onDelete(row: UserLabelRow) {
           </ElSelect>
         </ElFormItem>
       </ElForm>
-    </MarkModal>
+    </MarkDrawer>
   </Page>
 </template>

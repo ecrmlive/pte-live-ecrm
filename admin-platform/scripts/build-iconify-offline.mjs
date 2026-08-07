@@ -2,6 +2,7 @@
  * 从 @iconify/json 提取平台管理端用到的图标，写入 public/iconify/（离线加载，不请求 api.iconify.design）
  *
  * LUCIDE_ICONS 须与 sql/init_platform_access.sql 中 lucide:* 一致（去前缀）。
+ * ANT_DESIGN_ICONS 须与店铺菜单种子 / CRMEB_STORE_MENU_ICON_MAP 中 ant-design:* 一致。
  * 新增菜单 icon 时：改 SQL 种子 → 本列表 → 运行：
  *   pnpm --filter @pte-live/admin-platform run build:icons
  */
@@ -13,11 +14,68 @@ const require = createRequire(import.meta.url);
 const jsonRoot = path.dirname(require.resolve('@iconify/json/json/ep.json'));
 const ep = require(path.join(jsonRoot, 'ep.json'));
 const lucide = require(path.join(jsonRoot, 'lucide.json'));
+const antDesign = require(path.join(jsonRoot, 'ant-design.json'));
 
 const outDir = path.resolve(import.meta.dirname, '../public/iconify');
 fs.mkdirSync(outDir, { recursive: true });
 
 const EP_ICONS = ['fold', 'expand'];
+/** 店铺菜单 Iconify（qixi_crm_m_menu 全树 ant-design:* / CRMEB_STORE_MENU_ICON_MAP） */
+const ANT_DESIGN_ICONS = [
+  'account-book-outlined',
+  'appstore-outlined',
+  'audit-outlined',
+  'bar-chart-outlined',
+  'barcode-outlined',
+  'bell-outlined',
+  'calendar-outlined',
+  'car-outlined',
+  'cloud-outlined',
+  'cluster-outlined',
+  'comment-outlined',
+  'credit-card-outlined',
+  'crown-outlined',
+  'customer-service-outlined',
+  'dashboard-outlined',
+  'field-time-outlined',
+  'file-done-outlined',
+  'file-protect-outlined',
+  'file-text-outlined',
+  'flag-outlined',
+  'form-outlined',
+  'format-painter-outlined',
+  'gift-outlined',
+  'gold-outlined',
+  'history-outlined',
+  'home-outlined',
+  'idcard-outlined',
+  'key-outlined',
+  'like-outlined',
+  'line-chart-outlined',
+  'message-outlined',
+  'notification-outlined',
+  'percentage-outlined',
+  'picture-outlined',
+  'printer-outlined',
+  'profile-outlined',
+  'rollback-outlined',
+  'safety-outlined',
+  'schedule-outlined',
+  'search-outlined',
+  'setting-outlined',
+  'shop-outlined',
+  'shopping-outlined',
+  'star-outlined',
+  'swap-outlined',
+  'tags-outlined',
+  'team-outlined',
+  'thunderbolt-outlined',
+  'transaction-outlined',
+  'trophy-outlined',
+  'user-outlined',
+  'video-camera-outlined',
+  'wallet-outlined',
+];
 /** @see sql/init_platform_access.sql */
 const LUCIDE_ICONS = [
   'activity',
@@ -127,14 +185,21 @@ function subset(collection, names) {
 
 const epSubset = subset(ep, EP_ICONS);
 const lucideSubset = subset(lucide, LUCIDE_ICONS);
+const antDesignSubset = subset(antDesign, ANT_DESIGN_ICONS);
 
-const missing = LUCIDE_ICONS.filter((name) => !lucide.icons[name]);
-if (missing.length) {
-  console.warn('[build:icons] missing in @iconify/json lucide:', missing.join(', '));
+const missingLucide = LUCIDE_ICONS.filter((name) => !lucide.icons[name]);
+if (missingLucide.length) {
+  console.warn('[build:icons] missing in @iconify/json lucide:', missingLucide.join(', '));
+}
+const missingAnt = ANT_DESIGN_ICONS.filter((name) => !antDesign.icons[name]);
+if (missingAnt.length) {
+  console.warn('[build:icons] missing in @iconify/json ant-design:', missingAnt.join(', '));
 }
 
 fs.writeFileSync(path.join(outDir, 'ep.json'), JSON.stringify(epSubset));
 fs.writeFileSync(path.join(outDir, 'lucide.json'), JSON.stringify(lucideSubset));
+fs.writeFileSync(path.join(outDir, 'ant-design.json'), JSON.stringify(antDesignSubset));
 
 console.log('[build:icons] ep:', Object.keys(epSubset.icons).join(', '));
 console.log('[build:icons] lucide:', Object.keys(lucideSubset.icons).join(', '));
+console.log('[build:icons] ant-design:', Object.keys(antDesignSubset.icons).join(', '));

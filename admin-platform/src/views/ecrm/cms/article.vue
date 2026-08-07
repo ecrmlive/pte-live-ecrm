@@ -3,7 +3,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -47,7 +47,11 @@ async function loadCategories() {
   if (!categories.value.some((item) => item.cid === form.cid)) form.cid = categories.value[0]?.cid || 0;
 }
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.title.trim() || !form.content.trim()) {
       ElMessage.warning('请填写标题与内容');
@@ -65,7 +69,7 @@ const [FormModal, formModalApi] = useVbenModal({
     if (editingId.value) await updateArticle(editingId.value, payload);
     else await createArticle(payload);
     ElMessage.success('已保存');
-    formModalApi.close();
+    formDrawerApi.close();
     gridApi.reload();
   },
 });
@@ -86,7 +90,7 @@ const gridOptions: VxeGridProps<ArticleRow> = {
     { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 160 },
   ],
   height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 20 },
+  pagerConfig: { enabled: true, pageSize: 10 },
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
@@ -114,8 +118,8 @@ function openCreate() {
     sort: 0,
     show: true,
   });
-  formModalApi.setState({ title: '新建文章' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '新建文章' });
+  formDrawerApi.open();
 }
 
 onMounted(async () => {
@@ -134,8 +138,8 @@ function openEdit(row: ArticleRow) {
     sort: row.sort,
     show: row.status === 1,
   });
-  formModalApi.setState({ title: '编辑文章' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '编辑文章' });
+  formDrawerApi.open();
 }
 
 async function onDelete(row: ArticleRow) {
@@ -163,7 +167,7 @@ async function onDelete(row: ArticleRow) {
         <ElButton v-if="canManage" link type="danger" @click="onDelete(row)">删除</ElButton>
       </template>
     </Grid>
-    <FormModal class="w-[720px]">
+    <FormDrawer class="w-[720px]">
       <ElForm label-position="top">
         <ElFormItem label="标题" required>
           <ElInput v-model="form.title" />
@@ -189,6 +193,6 @@ async function onDelete(row: ArticleRow) {
           <ElSwitch v-model="form.show" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

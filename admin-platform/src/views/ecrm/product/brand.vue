@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -136,7 +136,11 @@ const gridOptions: VxeGridProps<PlatformBrand> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -167,7 +171,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增品牌' }).open();
+  formDrawerApi.setState({ title: '新增品牌' }).open();
 }
 
 function openEdit(row: PlatformBrand) {
@@ -178,7 +182,7 @@ function openEdit(row: PlatformBrand) {
     is_show: row.is_show,
     sort: row.sort,
   });
-  formModalApi.setState({ title: '编辑品牌' }).open();
+  formDrawerApi.setState({ title: '编辑品牌' }).open();
 }
 
 async function save() {
@@ -186,7 +190,7 @@ async function save() {
     ElMessage.warning('请填写品牌名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   try {
     const body = {
       brand_name: form.brand_name.trim(),
@@ -199,11 +203,11 @@ async function save() {
     } else {
       await createPlatformBrandApi(body);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('品牌已保存');
     gridApi.reload();
   } finally {
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -244,7 +248,7 @@ onMounted(() => void syncCategoryFilterOptions());
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="88px">
         <ElFormItem label="品牌名称" required>
           <ElInput v-model="form.brand_name" />
@@ -267,6 +271,6 @@ onMounted(() => void syncCategoryFilterOptions());
           <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

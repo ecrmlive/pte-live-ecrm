@@ -132,7 +132,7 @@ const gridOptions: VxeGridProps<UserAssetLedgerRow> = {
       title: '创建时间',
     },
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {

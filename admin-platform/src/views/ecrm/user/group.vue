@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -54,7 +54,7 @@ const gridOptions: VxeGridProps<PlatformUserGroup> = {
     },
     platformListActionColumn({ width: 130 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -85,7 +85,11 @@ const gridOptions: VxeGridProps<PlatformUserGroup> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -96,13 +100,13 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增用户分组' }).open();
+  formDrawerApi.setState({ title: '新增用户分组' }).open();
 }
 
 function openEdit(row: PlatformUserGroup) {
   editing.value = row;
   Object.assign(form, { group_name: row.group_name, sort: row.sort });
-  formModalApi.setState({ title: '编辑用户分组' }).open();
+  formDrawerApi.setState({ title: '编辑用户分组' }).open();
 }
 
 async function save() {
@@ -110,7 +114,7 @@ async function save() {
     ElMessage.warning('请填写分组名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const body = { group_name: form.group_name.trim(), sort: form.sort };
@@ -119,12 +123,12 @@ async function save() {
     } else {
       await createPlatformUserGroupApi(body);
     }
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success(editing.value ? '用户分组已更新' : '用户分组已创建');
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -158,7 +162,7 @@ async function remove(row: PlatformUserGroup) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="80px">
         <ElFormItem label="分组名称" required>
           <ElInput v-model="form.group_name" maxlength="32" show-word-limit />
@@ -167,6 +171,6 @@ async function remove(row: PlatformUserGroup) {
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

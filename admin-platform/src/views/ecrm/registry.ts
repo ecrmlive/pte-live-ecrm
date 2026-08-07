@@ -210,7 +210,7 @@ const PATH_COMPONENT: Record<string, string> = {
   '/systemForm/Basics/svip': 'ecrm/user/svip',
   '/systemForm/Basics/members': 'ecrm/user/member-levels',
   '/systemForm/Basics/service': 'ecrm/customer-service/index',
-  '/systemForm/Basics/margin': 'ecrm/merchant/deposits',
+  '/systemForm/Basics/margin': 'ecrm/merchant/margin-config',
   // 目录壳与剩余叶子：挂到最近已实现页，避免侧栏空洞
   '/': 'ecrm/dashboard/index',
   '/content': 'ecrm/content/notice',

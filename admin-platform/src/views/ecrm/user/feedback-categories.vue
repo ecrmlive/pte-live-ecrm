@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -109,7 +109,11 @@ const gridOptions: VxeGridProps<UserFeedbackCategory> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -119,7 +123,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formModalApi.setState({ title: '新增反馈分类' }).open();
+  formDrawerApi.setState({ title: '新增反馈分类' }).open();
 }
 
 function openEdit(row: UserFeedbackCategory) {
@@ -129,7 +133,7 @@ function openEdit(row: UserFeedbackCategory) {
     sort: row.sort,
     status: row.status,
   });
-  formModalApi.setState({ title: '编辑反馈分类' }).open();
+  formDrawerApi.setState({ title: '编辑反馈分类' }).open();
 }
 
 async function save() {
@@ -138,7 +142,7 @@ async function save() {
     ElMessage.warning('请填写不超过 32 字的分类名称');
     return;
   }
-  formModalApi.lock();
+  formDrawerApi.lock();
   saving.value = true;
   try {
     const payload = {
@@ -149,13 +153,13 @@ async function save() {
     };
     if (form.id) await updateUserFeedbackCategory(form.id, payload);
     else await createUserFeedbackCategory(payload);
-    formModalApi.close();
+    formDrawerApi.close();
     ElMessage.success('已保存');
     resetForm();
     gridApi.reload();
   } finally {
     saving.value = false;
-    formModalApi.unlock();
+    formDrawerApi.unlock();
   }
 }
 
@@ -209,7 +213,7 @@ async function remove(row: UserFeedbackCategory) {
       </template>
     </Grid>
 
-    <FormModal>
+    <FormDrawer>
       <ElForm label-width="80px">
         <ElFormItem label="分类名称" required>
           <ElInput v-model="form.name" maxlength="32" show-word-limit />
@@ -224,6 +228,6 @@ async function remove(row: UserFeedbackCategory) {
           </ElRadioGroup>
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

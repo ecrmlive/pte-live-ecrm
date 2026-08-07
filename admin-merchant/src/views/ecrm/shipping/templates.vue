@@ -3,7 +3,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -39,7 +39,11 @@ const form = reactive({
 });
 const editingId = ref(0);
 
-const [FormModal, formModalApi] = useVbenModal({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => {
     if (!form.name.trim()) {
       ElMessage.warning('请填写名称');
@@ -62,7 +66,7 @@ const [FormModal, formModalApi] = useVbenModal({
     if (editingId.value) await updateShippingTemplate(editingId.value, payload);
     else await createShippingTemplate(payload);
     ElMessage.success('已保存');
-    formModalApi.close();
+    formDrawerApi.close();
     gridApi.reload();
   },
 });
@@ -86,7 +90,7 @@ const gridOptions: VxeGridProps<ShippingTemplate> = {
     { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 220 },
   ],
   height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 20 },
+  pagerConfig: { enabled: true, pageSize: 10 },
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
@@ -114,8 +118,8 @@ function openCreate() {
     continue: 1,
     continue_price: 0,
   });
-  formModalApi.setState({ title: '新建运费模板' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '新建运费模板' });
+  formDrawerApi.open();
 }
 
 async function openEdit(row: ShippingTemplate) {
@@ -131,8 +135,8 @@ async function openEdit(row: ShippingTemplate) {
     continue: r?.continue ?? 1,
     continue_price: r?.continue_price ?? 0,
   });
-  formModalApi.setState({ title: '编辑运费模板' });
-  formModalApi.open();
+  formDrawerApi.setState({ title: '编辑运费模板' });
+  formDrawerApi.open();
 }
 
 async function onDelete(row: ShippingTemplate) {
@@ -178,7 +182,7 @@ async function setDefault(row: ShippingTemplate) {
         <el-tag :type="row.is_default === 1 ? 'success' : 'info'">{{ row.is_default === 1 ? '默认' : '—' }}</el-tag>
       </template>
     </Grid>
-    <FormModal>
+    <FormDrawer>
       <ElForm label-position="top">
         <ElFormItem label="名称" required>
           <ElInput v-model="form.name" />
@@ -203,6 +207,6 @@ async function setDefault(row: ShippingTemplate) {
           <ElInputNumber v-model="form.continue_price" :min="0" class="w-full" />
         </ElFormItem>
       </ElForm>
-    </FormModal>
+    </FormDrawer>
   </Page>
 </template>

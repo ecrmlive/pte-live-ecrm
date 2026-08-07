@@ -9,7 +9,6 @@ import {
   ElButton,
   ElDescriptions,
   ElDescriptionsItem,
-  ElDialog,
   ElForm,
   ElFormItem,
   ElInput,
@@ -47,7 +46,6 @@ const auditStatus: Record<
 
 const current = ref<PlatformWithdraw>();
 const detailLoading = ref(false);
-const rejectOpen = ref(false);
 const rejecting = ref(false);
 const canReview = ref(false);
 const rejectForm = reactive({ refusal: '' });
@@ -181,7 +179,7 @@ const gridOptions: VxeGridProps<PlatformWithdraw> = {
     },
     platformListActionColumn({ width: 192 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -201,6 +199,15 @@ const gridOptions: VxeGridProps<PlatformWithdraw> = {
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '确认拒绝',
+  cancelText: '取消',
+  placement: 'right',
+  title: '拒绝提现',
+  onConfirm: async () => reject(),
+});
 
 const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
   class: 'w-[560px] max-w-[96vw]',
@@ -268,7 +275,7 @@ async function markPaid(row: PlatformWithdraw) {
 function openReject(row: PlatformWithdraw) {
   current.value = row;
   rejectForm.refusal = '';
-  rejectOpen.value = true;
+  rejectDrawerApi.open();
 }
 
 async function reject() {
@@ -281,7 +288,7 @@ async function reject() {
   rejecting.value = true;
   try {
     await rejectPlatformWithdrawApi(current.value.financial_id, refusal);
-    rejectOpen.value = false;
+    rejectDrawerApi.close();
     ElMessage.success('提现申请已拒绝；资金释放由业务资金域处理。');
     await reloadGrid();
   } finally {
@@ -384,12 +391,7 @@ onMounted(async () => {
       </ElSkeleton>
     </DetailDrawer>
 
-    <ElDialog
-      v-model="rejectOpen"
-      title="拒绝提现"
-      width="480px"
-      destroy-on-close
-    >
+    <RejectDrawer>
       <ElForm label-width="84px">
         <ElFormItem label="拒绝原因" required>
           <ElInput
@@ -402,12 +404,6 @@ onMounted(async () => {
           />
         </ElFormItem>
       </ElForm>
-      <template #footer>
-        <ElButton @click="rejectOpen = false">取消</ElButton>
-        <ElButton :loading="rejecting" type="danger" @click="reject">
-          确认拒绝
-        </ElButton>
-      </template>
-    </ElDialog>
+    </RejectDrawer>
   </Page>
 </template>

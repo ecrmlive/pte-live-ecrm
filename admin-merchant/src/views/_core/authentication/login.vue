@@ -16,7 +16,10 @@ import {
   hydrateAccessTokenFromLegacy,
   setEncryptedToken,
 } from '#/utils/pte-live-token';
-import { markShopSessionBootstrapped } from '#/utils/jwt-session';
+import {
+  markJwtIssuedFromLogin,
+  markShopSessionBootstrapped,
+} from '#/utils/jwt-session';
 
 defineOptions({ name: 'Login' });
 
@@ -87,10 +90,22 @@ async function trySaasAutoLogin() {
   if (route.query.from !== 'admin') {
     return;
   }
-  hydrateAccessTokenFromLegacy((token) => {
-    accessStore.setAccessToken(token);
-    setEncryptedToken(token);
-  });
+  // 跨域新标签：平台通过 URL ?token= 下发 store_console access JWT。
+  const queryToken = String(route.query.token || '').trim();
+  if (queryToken) {
+    markJwtIssuedFromLogin();
+    accessStore.setAccessToken(queryToken);
+    setEncryptedToken(queryToken);
+    // 立刻去掉 URL 中的 token，避免历史/Referer 泄露。
+    const nextQuery = { ...route.query };
+    delete nextQuery.token;
+    await router.replace({ path: route.path, query: nextQuery });
+  } else {
+    hydrateAccessTokenFromLegacy((token) => {
+      accessStore.setAccessToken(token);
+      setEncryptedToken(token);
+    });
+  }
   const token = accessStore.accessToken || getDecryptedToken();
   if (!token) {
     return;

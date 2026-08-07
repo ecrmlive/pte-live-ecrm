@@ -88,12 +88,13 @@ func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	cateID, _ := strconv.ParseUint(c.DefaultQuery("category_id", "0"), 10, 64)
+	systemOnly := c.DefaultQuery("is_system", "0") == "1"
 	typeValue, err := attachmentType(c.Query("type"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "素材类型错误")
 		return
 	}
-	res, err := h.svc.List(c.Request.Context(), 0, uint(cateID), typeValue, page, limit)
+	res, err := h.svc.List(c.Request.Context(), 0, uint(cateID), systemOnly, typeValue, page, limit)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
@@ -160,7 +161,9 @@ func writeErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, attachment.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
-	case errors.Is(err, attachment.ErrBadParam), errors.Is(err, attachment.ErrForbidden):
+	case errors.Is(err, attachment.ErrBadParam),
+		errors.Is(err, attachment.ErrForbidden),
+		errors.Is(err, attachment.ErrSystemCategory):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	default:
 		response.Fail(c, http.StatusInternalServerError, "操作失败")

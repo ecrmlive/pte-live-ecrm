@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
@@ -109,7 +109,7 @@ const productGridOptions: VxeGridProps<PlatformPointsProduct> = {
     },
     platformListActionColumn({ width: 80 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 20, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -210,7 +210,11 @@ const [OrderGrid] = useVbenVxeGrid({
   gridOptions: orderGridOptions,
 });
 
-const [EditModal, editModalApi] = useVbenModal({
+const [EditDrawer, editDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '完成',
+  cancelText: '取消',
+  placement: 'right',
   onConfirm: async () => save(),
 });
 
@@ -222,7 +226,7 @@ function edit(row: PlatformPointsProduct) {
     stock: row.stock,
     version: row.version,
   });
-  editModalApi.setState({ title: '编辑积分商品' }).open();
+  editDrawerApi.setState({ title: '编辑积分商品' }).open();
 }
 
 async function save() {
@@ -230,16 +234,16 @@ async function save() {
     ElMessage.warning('请填写正积分值和非负库存');
     return;
   }
-  editModalApi.lock();
+  editDrawerApi.lock();
   saving.value = true;
   try {
     await updatePlatformPointsProductApi(editing.value.product_id, { ...form });
-    editModalApi.close();
+    editDrawerApi.close();
     ElMessage.success('积分商品已更新，新订单将使用新配置');
     productGridApi.reload();
   } finally {
     saving.value = false;
-    editModalApi.unlock();
+    editDrawerApi.unlock();
   }
 }
 
@@ -291,7 +295,7 @@ onMounted(async () => {
       <div class="mb-2 mt-6 text-base font-medium">积分订单（不展示个人资料）</div>
       <OrderGrid />
 
-      <EditModal class="w-[500px]">
+      <EditDrawer class="w-[500px]">
         <ElAlert
           type="warning"
           :closable="false"
@@ -311,7 +315,7 @@ onMounted(async () => {
             </ElRadioGroup>
           </ElFormItem>
         </ElForm>
-      </EditModal>
+      </EditDrawer>
     </template>
   </Page>
 </template>
