@@ -55,9 +55,9 @@ UPDATE `qixi_crm_a_menu`
 SET `parent_id`=220, `title`='分销管理', `icon`='ant-design:send-outlined', `sort`=1, `code`='marketing.spread'
 WHERE `id`=65;
 
--- 物流配送：非 CRMEB 平台顶层，挂到「设置」下，避免打乱顶层顺序（不删业务页）
+-- 物流配送：非 CRMEB 平台顶层；正式入口在「设置 → 系统设置 → 配送配置」，旧目录软隐藏
 UPDATE `qixi_crm_a_menu`
-SET `parent_id`=120, `title`='物流配送', `icon`='lucide:map-plus', `sort`=20, `kind`='directory'
+SET `parent_id`=120, `title`='物流配送', `icon`='lucide:map-plus', `sort`=1001, `kind`='directory', `status`=0
 WHERE `id`=90;
 
 -- 商品二级命名/嵌套对齐图片1（完整结构见 patch_product_menus.sql）

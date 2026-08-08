@@ -81,8 +81,8 @@ function mapNode(node: MergersMenuNode): null | PlatformAccessMenuItem {
   const component = resolveMergersComponent(path);
   const isLeaf = children.length === 0;
   // qixi_crm_a_menu 的 directory 仅用于组织侧栏，不应注册成路由。
-  // 否则父目录若碰巧与子页路径同名（例如 /region）会被 Vben 当作
-  // 叶子页注册，造成子菜单脱离父级、落到侧栏底部。
+  // 否则父目录若碰巧与子页路径同名（例如 /region、/banlace、/brokerage）
+  // 会被 Vben 当作叶子页注册，造成子菜单脱离父级或同级缩进错乱。
   const isDirectory = node.kind === 'directory' || !isLeaf;
   // 服务端菜单不是前端代码生成器。未注册真实组件的叶子不能降级到
   // placeholder，否则会把“菜单可见”误报成“功能已实现”。目录在所有

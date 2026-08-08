@@ -38,8 +38,10 @@ function useMenu() {
 
 function useMenuStyle(menu?: SubMenuProvider) {
   const subMenuStyle = computed(() => {
+    // Parent SubMenu.level：0 表示当前 ul 内是 L2；1→L3；2→L4。
+    // 注意：`?? 0 + 1` 会因运算符优先级变成 `?? 1`，导致层级错乱。
     return {
-      '--menu-level': menu ? (menu?.level ?? 0 + 1) : 0,
+      '--menu-level': menu ? (menu.level ?? 0) : 0,
     };
   });
   return subMenuStyle;

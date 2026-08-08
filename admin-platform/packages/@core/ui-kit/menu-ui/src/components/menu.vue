@@ -444,7 +444,7 @@ $namespace: vben;
 
 .#{$namespace}-menu__popup-container,
 .#{$namespace}-menu {
-  --menu-title-width: 140px;
+  --menu-title-width: 100%;
   --menu-item-icon-size: var(--font-size-base, 16px);
   --menu-item-height: 38px;
   --menu-item-padding-y: 21px;
@@ -557,32 +557,43 @@ $namespace: vben;
   list-style: none;
   background: hsl(var(--menu-background-color));
 
-  // 垂直菜单
+  // 垂直菜单：全局 L1–L4 左对齐 + 等步缩进 + 右侧 chevron 贴边。
+  // 同层 directory（sub-menu-content）与 page（menu-item）必须共用同一 padding-left，
+  // 且行宽 100%，否则绝对定位箭头会贴在文字旁、深层缩进看起来像居中。
   &.is-vertical {
     &:not(.#{$namespace}-menu.is-collapse) {
-      & .#{$namespace}-menu-item,
-      & .#{$namespace}-sub-menu-content,
-      & .#{$namespace}-menu-item-group__title {
-        padding-left: calc(
-          var(--menu-item-indent) + var(--menu-level) * var(--menu-item-indent)
-        );
+      .#{$namespace}-sub-menu {
+        width: 100%;
+      }
+
+      .#{$namespace}-menu-item,
+      .#{$namespace}-sub-menu-content {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start;
+        text-align: left;
+        // 给右侧展开箭头留位，避免与标题重叠
+        padding-right: 28px;
         white-space: nowrap;
       }
 
-      & > .#{$namespace}-sub-menu {
-        & > .#{$namespace}-menu {
-          & > .#{$namespace}-menu-item {
-            padding-left: calc(
-              0px + var(--menu-item-indent) + var(--menu-level) *
-                var(--menu-item-indent)
-            );
-          }
-        }
+      // 任意嵌套 ul：直接子叶子与直接子目录标题同级对齐
+      // --menu-level 由父级 SubMenu 写入（L2=0, L3=1, L4=2…）
+      .#{$namespace}-menu {
+        width: 100%;
+        padding-left: 0;
 
-        & > .#{$namespace}-sub-menu-content {
-          padding-left: calc(var(--menu-item-indent) - 8px);
+        & > .#{$namespace}-menu-item,
+        & > .#{$namespace}-sub-menu > .#{$namespace}-sub-menu-content {
+          padding-left: calc(
+            var(--menu-item-indent) + var(--menu-level) * var(--menu-item-indent)
+          );
         }
       }
+
+      // 根级 L1
+      & > .#{$namespace}-sub-menu > .#{$namespace}-sub-menu-content,
       & > .#{$namespace}-menu-item {
         padding-left: calc(var(--menu-item-indent) - 8px);
       }
@@ -721,8 +732,12 @@ $namespace: vben;
   }
 
   &__icon {
+    display: inline-flex;
     flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
     width: var(--menu-item-icon-size);
+    min-width: var(--menu-item-icon-size);
     height: var(--menu-item-icon-size);
     margin-right: 8px;
     vertical-align: middle;
@@ -832,16 +847,21 @@ $namespace: vben;
     position: absolute;
     top: 50%;
     right: 10px;
-    width: inherit;
-    margin-top: -8px;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    margin-top: -0.5em;
     margin-right: 0;
-    // font-size: 16px;
     font-weight: normal;
+    pointer-events: none;
     opacity: 1;
     transition: transform 0.25s ease;
   }
 
   &__title {
+    flex: 1;
+    min-width: 0;
     @include menu-title;
   }
 

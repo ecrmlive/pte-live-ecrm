@@ -245,6 +245,7 @@ const PATH_COMPONENT: Record<string, string> = {
   '/merchant/system': 'ecrm/merchant/store-menu',
   '/merchant/apply-setting': 'ecrm/merchant/apply-setting',
   '/setting': 'ecrm/setting/admin',
+  '/setting/rbac': 'ecrm/setting/admin',
   '/settings': 'ecrm/setting/admin',
   '/shop': 'ecrm/setting/shop',
   '/sys': 'ecrm/setting/cloud-config',

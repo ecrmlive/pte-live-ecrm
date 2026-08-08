@@ -129,7 +129,8 @@ onBeforeUnmount(() => {
           class="right-2"
           v-bind="props"
         />
-        <VbenIcon :class="nsMenu.e('icon')" :icon="menuIcon" />
+        <!-- fallback：与 SubMenuContent 一致，避免无图标叶子与目录标题错位 -->
+        <VbenIcon :class="nsMenu.e('icon')" :icon="menuIcon" fallback />
         <slot></slot>
         <slot name="title"></slot>
       </div>
