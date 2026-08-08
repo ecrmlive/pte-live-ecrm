@@ -16,7 +16,6 @@ import {
   ElOption,
   ElSelect,
   ElSwitch,
-  ElTag,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -30,11 +29,12 @@ import {
   type PlatformBrand,
   type PlatformBrandCategory,
 } from '#/api/core/platform-catalog';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
 import {
-  LIST_KEYWORD_FIELD,
-  listFormOptionsDefaults,
-} from '#/utils/list-form-defaults';
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
 const categories = ref<PlatformBrandCategory[]>([]);
 const editing = ref<PlatformBrand>();
@@ -52,25 +52,17 @@ function flatten(
   ]);
 }
 
-function categoryName(id: number) {
-  return (
-    categoryOptions.value.find((x) => x.value === id)?.label ||
-    (id ? `#${id}` : '未分类')
-  );
-}
-
 const formOptions: VbenFormProps = listFormOptionsDefaults([
   {
     component: 'Select',
     componentProps: {
       clearable: true,
       options: [],
-      placeholder: '全部分类',
+      placeholder: '请选择',
     },
     fieldName: 'category_id',
     label: '品牌分类',
   },
-  LIST_KEYWORD_FIELD('品牌名称'),
 ]);
 
 const gridOptions: VxeGridProps<PlatformBrand> = {
@@ -82,29 +74,26 @@ const gridOptions: VxeGridProps<PlatformBrand> = {
       showOverflow: false,
       title: '品牌名称',
     },
-    {
-      field: 'category_id',
-      formatter: ({ cellValue }) => categoryName(Number(cellValue)),
-      minWidth: 160,
-      title: '分类',
-    },
     { field: 'sort', title: '排序', width: 90 },
     {
       field: 'is_show',
       slots: { default: 'is_show' },
-      title: '状态',
-      width: 100,
+      title: '是否显示',
+      width: 120,
     },
-    platformListActionColumn({ width: 150 }),
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 170,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 140 }),
   ],
-  pagerConfig: { enabled: false },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async (_ctx, formValues) => {
+      query: async ({ page }, formValues) => {
         const categoryIdRaw = formValues?.category_id;
-        const keyword = String(formValues?.keyword ?? '')
-          .trim()
-          .toLowerCase();
         const [brandPage, categoryPage] = await Promise.all([
           listPlatformBrandsApi(
             categoryIdRaw ? { category_id: Number(categoryIdRaw) } : undefined,
@@ -114,13 +103,13 @@ const gridOptions: VxeGridProps<PlatformBrand> = {
             : listPlatformBrandCategoriesApi(),
         ]);
         categories.value = categoryPage.list || [];
-        let list = brandPage.list || [];
-        if (keyword) {
-          list = list.filter((row) =>
-            row.brand_name.toLowerCase().includes(keyword),
-          );
-        }
-        return { items: list, total: list.length };
+        const list = brandPage.list || [];
+        const total = list.length;
+        const start = (page.currentPage - 1) * page.pageSize;
+        return {
+          items: list.slice(start, start + page.pageSize),
+          total,
+        };
       },
     },
   },
@@ -138,7 +127,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -153,7 +142,9 @@ async function syncCategoryFilterOptions() {
     {
       fieldName: 'category_id',
       componentProps: {
+        clearable: true,
         options: categoryOptions.value,
+        placeholder: '请选择',
       },
     },
   ]);
@@ -171,7 +162,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '新增品牌' }).open();
+  formDrawerApi.setState({ title: '添加品牌' }).open();
 }
 
 function openEdit(row: PlatformBrand) {
@@ -211,6 +202,21 @@ async function save() {
   }
 }
 
+async function changeShow(row: PlatformBrand, enabled: boolean) {
+  const before = row.is_show === 1;
+  row.is_show = enabled ? 1 : 0;
+  try {
+    await updatePlatformBrandApi(row.brand_id, {
+      brand_name: row.brand_name,
+      category_id: row.category_id || 0,
+      is_show: enabled ? 1 : 0,
+      sort: row.sort,
+    });
+  } catch {
+    row.is_show = before ? 1 : 0;
+  }
+}
+
 async function remove(row: PlatformBrand) {
   try {
     await ElMessageBox.confirm(
@@ -234,17 +240,24 @@ onMounted(() => void syncCategoryFilterOptions());
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增品牌
+          添加品牌
         </ElButton>
       </template>
       <template #is_show="{ row }">
-        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
-          {{ row.is_show === 1 ? '显示' : '隐藏' }}
-        </ElTag>
+        <ElSwitch
+          :model-value="row.is_show === 1"
+          inline-prompt
+          active-text="显示"
+          inactive-text="隐藏"
+          @change="
+            (enabled: string | number | boolean) =>
+              changeShow(row, Boolean(enabled))
+          "
+        />
       </template>
       <template #action="{ row }">
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+        <ElButton link type="primary" @click="remove(row)">删除</ElButton>
       </template>
     </Grid>
 
@@ -254,7 +267,12 @@ onMounted(() => void syncCategoryFilterOptions());
           <ElInput v-model="form.brand_name" />
         </ElFormItem>
         <ElFormItem label="品牌分类">
-          <ElSelect v-model="form.category_id" clearable class="w-full" placeholder="未分类">
+          <ElSelect
+            v-model="form.category_id"
+            clearable
+            class="w-full"
+            placeholder="请选择"
+          >
             <ElOption label="未分类" :value="0" />
             <ElOption
               v-for="item in categoryOptions"
@@ -267,8 +285,15 @@ onMounted(() => void syncCategoryFilterOptions());
         <ElFormItem label="排序">
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
-        <ElFormItem label="显示">
-          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        <ElFormItem label="是否显示">
+          <ElSwitch
+            v-model="form.is_show"
+            :active-value="1"
+            :inactive-value="0"
+            inline-prompt
+            active-text="显示"
+            inactive-text="隐藏"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>

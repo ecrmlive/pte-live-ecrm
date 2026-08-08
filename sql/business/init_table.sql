@@ -675,14 +675,23 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_product_comment` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `order_item_id` bigint unsigned DEFAULT NULL, `user_id` bigint unsigned NOT NULL,
   `product_id` bigint unsigned NOT NULL, `store_id` bigint unsigned NOT NULL, `score` tinyint NOT NULL, `content` varchar(2000) NOT NULL DEFAULT '',
   `media` json NOT NULL, `reply_content` varchar(2000) NOT NULL DEFAULT '', `status` enum('pending','published','hidden') NOT NULL DEFAULT 'pending',
-  `source` enum('user','virtual') NOT NULL DEFAULT 'user', `virtual_author_name` varchar(64) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0,
+  `source` enum('user','virtual') NOT NULL DEFAULT 'user', `virtual_author_name` varchar(64) NOT NULL DEFAULT '',
+  `virtual_author_avatar` varchar(1024) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `replied_at` datetime DEFAULT NULL, `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_order_item` (`order_item_id`), KEY `idx_product_status` (`product_id`,`status`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_product_visible_sort` (`product_id`,`deleted_at`,`sort`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SET @qixi_ddl := (
   SELECT IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_product_comment' AND COLUMN_NAME='source')=0,
-    'ALTER TABLE `qixi_crm_b_product_comment` ADD COLUMN `source` enum(''user'',''virtual'') NOT NULL DEFAULT ''user'' AFTER `status`, ADD COLUMN `virtual_author_name` varchar(64) NOT NULL DEFAULT '''' AFTER `source`, ADD COLUMN `sort` int NOT NULL DEFAULT 0 AFTER `virtual_author_name`',
+    'ALTER TABLE `qixi_crm_b_product_comment` ADD COLUMN `source` enum(''user'',''virtual'') NOT NULL DEFAULT ''user'' AFTER `status`, ADD COLUMN `virtual_author_name` varchar(64) NOT NULL DEFAULT '''' AFTER `source`, ADD COLUMN `virtual_author_avatar` varchar(1024) NOT NULL DEFAULT '''' AFTER `virtual_author_name`, ADD COLUMN `sort` int NOT NULL DEFAULT 0 AFTER `virtual_author_avatar`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_product_comment' AND COLUMN_NAME='virtual_author_avatar')=0,
+    'ALTER TABLE `qixi_crm_b_product_comment` ADD COLUMN `virtual_author_avatar` varchar(1024) NOT NULL DEFAULT '''' AFTER `virtual_author_name`',
     'SELECT 1'
   )
 );

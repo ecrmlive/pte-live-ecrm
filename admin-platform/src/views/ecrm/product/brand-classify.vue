@@ -16,7 +16,6 @@ import {
   ElOption,
   ElSelect,
   ElSwitch,
-  ElTag,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -29,6 +28,7 @@ import {
   type PlatformBrandCategory,
 } from '#/api/core/platform-catalog';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   LIST_ENABLE_STATUS_FIELD,
   LIST_KEYWORD_FIELD,
@@ -81,20 +81,31 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
 const gridOptions: VxeGridProps<PlatformBrandCategory> = {
   columns: [
     {
+      // 覆盖全局 grid.align:'center'：树按钮绝对定位在左，居中会把名称顶到中间形成大空隙
+      align: 'left',
       field: 'cate_name',
-      minWidth: 220,
+      headerAlign: 'left',
+      minWidth: 260,
       showOverflow: false,
+      slots: { default: 'cate_name' },
       title: '分类名称',
       treeNode: true,
     },
-    { field: 'sort', title: '排序', width: 90 },
+    { align: 'center', field: 'sort', title: '排序', width: 90 },
     {
+      align: 'center',
       field: 'is_show',
       slots: { default: 'is_show' },
-      title: '状态',
-      width: 100,
+      title: '是否显示',
+      width: 120,
     },
-    platformListActionColumn({ width: 220 }),
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 170,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 140 }),
   ],
   pagerConfig: { enabled: false },
   proxyConfig: {
@@ -116,7 +127,12 @@ const gridOptions: VxeGridProps<PlatformBrandCategory> = {
     },
   },
   rowConfig: { isHover: true, keyField: 'brand_category_id' },
-  treeConfig: { childrenField: 'children', expandAll: true },
+  treeConfig: {
+    childrenField: 'children',
+    expandAll: true,
+    // 左对齐后 indent 只需区分层级；10px 三级仍可辨
+    indent: 10,
+  },
   toolbarConfig: {
     custom: false,
     export: false,
@@ -191,6 +207,21 @@ async function save() {
   }
 }
 
+async function changeShow(row: PlatformBrandCategory, enabled: boolean) {
+  const before = row.is_show === 1;
+  row.is_show = enabled ? 1 : 0;
+  try {
+    await updatePlatformBrandCategoryApi(row.brand_category_id, {
+      cate_name: row.cate_name,
+      is_show: enabled ? 1 : 0,
+      pid: row.pid,
+      sort: row.sort,
+    });
+  } catch {
+    row.is_show = before ? 1 : 0;
+  }
+}
+
 async function remove(row: PlatformBrandCategory) {
   try {
     await ElMessageBox.confirm(
@@ -212,18 +243,28 @@ async function remove(row: PlatformBrandCategory) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate(0)">
-          新增分类
+          新增品牌分类
         </ElButton>
       </template>
+
+      <template #cate_name="{ row }">
+        <span>{{ row.cate_name }} [ {{ row.brand_category_id }} ]</span>
+      </template>
+
       <template #is_show="{ row }">
-        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
-          {{ row.is_show === 1 ? '显示' : '隐藏' }}
-        </ElTag>
+        <ElSwitch
+          :model-value="row.is_show === 1"
+          inline-prompt
+          active-text="显示"
+          inactive-text="隐藏"
+          @change="
+            (enabled: string | number | boolean) =>
+              changeShow(row, Boolean(enabled))
+          "
+        />
       </template>
+
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openCreate(row.brand_category_id)">
-          加子类
-        </ElButton>
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
         <ElButton link type="danger" @click="remove(row)">删除</ElButton>
       </template>
@@ -250,10 +291,40 @@ async function remove(row: PlatformBrandCategory) {
         <ElFormItem label="排序">
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
-        <ElFormItem label="显示">
-          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        <ElFormItem label="是否显示">
+          <ElSwitch
+            v-model="form.is_show"
+            :active-value="1"
+            :inactive-value="0"
+            inline-prompt
+            active-text="显示"
+            inactive-text="隐藏"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
   </Page>
 </template>
+
+<style scoped>
+/*
+ * 根因：adapter 全局 align:'center' → .col--center 对 .vxe-cell--wrapper
+ * justify-content:center，树按钮绝对定位在左、名称被整块居中，中间空白巨大。
+ * 列已设 align/headerAlign:'left'；此处只收紧图标与文案间距。
+ * （旧版类名 vxe-tree--btn-wrapper 在 v4.19 已变为 vxe-cell--tree-btn）
+ */
+:deep(.vxe-cell--tree-node) {
+  text-align: left;
+}
+
+:deep(.vxe-cell--tree-btn) {
+  width: 1em;
+  height: 1em;
+  margin: 0;
+}
+
+:deep(.vxe-tree-cell) {
+  /* 默认 1.5em，略大于 1em 图标宽；收紧到紧贴箭头 */
+  padding-left: 1em;
+}
+</style>

@@ -10,7 +10,6 @@ import {
   ElButton,
   ElForm,
   ElFormItem,
-  ElImage,
   ElInput,
   ElInputNumber,
   ElMessage,
@@ -21,8 +20,7 @@ import {
 import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import ImagePickerDialog from '#/components/shop/image-picker-dialog.vue';
-import type { AttachmentItem } from '#/api/core/attachment';
+import ImageField from '#/components/shop/image-field.vue';
 import {
   deleteProductGuarantee,
   deleteProductLabel,
@@ -51,18 +49,16 @@ const route = useRoute();
 const kind = computed<Kind>(() =>
   route.path.includes('guarantee')
     ? 'guarantee'
-    : route.path.includes('spec')
+    : route.path.includes('spec') || route.path.includes('merSpecs')
       ? 'parameter'
       : 'label',
 );
-const pageTitle = computed(
-  () =>
-    ({
-      label: '商品标签',
-      guarantee: '保障服务',
-      parameter: '平台商品参数',
-    })[kind.value],
-);
+const pageTitle = computed(() => {
+  if (kind.value === 'label') return '商品标签';
+  if (kind.value === 'guarantee') return '保障服务';
+  if (route.path.includes('merSpecs')) return '店铺商品参数';
+  return '平台商品参数';
+});
 
 const editing = ref<number>();
 const form = reactive({
@@ -75,7 +71,6 @@ const form = reactive({
   sort: 0,
   status: 1,
 });
-const iconPicker = ref(false);
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
   LIST_KEYWORD_FIELD('名称'),
@@ -339,9 +334,6 @@ async function remove(id: number, name: string) {
   }
 }
 
-function onIconSelect(items: AttachmentItem[]) {
-  form.icon_url = items[0]?.attachment_src || '';
-}
 
 watch(kind, () => {
   gridApi.setGridOptions(gridOptions.value);
@@ -418,21 +410,11 @@ watch(kind, () => {
             />
           </ElFormItem>
           <ElFormItem label="保障图标">
-            <ElButton @click="iconPicker = true">选择平台图片</ElButton>
-            <ElImage
-              v-if="form.icon_url"
-              :src="form.icon_url"
-              class="ml-2 h-8 w-8"
-              fit="cover"
+            <ImageField
+              v-model="form.icon_url"
+              default-library="system"
+              :preview-size="64"
             />
-            <ElButton
-              v-if="form.icon_url"
-              link
-              type="danger"
-              @click="form.icon_url = ''"
-            >
-              清除
-            </ElButton>
           </ElFormItem>
         </template>
         <ElFormItem v-else label="参数值" required>
@@ -452,12 +434,5 @@ watch(kind, () => {
       </ElForm>
     </FormDrawer>
 
-    <ImagePickerDialog
-      v-model:open="iconPicker"
-      default-library="system"
-      kind="image"
-      :limit="1"
-      @select="onIconSelect"
-    />
   </Page>
 </template>

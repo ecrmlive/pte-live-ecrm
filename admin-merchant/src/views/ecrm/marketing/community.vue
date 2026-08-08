@@ -415,11 +415,7 @@ onMounted(async () => {
           </ElSelect>
         </ElFormItem>
         <ElFormItem class="col-span-2" label="封面图片">
-          <ImageField
-            v-model="form.image"
-            button-text="从素材库选择封面"
-            hint="支持从本店素材库上传或选择图片"
-          />
+          <ImageField v-model="form.image" :preview-size="96" />
         </ElFormItem>
         <ElFormItem class="col-span-2" label="正文" required>
           <ElInput

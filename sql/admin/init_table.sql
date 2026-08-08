@@ -386,8 +386,38 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_city` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_category` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `parent_id` bigint unsigned NOT NULL DEFAULT 0, `name` varchar(128) NOT NULL,
-  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1, PRIMARY KEY (`id`), KEY `idx_parent` (`parent_id`)
+  `pic` varchar(1024) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `is_hot` tinyint NOT NULL DEFAULT 0, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_parent` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐商品分类图标 / 推荐 / 创建时间（幂等）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_platform_category' AND COLUMN_NAME='pic')=0,
+    'ALTER TABLE `qixi_crm_a_platform_category` ADD COLUMN `pic` varchar(1024) NOT NULL DEFAULT '''' AFTER `name`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_platform_category' AND COLUMN_NAME='is_hot')=0,
+    'ALTER TABLE `qixi_crm_a_platform_category` ADD COLUMN `is_hot` tinyint NOT NULL DEFAULT 0 AFTER `status`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_platform_category' AND COLUMN_NAME='created_at')=0,
+    'ALTER TABLE `qixi_crm_a_platform_category` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `is_hot`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 商户入驻分类与商品分类不是同一事实。佣金比例由平台维护，不能复用商品类目表。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_merchant_category` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(128) NOT NULL,
@@ -488,14 +518,37 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_store_group_merchant` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_brand` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(128) NOT NULL, `category_id` bigint unsigned NOT NULL DEFAULT 0, `logo_url` varchar(1024) NOT NULL DEFAULT '',
-  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1, PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`), KEY `idx_category` (`category_id`)
+  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`), KEY `idx_category` (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐品牌创建时间（幂等）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_platform_brand' AND COLUMN_NAME='created_at')=0,
+    'ALTER TABLE `qixi_crm_a_platform_brand` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_platform_brand_category` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `parent_id` bigint unsigned NOT NULL DEFAULT 0,
   `name` varchar(128) NOT NULL, `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_parent_name` (`parent_id`,`name`),
   KEY `idx_parent_sort` (`parent_id`,`sort`,`id`), KEY `idx_status_sort` (`status`,`sort`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐品牌分类创建时间（幂等）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_platform_brand_category' AND COLUMN_NAME='created_at')=0,
+    'ALTER TABLE `qixi_crm_a_platform_brand_category` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_review` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL, `store_id` bigint unsigned NOT NULL,
   `source_event_id` bigint unsigned DEFAULT NULL,
@@ -515,6 +568,42 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_projection_outbox` (
   PRIMARY KEY (`id`), UNIQUE KEY `uk_source_event` (`source_event_id`), UNIQUE KEY `uk_product_action` (`product_id`,`action`),
   KEY `idx_status_created` (`status`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台对店铺商品的运营字段（显示/星级/排序/推荐），不改写商户库商品主状态。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_ops` (
+  `product_id` bigint unsigned NOT NULL,
+  `is_used` tinyint NOT NULL DEFAULT 1 COMMENT '平台是否显示',
+  `star` tinyint NOT NULL DEFAULT 0 COMMENT '推荐级别 0-5',
+  `rank_sort` int NOT NULL DEFAULT 0 COMMENT '平台排序',
+  `is_hot` tinyint NOT NULL DEFAULT 0,
+  `is_best` tinyint NOT NULL DEFAULT 0,
+  `is_benefit` tinyint NOT NULL DEFAULT 0,
+  `is_new` tinyint NOT NULL DEFAULT 0,
+  `cate_hot` tinyint NOT NULL DEFAULT 0,
+  `sys_labels` varchar(500) NOT NULL DEFAULT '',
+  `content_html` mediumtext COMMENT '平台侧商品详情/营销详情 HTML',
+  `refund_switch` tinyint NOT NULL DEFAULT 1 COMMENT '支持退款',
+  `once_min_count` int NOT NULL DEFAULT 1 COMMENT '最少购买件数',
+  `ficti` int NOT NULL DEFAULT 0 COMMENT '虚拟已售数量',
+  `updated_by` bigint unsigned NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_id`), KEY `idx_used_star` (`is_used`,`star`,`rank_sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_product_ops' AND COLUMN_NAME='content_html')=0,
+    'ALTER TABLE `qixi_crm_a_product_ops` ADD COLUMN `content_html` mediumtext NULL AFTER `sys_labels`, ADD COLUMN `refund_switch` tinyint NOT NULL DEFAULT 1 AFTER `content_html`, ADD COLUMN `once_min_count` int NOT NULL DEFAULT 1 AFTER `refund_switch`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_product_ops' AND COLUMN_NAME='ficti')=0,
+    'ALTER TABLE `qixi_crm_a_product_ops` ADD COLUMN `ficti` int NOT NULL DEFAULT 0 COMMENT ''虚拟已售数量'' AFTER `once_min_count`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 平台商品元数据独立于店铺商品配置；只保存运营展示与筛选规则，不存商户私有规格。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_label` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(64) NOT NULL,

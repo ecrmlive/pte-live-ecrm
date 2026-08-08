@@ -28,6 +28,8 @@ const props = withDefaults(
     title?: string;
     /** 是否显示返回箭头 */
     showBack?: boolean;
+    /** 隐藏导航栏（H5 iframe 全页预览时由页面自带导航） */
+    hideNav?: boolean;
     /** 导航栏是否高亮（如 DIY「页面设置」选中） */
     navActive?: boolean;
     /** 右侧留给悬浮工具条的外边距（避免机身 overflow 裁切） */
@@ -44,6 +46,7 @@ const props = withDefaults(
     showDeviceSwitcher: true,
     title: '页面标题',
     showBack: true,
+    hideNav: false,
     navActive: false,
     sideGutter: 52,
     sideGutterLeft: 0,
@@ -227,6 +230,7 @@ const outerStyle = computed(() => {
 
         <!-- 2. 导航栏 -->
         <div
+          v-if="!hideNav"
           class="device-preview__nav"
           :class="{ 'is-active': navActive }"
           @click="emit('nav-click')"

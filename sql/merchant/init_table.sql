@@ -37,17 +37,98 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_role_menu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_product` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `store_id` bigint unsigned NOT NULL, `title` varchar(255) NOT NULL,
-  `category_id` bigint unsigned DEFAULT NULL, `brand_name` varchar(64) NOT NULL DEFAULT '', `svip_price_type` tinyint NOT NULL DEFAULT 0, `svip_price` decimal(12,2) NOT NULL DEFAULT 0, `status` enum('draft','pending_review','on_sale','off_sale','rejected') NOT NULL DEFAULT 'draft',
+  `category_id` bigint unsigned DEFAULT NULL, `store_category_id` bigint unsigned NOT NULL DEFAULT 0,
+  `brand_name` varchar(64) NOT NULL DEFAULT '', `svip_price_type` tinyint NOT NULL DEFAULT 0, `svip_price` decimal(12,2) NOT NULL DEFAULT 0, `status` enum('draft','pending_review','on_sale','off_sale','rejected') NOT NULL DEFAULT 'draft',
   `version` bigint unsigned NOT NULL DEFAULT 1, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`)
+  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_store_category` (`store_category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐店铺分类（幂等）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product' AND COLUMN_NAME='store_category_id')=0,
+    'ALTER TABLE `qixi_crm_m_product` ADD COLUMN `store_category_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `category_id`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_sku` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL, `spec_json` json NOT NULL,
-  `price` decimal(12,2) NOT NULL, `stock` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `image` varchar(1024) NOT NULL DEFAULT '',
+  `price` decimal(12,2) NOT NULL, `ot_price` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `stock` int NOT NULL DEFAULT 0,
+  `code` varchar(64) NOT NULL DEFAULT '', `bar_code` varchar(64) NOT NULL DEFAULT '',
+  `weight` decimal(12,2) NOT NULL DEFAULT 0.00, `volume` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `extension_one` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `status` tinyint NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`), KEY `idx_product` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐 SKU 扩展字段（幂等）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='image')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `image` varchar(1024) NOT NULL DEFAULT '''' AFTER `spec_json`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='ot_price')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `ot_price` decimal(12,2) NOT NULL DEFAULT 0.00 AFTER `price`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='code')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `code` varchar(64) NOT NULL DEFAULT '''' AFTER `stock`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='bar_code')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `bar_code` varchar(64) NOT NULL DEFAULT '''' AFTER `code`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='weight')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `weight` decimal(12,2) NOT NULL DEFAULT 0.00 AFTER `bar_code`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='volume')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `volume` decimal(12,2) NOT NULL DEFAULT 0.00 AFTER `weight`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_sku' AND COLUMN_NAME='extension_one')=0,
+    'ALTER TABLE `qixi_crm_m_product_sku` ADD COLUMN `extension_one` decimal(12,2) NOT NULL DEFAULT 0.00 AFTER `volume`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 商品状态与审核出站命令必须在商户库同一事务提交；平台库和业务库均为可重试投影。
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_audit_outbox` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL,
@@ -65,9 +146,20 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_audit_outbox` (
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_detail` (
   `product_id` bigint unsigned NOT NULL, `brief` varchar(2000) NOT NULL DEFAULT '',
   `keyword` varchar(255) NOT NULL DEFAULT '', `unit_name` varchar(32) NOT NULL DEFAULT '件',
-  `cover_url` varchar(1024) NOT NULL DEFAULT '', `original_price` decimal(12,2) DEFAULT NULL,
+  `cover_url` varchar(1024) NOT NULL DEFAULT '', `delivery_way` varchar(64) NOT NULL DEFAULT '2',
+  `original_price` decimal(12,2) DEFAULT NULL,
   PRIMARY KEY (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐配送方式（幂等；1=到店自提 2=快递配送，逗号分隔）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product_detail' AND COLUMN_NAME='delivery_way')=0,
+    'ALTER TABLE `qixi_crm_m_product_detail` ADD COLUMN `delivery_way` varchar(64) NOT NULL DEFAULT ''2'' AFTER `cover_url`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_stock_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `sku_id` bigint unsigned NOT NULL, `order_id` bigint unsigned NOT NULL,
   `quantity` int NOT NULL, `status` enum('reserved','confirmed','released') NOT NULL DEFAULT 'reserved',

@@ -34,7 +34,7 @@ import {
 import UserPickerModal, {
   type PickedPlatformUser,
 } from '#/components/ecrm/user-picker-modal.vue';
-import ImageField from '#/components/shop/image-field.vue';
+import ImagesField from '#/components/shop/images-field.vue';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -124,7 +124,7 @@ const userPickerOpen = ref(false);
 const form = reactive({
   name: '',
   phone: '',
-  qualificationImages: [''] as string[],
+  qualificationImages: [] as string[],
   uid: 0,
   remark: '',
 });
@@ -139,51 +139,29 @@ const drawerTitle = computed(() =>
   drawerMode.value === 'edit' ? '编辑区域代理' : '新增区域代理',
 );
 
-function normalizeQualificationSlots(urls: string[]): string[] {
-  const filled = urls.map((item) => item.trim()).filter(Boolean);
-  if (!filled.length) return [''];
-  if (filled.length >= QUALIFICATION_MAX) {
-    return filled.slice(0, QUALIFICATION_MAX);
-  }
-  return [...filled, ''];
-}
-
 function parseQualificationImages(raw?: string): string[] {
   const text = String(raw ?? '').trim();
-  if (!text) return [''];
+  if (!text) return [];
   try {
     const parsed = JSON.parse(text) as unknown;
     if (Array.isArray(parsed)) {
-      return normalizeQualificationSlots(
-        parsed.map((item) => String(item ?? '').trim()),
-      );
+      return parsed
+        .map((item) => String(item ?? '').trim())
+        .filter(Boolean)
+        .slice(0, QUALIFICATION_MAX);
     }
   } catch {
     /* 兼容历史纯文本/单 URL */
   }
   if (text.startsWith('http') || text.startsWith('/')) {
-    return normalizeQualificationSlots([text]);
+    return [text].slice(0, QUALIFICATION_MAX);
   }
-  return [''];
+  return [];
 }
 
 function serializeQualificationImages(images: string[]): string {
   const urls = images.map((item) => item.trim()).filter(Boolean);
   return urls.length ? JSON.stringify(urls) : '';
-}
-
-function setQualificationImage(index: number, value?: string | null) {
-  form.qualificationImages[index] = String(value ?? '').trim();
-  form.qualificationImages = normalizeQualificationSlots(
-    form.qualificationImages,
-  );
-}
-
-function addQualificationSlot() {
-  if (form.qualificationImages.length >= QUALIFICATION_MAX) return;
-  const last = form.qualificationImages[form.qualificationImages.length - 1];
-  if (!String(last ?? '').trim()) return;
-  form.qualificationImages.push('');
 }
 
 /** 负责区域：名称(提成%)，顿号连接。 */
@@ -343,7 +321,7 @@ function resetForm() {
   Object.assign(form, {
     name: '',
     phone: '',
-    qualificationImages: [''],
+    qualificationImages: [],
     uid: 0,
     remark: '',
   });
@@ -566,32 +544,12 @@ function exportList() {
           />
         </ElFormItem>
         <ElFormItem label="身份资质">
-          <div class="agent-image-slots">
-            <ImageField
-              v-for="(_, index) in form.qualificationImages"
-              :key="`qual-${index}`"
-              :model-value="form.qualificationImages[index]"
-              :preview-size="72"
-              :show-button="false"
-              default-library="system"
-              @update:model-value="(value) => setQualificationImage(index, value)"
-            />
-            <ElButton
-              v-if="
-                form.qualificationImages.length < QUALIFICATION_MAX &&
-                !!String(
-                  form.qualificationImages[
-                    form.qualificationImages.length - 1
-                  ] || '',
-                ).trim()
-              "
-              plain
-              type="primary"
-              @click="addQualificationSlot"
-            >
-              新增
-            </ElButton>
-          </div>
+          <ImagesField
+            v-model="form.qualificationImages"
+            :limit="QUALIFICATION_MAX"
+            :preview-size="72"
+            default-library="system"
+          />
         </ElFormItem>
         <ElFormItem label="区域代理" required>
           <div class="linked-user-row">
@@ -680,13 +638,6 @@ function exportList() {
 </template>
 
 <style scoped>
-.agent-image-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}
-
 .field-tip {
   width: 100%;
   margin-top: 4px;

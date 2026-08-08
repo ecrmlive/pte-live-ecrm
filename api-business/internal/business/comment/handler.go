@@ -33,21 +33,22 @@ type ownedItem struct {
 	Status    string `gorm:"column:status"`
 }
 type row struct {
-	ID                uint64    `gorm:"column:id"`
-	OrderItemID       uint64    `gorm:"column:order_item_id"`
-	UserID            uint64    `gorm:"column:user_id"`
-	ProductID         uint64    `gorm:"column:product_id"`
-	StoreID           uint64    `gorm:"column:store_id"`
-	Score             int       `gorm:"column:score"`
-	Content           string    `gorm:"column:content"`
-	Media             string    `gorm:"column:media"`
-	Reply             string    `gorm:"column:reply_content"`
-	Source            string    `gorm:"column:source"`
-	VirtualAuthorName string    `gorm:"column:virtual_author_name"`
-	Sort              int       `gorm:"column:sort"`
-	Status            string    `gorm:"column:status"`
-	CreatedAt         time.Time `gorm:"column:created_at"`
-	Title             string    `gorm:"column:title"`
+	ID                  uint64    `gorm:"column:id"`
+	OrderItemID         uint64    `gorm:"column:order_item_id"`
+	UserID              uint64    `gorm:"column:user_id"`
+	ProductID           uint64    `gorm:"column:product_id"`
+	StoreID             uint64    `gorm:"column:store_id"`
+	Score               int       `gorm:"column:score"`
+	Content             string    `gorm:"column:content"`
+	Media               string    `gorm:"column:media"`
+	Reply               string    `gorm:"column:reply_content"`
+	Source              string    `gorm:"column:source"`
+	VirtualAuthorName   string    `gorm:"column:virtual_author_name"`
+	VirtualAuthorAvatar string    `gorm:"column:virtual_author_avatar"`
+	Sort                int       `gorm:"column:sort"`
+	Status              string    `gorm:"column:status"`
+	CreatedAt           time.Time `gorm:"column:created_at"`
+	Title               string    `gorm:"column:title"`
 }
 
 func (h *Handler) create(c *gin.Context) {
@@ -122,7 +123,7 @@ func (h *Handler) publicList(c *gin.Context) {
 		return
 	}
 	var rows []row
-	if h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_product_comment").Select("id,COALESCE(order_item_id,0) AS order_item_id,user_id,product_id,store_id,score,content,media,reply_content,source,virtual_author_name,sort,status,created_at").Where("product_id=? AND status='published' AND deleted_at IS NULL", id).Order("sort DESC,id DESC").Limit(30).Scan(&rows).Error != nil {
+	if h.db.WithContext(c.Request.Context()).Table("qixi_crm_b_product_comment").Select("id,COALESCE(order_item_id,0) AS order_item_id,user_id,product_id,store_id,score,content,media,reply_content,source,virtual_author_name,virtual_author_avatar,sort,status,created_at").Where("product_id=? AND status='published' AND deleted_at IS NULL", id).Order("sort DESC,id DESC").Limit(30).Scan(&rows).Error != nil {
 		response.Fail(c, 500, "评价查询失败")
 		return
 	}
@@ -133,7 +134,7 @@ func (h *Handler) publicList(c *gin.Context) {
 	response.OK(c, gin.H{"list": list})
 }
 func (r row) view() gin.H {
-	return gin.H{"comment_id": r.ID, "order_item_id": r.OrderItemID, "product_id": r.ProductID, "score": r.Score, "content": r.Content, "media": r.Media, "reply_content": r.Reply, "source": r.Source, "virtual_author_name": r.VirtualAuthorName, "sort": r.Sort, "status": r.Status, "title": r.Title, "create_time": r.CreatedAt.Format("2006-01-02 15:04:05")}
+	return gin.H{"comment_id": r.ID, "order_item_id": r.OrderItemID, "product_id": r.ProductID, "score": r.Score, "content": r.Content, "media": r.Media, "reply_content": r.Reply, "source": r.Source, "virtual_author_name": r.VirtualAuthorName, "virtual_author_avatar": r.VirtualAuthorAvatar, "sort": r.Sort, "status": r.Status, "title": r.Title, "create_time": r.CreatedAt.Format("2006-01-02 15:04:05")}
 }
 
 var errNotEligible = &commentError{}

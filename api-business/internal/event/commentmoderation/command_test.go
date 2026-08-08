@@ -33,4 +33,10 @@ func TestCommentModerationStatesAreExplicit(t *testing.T) {
 	if !isDuplicate(errors.New("Error 1062: Duplicate entry")) {
 		t.Fatal("duplicate-key error must be recognized for idempotent replay")
 	}
+	if !isUnknownColumn(errors.New("Error 1054: Unknown column 'virtual_author_avatar' in 'field list'")) {
+		t.Fatal("missing virtual_author_avatar column must be recognized")
+	}
+	if isUnknownColumn(errors.New("Error 1062: Duplicate entry")) {
+		t.Fatal("duplicate-key must not be treated as schema mismatch")
+	}
 }

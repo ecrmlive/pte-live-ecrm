@@ -46,7 +46,7 @@ const schema = computed((): VbenFormSchema[] => {
       component: markRaw(ImageField),
       componentProps: {
         hint: '建议图片上传尺寸为 654px×300px',
-        label: '选择图片',
+        previewSize: 96,
       },
       fieldName: 'image',
       label: '背景图片',

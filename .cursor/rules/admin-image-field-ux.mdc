@@ -1,0 +1,21 @@
+---
+description: 管理后台图片选择统一交互：点图开素材库、可删、无旁侧「从素材库选择」文案
+globs: admin-platform/src/**/*.{vue,ts,tsx},admin-merchant/src/**/*.{vue,ts,tsx}
+alwaysApply: true
+---
+
+# 管理后台：图片选择统一交互
+
+适用于 `admin-platform`、`admin-merchant`。
+
+## 强制
+
+- **单图**用共用组件 `components/shop/image-field.vue`；**多图**用 `components/shop/images-field.vue`。
+- 交互：**图片块（或空占位 +）可点** → 打开素材库 Modal；已选图悬停显示 **删除（×）**；多图横向/网格排列，未满限额时保留 `+` 添加格。
+- **禁止**旁侧「从素材库选择」类文字链接/长按钮（画蛇添足）。
+- 素材库选择器本身可用 Modal；实体增改详仍用 Drawer（见 `admin-form-must-use-drawer`）。
+
+## 禁止
+
+- 手写「从素材库选择」文案按钮做图片字段。
+- 另起一套上传/选图 UI（除非视频等非图片媒体，且无对应共用组件）。

@@ -29,40 +29,54 @@ func NewHandler(adminDB, merchantDB, businessDB *gorm.DB) *Handler {
 
 func (h *Handler) Register(r gin.IRoutes) {
 	h.RegisterMeta(r)
+	h.registerManage(r)
+	h.registerEdit(r)
 	r.GET("/products", h.list)
 	r.GET("/products/:id", h.get)
 	r.POST("/products/:id/audit", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "product.audit.submit"), h.audit)
 }
 
 type productRow struct {
-	ID            uint64    `gorm:"column:id"`
-	StoreID       uint64    `gorm:"column:store_id"`
-	MerchantID    uint64    `gorm:"column:merchant_id"`
-	MerchantName  string    `gorm:"column:merchant_name"`
-	StoreName     string    `gorm:"column:store_name"`
-	Title         string    `gorm:"column:title"`
-	CategoryID    uint64    `gorm:"column:category_id"`
-	BrandName     string    `gorm:"column:brand_name"`
-	SVIPPriceType int8      `gorm:"column:svip_price_type"`
-	SVIPPrice     float64   `gorm:"column:svip_price"`
-	Status        string    `gorm:"column:status"`
-	Version       uint64    `gorm:"column:version"`
-	CreatedAt     time.Time `gorm:"column:created_at"`
+	ID              uint64    `gorm:"column:id"`
+	StoreID         uint64    `gorm:"column:store_id"`
+	MerchantID      uint64    `gorm:"column:merchant_id"`
+	MerchantName    string    `gorm:"column:merchant_name"`
+	StoreName       string    `gorm:"column:store_name"`
+	Title           string    `gorm:"column:title"`
+	CategoryID      uint64    `gorm:"column:category_id"`
+	StoreCategoryID uint64    `gorm:"column:store_category_id"`
+	BrandName       string    `gorm:"column:brand_name"`
+	SVIPPriceType   int8      `gorm:"column:svip_price_type"`
+	SVIPPrice       float64   `gorm:"column:svip_price"`
+	Status          string    `gorm:"column:status"`
+	Version         uint64    `gorm:"column:version"`
+	CreatedAt       time.Time `gorm:"column:created_at"`
 }
 
 type detailRow struct {
 	ProductID     uint64   `gorm:"column:product_id"`
 	Brief         string   `gorm:"column:brief"`
+	Keyword       string   `gorm:"column:keyword"`
+	UnitName      string   `gorm:"column:unit_name"`
 	CoverURL      string   `gorm:"column:cover_url"`
+	DeliveryWay   string   `gorm:"column:delivery_way"`
 	OriginalPrice *float64 `gorm:"column:original_price"`
 }
 
 type skuRow struct {
-	ID        uint64  `gorm:"column:id"`
-	ProductID uint64  `gorm:"column:product_id"`
-	SpecJSON  []byte  `gorm:"column:spec_json"`
-	Price     float64 `gorm:"column:price"`
-	Stock     int     `gorm:"column:stock"`
+	ID           uint64  `gorm:"column:id"`
+	ProductID    uint64  `gorm:"column:product_id"`
+	SpecJSON     []byte  `gorm:"column:spec_json"`
+	Image        string  `gorm:"column:image"`
+	Price        float64 `gorm:"column:price"`
+	OtPrice      float64 `gorm:"column:ot_price"`
+	Stock        int     `gorm:"column:stock"`
+	Code         string  `gorm:"column:code"`
+	BarCode      string  `gorm:"column:bar_code"`
+	Weight       float64 `gorm:"column:weight"`
+	Volume       float64 `gorm:"column:volume"`
+	ExtensionOne float64 `gorm:"column:extension_one"`
+	Status       int8    `gorm:"column:status"`
 }
 
 type productReview struct {
@@ -99,23 +113,32 @@ type categoryRow struct {
 }
 
 type productResponse struct {
-	ProductID  uint64  `json:"product_id"`
-	MerID      uint64  `json:"mer_id"`
-	MerName    string  `json:"mer_name"`
-	StoreName  string  `json:"store_name"`
-	Title      string  `json:"title"`
-	StoreInfo  string  `json:"store_info"`
-	CateName   string  `json:"cate_name"`
-	BrandName  string  `json:"brand_name"`
-	Image      string  `json:"image"`
-	Price      float64 `json:"price"`
-	OtPrice    float64 `json:"ot_price"`
-	Stock      int     `json:"stock"`
-	Sales      int     `json:"sales"`
-	Status     int8    `json:"status"`
-	IsShow     int8    `json:"is_show"`
-	Refusal    string  `json:"refusal,omitempty"`
-	CreateTime string  `json:"create_time"`
+	ProductID      uint64   `json:"product_id"`
+	MerID          uint64   `json:"mer_id"`
+	MerName        string   `json:"mer_name"`
+	StoreName      string   `json:"store_name"`
+	Title          string   `json:"title"`
+	StoreInfo      string   `json:"store_info"`
+	CateName       string   `json:"cate_name"`
+	MerCateName    string   `json:"mer_cate_name"`
+	BrandName      string   `json:"brand_name"`
+	Image          string   `json:"image"`
+	Price          float64  `json:"price"`
+	OtPrice        float64  `json:"ot_price"`
+	Stock          int      `json:"stock"`
+	Sales          int      `json:"sales"`
+	Ficti          int      `json:"ficti"`
+	CareCount      int      `json:"care_count"`
+	ActivityLabels []string `json:"activity_labels"`
+	Status         int8     `json:"status"`
+	IsShow         int8     `json:"is_show"`
+	SpecType       int8     `json:"spec_type"`
+	Star           int8     `json:"star"`
+	Rank           int      `json:"rank"`
+	SVIPPriceType  int8     `json:"svip_price_type"`
+	ProductType    int8     `json:"product_type"`
+	Refusal        string   `json:"refusal,omitempty"`
+	CreateTime     string   `json:"create_time"`
 }
 
 func (h *Handler) list(c *gin.Context) {
@@ -129,16 +152,9 @@ func (h *Handler) list(c *gin.Context) {
 		response.OK(c, gin.H{"list": []productResponse{}, "total": 0, "page": page, "limit": limit})
 		return
 	}
-	query := h.base(c, merchantIDs)
-	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
-		query = query.Where("p.title LIKE ?", "%"+keyword+"%")
-	}
-	if merchantID, _ := strconv.ParseUint(c.Query("mer_id"), 10, 64); merchantID > 0 {
-		query = query.Where("s.merchant_id = ?", merchantID)
-	}
-	if status := strings.TrimSpace(c.Query("status")); status != "" {
-		query = query.Where("p.status = ?", statusName(status))
-	}
+	filters := h.listFilterParams(c)
+	query := h.filteredBase(c, merchantIDs, filters)
+	query = applyTabType(query, filters.TabType)
 	query = queryfilter.ApplyCreatedAtRange(query, c, "p.created_at")
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -207,7 +223,7 @@ func (h *Handler) audit(c *gin.Context) {
 	var row productRow
 	var command productAuditOutbox
 	err := h.merchantDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
 			return err
 		}
 		if row.ID == 0 {
@@ -260,7 +276,7 @@ func (h *Handler) audit(c *gin.Context) {
 }
 
 func (h *Handler) base(c *gin.Context, merchantIDs []uint64) *gorm.DB {
-	q := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
+	q := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
 	if merchantIDs != nil {
 		q = q.Where("s.merchant_id IN ?", merchantIDs)
 	}
@@ -335,13 +351,31 @@ func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productRespons
 	if err := h.adminDB.WithContext(c.Request.Context()).Where("product_id IN ?", ids).Order("id DESC").Find(&reviews).Error; err != nil {
 		return nil, err
 	}
+	var opsRows []productOps
+	_ = h.adminDB.WithContext(c.Request.Context()).Where("product_id IN ?", ids).Find(&opsRows).Error
+	type viewSnap struct {
+		ProductID   uint64 `gorm:"column:product_id"`
+		Sales       int    `gorm:"column:sales"`
+		Stock       int    `gorm:"column:stock"`
+		SaleStatus  int8   `gorm:"column:sale_status"`
+		ProductType int8   `gorm:"column:product_type"`
+	}
+	var views []viewSnap
+	_ = h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_product_view").
+		Select("product_id,sales,stock,sale_status,product_type").Where("product_id IN ?", ids).Find(&views).Error
 	detailByID := map[uint64]detailRow{}
 	for _, x := range details {
 		detailByID[x.ProductID] = x
 	}
 	skuByID := map[uint64]skuRow{}
+	stockByID := map[uint64]int{}
+	skuCountByID := map[uint64]int{}
 	for _, x := range skus {
-		skuByID[x.ProductID] = x
+		skuCountByID[x.ProductID]++
+		stockByID[x.ProductID] += x.Stock
+		if _, ok := skuByID[x.ProductID]; !ok {
+			skuByID[x.ProductID] = x
+		}
 	}
 	nameByID := map[uint64]string{}
 	for _, x := range categoriesRows {
@@ -353,6 +387,14 @@ func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productRespons
 			reviewByID[x.ProductID] = x
 		}
 	}
+	opsByID := map[uint64]productOps{}
+	for _, x := range opsRows {
+		opsByID[x.ProductID] = x
+	}
+	viewByID := map[uint64]viewSnap{}
+	for _, x := range views {
+		viewByID[x.ProductID] = x
+	}
 	out := make([]productResponse, 0, len(rows))
 	for _, row := range rows {
 		d, s := detailByID[row.ID], skuByID[row.ID]
@@ -360,7 +402,52 @@ func (h *Handler) responses(c *gin.Context, rows []productRow) ([]productRespons
 		if d.OriginalPrice != nil {
 			ot = *d.OriginalPrice
 		}
-		out = append(out, productResponse{ProductID: row.ID, MerID: row.MerchantID, MerName: row.MerchantName, StoreName: row.StoreName, Title: row.Title, StoreInfo: d.Brief, CateName: nameByID[row.CategoryID], BrandName: row.BrandName, Image: d.CoverURL, Price: s.Price, OtPrice: ot, Stock: s.Stock, Sales: 0, Status: statusCode(row.Status), IsShow: showCode(row.Status), Refusal: reviewByID[row.ID].Reason, CreateTime: row.CreatedAt.Format("2006-01-02 15:04:05")})
+		ops := opsByID[row.ID]
+		view := viewByID[row.ID]
+		isShow := int8(1)
+		if ops.ProductID > 0 {
+			isShow = ops.IsUsed
+		} else if view.ProductID > 0 {
+			isShow = view.SaleStatus
+		} else {
+			isShow = showCode(row.Status)
+		}
+		specType := int8(0)
+		if skuCountByID[row.ID] > 1 {
+			specType = 1
+		}
+		stock := stockByID[row.ID]
+		if stock == 0 && view.Stock > 0 {
+			stock = view.Stock
+		}
+		out = append(out, productResponse{
+			ProductID:      row.ID,
+			MerID:          row.MerchantID,
+			MerName:        row.MerchantName,
+			StoreName:      row.StoreName,
+			Title:          row.Title,
+			StoreInfo:      d.Brief,
+			CateName:       nameByID[row.CategoryID],
+			MerCateName:    "", // 店铺商品分类尚未落入新模型列表投影
+			BrandName:      row.BrandName,
+			Image:          d.CoverURL,
+			Price:          s.Price,
+			OtPrice:        ot,
+			Stock:          stock,
+			Sales:          view.Sales,
+			Ficti:          ops.Ficti,
+			CareCount:      0,
+			ActivityLabels: []string{},
+			Status:         statusCode(row.Status),
+			IsShow:         isShow,
+			SpecType:       specType,
+			Star:           ops.Star,
+			Rank:           ops.RankSort,
+			SVIPPriceType:  row.SVIPPriceType,
+			ProductType:    view.ProductType,
+			Refusal:        reviewByID[row.ID].Reason,
+			CreateTime:     row.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
 	}
 	return out, nil
 }

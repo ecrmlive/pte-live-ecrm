@@ -1,0 +1,45 @@
+---
+description: 改 SQL/API 后必须自动同步到 local（执行 patch/seed、pack 并重启 API）
+alwaysApply: true
+---
+
+# Local 开发自动同步（强制）
+
+用户已要求：数据库模拟/调整 SQL、以及 API 代码改动，**写完后由 Agent 自动落到本机 local**，不要只改文件就结束。
+
+## 何时必须执行
+
+1. **新增/修改了** `sql/admin|business|merchant` 下的 `patch_*.sql`、`seed_*_local.sql`、`seed_*.sql`，或改了会影响结构/演示数据的 `init_*.sql` 中可幂等补丁段  
+   → 立刻导入 local MySQL。
+2. **修改了** `api-platform` / `api-business` / `api-merchant` 任意代码  
+   → 立刻本机 `pack` 对应服务并重启 Compose 容器。
+
+## 怎么执行（优先用仓库脚本）
+
+```bash
+# 按 git 变更自动：有 sql 就导入，有 api-* 就 pack+重启
+make local-sync
+
+# 仅 SQL
+make local-sync-sql
+
+# 仅某个 API
+make local-sync-api SVC=api-platform
+
+# 全量 SQL + 三个 API
+make local-sync MODE=all
+```
+
+等价脚本：`scripts/local-dev-sync.sh`（`auto|sql|api|all`）。
+
+## 约束
+
+- 仅操作 **local**（`pte_live_mysql`、`pte_live_ecrm_api_*`）；**不要**对远程/test 服务器做同步，除非用户明确要求部署。
+- SQL 必须幂等（`IF NOT EXISTS` / `INSERT … WHERE NOT EXISTS` / `ON DUPLICATE`）；中文用 utf8mb4。
+- 不把密码、密钥写入脚本或规则；MySQL 用容器内 `MYSQL_ROOT_PASSWORD`。
+- 同步失败要报告命令与错误，不要假装已部署。
+- 这不替代用户明确要求的 commit/push；也不是 `local-db-reset`（破坏性重建仍须用户确认）。
+
+## 任务收尾
+
+功能改完且涉及 SQL/API 时，在回复里简要说明已执行的 `local-sync` 范围（哪些库、哪些服务）。

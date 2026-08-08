@@ -2,6 +2,7 @@ package commentmoderation
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -13,8 +14,11 @@ func TestCommandValidationFailsClosed(t *testing.T) {
 	if !Valid(Command{Action: "create_virtual", ProductID: 1001, Score: 5, Content: "虚构中文虚拟评论", VirtualAuthorName: "演示用户小满", Sort: 80, OperatorID: 9, IdempotencyKey: "comment-create-virtual-1001"}) {
 		t.Fatal("valid virtual-comment creation command must pass")
 	}
-	if !Valid(Command{Action: "create_virtual", ProductID: 1001, Score: 5, Content: "虚构中文虚拟评论", VirtualAuthorName: "演示用户小满", Sort: 80, Media: []string{"/demo/comment-1.png"}, OperatorID: 9, IdempotencyKey: "comment-create-virtual-media-1001"}) {
+	if !Valid(Command{Action: "create_virtual", ProductID: 1001, Score: 5, Content: "虚构中文虚拟评论", VirtualAuthorName: "演示用户小满", VirtualAuthorAvatar: "/demo/avatars/xiaoman.png", Sort: 80, Media: []string{"/demo/comment-1.png"}, OperatorID: 9, IdempotencyKey: "comment-create-virtual-media-1001"}) {
 		t.Fatal("registered image url command must pass")
+	}
+	if Valid(Command{Action: "create_virtual", ProductID: 1001, Score: 5, Content: "虚构中文虚拟评论", VirtualAuthorName: "演示用户小满", VirtualAuthorAvatar: strings.Repeat("a", 1025), Sort: 80, OperatorID: 9, IdempotencyKey: "comment-create-virtual-avatar-too-long"}) {
+		t.Fatal("oversized virtual avatar must fail")
 	}
 	if !Valid(Command{CommentID: 8803, Action: "sort_virtual", Sort: 90, OperatorID: 9, IdempotencyKey: "comment-sort-virtual-8803"}) {
 		t.Fatal("valid virtual-comment sort command must pass")

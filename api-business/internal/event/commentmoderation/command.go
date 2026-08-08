@@ -17,18 +17,19 @@ import (
 const CommandSubject = "qixi.platform.product-comment-moderation-command.v1"
 
 type command struct {
-	CommentID         uint64   `json:"comment_id"`
-	Action            string   `json:"action"`
-	OperatorID        uint64   `json:"operator_id"`
-	IdempotencyKey    string   `json:"idempotency_key"`
-	Note              string   `json:"note,omitempty"`
-	ProductID         uint64   `json:"product_id,omitempty"`
-	Score             int      `json:"score,omitempty"`
-	Content           string   `json:"content,omitempty"`
-	VirtualAuthorName string   `json:"virtual_author_name,omitempty"`
-	Sort              int      `json:"sort,omitempty"`
-	Media             []string `json:"media,omitempty"`
-	MediaSet          bool     `json:"media_set,omitempty"`
+	CommentID           uint64   `json:"comment_id"`
+	Action              string   `json:"action"`
+	OperatorID          uint64   `json:"operator_id"`
+	IdempotencyKey      string   `json:"idempotency_key"`
+	Note                string   `json:"note,omitempty"`
+	ProductID           uint64   `json:"product_id,omitempty"`
+	Score               int      `json:"score,omitempty"`
+	Content             string   `json:"content,omitempty"`
+	VirtualAuthorName   string   `json:"virtual_author_name,omitempty"`
+	VirtualAuthorAvatar string   `json:"virtual_author_avatar,omitempty"`
+	Sort                int      `json:"sort,omitempty"`
+	Media               []string `json:"media,omitempty"`
+	MediaSet            bool     `json:"media_set,omitempty"`
 }
 type result struct {
 	CommentID uint64 `json:"comment_id"`
@@ -36,17 +37,18 @@ type result struct {
 	Code      string `json:"code,omitempty"`
 }
 type comment struct {
-	ID                uint64     `gorm:"column:id"`
-	ProductID         uint64     `gorm:"column:product_id"`
-	StoreID           uint64     `gorm:"column:store_id"`
-	Score             int        `gorm:"column:score"`
-	Content           string     `gorm:"column:content"`
-	Media             string     `gorm:"column:media"`
-	VirtualAuthorName string     `gorm:"column:virtual_author_name"`
-	Sort              int        `gorm:"column:sort"`
-	Source            string     `gorm:"column:source"`
-	Status            string     `gorm:"column:status"`
-	DeletedAt         *time.Time `gorm:"column:deleted_at"`
+	ID                  uint64     `gorm:"column:id"`
+	ProductID           uint64     `gorm:"column:product_id"`
+	StoreID             uint64     `gorm:"column:store_id"`
+	Score               int        `gorm:"column:score"`
+	Content             string     `gorm:"column:content"`
+	Media               string     `gorm:"column:media"`
+	VirtualAuthorName   string     `gorm:"column:virtual_author_name"`
+	VirtualAuthorAvatar string     `gorm:"column:virtual_author_avatar"`
+	Sort                int        `gorm:"column:sort"`
+	Source              string     `gorm:"column:source"`
+	Status              string     `gorm:"column:status"`
+	DeletedAt           *time.Time `gorm:"column:deleted_at"`
 }
 
 var (
@@ -81,7 +83,7 @@ func Apply(ctx context.Context, db *gorm.DB, raw []byte) (out result, err error)
 	if json.Unmarshal(raw, &in) != nil || !valid(in) {
 		return result{CommentID: in.CommentID, Code: "invalid"}, errInvalid
 	}
-	in.IdempotencyKey, in.Note, in.Content, in.VirtualAuthorName = strings.TrimSpace(in.IdempotencyKey), strings.TrimSpace(in.Note), strings.TrimSpace(in.Content), strings.TrimSpace(in.VirtualAuthorName)
+	in.IdempotencyKey, in.Note, in.Content, in.VirtualAuthorName, in.VirtualAuthorAvatar = strings.TrimSpace(in.IdempotencyKey), strings.TrimSpace(in.Note), strings.TrimSpace(in.Content), strings.TrimSpace(in.VirtualAuthorName), strings.TrimSpace(in.VirtualAuthorAvatar)
 	for i := range in.Media {
 		in.Media[i] = strings.TrimSpace(in.Media[i])
 	}
@@ -127,6 +129,9 @@ func Apply(ctx context.Context, db *gorm.DB, raw []byte) (out result, err error)
 	if errors.Is(err, errConflict) {
 		return result{CommentID: in.CommentID, Code: "conflict"}, errConflict
 	}
+	if isUnknownColumn(err) {
+		return result{CommentID: in.CommentID, Code: "schema"}, err
+	}
 	if err != nil {
 		return result{CommentID: in.CommentID, Code: "failed"}, err
 	}
@@ -143,7 +148,7 @@ func createVirtual(tx *gorm.DB, in *command, out *result) error {
 	if err != nil {
 		return err
 	}
-	row := comment{ProductID: in.ProductID, StoreID: product.StoreID, Score: in.Score, Content: in.Content, Media: string(media), VirtualAuthorName: in.VirtualAuthorName, Sort: in.Sort, Source: "virtual", Status: "published"}
+	row := comment{ProductID: in.ProductID, StoreID: product.StoreID, Score: in.Score, Content: in.Content, Media: string(media), VirtualAuthorName: in.VirtualAuthorName, VirtualAuthorAvatar: in.VirtualAuthorAvatar, Sort: in.Sort, Source: "virtual", Status: "published"}
 	if err := tx.Table("qixi_crm_b_product_comment").Create(&row).Error; err != nil {
 		return err
 	}
@@ -168,7 +173,7 @@ func mutateVirtualOrStatus(tx *gorm.DB, row comment, in *command, out *result) e
 		if row.Source != "virtual" {
 			return errConflict
 		}
-		changes["score"], changes["content"], changes["virtual_author_name"] = in.Score, in.Content, in.VirtualAuthorName
+		changes["score"], changes["content"], changes["virtual_author_name"], changes["virtual_author_avatar"], changes["sort"] = in.Score, in.Content, in.VirtualAuthorName, in.VirtualAuthorAvatar, in.Sort
 		if in.MediaSet {
 			media, err := json.Marshal(in.Media)
 			if err != nil {
@@ -191,10 +196,11 @@ func mutateVirtualOrStatus(tx *gorm.DB, row comment, in *command, out *result) e
 	default:
 		return errInvalid
 	}
+	// MySQL 默认按「实际变更行数」回报 RowsAffected；编辑自评时字段可能与库中相同
+	// （或旧二进制未写入 sort/avatar）→ RowsAffected=0，不能据此判 conflict。
+	// 行已在事务内 FOR UPDATE 锁定，Updates 无错即视为成功。
 	if res := tx.Table("qixi_crm_b_product_comment").Where("id=? AND deleted_at IS NULL", row.ID).Updates(changes); res.Error != nil {
 		return res.Error
-	} else if res.RowsAffected != 1 {
-		return errConflict
 	}
 	if err := audit(tx, row.ID, from, to, in); err != nil {
 		return err
@@ -224,7 +230,8 @@ func valid(in command) bool {
 	}
 }
 func validVirtual(in command) bool {
-	if in.Score < 1 || in.Score > 5 || len([]rune(strings.TrimSpace(in.Content))) == 0 || len([]rune(strings.TrimSpace(in.Content))) > 2000 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) == 0 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) > 64 || in.Sort < 0 || in.Sort > 999999 || len(in.Media) > 9 {
+	avatar := strings.TrimSpace(in.VirtualAuthorAvatar)
+	if in.Score < 1 || in.Score > 5 || len([]rune(strings.TrimSpace(in.Content))) == 0 || len([]rune(strings.TrimSpace(in.Content))) > 2000 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) == 0 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) > 64 || len([]rune(avatar)) > 1024 || in.Sort < 0 || in.Sort > 999999 || len(in.Media) > 9 {
 		return false
 	}
 	for _, media := range in.Media {
@@ -246,4 +253,12 @@ func nextStatus(current, action string) (string, bool) {
 }
 func isDuplicate(err error) bool {
 	return err != nil && strings.Contains(strings.ToLower(err.Error()), "duplicate")
+}
+
+func isUnknownColumn(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unknown column") || strings.Contains(msg, "error 1054")
 }

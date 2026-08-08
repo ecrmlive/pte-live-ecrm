@@ -7,6 +7,7 @@ QX := /bin/bash $(ROOT_DIR)/scripts/qixi-crm.sh
 
 .PHONY: help init-env-local init-env-test check-config pack pack-backend local-admin-init \
 	local local-infra local-db-init local-db-reset local-backend local-job local-down local-ps local-compose-check \
+	local-sync local-sync-sql local-sync-api \
 	test test-infra test-db-init test-backend test-job test-down test-ps test-compose-check
 
 help:
@@ -49,6 +50,18 @@ local-ps:
 	@$(QX) ps
 local-compose-check:
 	@$(QX) compose-config
+
+# 开发同步：sql patch/seed → local MySQL；改过的 API → pack + 重启容器
+#   make local-sync              # 按 git 变更自动
+#   make local-sync-sql          # 仅 SQL
+#   make local-sync-api SVC=api-platform
+#   make local-sync MODE=all     # 全量 SQL + 三个 API
+local-sync:
+	@/bin/bash $(ROOT_DIR)/scripts/local-dev-sync.sh $${MODE:-auto}
+local-sync-sql:
+	@/bin/bash $(ROOT_DIR)/scripts/local-dev-sync.sh sql
+local-sync-api:
+	@/bin/bash $(ROOT_DIR)/scripts/local-dev-sync.sh api $(SVC)
 
 # test 与 local 调用完全相同的单 Compose；差别只在命令执行的宿主机。
 test: test-backend

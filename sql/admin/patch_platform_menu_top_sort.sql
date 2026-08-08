@@ -60,16 +60,16 @@ UPDATE `qixi_crm_a_menu`
 SET `parent_id`=120, `title`='物流配送', `icon`='lucide:map-plus', `sort`=20, `kind`='directory'
 WHERE `id`=90;
 
--- 商品 / 订单关键二级命名对齐 CRMEB
-UPDATE `qixi_crm_a_menu` SET `title`='商品管理', `sort`=1 WHERE `id`=43;
-UPDATE `qixi_crm_a_menu` SET `title`='商品分类', `sort`=2 WHERE `id`=41;
-UPDATE `qixi_crm_a_menu` SET `title`='品牌管理', `sort`=3 WHERE `id`=42;
-UPDATE `qixi_crm_a_menu` SET `title`='评论管理', `sort`=4 WHERE `id`=47;
-UPDATE `qixi_crm_a_menu` SET `title`='保障服务', `sort`=5 WHERE `id`=45;
-UPDATE `qixi_crm_a_menu` SET `title`='商品标签', `sort`=6 WHERE `id`=44;
-UPDATE `qixi_crm_a_menu` SET `title`='平台商品参数', `sort`=7 WHERE `id`=46;
-UPDATE `qixi_crm_a_menu` SET `title`='价格说明', `sort`=8 WHERE `id`=48;
-UPDATE `qixi_crm_a_menu` SET `title`='活动标签', `sort`=9 WHERE `id`=49;
+-- 商品二级命名/嵌套对齐图片1（完整结构见 patch_product_menus.sql）
+UPDATE `qixi_crm_a_menu` SET `title`='商品管理', `sort`=1, `kind`='page', `parent_id`=40 WHERE `id`=43;
+UPDATE `qixi_crm_a_menu` SET `title`='商品分类', `sort`=2, `kind`='page', `parent_id`=40 WHERE `id`=41;
+UPDATE `qixi_crm_a_menu` SET `title`='品牌管理', `sort`=3, `kind`='directory', `route_path`='/product/brand', `parent_id`=40 WHERE `id`=42;
+UPDATE `qixi_crm_a_menu` SET `title`='评论管理', `sort`=4, `kind`='page', `parent_id`=40 WHERE `id`=47;
+UPDATE `qixi_crm_a_menu` SET `title`='保障服务', `sort`=5, `kind`='page', `parent_id`=40 WHERE `id`=45;
+UPDATE `qixi_crm_a_menu` SET `title`='商品标签', `sort`=6, `kind`='page', `parent_id`=40 WHERE `id`=44;
+UPDATE `qixi_crm_a_menu` SET `title`='商品参数', `sort`=7, `kind`='directory', `route_path`='/product/specsMain', `parent_id`=40 WHERE `id`=46;
+UPDATE `qixi_crm_a_menu` SET `title`='价格说明', `sort`=8, `kind`='page', `parent_id`=40 WHERE `id`=48;
+UPDATE `qixi_crm_a_menu` SET `title`='活动标签', `sort`=99, `kind`='page', `parent_id`=40, `status`=0 WHERE `id`=49;
 
 UPDATE `qixi_crm_a_menu` SET `title`='订单列表', `sort`=1 WHERE `id`=51;
 UPDATE `qixi_crm_a_menu` SET `title`='退款订单', `sort`=2 WHERE `id`=52;

@@ -160,9 +160,7 @@ onMounted(async () => {
                 :disabled="!canManage"
                 default-library="system"
                 :preview-size="52"
-                :show-button="false"
               />
-              <div class="tips">点击缩略图从素材库选择入驻页背景</div>
             </div>
           </ElFormItem>
           <ElFormItem v-if="canManage">

@@ -786,7 +786,6 @@ onMounted(() => {
         <ElFormItem label="身份资质">
           <ImageField
             v-model="agentForm.qualification"
-            button-text="从素材库选择"
             :preview-size="96"
             default-library="system"
           />

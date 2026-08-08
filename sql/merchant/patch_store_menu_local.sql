@@ -7,8 +7,15 @@
 
 SET NAMES utf8mb4;
 
-ALTER TABLE `qixi_crm_m_menu`
-  ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_menu' AND COLUMN_NAME='created_at')=0,
+    'ALTER TABLE `qixi_crm_m_menu` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `status`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 
 UPDATE `qixi_crm_m_menu` SET `name`='首页' WHERE `id`=1;
 

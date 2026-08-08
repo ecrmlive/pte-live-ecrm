@@ -155,9 +155,9 @@ INSERT INTO `qixi_crm_b_product_comment` (`id`,`order_item_id`,`user_id`,`produc
   (8801,980001,9101,1001,1,5,'虚构中文评论：羊绒柔软，版型合身。',JSON_ARRAY(),'感谢您的认可。','pending'),
   (8802,980002,9101,1101,2,4,'虚构中文评论：香氛淡雅，包装完整。',JSON_ARRAY(),'','published')
 ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`store_id`=VALUES(`store_id`),`score`=VALUES(`score`),`content`=VALUES(`content`),`media`=VALUES(`media`),`reply_content`=VALUES(`reply_content`),`status`=VALUES(`status`);
-INSERT INTO `qixi_crm_b_product_comment` (`id`,`order_item_id`,`user_id`,`product_id`,`store_id`,`score`,`content`,`media`,`source`,`virtual_author_name`,`sort`,`status`) VALUES
-  (8803,NULL,0,1001,1,5,'虚构中文虚拟评论：上身显气质，换季也很百搭。',JSON_ARRAY(),'virtual','演示用户小满',80,'published')
-ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`store_id`=VALUES(`store_id`),`score`=VALUES(`score`),`content`=VALUES(`content`),`media`=VALUES(`media`),`source`=VALUES(`source`),`virtual_author_name`=VALUES(`virtual_author_name`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`deleted_at`=NULL;
+INSERT INTO `qixi_crm_b_product_comment` (`id`,`order_item_id`,`user_id`,`product_id`,`store_id`,`score`,`content`,`media`,`source`,`virtual_author_name`,`virtual_author_avatar`,`sort`,`status`) VALUES
+  (8803,NULL,0,1001,1,5,'虚构中文虚拟评论：上身显气质，换季也很百搭。',JSON_ARRAY(),'virtual','演示用户小满','',80,'published')
+ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`store_id`=VALUES(`store_id`),`score`=VALUES(`score`),`content`=VALUES(`content`),`media`=VALUES(`media`),`source`=VALUES(`source`),`virtual_author_name`=VALUES(`virtual_author_name`),`virtual_author_avatar`=VALUES(`virtual_author_avatar`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`deleted_at`=NULL;
 
 -- 用户运营夹具均为虚构中文名称，仅用于后台标签、分组与打标闭环验收。
 INSERT INTO `qixi_crm_b_user_label` (`label_id`,`label_name`,`sort`,`is_del`) VALUES

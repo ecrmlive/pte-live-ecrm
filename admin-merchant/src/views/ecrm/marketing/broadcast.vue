@@ -427,10 +427,10 @@ onMounted(async () => {
           />
         </ElFormItem>
         <ElFormItem label="封面">
-          <ImageField v-model="form.cover_img" button-text="选择封面" />
+          <ImageField v-model="form.cover_img" :preview-size="96" />
         </ElFormItem>
         <ElFormItem label="分享图">
-          <ImageField v-model="form.feeds_img" button-text="选择分享图" />
+          <ImageField v-model="form.feeds_img" :preview-size="96" />
         </ElFormItem>
         <ElFormItem class="col-span-2" label="播放地址">
           <ElInput v-model="form.play_url" placeholder="可选，供 C 端播放器使用" />

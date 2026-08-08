@@ -44,17 +44,22 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (23,20,'region.agent_review','代理审核','lucide:badge-check','/business-zones/agent-review','page',99),
   (24,20,'region.agent_settings','代理设置','lucide:settings-2','/business-zones/settings','page',3),
 
-  -- 商品
+  -- 商品（对齐 CRMEB / 图片1：品牌管理、商品参数为二级目录）
   (40,0,'product','商品','ant-design:shopping-outlined','/product','directory',3),
   (43,40,'product.audit','商品管理','lucide:shield-check','/product/audit','page',1),
   (41,40,'product.category','商品分类','lucide:folder-tree','/product/category','page',2),
-  (42,40,'product.brand','品牌管理','lucide:award','/product/brand','page',3),
+  (42,40,'product.brand','品牌管理','lucide:award','/product/brand','directory',3),
+  (54,42,'product.brand.category','品牌分类','lucide:folder-tree','/product/band/brandClassify','page',1),
+  (55,42,'product.brand.list','品牌列表','lucide:award','/product/band/brandList','page',2),
   (47,40,'product.comment','评论管理','lucide:message-square','/product/comment','page',4),
   (45,40,'product.guarantee','保障服务','lucide:shield','/product/guarantee','page',5),
   (44,40,'product.label','商品标签','lucide:tags','/product/label','page',6),
-  (46,40,'product.parameter','平台商品参数','lucide:list-tree','/product/specs','page',7),
+  (46,40,'product.parameter','商品参数','lucide:list-tree','/product/specsMain','directory',7),
+  (56,46,'product.parameter.store','店铺商品参数','lucide:store','/product/merSpecs','page',1),
+  (57,46,'product.parameter.platform','平台商品参数','lucide:list-tree','/product/specs','page',2),
   (48,40,'product.price_description','价格说明','lucide:badge-dollar-sign','/product/priceDescription','page',8),
-  (49,40,'product.activity_label','活动标签','lucide:badge','/product/activityLabel','page',9),
+  -- 活动标签：功能页保留，侧栏按图片1软隐藏（status 默认 1，见下方 UPDATE）
+  (49,40,'product.activity_label','活动标签','lucide:badge','/product/activityLabel','page',99),
 
   -- 订单
   (50,0,'order','订单','ant-design:file-text-outlined','/order','directory',4),
@@ -194,7 +199,8 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (35,52,'order.refund.reject','拒绝退款','','order/refund','button',2),
   (20903,43,'product.audit.submit','审核商品','','product/audit','button',1),
   (20904,41,'product.category.manage','维护商品分类','','product/category','button',1),
-  (20905,42,'product.brand.manage','维护商品品牌','','product/brand','button',1),
+  (20905,55,'product.brand.manage','维护商品品牌','','product/band/brandList','button',1),
+  (20906,54,'product.brand.category.manage','维护品牌分类','','product/band/brandClassify','button',1),
   (20910,84,'content.article.manage','维护文章','','cms/article','button',1),
   (20911,84,'content.article_category.manage','维护文章分类','','cms/article','button',2),
   (20912,81,'content.notice.manage','维护公告','','content/notice','button',1),
@@ -244,7 +250,8 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20941,17,'merchant.profitsharing.review','审核店铺分账申请及维护审核备注','','merchant/applyments','button',1)
   ,(20942,44,'product.label.manage','维护平台商品标签','','product/label','button',1)
   ,(20943,45,'product.guarantee.manage','维护平台保障服务','','product/guarantee','button',1)
-  ,(20944,46,'product.parameter.manage','维护平台商品参数模板','','product/specs','button',1)
+  ,(20944,57,'product.parameter.manage','维护平台商品参数模板','','product/specs','button',1)
+  ,(20907,56,'product.parameter.store.manage','维护店铺商品参数模板','','product/merSpecs','button',1)
   ,(20945,47,'product.comment.review','审核或隐藏商品评论','','product/comment','button',1)
   ,(20946,47,'product.comment.virtual.manage','新增或编辑虚拟商品评论','','product/comment','button',2)
   ,(20947,47,'product.comment.sort','调整虚拟商品评论排序','','product/comment','button',3)
@@ -307,6 +314,11 @@ ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),
 UPDATE `qixi_crm_a_menu`
 SET `title`='店铺入驻申请', `icon`='lucide:badge-check', `route_path`='/merchant/review', `kind`='page', `sort`=2, `parent_id`=25, `status`=1
 WHERE `id`=27 OR `code`='merchant.mgmt.review';
+
+-- 商品：活动标签页保留路由，侧栏按图片1软隐藏（status=0）
+UPDATE `qixi_crm_a_menu`
+SET `title`='活动标签', `icon`='lucide:badge', `route_path`='/product/activityLabel', `kind`='page', `sort`=99, `parent_id`=40, `status`=0
+WHERE `id`=49 OR `code`='product.activity_label';
 
 -- 区域代理：侧栏只保留区域列表 / 代理人员 / 代理设置；代理审核菜单软隐藏（status=0），API 按钮权限仍挂在代理人员下
 UPDATE `qixi_crm_a_menu`

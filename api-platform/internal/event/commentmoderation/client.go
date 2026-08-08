@@ -16,18 +16,19 @@ import (
 const CommandSubject = "qixi.platform.product-comment-moderation-command.v1"
 
 type Command struct {
-	CommentID         uint64   `json:"comment_id"`
-	Action            string   `json:"action"`
-	OperatorID        uint64   `json:"operator_id"`
-	IdempotencyKey    string   `json:"idempotency_key"`
-	Note              string   `json:"note,omitempty"`
-	ProductID         uint64   `json:"product_id,omitempty"`
-	Score             int      `json:"score,omitempty"`
-	Content           string   `json:"content,omitempty"`
-	VirtualAuthorName string   `json:"virtual_author_name,omitempty"`
-	Sort              int      `json:"sort,omitempty"`
-	Media             []string `json:"media,omitempty"`
-	MediaSet          bool     `json:"media_set,omitempty"`
+	CommentID           uint64   `json:"comment_id"`
+	Action              string   `json:"action"`
+	OperatorID          uint64   `json:"operator_id"`
+	IdempotencyKey      string   `json:"idempotency_key"`
+	Note                string   `json:"note,omitempty"`
+	ProductID           uint64   `json:"product_id,omitempty"`
+	Score               int      `json:"score,omitempty"`
+	Content             string   `json:"content,omitempty"`
+	VirtualAuthorName   string   `json:"virtual_author_name,omitempty"`
+	VirtualAuthorAvatar string   `json:"virtual_author_avatar,omitempty"`
+	Sort                int      `json:"sort,omitempty"`
+	Media               []string `json:"media,omitempty"`
+	MediaSet            bool     `json:"media_set,omitempty"`
 }
 type Result struct {
 	CommentID uint64 `json:"comment_id"`
@@ -98,7 +99,8 @@ func Valid(in Command) bool {
 	}
 }
 func validVirtual(in Command) bool {
-	if in.Score < 1 || in.Score > 5 || len([]rune(strings.TrimSpace(in.Content))) == 0 || len([]rune(strings.TrimSpace(in.Content))) > 2000 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) == 0 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) > 64 || in.Sort < 0 || in.Sort > 999999 || len(in.Media) > 9 {
+	avatar := strings.TrimSpace(in.VirtualAuthorAvatar)
+	if in.Score < 1 || in.Score > 5 || len([]rune(strings.TrimSpace(in.Content))) == 0 || len([]rune(strings.TrimSpace(in.Content))) > 2000 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) == 0 || len([]rune(strings.TrimSpace(in.VirtualAuthorName))) > 64 || len([]rune(avatar)) > 1024 || in.Sort < 0 || in.Sort > 999999 || len(in.Media) > 9 {
 		return false
 	}
 	for _, media := range in.Media {

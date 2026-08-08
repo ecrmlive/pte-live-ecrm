@@ -40,19 +40,22 @@ func (h *Handler) Register(r gin.IRoutes) {
 }
 
 type row struct {
-	ID                uint64    `gorm:"column:id" json:"id"`
-	ProductID         uint64    `gorm:"column:product_id" json:"product_id"`
-	StoreID           uint64    `gorm:"column:store_id" json:"store_id"`
-	Score             int       `gorm:"column:score" json:"score"`
-	Content           string    `gorm:"column:content" json:"content"`
-	Media             string    `gorm:"column:media" json:"media"`
-	ReplyContent      string    `gorm:"column:reply_content" json:"reply_content"`
-	Source            string    `gorm:"column:source" json:"source"`
-	VirtualAuthorName string    `gorm:"column:virtual_author_name" json:"virtual_author_name"`
-	Sort              int       `gorm:"column:sort" json:"sort"`
-	Status            string    `gorm:"column:status" json:"status"`
-	CreatedAt         time.Time `gorm:"column:created_at" json:"created_at"`
-	ProductTitle      string    `gorm:"column:product_title" json:"product_title"`
+	ID                  uint64    `gorm:"column:id" json:"id"`
+	ProductID           uint64    `gorm:"column:product_id" json:"product_id"`
+	StoreID             uint64    `gorm:"column:store_id" json:"store_id"`
+	Score               int       `gorm:"column:score" json:"score"`
+	Content             string    `gorm:"column:content" json:"content"`
+	Media               string    `gorm:"column:media" json:"media"`
+	ReplyContent        string    `gorm:"column:reply_content" json:"reply_content"`
+	Source              string    `gorm:"column:source" json:"source"`
+	VirtualAuthorName   string    `gorm:"column:virtual_author_name" json:"virtual_author_name"`
+	VirtualAuthorAvatar string    `gorm:"column:virtual_author_avatar" json:"virtual_author_avatar"`
+	Sort                int       `gorm:"column:sort" json:"sort"`
+	Status              string    `gorm:"column:status" json:"status"`
+	CreatedAt           time.Time `gorm:"column:created_at" json:"created_at"`
+	ProductTitle        string    `gorm:"column:product_title" json:"product_title"`
+	ProductCover        string    `gorm:"column:product_cover" json:"product_cover"`
+	UserName            string    `gorm:"column:user_name" json:"user_name"`
 }
 type moderateInput struct {
 	Action         string `json:"action"`
@@ -60,13 +63,14 @@ type moderateInput struct {
 	IdempotencyKey string `json:"idempotency_key"`
 }
 type virtualInput struct {
-	ProductID         uint64   `json:"product_id"`
-	Score             int      `json:"score"`
-	Content           string   `json:"content"`
-	VirtualAuthorName string   `json:"virtual_author_name"`
-	Sort              int      `json:"sort"`
-	AttachmentIDs     []uint64 `json:"attachment_ids"`
-	IdempotencyKey    string   `json:"idempotency_key"`
+	ProductID           uint64   `json:"product_id"`
+	Score               int      `json:"score"`
+	Content             string   `json:"content"`
+	VirtualAuthorName   string   `json:"virtual_author_name"`
+	VirtualAuthorAvatar string   `json:"virtual_author_avatar"`
+	Sort                int      `json:"sort"`
+	AttachmentIDs       []uint64 `json:"attachment_ids"`
+	IdempotencyKey      string   `json:"idempotency_key"`
 }
 type sortInput struct {
 	Sort           int    `json:"sort"`
@@ -77,7 +81,7 @@ type deleteInput struct {
 	Note           string `json:"note"`
 }
 
-const columns = "pc.id,pc.product_id,pc.store_id,pc.score,pc.content,pc.media,pc.reply_content,pc.source,pc.virtual_author_name,pc.sort,pc.status,pc.created_at,COALESCE(p.title,'') AS product_title"
+const columns = "pc.id,pc.product_id,pc.store_id,pc.score,pc.content,pc.media,pc.reply_content,pc.source,pc.virtual_author_name,pc.virtual_author_avatar,pc.sort,pc.status,pc.created_at,COALESCE(p.title,'') AS product_title,COALESCE(p.cover_url,'') AS product_cover,CASE WHEN pc.source='virtual' THEN pc.virtual_author_name ELSE COALESCE(u.nickname,'') END AS user_name"
 
 func (h *Handler) List(c *gin.Context) {
 	page, limit := paging(c)
@@ -96,6 +100,13 @@ func (h *Handler) List(c *gin.Context) {
 		}
 		q = q.Where("pc.product_id=?", productID)
 	}
+	if userName := strings.TrimSpace(c.Query("user_name")); userName != "" {
+		like := "%" + userName + "%"
+		q = q.Where(
+			"(pc.source='virtual' AND pc.virtual_author_name LIKE ?) OR (pc.source<>'virtual' AND u.nickname LIKE ?)",
+			like, like,
+		)
+	}
 	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
 		like := "%" + keyword + "%"
 		q = q.Where("pc.content LIKE ? OR p.title LIKE ? OR CAST(pc.product_id AS CHAR) = ?", like, like, keyword)
@@ -106,8 +117,16 @@ func (h *Handler) List(c *gin.Context) {
 		failed(c)
 		return
 	}
+	orderSQL := "pc.sort DESC,pc.id DESC"
+	if sortField := strings.TrimSpace(c.Query("sort_field")); sortField == "score" {
+		if strings.EqualFold(strings.TrimSpace(c.Query("sort_order")), "asc") {
+			orderSQL = "pc.score ASC,pc.id DESC"
+		} else {
+			orderSQL = "pc.score DESC,pc.id DESC"
+		}
+	}
 	var rows []row
-	if err := q.Select(columns).Order("pc.sort DESC,pc.id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
+	if err := q.Select(columns).Order(orderSQL).Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		failed(c)
 		return
 	}
@@ -150,7 +169,7 @@ func (h *Handler) CreateVirtual(c *gin.Context) {
 	if !ok {
 		return
 	}
-	h.dispatch(c, commentcommand.Command{Action: "create_virtual", OperatorID: uint64(middleware.AdminID(c)), IdempotencyKey: strings.TrimSpace(in.IdempotencyKey), ProductID: in.ProductID, Score: in.Score, Content: strings.TrimSpace(in.Content), VirtualAuthorName: strings.TrimSpace(in.VirtualAuthorName), Sort: in.Sort, Media: media}, "虚拟评论参数错误")
+	h.dispatch(c, commentcommand.Command{Action: "create_virtual", OperatorID: uint64(middleware.AdminID(c)), IdempotencyKey: strings.TrimSpace(in.IdempotencyKey), ProductID: in.ProductID, Score: in.Score, Content: strings.TrimSpace(in.Content), VirtualAuthorName: strings.TrimSpace(in.VirtualAuthorName), VirtualAuthorAvatar: strings.TrimSpace(in.VirtualAuthorAvatar), Sort: in.Sort, Media: media}, "虚拟评论参数错误")
 }
 func (h *Handler) UpdateVirtual(c *gin.Context) {
 	commentID := id(c)
@@ -163,7 +182,7 @@ func (h *Handler) UpdateVirtual(c *gin.Context) {
 	if !ok {
 		return
 	}
-	h.dispatch(c, commentcommand.Command{CommentID: commentID, Action: "update_virtual", OperatorID: uint64(middleware.AdminID(c)), IdempotencyKey: strings.TrimSpace(in.IdempotencyKey), Score: in.Score, Content: strings.TrimSpace(in.Content), VirtualAuthorName: strings.TrimSpace(in.VirtualAuthorName), Sort: in.Sort, Media: media, MediaSet: in.AttachmentIDs != nil}, "虚拟评论参数错误")
+	h.dispatch(c, commentcommand.Command{CommentID: commentID, Action: "update_virtual", OperatorID: uint64(middleware.AdminID(c)), IdempotencyKey: strings.TrimSpace(in.IdempotencyKey), Score: in.Score, Content: strings.TrimSpace(in.Content), VirtualAuthorName: strings.TrimSpace(in.VirtualAuthorName), VirtualAuthorAvatar: strings.TrimSpace(in.VirtualAuthorAvatar), Sort: in.Sort, Media: media, MediaSet: in.AttachmentIDs != nil}, "虚拟评论参数错误")
 }
 func (h *Handler) SortVirtual(c *gin.Context) {
 	commentID := id(c)
@@ -200,6 +219,8 @@ func (h *Handler) dispatch(c *gin.Context, command commentcommand.Command, inval
 		response.Fail(c, http.StatusNotFound, "评论不存在")
 	case "conflict":
 		response.Fail(c, http.StatusConflict, "评论状态已变化、类型不匹配或幂等键冲突")
+	case "schema":
+		response.Fail(c, http.StatusServiceUnavailable, "业务库评论表缺少字段，请先执行 sql/business/patch_product_comment_virtual_avatar.sql")
 	case "invalid":
 		bad(c, invalidMessage)
 	default:
@@ -241,7 +262,11 @@ func (h *Handler) media(c *gin.Context, ids []uint64) ([]string, bool) {
 	return media, true
 }
 func (h *Handler) base(c *gin.Context) *gorm.DB {
-	return h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_product_comment AS pc").Joins("LEFT JOIN qixi_crm_b_product_view AS p ON p.product_id=pc.product_id").Where("pc.deleted_at IS NULL")
+	return h.businessDB.WithContext(c.Request.Context()).
+		Table("qixi_crm_b_product_comment AS pc").
+		Joins("LEFT JOIN qixi_crm_b_product_view AS p ON p.product_id=pc.product_id").
+		Joins("LEFT JOIN qixi_crm_b_user AS u ON u.id=pc.user_id").
+		Where("pc.deleted_at IS NULL")
 }
 func validStatus(value string) bool {
 	return value == "pending" || value == "published" || value == "hidden"

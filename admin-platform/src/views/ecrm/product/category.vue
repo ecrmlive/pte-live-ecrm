@@ -6,9 +6,11 @@ import { computed, reactive, ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
+  ElAlert,
   ElButton,
   ElForm,
   ElFormItem,
+  ElImage,
   ElInput,
   ElInputNumber,
   ElMessage,
@@ -16,7 +18,6 @@ import {
   ElOption,
   ElSelect,
   ElSwitch,
-  ElTag,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -26,9 +27,14 @@ import {
   deletePlatformCategoryApi,
   listPlatformCategoriesApi,
   updatePlatformCategoryApi,
+  updatePlatformCategoryRecommendApi,
+  updatePlatformCategoryStatusApi,
   type PlatformCategory,
 } from '#/api/core/platform-catalog';
+import ImageField from '#/components/shop/image-field.vue';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   LIST_ENABLE_STATUS_FIELD,
   LIST_KEYWORD_FIELD,
@@ -37,17 +43,27 @@ import {
 
 const treeRows = ref<PlatformCategory[]>([]);
 const editing = ref<PlatformCategory>();
-const form = reactive({ cate_name: '', is_show: 1, pid: 0, sort: 0 });
+const form = reactive({
+  cate_name: '',
+  is_hot: 0,
+  is_show: 1,
+  pic: '',
+  pid: 0,
+  sort: 0,
+});
 
-const options = computed(() => flatten(treeRows.value));
+const options = computed(() => flattenParents(treeRows.value));
 
-function flatten(
+function flattenParents(
   items: PlatformCategory[],
   prefix = '',
+  depth = 0,
 ): Array<{ label: string; value: number }> {
+  // 上级最多选到二级，保证可落到三级
+  if (depth >= 2) return [];
   return items.flatMap((item) => [
     { label: `${prefix}${item.cate_name}`, value: item.store_category_id },
-    ...flatten(item.children || [], `${prefix}— `),
+    ...flattenParents(item.children || [], `${prefix}— `, depth + 1),
   ]);
 }
 
@@ -81,20 +97,45 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
 const gridOptions: VxeGridProps<PlatformCategory> = {
   columns: [
     {
+      // 覆盖全局 grid.align:'center'：树按钮绝对定位在左，居中会把名称顶到中间形成大空隙
+      align: 'left',
       field: 'cate_name',
-      minWidth: 240,
+      headerAlign: 'left',
+      minWidth: 260,
       showOverflow: false,
+      slots: { default: 'cate_name' },
       title: '分类名称',
       treeNode: true,
     },
-    { field: 'sort', title: '排序', width: 90 },
     {
-      field: 'is_show',
-      slots: { default: 'is_show' },
-      title: '状态',
+      align: 'center',
+      field: 'pic',
+      slots: { default: 'pic' },
+      title: '分类图标',
       width: 100,
     },
-    platformListActionColumn({ width: 150 }),
+    { align: 'center', field: 'sort', title: '排序', width: 90 },
+    {
+      align: 'center',
+      field: 'is_show',
+      slots: { default: 'is_show' },
+      title: '是否显示',
+      width: 120,
+    },
+    {
+      align: 'center',
+      field: 'is_hot',
+      slots: { default: 'is_hot' },
+      title: '是否推荐',
+      width: 130,
+    },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 170,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 140 }),
   ],
   pagerConfig: { enabled: false },
   proxyConfig: {
@@ -116,7 +157,12 @@ const gridOptions: VxeGridProps<PlatformCategory> = {
     },
   },
   rowConfig: { isHover: true, keyField: 'store_category_id' },
-  treeConfig: { childrenField: 'children', expandAll: true },
+  treeConfig: {
+    childrenField: 'children',
+    expandAll: true,
+    // 左对齐后 indent 只需区分层级；10px 三级仍可辨
+    indent: 10,
+  },
   toolbarConfig: {
     custom: false,
     export: false,
@@ -136,25 +182,34 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
   onConfirm: async () => save(),
 });
 
-function resetForm() {
+function resetForm(parentID = 0) {
   editing.value = undefined;
-  Object.assign(form, { cate_name: '', is_show: 1, pid: 0, sort: 0 });
+  Object.assign(form, {
+    cate_name: '',
+    is_hot: 0,
+    is_show: 1,
+    pic: '',
+    pid: parentID,
+    sort: 0,
+  });
 }
 
-function openCreate() {
-  resetForm();
-  formDrawerApi.setState({ title: '新增分类' }).open();
+function openCreate(parentID = 0) {
+  resetForm(parentID);
+  formDrawerApi.setState({ title: '新增商品分类' }).open();
 }
 
 function openEdit(row: PlatformCategory) {
   editing.value = row;
   Object.assign(form, {
     cate_name: row.cate_name,
+    is_hot: row.is_hot ?? 0,
     is_show: row.is_show,
+    pic: row.pic || '',
     pid: row.pid,
     sort: row.sort,
   });
-  formDrawerApi.setState({ title: '编辑分类' }).open();
+  formDrawerApi.setState({ title: '编辑商品分类' }).open();
 }
 
 async function save() {
@@ -164,25 +219,44 @@ async function save() {
   }
   formDrawerApi.lock();
   try {
+    const body = {
+      cate_name: form.cate_name.trim(),
+      is_hot: form.is_hot,
+      is_show: form.is_show,
+      pic: form.pic.trim(),
+      pid: form.pid,
+      sort: form.sort,
+    };
     if (editing.value) {
-      await updatePlatformCategoryApi(editing.value.store_category_id, {
-        cate_name: form.cate_name.trim(),
-        is_show: form.is_show,
-        sort: form.sort,
-      });
+      await updatePlatformCategoryApi(editing.value.store_category_id, body);
     } else {
-      await createPlatformCategoryApi({
-        cate_name: form.cate_name.trim(),
-        is_show: form.is_show,
-        pid: form.pid,
-        sort: form.sort,
-      });
+      await createPlatformCategoryApi(body);
     }
     formDrawerApi.close();
     ElMessage.success('分类已保存');
     gridApi.reload();
   } finally {
     formDrawerApi.unlock();
+  }
+}
+
+async function changeShow(row: PlatformCategory, enabled: boolean) {
+  const before = row.is_show === 1;
+  row.is_show = enabled ? 1 : 0;
+  try {
+    await updatePlatformCategoryStatusApi(row.store_category_id, enabled);
+  } catch {
+    row.is_show = before ? 1 : 0;
+  }
+}
+
+async function changeHot(row: PlatformCategory, enabled: boolean) {
+  const before = row.is_hot === 1;
+  row.is_hot = enabled ? 1 : 0;
+  try {
+    await updatePlatformCategoryRecommendApi(row.store_category_id, enabled);
+  } catch {
+    row.is_hot = before ? 1 : 0;
   }
 }
 
@@ -204,17 +278,61 @@ async function remove(row: PlatformCategory) {
 
 <template>
   <Page auto-content-height>
+    <ElAlert
+      class="mb-3"
+      type="warning"
+      :closable="false"
+      title="平台商品的分类应添加至三级，否则店铺添加商品时无分类可选"
+    />
     <Grid>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增分类
+        <ElButton :icon="Plus" type="primary" @click="openCreate(0)">
+          新增商品分类
         </ElButton>
       </template>
-      <template #is_show="{ row }">
-        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
-          {{ row.is_show === 1 ? '显示' : '隐藏' }}
-        </ElTag>
+
+      <template #cate_name="{ row }">
+        <span>{{ row.cate_name }} [{{ row.store_category_id }}]</span>
       </template>
+
+      <template #pic="{ row }">
+        <ElImage
+          v-if="row.pic"
+          :src="resolveCosMediaUrl(row.pic)"
+          class="cate-icon"
+          fit="cover"
+          :preview-src-list="[resolveCosMediaUrl(row.pic)]"
+          preview-teleported
+        />
+        <span v-else class="text-muted">—</span>
+      </template>
+
+      <template #is_show="{ row }">
+        <ElSwitch
+          :model-value="row.is_show === 1"
+          inline-prompt
+          active-text="显示"
+          inactive-text="隐藏"
+          @change="
+            (enabled: string | number | boolean) =>
+              changeShow(row, Boolean(enabled))
+          "
+        />
+      </template>
+
+      <template #is_hot="{ row }">
+        <ElSwitch
+          :model-value="row.is_hot === 1"
+          inline-prompt
+          active-text="推荐"
+          inactive-text="不推荐"
+          @change="
+            (enabled: string | number | boolean) =>
+              changeHot(row, Boolean(enabled))
+          "
+        />
+      </template>
+
       <template #action="{ row }">
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
         <ElButton link type="danger" @click="remove(row)">删除</ElButton>
@@ -224,27 +342,87 @@ async function remove(row: PlatformCategory) {
     <FormDrawer>
       <ElForm label-width="96px">
         <ElFormItem label="上级分类">
-          <ElSelect v-model="form.pid" class="w-full">
+          <ElSelect v-model="form.pid" class="w-full" clearable placeholder="顶级分类">
             <ElOption label="顶级分类" :value="0" />
             <ElOption
-              v-for="item in options"
+              v-for="item in options.filter(
+                (x) => x.value !== editing?.store_category_id,
+              )"
               :key="item.value"
-              :disabled="item.value === editing?.store_category_id"
               :label="item.label"
               :value="item.value"
             />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="分类名称" required>
-          <ElInput v-model="form.cate_name" />
+          <ElInput v-model="form.cate_name" placeholder="请输入分类名称" />
+        </ElFormItem>
+        <ElFormItem label="分类图标">
+          <ImageField
+            v-model="form.pic"
+            default-library="system"
+            hint="建议尺寸：110×110px"
+            :preview-size="72"
+          />
         </ElFormItem>
         <ElFormItem label="排序">
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
-        <ElFormItem label="显示">
-          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        <ElFormItem label="是否显示">
+          <ElSwitch
+            v-model="form.is_show"
+            :active-value="1"
+            :inactive-value="0"
+            inline-prompt
+            active-text="显示"
+            inactive-text="隐藏"
+          />
+        </ElFormItem>
+        <ElFormItem label="是否推荐">
+          <ElSwitch
+            v-model="form.is_hot"
+            :active-value="1"
+            :inactive-value="0"
+            inline-prompt
+            active-text="推荐"
+            inactive-text="不推荐"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
   </Page>
 </template>
+
+<style scoped>
+.cate-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.text-muted {
+  color: var(--el-text-color-placeholder);
+}
+
+/*
+ * 根因：adapter 全局 align:'center' → .col--center 对 .vxe-cell--wrapper
+ * justify-content:center，树按钮绝对定位在左、名称被整块居中，中间空白巨大。
+ * 列已设 align/headerAlign:'left'；此处只收紧图标与文案间距。
+ * （旧版类名 vxe-tree--btn-wrapper 在 v4.19 已变为 vxe-cell--tree-btn）
+ */
+:deep(.vxe-cell--tree-node) {
+  text-align: left;
+}
+
+:deep(.vxe-cell--tree-btn) {
+  width: 1em;
+  height: 1em;
+  margin: 0;
+}
+
+:deep(.vxe-tree-cell) {
+  /* 默认 1.5em，略大于 1em 图标宽；收紧到紧贴箭头 */
+  padding-left: 1em;
+}
+</style>

@@ -1291,7 +1291,6 @@ onMounted(async () => {
                     <ImageField
                       v-model="form.mer_avatar"
                       :disabled="isReadonly"
-                      button-text="从素材库选择"
                       :preview-size="120"
                     />
                   </ElFormItem>

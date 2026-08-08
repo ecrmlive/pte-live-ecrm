@@ -231,22 +231,50 @@ export function fetchProductParameterTemplates() { return requestClient.get<{ li
 export function saveProductParameterTemplate(id: number | undefined, value: { name: string; values: string[]; sort: number; status: number }) { return id ? requestClient.put(`/product/parameter-templates/${id}`, value) : requestClient.post('/product/parameter-templates', value); }
 export function deleteProductParameterTemplate(id: number) { return requestClient.delete(`/product/parameter-templates/${id}`); }
 export type ProductCommentStatus = 'hidden' | 'pending' | 'published';
-export interface ProductCommentRow { id: number; product_id: number; store_id: number; score: number; content: string; media: string; reply_content: string; source: 'user' | 'virtual'; virtual_author_name: string; sort: number; status: ProductCommentStatus; created_at: string; product_title: string; }
+export interface ProductCommentRow {
+  id: number;
+  product_id: number;
+  store_id: number;
+  score: number;
+  content: string;
+  media: string;
+  reply_content: string;
+  source: 'user' | 'virtual';
+  virtual_author_name: string;
+  virtual_author_avatar?: string;
+  sort: number;
+  status: ProductCommentStatus;
+  created_at: string;
+  product_title: string;
+  product_cover?: string;
+  user_name?: string;
+}
 export function fetchProductComments(params: {
   page: number;
   limit: number;
   product_id?: number;
   status?: ProductCommentStatus;
   keyword?: string;
+  user_name?: string;
   date_from?: string;
   date_to?: string;
-  reply_status?: 'has_reply' | 'no_reply';
+  sort_field?: 'score';
+  sort_order?: 'asc' | 'desc';
 }) {
   return requestClient.get<PageResult<ProductCommentRow>>('/product/comments', { params });
 }
 export function fetchProductComment(id: number) { return requestClient.get<ProductCommentRow>(`/product/comments/${id}`); }
 export function moderateProductComment(id: number, input: { action: 'hide' | 'publish'; idempotency_key: string; note?: string }) { return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/moderate`, input); }
-export interface VirtualProductCommentInput { product_id?: number; score: number; content: string; virtual_author_name: string; sort: number; attachment_ids?: number[]; idempotency_key: string; }
+export interface VirtualProductCommentInput {
+  product_id?: number;
+  score: number;
+  content: string;
+  virtual_author_name: string;
+  virtual_author_avatar?: string;
+  sort: number;
+  attachment_ids?: number[];
+  idempotency_key: string;
+}
 export function createVirtualProductComment(input: Required<VirtualProductCommentInput>) { return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>('/product/comments/virtual', input); }
 export function updateVirtualProductComment(id: number, input: Omit<VirtualProductCommentInput, 'product_id'>) { return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/virtual`, input); }
 export function sortVirtualProductComment(id: number, input: { sort: number; idempotency_key: string }) { return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/sort`, input); }
