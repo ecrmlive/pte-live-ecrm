@@ -58,7 +58,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
         },
       },
     },
-    toolbarConfig: { search: true, refresh: true },
+    toolbarConfig: { search: false, refresh: true },
   } as VxeGridProps<DiyPageRow>,
 });
 

@@ -219,17 +219,226 @@ export function fetchMerchantDepositLedgers(
   );
 }
 export interface ProductLabelRow { id: number; name: string; description: string; color: string; sort: number; status: number; created_at: string; }
-export interface ProductGuaranteeRow { id: number; name: string; content: string; icon_url: string; sort: number; status: number; created_at: string; }
-export interface ProductParameterTemplateRow { id: number; name: string; values_json: string; sort: number; status: number; created_at: string; }
+export interface ProductGuaranteeRow {
+  id: number;
+  name: string;
+  content: string;
+  icon_url: string;
+  sort: number;
+  status: number;
+  mer_count: number;
+  product_count: number;
+  created_at: string;
+}
+export type ProductGuaranteeSaveInput = Pick<
+  ProductGuaranteeRow,
+  'name' | 'content' | 'icon_url' | 'sort' | 'status'
+>;
+export interface ProductParameterItem {
+  name: string;
+  values: string[];
+  required: number;
+  sort: number;
+}
+export interface ProductParameterTemplateRow {
+  id: number;
+  name: string;
+  cate_ids: number[];
+  cate_names: string[];
+  cate_names_text: string;
+  params: ProductParameterItem[];
+  is_required: number;
+  sort: number;
+  status: number;
+  created_at: string;
+}
+export type ProductParameterTemplateSaveInput = {
+  name: string;
+  cate_ids: number[];
+  params: ProductParameterItem[];
+  sort: number;
+  status: number;
+};
+export interface StoreParameterItem {
+  name: string;
+  values: string[];
+  required: number;
+  sort: number;
+}
+export interface StoreParameterTemplateRow {
+  id: number;
+  store_id: number;
+  mer_id: number;
+  mer_name: string;
+  template_name: string;
+  sort: number;
+  created_at: string;
+}
+export interface StoreParameterTemplateDetail extends StoreParameterTemplateRow {
+  cate_id?: number;
+  is_required?: number;
+  params: StoreParameterItem[];
+}
 export function fetchProductLabels() { return requestClient.get<{ list: ProductLabelRow[] }>('/product/labels'); }
 export function saveProductLabel(id: number | undefined, value: Omit<ProductLabelRow, 'id' | 'created_at'>) { return id ? requestClient.put(`/product/labels/${id}`, value) : requestClient.post('/product/labels', value); }
+export function updateProductLabelStatus(id: number, status: number) {
+  return requestClient.put(`/product/labels/${id}/status`, { status });
+}
 export function deleteProductLabel(id: number) { return requestClient.delete(`/product/labels/${id}`); }
-export function fetchProductGuarantees() { return requestClient.get<{ list: ProductGuaranteeRow[] }>('/product/guarantees'); }
-export function saveProductGuarantee(id: number | undefined, value: Omit<ProductGuaranteeRow, 'id' | 'created_at'>) { return id ? requestClient.put(`/product/guarantees/${id}`, value) : requestClient.post('/product/guarantees', value); }
+export function fetchProductGuarantees(params?: {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return requestClient.get<{ list: ProductGuaranteeRow[]; total?: number }>(
+    '/product/guarantees',
+    { params },
+  );
+}
+export function saveProductGuarantee(
+  id: number | undefined,
+  value: ProductGuaranteeSaveInput,
+) {
+  return id
+    ? requestClient.put(`/product/guarantees/${id}`, value)
+    : requestClient.post('/product/guarantees', value);
+}
+export function updateProductGuaranteeStatus(id: number, status: number) {
+  return requestClient.put(`/product/guarantees/${id}/status`, { status });
+}
 export function deleteProductGuarantee(id: number) { return requestClient.delete(`/product/guarantees/${id}`); }
-export function fetchProductParameterTemplates() { return requestClient.get<{ list: ProductParameterTemplateRow[] }>('/product/parameter-templates'); }
-export function saveProductParameterTemplate(id: number | undefined, value: { name: string; values: string[]; sort: number; status: number }) { return id ? requestClient.put(`/product/parameter-templates/${id}`, value) : requestClient.post('/product/parameter-templates', value); }
-export function deleteProductParameterTemplate(id: number) { return requestClient.delete(`/product/parameter-templates/${id}`); }
+export function fetchProductParameterTemplates(params?: {
+  page?: number;
+  limit?: number;
+  name?: string;
+  template_name?: string;
+  cate_id?: number;
+}) {
+  return requestClient.get<{
+    list: ProductParameterTemplateRow[];
+    total?: number;
+    page?: number;
+    limit?: number;
+  }>('/product/parameter-templates', { params });
+}
+export function fetchProductParameterTemplate(id: number) {
+  return requestClient.get<ProductParameterTemplateRow>(
+    `/product/parameter-templates/${id}`,
+  );
+}
+export function saveProductParameterTemplate(
+  id: number | undefined,
+  value: ProductParameterTemplateSaveInput,
+) {
+  return id
+    ? requestClient.put(`/product/parameter-templates/${id}`, value)
+    : requestClient.post('/product/parameter-templates', value);
+}
+export function deleteProductParameterTemplate(id: number) {
+  return requestClient.delete(`/product/parameter-templates/${id}`);
+}
+export interface ProductPriceRuleRow {
+  id: number;
+  name: string;
+  cate_ids: number[];
+  cate_names: string[];
+  cate_names_text: string;
+  is_default: number;
+  content: string;
+  sort: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+export type ProductPriceRuleSaveInput = {
+  name: string;
+  cate_ids: number[];
+  content: string;
+  sort: number;
+  status: number;
+};
+export function fetchProductPriceRules(params?: {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  cate_id?: number;
+  status?: number;
+}) {
+  return requestClient.get<{
+    list: ProductPriceRuleRow[];
+    total?: number;
+    page?: number;
+    limit?: number;
+  }>('/product/price-rules', { params });
+}
+export function fetchProductPriceRule(id: number) {
+  return requestClient.get<ProductPriceRuleRow>(`/product/price-rules/${id}`);
+}
+export function saveProductPriceRule(
+  id: number | undefined,
+  value: ProductPriceRuleSaveInput,
+) {
+  return id
+    ? requestClient.put(`/product/price-rules/${id}`, value)
+    : requestClient.post('/product/price-rules', value);
+}
+export function updateProductPriceRuleStatus(id: number, status: number) {
+  return requestClient.put(`/product/price-rules/${id}/status`, { status });
+}
+export function deleteProductPriceRule(id: number) {
+  return requestClient.delete(`/product/price-rules/${id}`);
+}
+export function fetchStoreParameterTemplates(params?: {
+  page?: number;
+  limit?: number;
+  mer_id?: number;
+  store_id?: number;
+  template_name?: string;
+}) {
+  return requestClient.get<{
+    list: StoreParameterTemplateRow[];
+    total: number;
+    page: number;
+    limit: number;
+  }>('/product/store-parameter-templates', { params });
+}
+export function fetchStoreParameterTemplate(id: number) {
+  return requestClient.get<StoreParameterTemplateDetail>(
+    `/product/store-parameter-templates/${id}`,
+  );
+}
+export function createStoreParameterTemplate(value: {
+  mer_id?: number;
+  store_id?: number;
+  template_name: string;
+  cate_id: number;
+  is_required?: number;
+  params: StoreParameterItem[];
+  sort?: number;
+}) {
+  return requestClient.post<StoreParameterTemplateDetail>(
+    '/product/store-parameter-templates',
+    value,
+  );
+}
+export function copyStoreParameterTemplate(
+  id: number,
+  value: {
+    template_name: string;
+    cate_ids: number[];
+    params: StoreParameterItem[];
+    sort: number;
+    status?: number;
+  },
+) {
+  return requestClient.post<{
+    ok: boolean;
+    platform_template_id: number;
+    name: string;
+  }>(`/product/store-parameter-templates/${id}/copy`, value);
+}
 export type ProductCommentStatus = 'hidden' | 'pending' | 'published';
 export interface ProductCommentRow {
   id: number;

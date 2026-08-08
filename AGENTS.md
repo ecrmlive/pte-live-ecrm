@@ -84,7 +84,7 @@ Skill：`.cursor/skills/pte-live-ecrm/SKILL.md`（Codex 镜像：`codex-skills/p
 
 - 功能验收以 `docs/features/` 为准；产品全景以 `docs/product-understanding.md` 为准。
 - 对照 CRMEB 时只读外部源码：`~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0`。
-- **管理后台列表/抽屉布局 100% 强制标准**：以平台「店铺列表」`admin-platform/src/views/ecrm/merchant/list.vue` 为准；规范见 `docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md`。新建或改版列表页必须对齐该页（Page + useVbenVxeGrid + 固定右操作列 + Drawer 增删改详情），禁止再走 `EcrmListPage` / 手写 `el-table` 骨架。
+- **管理后台列表/抽屉布局 100% 强制标准（锁定，禁止擅自改标准）**：以平台「店铺列表」`admin-platform/src/views/ecrm/merchant/list.vue` 为准；规范见 `docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md`（§0 / §0.1 每次必读）。新建或改版列表页必须对齐该页（Page + useVbenVxeGrid + 固定右操作列 + 表格与分页同卡贴合 + Drawer 增删改详情；筛选按钮重置→搜索；禁止 Vxe 圆形工具栏搜索）。禁止再走 `EcrmListPage` / 手写 `el-table` 骨架；禁止为单页问题改写金标准或全局列表默认项。
 - **管理后台时间**：统一 `yyyy-MM-dd HH:mm:ss`（Asia/Shanghai）；API/MySQL 部署时区见 `docs/release/PACK-AND-CONFIG.md`「时区」；前端用 `formatShanghaiDateTime`。
 - **数据库与表前缀固定为**：`qixi_crm_admin.qixi_crm_a_`（统一后台）、`qixi_crm_business.qixi_crm_b_`（C 端业务）、`qixi_crm_merchant.qixi_crm_m_`（店铺）。IM 表规则严格以 pte-live-im 仓库 `sql/init_im_schema.sql` 的实际定义为准，七禧不得重定义。禁止新代码使用 `qixi_m_*`、裸 `qixi_` 或 `eb_` 表前缀。见 `docs/SYSTEM-ARCHITECTURE.md`。
 - 订单、支付、退款、库存、优惠、积分、佣金、商户结算为高风险域；改前先理清状态机与幂等。
@@ -104,5 +104,6 @@ Skill：`.cursor/skills/pte-live-ecrm/SKILL.md`（Codex 镜像：`codex-skills/p
 
 1. 读 `docs/analysis-completeness.md` 与 `docs/overview.md`。
 2. 读本 Skill 的 references（功能图 / 技术栈 / 工作约定）。
-3. 需要对照原系统时再打开 `~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0` 对应 Repository / 菜单 SQL。
-4. 出方案 → 改代码 →（用户要求时）测试/部署。
+3. **改管理后台列表/布局时**：先读 `docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md` §0 / §0.1，并对照 `admin-platform/src/views/ecrm/merchant/list.vue`。
+4. 需要对照原系统时再打开 `~/Downloads/CRMEB多商户系统/CRMEB_MER_v4.0` 对应 Repository / 菜单 SQL。
+5. 出方案 → 改代码 →（用户要求时）测试/部署。

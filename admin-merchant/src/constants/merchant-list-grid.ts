@@ -55,4 +55,11 @@ export const MERCHANT_LIST_GRID_LAYOUT = {
   },
   /** 有 fixed 列时需开启横向滚动容器 */
   scrollX: { enabled: true, gt: 0 },
+  /**
+   * 产品标准：禁止 Vxe 工具栏圆形蓝色「搜索」按钮（magnifying glass）。
+   * 表单区「搜索」提交按钮保留；adapter 会强制 search:false，勿再开。
+   */
+  toolbarConfig: {
+    search: false,
+  },
 };

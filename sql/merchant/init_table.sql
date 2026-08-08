@@ -316,6 +316,23 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_attribute` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `product_id` bigint unsigned NOT NULL, `attribute_name` varchar(128) NOT NULL,
   `attribute_value` json NOT NULL, PRIMARY KEY (`id`), KEY `idx_product` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 店铺商品参数模板（对齐 CRMEB eb_parameter_template；平台 merSpecs 只读+复制；商户 specs 增改）
+CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_parameter_template` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `store_id` bigint unsigned NOT NULL COMMENT '店铺 ID（qixi_crm_m_store.id）',
+  `template_name` varchar(64) NOT NULL COMMENT '参数模板名称',
+  `cate_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT '关联平台分类 ID',
+  `is_required` tinyint NOT NULL DEFAULT 0 COMMENT '是否必选：1=店铺关联该分类时必须使用本模板',
+  `params_json` json NOT NULL COMMENT '参数项数组 [{name,values[],required,sort}]',
+  `sort` int NOT NULL DEFAULT 0,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_store_sort` (`store_id`,`is_del`,`sort`,`id`),
+  KEY `idx_store_cate` (`store_id`,`cate_id`,`is_del`),
+  KEY `idx_name` (`template_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='店铺商品参数模板';
 CREATE TABLE IF NOT EXISTS `qixi_crm_m_product_tag` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `store_id` bigint unsigned NOT NULL, `name` varchar(64) NOT NULL,
   `info` varchar(255) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,

@@ -15,12 +15,34 @@
   min-height: 0 !important;
 }
 
-/* 双列等窄内容区：允许 grid 在 flex 布局下收缩，避免表宽把操作列顶出视口 */
+/* 表本体随行高，避免 JS 按父级写入的像素高在 pager 上方留白 */
+.platform-vxe-grid .vxe-table {
+  height: auto !important;
+  max-height: none !important;
+}
+
+/*
+ * vxe 默认 layouts 把 Toolbar/Table/Pager 放进 flex-grow:1 的 body；
+ * 再叠加 Page auto-content-height / 旧外层 h-full / height:auto→100% 时，
+ * 表体会被撑出大块空白（expand 行 + fixed 列后更明显）。列表页要内容撑开、整页滚动。
+ * 只关 flex-grow，勿设 flex-shrink:0：否则表宽随列撑开、外层横滑，
+ * fixed:right 操作列会跟着卷走。
+ */
+.platform-vxe-grid .vxe-grid--layout-body-wrapper,
+.platform-vxe-grid .vxe-grid--layout-body-content-wrapper,
+.platform-vxe-grid .vxe-grid--table-container,
+.platform-vxe-grid .vxe-grid--table-wrapper,
+.platform-vxe-grid .vxe-table--viewport-wrapper {
+  flex-grow: 0 !important;
+}
+
+/* 双列等窄内容区：收缩 + 裁切，强制横向滚动落在 vxe body/header 内 */
 .platform-vxe-grid .vxe-grid--layout-body-content-wrapper {
   min-width: 0;
   overflow: hidden;
 }
 
+.platform-vxe-grid .vxe-grid--layout-body-wrapper,
 .platform-vxe-grid .vxe-grid--layout-body-content-wrapper,
 .platform-vxe-grid .vxe-table--render-wrapper,
 .platform-vxe-grid .vxe-table--main-wrapper {
@@ -32,16 +54,21 @@
 /*
  * 不要在 table-container 上设 overflow-x:auto：会把 fixed-right 一并卷走。
  * 横向滚动交给 vxe scrollX + body/header wrapper；fixed 列叠在可视区右侧。
+ * overflow-x:hidden 约束宽度；overflow-y:visible 保留内容高度（非整表体内滚）。
  */
 .platform-vxe-grid .vxe-grid--table-container {
   max-height: none !important;
   height: auto !important;
   min-height: 0 !important;
-  overflow: visible !important;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
 }
 
 .platform-vxe-grid .vxe-table--render-wrapper {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden !important;
 }
 
@@ -97,6 +124,11 @@
   flex-shrink: 0;
   justify-content: flex-end;
   padding-top: 12px;
+}
+
+/* 筛选区 CSS Grid 勿拉伸行轨（Page 定高 + flex 链路易留出第二行下方空白） */
+.platform-vxe-grid .vxe-grid--form-wrapper .grid {
+  align-content: start;
 }
 
 /* 行高随内容增高（需 grid showOverflow: false；列级 showOverflow: true 走下方 ellipsis） */

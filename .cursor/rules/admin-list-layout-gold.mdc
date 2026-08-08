@@ -1,0 +1,30 @@
+---
+description: 管理后台列表布局金标准锁定——改列表前必读文档，禁止擅自改标准
+globs: admin-platform/src/views/**/*.vue,admin-merchant/src/views/**/*.vue,admin-platform/src/constants/platform-list-*.ts,admin-merchant/src/constants/**/*list*.ts,admin-platform/src/styles/platform-list-page.scss,admin-merchant/src/styles/**/*list*.scss,admin-platform/src/adapter/vxe-table.ts,admin-merchant/src/adapter/vxe-table.ts,admin-platform/packages/effects/plugins/src/vxe-table/**
+alwaysApply: false
+---
+
+# 管理后台列表布局：金标准锁定
+
+## 每次动手前（强制）
+
+1. 阅读 `docs/acceptance/LAYOUT-FIDELITY-CHECKLIST.md`（尤其 §0 / §0.1 / §1.1）。
+2. 只读对照金标准：`admin-platform/src/views/ecrm/merchant/list.vue`。
+3. 对照共享默认：`platform-list-grid.ts`（或 merchant 对应）、`list-form-defaults`、`platform-list-page.scss`。
+
+未读标准就改列表 / Grid / 分页 / 操作列 / 筛选按钮 = 违规。
+
+## 已锁定（禁止「随手改」）
+
+- 筛选按钮顺序：**重置 → 搜索**（勿设 `actionButtonsReverse: true`）。
+- 操作列：`platformListActionColumn` → `fixed: 'right'`；修空白时不得破坏固定列（忌外层 `overflow:visible` 卷走 fixed）。
+- 表格与分页：同一白底卡片内贴合，禁止大块空洞把分页顶开。
+- **禁止**传 Grid `height: 'auto'`（会变 `height:100%` 空洞）。
+- **禁止** Vxe 工具栏圆形蓝色搜索按钮（`toolbarConfig.search` 必须 false）。
+- 统计卡等摘要：独立区域；禁止塞进 `#toolbar-actions`。
+- 增改详：`useVbenDrawer`（见 `admin-form-must-use-drawer`）。
+
+## 改全局前
+
+动 `platform-list-grid` / `use-vxe-grid.vue` / `platform-list-page.scss` / vxe adapter 前：评估全部列表 + 固定操作列。  
+**禁止**为单页问题改写金标准或另立标准；改标准须用户明确授权并先更新 `LAYOUT-FIDELITY-CHECKLIST.md`。

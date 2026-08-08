@@ -22,6 +22,35 @@ func TestReturnRefundStatusCompatibility(t *testing.T) {
 	}
 }
 
+func TestTabStatusesMatchCRMEBAdminBuckets(t *testing.T) {
+	cases := map[string][]string{
+		"0":        {"applied", "merchant_handling"},
+		"applied":  {"applied", "merchant_handling"},
+		"-1":       {"rejected"},
+		"1":        {"awaiting_return", "refunding"},
+		"approved": {"awaiting_return", "refunding"},
+		"2":        {"awaiting_receipt"},
+		"4":        {"platform_intervene"},
+		"dispute":  {"platform_intervene"},
+		"3":        {"refunded"},
+		"all":      nil,
+	}
+	for in, want := range cases {
+		got := tabStatuses(in)
+		if len(got) != len(want) {
+			t.Fatalf("tabStatuses(%q)=%v want %v", in, got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("tabStatuses(%q)=%v want %v", in, got, want)
+			}
+		}
+	}
+	if got := statusLabel("platform_intervene"); got != "纠纷中" {
+		t.Fatalf("dispute label = %q", got)
+	}
+}
+
 func TestRefundExportCSVUsesChineseHeadersAndNeutralisesFormula(t *testing.T) {
 	content, err := refundCSV([]refund{{
 		OrderID: 123, MerchantID: 8, StoreID: 9, RefundNo: "=恶意公式", Amount: 19.9,

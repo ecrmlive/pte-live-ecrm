@@ -33,7 +33,6 @@ setupVbenVxeTable({
           resizable: true,
         },
         minHeight: 180,
-        height: 'auto',
         formConfig: {
           enabled: false,
         },
@@ -80,7 +79,7 @@ setupVbenVxeTable({
 type GridHookOptions<T extends Record<string, any> = Record<string, any>> =
   Parameters<typeof useGrid<T, ComponentType, ComponentPropsMap>>[0];
 
-/** height: auto 时关闭 virtualY，避免 vxe 固定行高与动态内容冲突 */
+/** 内容高度列表页关闭 virtualY，避免 vxe 固定行高与动态内容冲突 */
 function withAutoHeightVirtualYGuard<T extends Record<string, any>>(
   options?: GridHookOptions<T>,
 ): GridHookOptions<T> | undefined {
@@ -90,7 +89,12 @@ function withAutoHeightVirtualYGuard<T extends Record<string, any>>(
 
   const { gridOptions } = options;
   const height = gridOptions.height;
-  if (height !== 'auto' && height !== undefined && height !== null && height !== '') {
+  const isContentHeight =
+    height === undefined ||
+    height === null ||
+    height === '' ||
+    height === 'auto';
+  if (!isContentHeight) {
     return options;
   }
 
@@ -126,6 +130,12 @@ function withPlatformListGridDefaults<T extends Record<string, any>>(
       pagerConfig: {
         ...platformListPagerConfig(),
         ...(gridOptions.pagerConfig ?? {}),
+      },
+      // 产品标准：强制关闭圆形工具栏搜索；表单「搜索」不受影响
+      toolbarConfig: {
+        ...PLATFORM_LIST_GRID_LAYOUT.toolbarConfig,
+        ...gridOptions.toolbarConfig,
+        search: false,
       },
     },
   };

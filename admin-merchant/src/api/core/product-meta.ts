@@ -33,9 +33,30 @@ export interface ProductAttrTemplate {
   template_value: string;
 }
 
+export interface ProductParameterItem {
+  name: string;
+  required: 0 | 1;
+  sort: number;
+  values: string[];
+}
+
+export interface ProductParameterTemplate {
+  cate_id: number;
+  create_time: string;
+  is_required: 0 | 1;
+  params: ProductParameterItem[];
+  sort: number;
+  template_id: number;
+  template_name: string;
+}
+
 export type ProductLabelInput = Pick<ProductLabel, 'info' | 'name' | 'sort' | 'status'>;
 export type ProductGuaranteeInput = Pick<ProductGuarantee, 'content' | 'name' | 'sort' | 'status'>;
 export type ProductAttrTemplateInput = Pick<ProductAttrTemplate, 'sort' | 'template_name' | 'template_value'>;
+export type ProductParameterTemplateInput = Pick<
+  ProductParameterTemplate,
+  'cate_id' | 'is_required' | 'params' | 'sort' | 'template_name'
+>;
 
 export interface ProductMetaListParams {
   date_from?: string;
@@ -92,4 +113,26 @@ export function updateProductAttrTemplateApi(id: number, body: ProductAttrTempla
 
 export function deleteProductAttrTemplateApi(id: number) {
   return requestClient.delete(`/product/attr-templates/${id}`);
+}
+
+export function listProductParameterTemplatesApi(params: ProductMetaListParams & { cate_id?: number }) {
+  return requestClient.get<ProductMetaPage<ProductParameterTemplate>>('/product/parameter-templates', {
+    params,
+  });
+}
+
+export function getProductParameterTemplateApi(id: number) {
+  return requestClient.get<ProductParameterTemplate>(`/product/parameter-templates/${id}`);
+}
+
+export function createProductParameterTemplateApi(body: ProductParameterTemplateInput) {
+  return requestClient.post<ProductParameterTemplate>('/product/parameter-templates', body);
+}
+
+export function updateProductParameterTemplateApi(id: number, body: ProductParameterTemplateInput) {
+  return requestClient.put<ProductParameterTemplate>(`/product/parameter-templates/${id}`, body);
+}
+
+export function deleteProductParameterTemplateApi(id: number) {
+  return requestClient.delete(`/product/parameter-templates/${id}`);
 }

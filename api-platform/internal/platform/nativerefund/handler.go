@@ -34,11 +34,12 @@ func (h *Handler) Register(r gin.IRoutes) {
 	platformOnly := middleware.RequireAdminRoles("platform")
 	approve := middleware.RequireAdminMenu(h.adminDB, "order.refund.approve")
 	reject := middleware.RequireAdminMenu(h.adminDB, "order.refund.reject")
-	viewLog := middleware.RequireAdminMenu(h.adminDB, "order.refund.log")
 	export := middleware.RequireAdminMenu(h.adminDB, "order.refund.export")
 	r.GET("/refunds", h.list)
+	r.GET("/refunds/tab-counts", h.tabCounts)
 	r.POST("/refunds/export", platformOnly, export, h.export)
-	r.GET("/refunds/:id/events", platformOnly, viewLog, h.events)
+	// Events are platform-only read audit (detail tab「订单记录」); no money mutation.
+	r.GET("/refunds/:id/events", platformOnly, h.events)
 	r.GET("/refunds/:id", h.get)
 	r.POST("/refunds/:id/approve", platformOnly, approve, h.approve)
 	r.POST("/refunds/:id/reject", platformOnly, reject, h.reject)
@@ -84,10 +85,7 @@ func (h *Handler) list(c *gin.Context) {
 		response.OK(c, gin.H{"list": []gin.H{}, "total": 0, "page": page, "limit": limit})
 		return
 	}
-	q := h.base(c, ids)
-	if status := strings.TrimSpace(c.Query("status")); status != "" {
-		q = q.Where("r.status = ?", normalizeStatus(status))
-	}
+	q := h.applyListFilters(c, h.base(c, ids), ids)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)
@@ -98,11 +96,62 @@ func (h *Handler) list(c *gin.Context) {
 		fail(c)
 		return
 	}
-	list := make([]gin.H, 0, len(rows))
-	for _, row := range rows {
-		list = append(list, h.view(c, row))
+	response.OK(c, gin.H{"list": h.enrichRows(c, rows, false), "total": total, "page": page, "limit": limit})
+}
+
+func (h *Handler) tabCounts(c *gin.Context) {
+	ids, ok := h.scope(c)
+	if !ok {
+		return
 	}
-	response.OK(c, gin.H{"list": list, "total": total, "page": page, "limit": limit})
+	empty := gin.H{
+		"all": 0, "applied": 0, "rejected": 0, "approved": 0,
+		"awaiting_receipt": 0, "dispute": 0, "completed": 0,
+	}
+	if ids != nil && len(ids) == 0 {
+		response.OK(c, empty)
+		return
+	}
+	// Rebuild query without status/tab so each bucket shares the same non-status filters.
+	values := c.Request.URL.Query()
+	values.Del("tab_status")
+	values.Del("status")
+	origRaw := c.Request.URL.RawQuery
+	c.Request.URL.RawQuery = values.Encode()
+	q := h.applyListFilters(c, h.base(c, ids), ids)
+	c.Request.URL.RawQuery = origRaw
+
+	type statusCount struct {
+		Status string `gorm:"column:status"`
+		Cnt    int64  `gorm:"column:cnt"`
+	}
+	var rows []statusCount
+	if err := q.Select("r.status AS status, COUNT(1) AS cnt").Group("r.status").Scan(&rows).Error; err != nil {
+		fail(c)
+		return
+	}
+	counts := map[string]int64{}
+	var all int64
+	for _, row := range rows {
+		counts[row.Status] = row.Cnt
+		all += row.Cnt
+	}
+	sum := func(keys ...string) int64 {
+		var n int64
+		for _, key := range keys {
+			n += counts[key]
+		}
+		return n
+	}
+	response.OK(c, gin.H{
+		"all":              all,
+		"applied":          sum("applied", "merchant_handling"),
+		"rejected":         sum("rejected"),
+		"approved":         sum("awaiting_return", "refunding"),
+		"awaiting_receipt": sum("awaiting_receipt"),
+		"dispute":          sum("platform_intervene"),
+		"completed":        sum("refunded"),
+	})
 }
 
 func (h *Handler) get(c *gin.Context) {
@@ -128,7 +177,12 @@ func (h *Handler) get(c *gin.Context) {
 		response.Fail(c, http.StatusNotFound, "售后单不存在")
 		return
 	}
-	response.OK(c, h.view(c, row))
+	items := h.enrichRows(c, []refund{row}, true)
+	if len(items) == 0 {
+		response.Fail(c, http.StatusNotFound, "售后单不存在")
+		return
+	}
+	response.OK(c, items[0])
 }
 
 // events returns the immutable state-transition trail after first checking the
@@ -159,6 +213,15 @@ func (h *Handler) events(c *gin.Context) {
 	}
 	page, limit := page(c)
 	q := h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_refund_event").Where("refund_id = ?", id)
+	if terminal := strings.TrimSpace(c.Query("terminal")); terminal != "" {
+		q = q.Where("actor_type = ?", terminal)
+	}
+	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
+		q = q.Where("created_at >= ?", from+" 00:00:00")
+	}
+	if to := strings.TrimSpace(c.Query("date_to")); to != "" {
+		q = q.Where("created_at <= ?", to+" 23:59:59")
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		fail(c)
@@ -169,12 +232,33 @@ func (h *Handler) events(c *gin.Context) {
 		fail(c)
 		return
 	}
+	userIDs := make([]uint64, 0)
+	for _, item := range rows {
+		if item.ActorType == "user" || item.ActorType == "merchant" {
+			userIDs = append(userIDs, item.ActorID)
+		}
+	}
+	nicknames := map[uint64]string{}
+	if len(userIDs) > 0 {
+		var users []userRow
+		_ = h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_user").
+			Select("id,nickname").Where("id IN ?", userIDs).Find(&users)
+		for _, u := range users {
+			nicknames[u.ID] = u.Nickname
+		}
+	}
 	list := make([]gin.H, 0, len(rows))
 	for _, item := range rows {
 		list = append(list, gin.H{
 			"id": item.ID, "from_status": item.FromStatus, "to_status": item.ToStatus,
 			"actor_type": item.ActorType, "actor_id": item.ActorID, "reason": item.Reason,
 			"created_at": item.CreatedAt.Format("2006-01-02 15:04:05"),
+			"order_sn":   row.RefundNo,
+			"content":    eventContent(item.FromStatus, item.ToStatus, item.Reason),
+			"role":       actorRole(item.ActorType),
+			"operator":   operatorLabel(item.ActorType, item.ActorID, nicknames),
+			"terminal":   item.ActorType,
+			"operate_time": item.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	response.OK(c, gin.H{"list": list, "total": total, "page": page, "limit": limit})

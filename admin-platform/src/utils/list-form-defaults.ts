@@ -12,6 +12,7 @@ export function listFormOptionsDefaults(
   return {
     collapsed: false,
     showCollapseButton: false,
+    commonConfig: { componentProps: { class: 'w-full' } },
     wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
     schema,
     ...overrides,

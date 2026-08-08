@@ -7,7 +7,7 @@ const PATH_COMPONENT: Record<string, string> = {
   '/product/label': 'ecrm/product/label',
   '/product/specs': 'ecrm/product/specs',
   '/product/classify': 'ecrm/product/category',
-  '/product/attr': 'ecrm/product/specs',
+  '/product/attr': 'ecrm/product/attr',
   '/product/unit': 'ecrm/product/unit',
   '/product/cdkey': 'ecrm/product/cdkey',
   '/product/reviews': 'ecrm/product/reviews',

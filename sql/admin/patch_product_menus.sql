@@ -79,6 +79,17 @@ UPDATE `qixi_crm_a_menu`
 SET `title`='价格说明', `icon`='lucide:badge-dollar-sign', `route_path`='/product/priceDescription', `kind`='page', `sort`=8, `parent_id`=40, `status`=1
 WHERE `id`=48 OR `code`='product.price_description';
 
+INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`)
+VALUES (21021,48,'product.price_description.manage','维护平台价格说明','','product/priceDescription','button',1,1)
+ON DUPLICATE KEY UPDATE
+  `parent_id`=VALUES(`parent_id`),
+  `code`=VALUES(`code`),
+  `title`=VALUES(`title`),
+  `route_path`=VALUES(`route_path`),
+  `kind`=VALUES(`kind`),
+  `sort`=VALUES(`sort`),
+  `status`=1;
+
 -- 活动标签：功能页保留，侧栏不展示（对齐图片1）
 UPDATE `qixi_crm_a_menu`
 SET `title`='活动标签', `icon`='lucide:badge', `route_path`='/product/activityLabel', `kind`='page', `sort`=99, `parent_id`=40, `status`=0
@@ -110,4 +121,4 @@ SELECT r.id, m.id
 FROM `qixi_crm_a_role` AS r
 CROSS JOIN `qixi_crm_a_menu` AS m
 WHERE r.code = 'platform'
-  AND m.id IN (54,55,56,57,20906,20907);
+  AND m.id IN (48,54,55,56,57,20906,20907,21021);

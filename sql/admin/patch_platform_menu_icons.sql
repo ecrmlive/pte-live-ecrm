@@ -43,7 +43,7 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:list-tree' WHERE `id`=57 AND `kind` 
 UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:file-text-outlined' WHERE `id`=50 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:receipt-text' WHERE `id`=51 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet' WHERE `id`=52 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:ban' WHERE `id`=53 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:audit-outlined' WHERE `id`=53 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:flag-outlined' WHERE `id`=60 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:ticket' WHERE `id`=61 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:radio-tower' WHERE `id`=62 AND `kind` IN ('directory','page');

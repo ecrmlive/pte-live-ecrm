@@ -26,6 +26,13 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/product/labels", middleware.RequireStorePermission(h.db, "product.label.create"), h.createLabel)
 	r.PUT("/product/labels/:id", middleware.RequireStorePermission(h.db, "product.label.update"), h.updateLabel)
 	r.DELETE("/product/labels/:id", middleware.RequireStorePermission(h.db, "product.label.delete"), h.deleteLabel)
+
+	// 店铺商品参数模板（CRMEB merchantStoreParameterTemplate*；写操作按 store_id 隔离）
+	r.GET("/product/parameter-templates", h.listParameterTemplates)
+	r.GET("/product/parameter-templates/:id", h.detailParameterTemplate)
+	r.POST("/product/parameter-templates", h.createParameterTemplate)
+	r.PUT("/product/parameter-templates/:id", h.updateParameterTemplate)
+	r.DELETE("/product/parameter-templates/:id", h.deleteParameterTemplate)
 }
 
 type tag struct {

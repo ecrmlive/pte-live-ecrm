@@ -93,7 +93,7 @@ SELECT
   0,
   CONCAT('ostat-item-', `n`),
   ELT(((`n` - 1) % 3) + 1, '轻奢羊绒针织衫','无火藤条香氛礼盒','智能数显保温杯'),
-  '/demo/product-knit-v1.png',
+  'https://cos.qxkejiwl.top/pte-live-ecrm/platform/20260807/7dc13a394086786f9aba4a9606ad1eb2.png',
   JSON_OBJECT('默认','标准'),
   80 + (`n` % 11) * 25,
   1 + (`n` % 2),

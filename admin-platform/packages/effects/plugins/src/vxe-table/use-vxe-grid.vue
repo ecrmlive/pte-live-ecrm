@@ -395,7 +395,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="cn('h-full rounded-md bg-card', className)">
+  <!--
+    h-auto（非 h-full）：Page auto-content-height 下 h-full 会把白卡片锁成视口高，
+    vxe body/table flex-grow 再把分页顶到卡片底，表体与 pager 之间出现大块空洞。
+    内容撑开 + 整页滚动（platform-list-page）；需要铺满时由调用方传 class: 'h-full'。
+  -->
+  <div :class="cn('h-auto rounded-md bg-card', className)">
     <VxeGrid
       ref="gridRef"
       :class="

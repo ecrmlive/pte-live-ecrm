@@ -70,14 +70,40 @@ INSERT INTO `qixi_crm_a_product_label` (`id`,`name`,`description`,`color`,`sort`
   (7501,'七天无理由','适用于演示商品的售后保障标签','#16a34a',100,1),
   (7502,'新品尝鲜','本地验收用新品标识','#2563eb',90,1)
 ON DUPLICATE KEY UPDATE `description`=VALUES(`description`),`color`=VALUES(`color`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
-INSERT INTO `qixi_crm_a_product_guarantee` (`id`,`name`,`content`,`icon_url`,`sort`,`status`) VALUES
-  (7511,'正品保障','平台演示：商品来源与售后承诺以订单规则为准。','',100,1),
-  (7512,'极速退款','平台演示：符合规则的退款进入售后状态机处理。','',90,1)
-ON DUPLICATE KEY UPDATE `content`=VALUES(`content`),`icon_url`=VALUES(`icon_url`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
-INSERT INTO `qixi_crm_a_product_parameter_template` (`id`,`name`,`values_json`,`sort`,`status`) VALUES
-  (7521,'演示规格颜色',JSON_ARRAY('中国红','竹青色','云白色'),100,1),
-  (7522,'演示规格容量',JSON_ARRAY('小杯','中杯','大杯'),90,1)
-ON DUPLICATE KEY UPDATE `values_json`=VALUES(`values_json`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
+INSERT INTO `qixi_crm_a_product_guarantee` (`id`,`name`,`content`,`icon_url`,`sort`,`status`,`mer_count`,`product_count`) VALUES
+  (7511,'正品保障','平台演示：商品来源与售后承诺以订单规则为准。','',100,1,0,0),
+  (7512,'极速退款','平台演示：符合规则的退款进入售后状态机处理。','',90,1,0,0)
+ON DUPLICATE KEY UPDATE `content`=VALUES(`content`),`icon_url`=VALUES(`icon_url`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`mer_count`=VALUES(`mer_count`),`product_count`=VALUES(`product_count`);
+INSERT INTO `qixi_crm_a_product_parameter_template`
+  (`id`,`name`,`cate_ids_json`,`params_json`,`values_json`,`sort`,`status`) VALUES
+  (
+    7521,'测试',JSON_ARRAY(7635,7628),
+    JSON_ARRAY(
+      JSON_OBJECT('name','颜色','values',JSON_ARRAY('中国红','竹青色','云白色'),'required',0,'sort',100),
+      JSON_OBJECT('name','尺码','values',JSON_ARRAY('S','M','L'),'required',0,'sort',90)
+    ),
+    JSON_ARRAY('中国红','竹青色','云白色'),0,1
+  ),
+  (
+    7522,'通用参数',JSON_ARRAY(7636,7632,7629,7621,7635,7628,7631),
+    JSON_ARRAY(
+      JSON_OBJECT('name','品牌','values',JSON_ARRAY('七禧','演示品牌'),'required',0,'sort',100),
+      JSON_OBJECT('name','产地','values',JSON_ARRAY('中国','进口'),'required',0,'sort',90)
+    ),
+    JSON_ARRAY('七禧','演示品牌'),0,1
+  )
+ON DUPLICATE KEY UPDATE
+  `name`=VALUES(`name`),`cate_ids_json`=VALUES(`cate_ids_json`),`params_json`=VALUES(`params_json`),
+  `values_json`=VALUES(`values_json`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
+INSERT INTO `qixi_crm_a_product_price_rule`
+  (`id`,`name`,`cate_ids_json`,`is_default`,`content`,`sort`,`status`) VALUES
+  (7531,'集成灶',JSON_ARRAY(7635,7628,7631,7632,7621),0,'<p><strong>演示：集成灶价格与规格差异说明</strong></p>',1,1),
+  (7532,'MOCO针织开衫假两件',JSON_ARRAY(7635,7628,7631,7632,7621),0,'<p>演示价格说明：含优惠、规格与运费差异提示。</p>',0,1),
+  (7533,'通用价格说明',JSON_ARRAY(),1,'<p>未指定分类时默认适用于全部商品。</p>',0,1),
+  (7534,'服饰专场说明',JSON_ARRAY(7631),0,'<p>服饰类演示：尺码色差与运费说明。</p>',2,1)
+ON DUPLICATE KEY UPDATE
+  `name`=VALUES(`name`),`cate_ids_json`=VALUES(`cate_ids_json`),`is_default`=VALUES(`is_default`),
+  `content`=VALUES(`content`),`sort`=VALUES(`sort`),`status`=VALUES(`status`);
 
 -- 店铺分组夹具用于三级分组、店铺关联和装修模板绑定验收；仅使用中文虚构店铺。
 INSERT INTO `qixi_crm_a_store_group` (`id`,`parent_id`,`path`,`level`,`name`,`sort`,`status`,`diy_page_id`,`positioning_status`,`longitude`,`latitude`,`address`) VALUES

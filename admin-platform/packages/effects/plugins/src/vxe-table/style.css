@@ -125,6 +125,20 @@
   overflow: visible;
 }
 
+/*
+ * vxe 默认把 Toolbar/Table/Pager 放进 flex-grow:1 的 body；
+ * 叠加 Page auto-content-height 时表体会被撑出大块空白（pager 被顶到卡片底）。
+ * 只关 flex-grow（勿 flex-shrink:0），避免表宽撑破容器导致 fixed:right 失效。
+ * platform-list-page.scss 对 .platform-vxe-grid 做同样覆盖；此处兜底非 class 场景。
+ */
+.vxe-grid--layout-body-wrapper,
+.vxe-grid--layout-body-content-wrapper,
+.vxe-grid--table-container,
+.vxe-grid--table-wrapper,
+.vxe-table--viewport-wrapper {
+  flex-grow: 0 !important;
+}
+
 .vxe-grid--layout-body-content-wrapper {
   overflow: hidden;
 }

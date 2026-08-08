@@ -129,6 +129,12 @@ function withMerchantListGridDefaults<T extends Record<string, any>>(
         ...merchantListPagerConfig(),
         ...(gridOptions.pagerConfig ?? {}),
       },
+      // 产品标准：强制关闭圆形工具栏搜索；表单「搜索」不受影响
+      toolbarConfig: {
+        ...MERCHANT_LIST_GRID_LAYOUT.toolbarConfig,
+        ...gridOptions.toolbarConfig,
+        search: false,
+      },
     },
   };
 }

@@ -616,15 +616,52 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_guarantee` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(64) NOT NULL,
   `content` varchar(1000) NOT NULL DEFAULT '', `icon_url` varchar(1024) NOT NULL DEFAULT '',
   `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `mer_count` int NOT NULL DEFAULT 0 COMMENT '使用的店铺数（计数缓存，对齐 CRMEB mer_count）',
+  `product_count` int NOT NULL DEFAULT 0 COMMENT '使用商品数（计数缓存，对齐 CRMEB product_cout）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`), KEY `idx_status_sort` (`status`,`sort`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_parameter_template` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(64) NOT NULL,
-  `values_json` json NOT NULL, `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL COMMENT '模板名称',
+  `cate_ids_json` json NOT NULL COMMENT '关联平台分类 ID 列表',
+  `params_json` json NOT NULL COMMENT '参数项 [{name,values,required,sort}]',
+  `values_json` json NOT NULL COMMENT '兼容旧候选值数组（首参数 values 快照）',
+  `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_name` (`name`), KEY `idx_status_sort` (`status`,`sort`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_product_price_rule` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL COMMENT '名称',
+  `cate_ids_json` json NULL COMMENT '关联平台分类 ID 列表；空=全部商品',
+  `is_default` tinyint NOT NULL DEFAULT 1 COMMENT '1=未选分类默认全部商品',
+  `content` mediumtext NULL COMMENT '价格说明详情 HTML',
+  `sort` int NOT NULL DEFAULT 0 COMMENT '排序',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '是否显示 1显示 0隐藏',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_status_sort` (`status`,`sort`,`id`), KEY `idx_is_default` (`is_default`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 既有库补齐平台参数模板分类/参数项（幂等；完整迁移见 patch_product_parameter_template_crmeb.sql）
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_product_parameter_template' AND COLUMN_NAME='cate_ids_json')=0,
+    'ALTER TABLE `qixi_crm_a_product_parameter_template` ADD COLUMN `cate_ids_json` json NULL COMMENT ''关联平台分类 ID 列表'' AFTER `name`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_product_parameter_template' AND COLUMN_NAME='params_json')=0,
+    'ALTER TABLE `qixi_crm_a_product_parameter_template` ADD COLUMN `params_json` json NULL COMMENT ''参数项 [{name,values,required,sort}]'' AFTER `cate_ids_json`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_rule` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `rule_type` enum('coupon','seckill','combination','presell','assist','svip','distribution') NOT NULL,
   `name` varchar(128) NOT NULL, `rule` json NOT NULL, `status` tinyint NOT NULL DEFAULT 1,

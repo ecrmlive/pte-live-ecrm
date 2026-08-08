@@ -272,7 +272,7 @@ func main() {
 	platformSvipInterestH := platformsvipinterest.New(businessDB, gdb)
 	platformCloudConfigH := platformcloudconfig.NewHandler(cloudConfigSvc, idSvc, paymentConfigStore)
 	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc, gdb)
-	platformProductMetaH := platformproductmeta.NewHandler(gdb)
+	platformProductMetaH := platformproductmeta.NewHandler(gdb, merchantDB)
 	platformCommentH := platformcomment.NewHandler(businessDB, gdb, productCommentCommands)
 	platformFeedbackH := platformfeedback.New(businessDB, gdb, feedbackCommands)
 	platformInvoiceH := platforminvoice.New(businessDB, gdb)

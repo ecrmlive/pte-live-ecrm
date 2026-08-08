@@ -4,9 +4,37 @@
 > **金标准实现**：`admin-platform/src/views/ecrm/merchant/list.vue`（店铺列表）。  
 > 目标：统一后台布局分区与交互对齐 [CRMEB Merchant](https://mer.crmeb.net/admin/dashboard)（控制台 / 列表 / 添加编辑详情 / 确认弹窗）。  
 > **颜色不纳入本清单**：主题色由 Vben 主题配置决定，不要求复刻 CRMEB 珊瑚红。  
-> **组件强制**：必须使用 Vben Common UI / 适配层组件，禁止以自研 `Ecrm*` Element 壳作为列表/表单主路径。
+> **组件强制**：必须使用 Vben Common UI / 适配层组件，禁止以自研 `Ecrm*` Element 壳作为列表/表单主路径。  
+> **锁定声明**：下列条款为已制定标准。**禁止**为「看起来更好 / 修某一页」而擅自改写金标准、全局列表默认项或共享 SCSS 语义；改标准须用户明确授权，并先更新本文档再改代码。
 
-## 0. 金标准（必须遵守）
+## 0. Agent / 开发强制流程（每次必做）
+
+改 `admin-platform` / `admin-merchant` 任意**列表、筛选、工具栏、分页、表格高度、操作列、Drawer 壳**之前：
+
+1. **先读本文档全文**（至少 §0、§0.1、§1.1）。
+2. **打开金标准页对照**：`admin-platform/src/views/ecrm/merchant/list.vue`（只读对照，勿为单页问题改坏金标准页）。
+3. **打开共享默认**：`admin-platform/src/constants/platform-list-grid.ts`、`#/utils/list-form-defaults`、`admin-platform/src/styles/platform-list-page.scss`（及 merchant 侧对应物）。
+4. 实现时**复刻金标准配置**，禁止另起一套 form/toolbar/height/overflow。
+5. 若必须动全局（`platform-list-grid` / `use-vxe-grid` / `platform-list-page.scss` / adapter）：先评估对**所有列表 + 固定操作列**的影响；禁止用「修一页空白」破坏 `fixed: 'right'` 或分页贴合。
+
+偏离金标准 = **未完成**，不得宣称对齐。
+
+## 0.1 已锁定细则（禁止随意调整）
+
+| 项 | 强制 | 禁止 |
+| --- | --- | --- |
+| 金标准页 | 仅 `merchant/list.vue` | 把订单/退款/核销等页当成新标准去改全局 |
+| 筛选按钮顺序 | **重置 → 搜索**（`actionButtonsReverse` **不要设 true**；与店铺列表一致，用 `listFormOptionsDefaults(schema)`） | 为「搜索在前」单独 `actionButtonsReverse: true` |
+| Vxe 工具栏圆形搜索 | **关闭**（`toolbarConfig.search: false`，adapter 强制） | 打开蓝色放大镜圆形按钮 |
+| 操作列 | `platformListActionColumn` → **`fixed: 'right'`** | 去掉 fixed；用 `overflow: visible` / `flex-shrink: 0` 把横滑甩到外层导致固定列失效 |
+| 表格 + 分页 | **同一块白底卡片内贴合**（中间无大块空洞） | 分页「悬浮」在视口底、与末行之间巨大空白 |
+| Grid 高度 | **不传** `height: 'auto'`（会映射成 `height:100%` 空洞）；外层内容高 `h-auto` | 再开 `height:'auto'` / 用一页 scoped 巨量 height hack 对抗全局 |
+| 统计卡 / 独立摘要 | **独立白底区域**（筛选与表格之间的 sibling），**禁止**塞进 `#toolbar-actions` | 把 6 张统计卡塞进 Vxe toolbar 撑坏表格 |
+| 有固定列的列表 | 保持 `scrollX` + 外层宽度约束（见 `platform-list-page.scss`） | 为消右侧留白全局关 `scrollX` 而不区分「有/无 fixed 列」 |
+| 无操作列且列宽不足铺满时 | **仅该页**可关 `scrollX` 或让一列 `minWidth` 吸收剩余宽度 | 改全局默认伤害店铺列表固定列 |
+| Drawer | 增改详 `useVbenDrawer`；选择器可用 Modal | Dialog/Modal 做实体增改详 |
+
+## 0.2 金标准（必须遵守）
 
 | 项 | 强制要求 |
 | --- | --- |
@@ -14,16 +42,18 @@
 | 适用范围 | `admin-platform`、`admin-merchant` 所有列表页、筛选、工具栏、分页、添加/编辑/详情 Drawer |
 | 共享工具 | `platformListActionColumn` / `platformListPagerConfig` / `PLATFORM_LIST_GRID_CLASS`（`#/constants/platform-list-grid`）及对应 SCSS；**默认每页 10 条**（`platform-list-pager.ts` / `merchant-list-pager.ts`） |
 | 禁止 | 新建 `EcrmListPage` + 手写 `el-table` / `el-pagination` 作为列表骨架；用 `ElDialog` / `useVbenModal` / `ElMessageBox.prompt` 做添加、编辑、详情（选择器弹层除外） |
-| Agent / 开发 | 改任何列表页前先打开店铺列表对照；偏离金标准视为未完成 |
+| Agent / 开发 | **每次**改列表前必读本文档 + 打开店铺列表对照；偏离金标准视为未完成；**禁止擅自修改本标准** |
 
 店铺列表已落地、且后续页必须复刻的要点：
 
 1. `Page` + `auto-content-height`，默认不传页面 `title` / `description`（由菜单/面包屑承担）。
-2. `useVbenVxeGrid`：`formOptions` 筛选 → 状态 Tab / 工具栏 → 表格 → 底部分页。
-3. 操作列 `fixed: 'right'`（`platformListActionColumn`）；单元格可用 `ElButton` link / `ElSwitch` / `ElTag`。
-4. 添加 / 编辑 / 详情使用 `useVbenDrawer`（宽抽屉 ~1000px）；详情只读描述 + 可切编辑；确认用 `confirm()`。
-5. 表格行高自适应（默认 `showOverflow: false` + platform grid 布局）；备注等自由文本用 `col--remark`（单行 ellipsis + tooltip、合理 `minWidth` + `width`/`maxWidth` 上限，禁止 `width: 'auto'`），操作列 `fixed: 'right'` 不透明 + 高 z-index，双列菜单下也必须始终可见可点；整页滚动而非表体内滚。
-6. 无「刷新列表」类无意义按钮；主操作（如添加）放在工具栏。
+2. `useVbenVxeGrid`：`formOptions` 筛选 → 状态 Tab / 工具栏 → **表格 → 底部分页（同卡贴合）**。
+3. 筛选按钮：**重置 → 搜索**；使用 `listFormOptionsDefaults(schema)`，勿擅自 `actionButtonsReverse: true`。
+4. 操作列 `fixed: 'right'`（`platformListActionColumn`）；单元格可用 `ElButton` link / `ElSwitch` / `ElTag`。
+5. 添加 / 编辑 / 详情使用 `useVbenDrawer`（宽抽屉 ~1000px）；详情只读描述 + 可切编辑；确认用 `confirm()`。
+6. 表格行高自适应（默认 `showOverflow: false` + platform grid 布局）；备注等自由文本用 `col--remark`（单行 ellipsis + tooltip、合理 `minWidth` + `width`/`maxWidth` 上限，禁止 `width: 'auto'`），操作列 `fixed: 'right'` 不透明 + 高 z-index，双列菜单下也必须始终可见可点；整页滚动而非表体内滚。
+7. 无「刷新列表」类无意义按钮；主操作（如添加）放在工具栏；**禁止** Vxe 圆形工具栏搜索。
+8. 汇总统计等非工具栏内容 → **独立区域**，勿塞进 `#toolbar-actions`。
 
 ## 1. 强制组件栈（Vben）
 
@@ -57,8 +87,10 @@ Element Plus 仅允许作为 **单元格内控件**（如 `ElButton` link、`ElS
 ```
 
 - 外层 `Page` 用 `auto-content-height`，**默认不传** `title` / `description`。
-- 分区顺序固定：**筛选（Grid form）→ Tab / 工具栏 → 表格 → 分页**。
+- 分区顺序固定：**筛选（Grid form）→ Tab / 工具栏 → 表格 → 分页（同卡贴合）**。
+- 若有汇总统计：放在筛选与表格之间的**独立区域**，不进 toolbar。
 - 操作列：`fixed: 'right'`。
+- 筛选操作钮：**重置 → 搜索**。
 - 确认类交互用 `confirm({ title: '提示', icon: 'warning', ... })`。
 - 权限：`v-if` / 按钮码不得因布局迁移删除或放宽。
 

@@ -65,7 +65,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (50,0,'order','订单','ant-design:file-text-outlined','/order','directory',4),
   (51,50,'order.list','订单列表','lucide:receipt-text','/order/list','page',1),
   (52,50,'order.refund','退款订单','lucide:wallet','/order/refund','page',2),
-  (53,50,'order.cancellation','核销记录','lucide:ban','/order/cancellation','page',3),
+  (53,50,'order.cancellation','核销记录','ant-design:audit-outlined','/order/cancellation','page',3),
 
   -- 分销（独立一级；原营销下分销管理归位到此）
   (220,0,'promoter','分销','ant-design:send-outlined','/promoter','directory',5),
@@ -252,6 +252,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20943,45,'product.guarantee.manage','维护平台保障服务','','product/guarantee','button',1)
   ,(20944,57,'product.parameter.manage','维护平台商品参数模板','','product/specs','button',1)
   ,(20907,56,'product.parameter.store.manage','维护店铺商品参数模板','','product/merSpecs','button',1)
+  ,(21021,48,'product.price_description.manage','维护平台价格说明','','product/priceDescription','button',1)
   ,(20945,47,'product.comment.review','审核或隐藏商品评论','','product/comment','button',1)
   ,(20946,47,'product.comment.virtual.manage','新增或编辑虚拟商品评论','','product/comment','button',2)
   ,(20947,47,'product.comment.sort','调整虚拟商品评论排序','','product/comment','button',3)
@@ -293,7 +294,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20983,188,'accounts.invoice.read','查看订单发票监管记录','','accounts/invoices','button',1)
   ,(20984,190,'setting.shop.manage','维护商城基础设置','','setting/shop','button',1)
   ,(20985,191,'setting.pay.manage','维护支付方式开关','','setting/pay','button',1)
-  ,(20986,53,'order.cancellation.read','查看取消或退款订单','','order/cancellation','button',1)
+  ,(20986,53,'order.cancellation.read','查看核销记录','','order/cancellation','button',1)
   ,(20987,131,'app.wechat.manage','维护公众号基础开关','','app/wechat','button',1)
   ,(20988,196,'setting.storage.manage','维护存储配置开关','','setting/storage','button',1)
   ,(20989,198,'maintain.cache.manage','提交缓存清理','','maintain/cache','button',1)
