@@ -102,6 +102,34 @@ export const PLATFORM_LUCIDE_ICONS = PLATFORM_LUCIDE_ICON_NAMES.map(
   (name) => `lucide:${name}`,
 );
 
+/** 平台侧栏顶层 / 关键二级 ant-design 图标（离线 ant-design.json） */
+export const PLATFORM_ANT_DESIGN_ICON_NAMES = [
+  'appstore-outlined',
+  'bar-chart-outlined',
+  'cluster-outlined',
+  'customer-service-outlined',
+  'dashboard-outlined',
+  'file-text-outlined',
+  'flag-outlined',
+  'format-painter-outlined',
+  'home-outlined',
+  'read-outlined',
+  'send-outlined',
+  'setting-outlined',
+  'share-alt-outlined',
+  'shop-outlined',
+  'shopping-outlined',
+  'team-outlined',
+  'tool-outlined',
+  'user-outlined',
+] as const;
+
+/** 菜单图标选择器：lucide + 平台顶层 ant-design */
+export const PLATFORM_MENU_PICKER_ICONS = [
+  ...PLATFORM_ANT_DESIGN_ICON_NAMES.map((name) => `ant-design:${name}`),
+  ...PLATFORM_LUCIDE_ICONS,
+] as const;
+
 /**
  * CRMEB 商户菜单旧 icon（无 iview/remix 名或历史 lucide）→ Vben Iconify。
  * 店铺菜单列表「菜单图标」列与侧栏预览共用；已是 `prefix:name` 且未命中表则原样返回。

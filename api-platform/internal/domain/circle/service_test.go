@@ -13,7 +13,7 @@ type serviceStoreStub struct {
 	revokedReason string
 }
 
-func (s *serviceStoreStub) ListCircles(context.Context, string, *int8, int, int) ([]Circle, int64, error) {
+func (s *serviceStoreStub) ListCircles(context.Context, CircleListFilter, int, int) ([]Circle, int64, error) {
 	return nil, 0, nil
 }
 func (s *serviceStoreStub) GetCircle(context.Context, uint) (*Circle, error) { return nil, nil }
@@ -23,7 +23,7 @@ func (s *serviceStoreStub) DeleteCircle(context.Context, uint) error         { r
 func (s *serviceStoreStub) CountCircleChildren(context.Context, uint) (int64, error) {
 	return 0, nil
 }
-func (s *serviceStoreStub) ListAgents(context.Context, string, *int8, int, int) ([]Agent, int64, error) {
+func (s *serviceStoreStub) ListAgents(context.Context, string, *int8, *int8, int, int) ([]Agent, int64, error) {
 	if s.agent == nil {
 		return nil, 0, nil
 	}
@@ -68,7 +68,7 @@ func TestListAgentsDoesNotReturnPaymentCredentials(t *testing.T) {
 		PaymentBank:    "local-demo-bank",
 		PaymentQRImg:   "/demo/payment-qr.png",
 	}}
-	res, err := NewService(store).ListAgents(context.Background(), "", nil, 1, 20)
+	res, err := NewService(store).ListAgents(context.Background(), "", nil, nil, 1, 20)
 	if err != nil {
 		t.Fatalf("list agents: %v", err)
 	}

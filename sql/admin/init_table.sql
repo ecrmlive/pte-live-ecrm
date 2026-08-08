@@ -314,9 +314,18 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_business_zone` (
   `remark` varchar(500) NOT NULL DEFAULT '', `sort` int NOT NULL DEFAULT 0, `status` tinyint NOT NULL DEFAULT 1,
   `type` tinyint NOT NULL DEFAULT 0, `role_id` bigint unsigned NOT NULL DEFAULT 0,
   `business_store_category` bigint unsigned NOT NULL DEFAULT 0, `business_store_type` bigint unsigned NOT NULL DEFAULT 0,
+  `goods_type` varchar(64) NOT NULL DEFAULT '', `platform_category_ids` varchar(500) NOT NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`circle_id`), KEY `idx_parent_type` (`pid`,`type`), KEY `idx_listing` (`status`,`sort`,`circle_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_business_zone' AND COLUMN_NAME='goods_type')=0,
+    'ALTER TABLE `qixi_crm_a_business_zone` ADD COLUMN `goods_type` varchar(64) NOT NULL DEFAULT '''' AFTER `business_store_type`, ADD COLUMN `platform_category_ids` varchar(500) NOT NULL DEFAULT '''' AFTER `goods_type`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_business_zone_agent` (
   `circle_agent_id` bigint unsigned NOT NULL AUTO_INCREMENT, `uid` bigint unsigned NOT NULL DEFAULT 0,
   `name` varchar(64) NOT NULL, `phone` varchar(32) NOT NULL, `qualification` varchar(2000) NOT NULL DEFAULT '',

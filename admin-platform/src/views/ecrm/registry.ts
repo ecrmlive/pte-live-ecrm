@@ -51,7 +51,7 @@ const PATH_COMPONENT: Record<string, string> = {
   '/content/attachment': 'ecrm/content/attachment',
   '/config/picture': 'ecrm/content/attachment',
   '/merchant/list': 'ecrm/merchant/list',
-  '/merchant/index': 'ecrm/merchant/list',
+  '/merchant/index': 'ecrm/merchant/account-list',
   '/merchant/audit': 'ecrm/merchant/audit',
   '/merchant/application': 'ecrm/merchant/audit',
   '/merchant/categories': 'ecrm/merchant/categories',

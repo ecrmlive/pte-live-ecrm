@@ -8,80 +8,83 @@ ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`status`=VALUES(`status`);
 
 -- 平台、商户、区域、客服、运营共用同一套 Vben 应用，由角色决定可见菜单。
 -- “统一后台”是系统身份，不是侧栏菜单；控制台是所有有权限账号的首个业务入口。
--- icon 使用 admin-platform 本地打包的 lucide 图标，不依赖公网 Iconify 服务。
+-- 顶层顺序对齐 CRMEB 平台侧栏（sort ASC）；顶层 icon 用离线 ant-design:*。
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
-  -- 首页：对齐 CRMEB 平台侧栏（控制台 / 数据大屏 / 商品·订单·用户统计）
-  (1,0,'home','首页','lucide:house','/','directory',1),
+  -- 首页
+  (1,0,'home','首页','ant-design:home-outlined','/','directory',1),
   (2,1,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
   (216,1,'data.screen','数据大屏','lucide:monitor','/data-screen/index','page',2),
   (194,1,'statistic.product','商品统计','lucide:package','/statistic/product','page',3),
   (193,1,'statistic.order','订单统计','lucide:receipt-text','/statistic/order','page',4),
   (195,1,'statistic.user','用户统计','lucide:users','/statistic/user','page',5),
 
-  -- 店铺侧栏：一级「店铺功能」→ 店铺管理 / 店铺设置；商户管理为独立一级。
-  -- icon 必须是 admin-platform 离线 lucide 白名单（见 platform-lucide-icons.ts）。
-  (10,0,'store','店铺功能','lucide:store','/store','directory',10),
-  (18,10,'store.manage','店铺管理','lucide:layout-grid','/mer/mer','directory',1),
+  -- 店铺：店铺管理 / 店铺设置 / 商户管理 / 区域代理
+  (10,0,'store','店铺','ant-design:shop-outlined','/store','directory',2),
+  (18,10,'store.manage','店铺管理','ant-design:shop-outlined','/mer/mer','directory',1),
   (11,18,'merchant.list','店铺列表','lucide:store','/merchant/list','page',1),
   (13,18,'merchant.category','店铺分类','lucide:folder-tree','/merchant/classify','page',2),
   (14,18,'merchant.grouping','店铺分组','lucide:git-branch','/merchant/grouping','page',3),
   (15,18,'merchant.type','店铺类型','lucide:award','/merchant/type','page',4),
   (12,18,'merchant.audit','店铺入驻申请','lucide:badge-check','/merchant/application','page',5),
   (17,18,'merchant.applyments','店铺分账申请','lucide:wallet','/merchant/applyments','page',6),
-  (19,10,'store.settings','店铺设置','lucide:settings','/mer/store','directory',2),
+  (19,10,'store.settings','店铺设置','ant-design:setting-outlined','/mer/store','directory',2),
   (16,19,'merchant.deposit','店铺保证金','lucide:shield-check','/merchant/deposit_list','page',1),
   (213,19,'store.margin_config','保证金配置','lucide:key-round','/systemForm/Basics/margin','page',2),
   (214,19,'store.menu','店铺菜单','lucide:folder-tree','/merchant/system','page',3),
   (215,19,'store.description','说明提示','lucide:receipt-text','/merchant/type/description','page',4),
-
-  (25,0,'merchant.mgmt','商户管理','lucide:users','/merchant-mgmt','directory',11),
+  (25,10,'merchant.mgmt','商户管理','ant-design:team-outlined','/merchant-mgmt','directory',3),
   (26,25,'merchant.mgmt.list','商户列表','lucide:store','/merchant/index','page',1),
   (27,25,'merchant.mgmt.review','商户入驻审核','lucide:badge-check','/merchant/review','page',2),
   (28,25,'merchant.mgmt.admins','商户管理员','lucide:user-round-cog','/merchant/admin-list','page',3),
   (29,25,'merchant.mgmt.settings','商户设置','lucide:settings','/merchant/apply-setting','page',4),
-
-  (20,0,'region','区域管理','lucide:map-pinned','/business-zones','directory',20),
+  (20,10,'region','区域代理','ant-design:cluster-outlined','/business-zones','directory',4),
   (21,20,'region.index','区域商圈','lucide:map-pinned','/region','page',1),
   (22,20,'region.agents','区域代理','lucide:users','/business-zones/agents','page',2),
   (23,20,'region.agent_review','代理审核','lucide:badge-check','/business-zones/agent-review','page',3),
   (24,20,'region.agent_settings','代理设置','lucide:settings-2','/business-zones/settings','page',4),
 
-  (30,0,'service','客服管理','lucide:messages-square','/service','page',30),
-
-  (40,0,'product','商品管理','lucide:puzzle','/product','directory',40),
-  (41,40,'product.category','商品分类','lucide:folder-tree','/product/category','page',1),
-  (42,40,'product.brand','品牌管理','lucide:award','/product/brand','page',2),
-  (43,40,'product.audit','商品审核','lucide:shield-check','/product/audit','page',3),
-  (44,40,'product.label','商品标签','lucide:tags','/product/label','page',4),
+  -- 商品
+  (40,0,'product','商品','ant-design:shopping-outlined','/product','directory',3),
+  (43,40,'product.audit','商品管理','lucide:shield-check','/product/audit','page',1),
+  (41,40,'product.category','商品分类','lucide:folder-tree','/product/category','page',2),
+  (42,40,'product.brand','品牌管理','lucide:award','/product/brand','page',3),
+  (47,40,'product.comment','评论管理','lucide:message-square','/product/comment','page',4),
   (45,40,'product.guarantee','保障服务','lucide:shield','/product/guarantee','page',5),
-  (46,40,'product.parameter','平台商品参数','lucide:list-tree','/product/specs','page',6),
-  (47,40,'product.comment','评论管理','lucide:message-square','/product/comment','page',7),
+  (44,40,'product.label','商品标签','lucide:tags','/product/label','page',6),
+  (46,40,'product.parameter','平台商品参数','lucide:list-tree','/product/specs','page',7),
+  (48,40,'product.price_description','价格说明','lucide:badge-dollar-sign','/product/priceDescription','page',8),
+  (49,40,'product.activity_label','活动标签','lucide:badge','/product/activityLabel','page',9),
 
-  (50,0,'order','订单管理','lucide:receipt-text','/order','directory',50),
+  -- 订单
+  (50,0,'order','订单','ant-design:file-text-outlined','/order','directory',4),
   (51,50,'order.list','订单列表','lucide:receipt-text','/order/list','page',1),
-  (52,50,'order.refund','售后退款','lucide:wallet','/order/refund','page',2),
-  (53,50,'order.cancellation','取消/退款订单','lucide:ban','/order/cancellation','page',3),
+  (52,50,'order.refund','退款订单','lucide:wallet','/order/refund','page',2),
+  (53,50,'order.cancellation','核销记录','lucide:ban','/order/cancellation','page',3),
 
-  (60,0,'marketing','营销管理','lucide:activity','/marketing','directory',60),
+  -- 分销（独立一级；原营销下分销管理归位到此）
+  (220,0,'promoter','分销','ant-design:send-outlined','/promoter','directory',5),
+  (65,220,'marketing.spread','分销管理','ant-design:send-outlined','/marketing/spread','page',1),
+
+  -- 营销
+  (60,0,'marketing','营销','ant-design:flag-outlined','/marketing','directory',6),
   (61,60,'marketing.coupon','平台优惠券','lucide:award','/marketing/coupon','page',1),
   (62,60,'marketing.seckill','秒杀活动','lucide:radio-tower','/marketing/seckill','page',2),
   (63,60,'marketing.combination','拼团活动','lucide:users','/marketing/combination','page',3),
   (64,60,'marketing.presell','预售活动','lucide:receipt-text','/marketing/presell','page',4),
-  (65,60,'marketing.spread','分销管理','lucide:git-branch','/marketing/spread','page',5),
-  (66,60,'marketing.broadcast','直播管理','lucide:radio-tower','/marketing/broadcast','page',6),
-  (67,60,'marketing.assist','好友助力','lucide:hand-heart','/marketing/assist','page',7),
-  (68,60,'marketing.points','积分商城','lucide:badge-plus','/marketing/points','page',8),
-  (69,60,'marketing.recharge','用户充值','lucide:circle-dollar-sign','/marketing/recharge','page',9),
-  (207,60,'marketing.discounts','优惠套餐','lucide:package','/marketing/discounts/list','page',12),
-  (208,60,'marketing.atmosphere','活动氛围','lucide:sparkles','/marketing/atmosphere/list','page',13),
-  (209,60,'marketing.border','活动边框','lucide:frame','/marketing/border/list','page',14),
-  (210,60,'marketing.topic','活动专题','lucide:layout-template','/group/topic/94','page',15),
-  (211,60,'marketing.application','活动报名','lucide:clipboard-list','/marketing/application/list','page',16),
-  (185,60,'marketing.coupon.send_records','优惠券发送记录','lucide:ticket-check','/marketing/coupon/send-records','page',10),
-  (186,60,'marketing.coupon.receipt_records','优惠券领取记录','lucide:ticket','/marketing/coupon/receipt-records','page',11),
-  (212,110,'operations.system_form','系统表单','lucide:clipboard-pen','/systemForm/form_list','page',2),
+  (66,60,'marketing.broadcast','直播管理','lucide:radio-tower','/marketing/broadcast','page',5),
+  (67,60,'marketing.assist','好友助力','lucide:hand-heart','/marketing/assist','page',6),
+  (68,60,'marketing.points','积分商城','lucide:badge-plus','/marketing/points','page',7),
+  (69,60,'marketing.recharge','用户充值','lucide:circle-dollar-sign','/marketing/recharge','page',8),
+  (185,60,'marketing.coupon.send_records','优惠券发送记录','lucide:ticket-check','/marketing/coupon/send-records','page',9),
+  (186,60,'marketing.coupon.receipt_records','优惠券领取记录','lucide:ticket','/marketing/coupon/receipt-records','page',10),
+  (207,60,'marketing.discounts','优惠套餐','lucide:package','/marketing/discounts/list','page',11),
+  (208,60,'marketing.atmosphere','活动氛围','lucide:sparkles','/marketing/atmosphere/list','page',12),
+  (209,60,'marketing.border','活动边框','lucide:frame','/marketing/border/list','page',13),
+  (210,60,'marketing.topic','活动专题','lucide:layout-template','/group/topic/94','page',14),
+  (211,60,'marketing.application','活动报名','lucide:clipboard-list','/marketing/application/list','page',15),
 
-  (70,0,'user','用户管理','lucide:users','/user','directory',70),
+  -- 用户
+  (70,0,'user','用户','ant-design:user-outlined','/user','directory',7),
   (71,70,'user.label','用户标签','lucide:badge-check','/user/label','page',1),
   (72,70,'user.group','用户分组','lucide:users','/user/group','page',2),
   (73,70,'user.svip','会员等级','lucide:award','/user/svip','page',3),
@@ -108,7 +111,8 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (183,70,'user.member.level','会员等级管理','lucide:medal','/user/member/levels','page',21),
   (184,70,'user.svip.interest','会员权益','lucide:heart-handshake','/user/member/equity','page',22),
 
-  (80,0,'content','内容管理','lucide:images','/content','directory',80),
+  -- 内容
+  (80,0,'content','内容','ant-design:read-outlined','/content','directory',8),
   (81,80,'content.notice','公告管理','lucide:messages-square','/content/notice','page',1),
   (82,80,'content.community','社区内容','lucide:images','/content/community','page',2),
   (83,80,'content.attachment','素材管理','lucide:images','/content/attachment','page',3),
@@ -117,51 +121,62 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (86,80,'content.community.topic','社区话题','lucide:hash','/community/topic','page',6),
   (87,80,'content.community.list','社区内容','lucide:images','/community/list','page',7),
   (88,80,'content.community.reply','社区评论','lucide:message-square','/community/reply','page',8),
-  (48,40,'product.price_description','价格说明','lucide:badge-dollar-sign','/product/priceDescription','page',8),
-  (49,40,'product.activity_label','活动标签','lucide:badge','/product/activityLabel','page',9),
 
-  (90,0,'freight','物流配送','lucide:map-plus','/freight','directory',90),
-  (91,90,'freight.express','快递公司','lucide:map-plus','/freight/express','page',1),
-
-  (100,0,'accounts','财务管理','lucide:wallet','/accounts','directory',100),
+  -- 财务
+  (100,0,'accounts','财务','ant-design:bar-chart-outlined','/accounts','directory',9),
   (101,100,'accounts.withdraw','提现审核','lucide:wallet','/accounts/withdraw','page',1),
   (102,100,'accounts.user_assets','用户资产流水','lucide:wallet-cards','/accounts/user-assets','page',2),
   (103,100,'accounts.merchant_settlement','店铺结算监管','lucide:landmark','/accounts/merchant-settlement','page',3),
   (188,100,'accounts.invoice','发票管理','lucide:receipt','/accounts/invoices','page',4),
 
-  (110,0,'operations','运营装修','lucide:pen-line','/operations','directory',110),
-  (111,110,'operations.diy','商城装修','lucide:pen-line','/operations/diy','page',1),
+  -- 应用
+  (130,0,'app','应用','ant-design:appstore-outlined','/app','directory',10),
+  (131,130,'app.wechat','公众号','lucide:message-circle','/app/wechat','page',1),
+  (202,130,'app.routine','小程序','lucide:smartphone','/app/routine','page',2),
+  (203,130,'app.wechat_reply','微信回复','lucide:message-square-reply','/admin/app/wechat/reply','page',3),
+  (204,130,'app.wechat_menus','微信菜单','lucide:menu','/app/wechat/menus','page',4),
+  (205,130,'app.wechat_template','模板消息','lucide:mail','/app/wechat/template','page',5),
+  (206,130,'app.wechat_news','图文消息','lucide:newspaper','/app/wechat/newsCategory','page',6),
 
-  (120,0,'setting','系统设置','lucide:settings','/setting','directory',120),
+  -- 装修
+  (110,0,'operations','装修','ant-design:format-painter-outlined','/operations','directory',11),
+  (111,110,'operations.diy','商城装修','lucide:pen-line','/operations/diy','page',1),
+  (212,110,'operations.system_form','系统表单','lucide:clipboard-pen','/systemForm/form_list','page',2),
+
+  -- 客服
+  (30,0,'service','客服','ant-design:customer-service-outlined','/service','directory',12),
+  (301,30,'service.auto_reply','客服自动回复','lucide:message-square-reply','/systemForm/customer_keyword','page',1),
+  (302,30,'service.customer.list','客服列表','ant-design:customer-service-outlined','/service/customer/list','page',2),
+  (303,30,'service.settings','客服设置','lucide:settings-2','/systemForm/Basics/service','page',3),
+
+  -- 设置（物流配送非 CRMEB 平台顶层，挂在设置下）
+  (120,0,'setting','设置','ant-design:setting-outlined','/setting','directory',13),
   (121,120,'setting.admin','管理员','lucide:user-round-cog','/setting/admin','page',1),
   (122,120,'setting.role','角色权限','lucide:shield-check','/setting/role','page',2),
   (123,120,'setting.menu','菜单管理','lucide:folder-tree','/setting/menu','page',3),
   (124,120,'setting.agreements','协议设置','lucide:receipt-text','/setting/agreements','page',4),
   (125,120,'setting.cloud_config','云服务配置','lucide:key-round','/setting/cloud-config','page',5),
-  (126,120,'setting.sms','短信配置','lucide:messages-square','/setting/sms','page',6)
-  ,(187,120,'setting.operation_log','操作日志','lucide:history','/setting/system-log','page',7)
-  ,(189,120,'setting.login_log','登录日志','lucide:log-in','/setting/login-log','page',8)
-  ,(190,120,'setting.shop','商城设置','lucide:store','/setting/shop','page',9)
-  ,(191,120,'setting.pay','支付设置','lucide:credit-card','/setting/pay','page',10)
-  ,(130,0,'app','应用管理','lucide:smartphone','/app','directory',130)
-  ,(131,130,'app.wechat','公众号','lucide:message-circle','/app/wechat','page',1)
-  ,(196,120,'setting.storage','存储配置','lucide:hard-drive','/setting/storage','page',11)
-  ,(197,0,'maintain','系统维护','lucide:wrench','/maintain','directory',197)
-  ,(198,197,'maintain.cache','清除缓存','lucide:eraser','/maintain/cache','page',1)
-  ,(199,197,'maintain.backup','数据备份','lucide:database-backup','/maintain/dataBackup','page',2)
-  ,(200,197,'maintain.group_data','组合数据','lucide:layers','/group/list','page',3)
-  ,(201,197,'maintain.hot_search','热门搜索','lucide:search','/group/config/67','page',4)
-  ,(202,130,'app.routine','小程序','lucide:smartphone','/app/routine','page',2)
-  ,(203,130,'app.wechat_reply','微信回复','lucide:message-square-reply','/admin/app/wechat/reply','page',3)
-  ,(204,130,'app.wechat_menus','微信菜单','lucide:menu','/app/wechat/menus','page',4)
-  ,(205,130,'app.wechat_template','模板消息','lucide:mail','/app/wechat/template','page',5)
-  ,(206,130,'app.wechat_news','图文消息','lucide:newspaper','/app/wechat/newsCategory','page',6)
+  (126,120,'setting.sms','短信配置','lucide:messages-square','/setting/sms','page',6),
+  (187,120,'setting.operation_log','操作日志','lucide:history','/setting/system-log','page',7),
+  (189,120,'setting.login_log','登录日志','lucide:log-in','/setting/login-log','page',8),
+  (190,120,'setting.shop','商城设置','lucide:store','/setting/shop','page',9),
+  (191,120,'setting.pay','支付设置','lucide:credit-card','/setting/pay','page',10),
+  (196,120,'setting.storage','存储配置','lucide:hard-drive','/setting/storage','page',11),
+  (90,120,'freight','物流配送','lucide:map-plus','/freight','directory',20),
+  (91,90,'freight.express','快递公司','lucide:map-plus','/freight/express','page',1),
+
+  -- 维护
+  (197,0,'maintain','维护','ant-design:tool-outlined','/maintain','directory',14),
+  (198,197,'maintain.cache','清除缓存','lucide:eraser','/maintain/cache','page',1),
+  (199,197,'maintain.backup','数据备份','lucide:database-backup','/maintain/dataBackup','page',2),
+  (200,197,'maintain.group_data','组合数据','lucide:layers','/group/list','page',3),
+  (201,197,'maintain.hot_search','热门搜索','lucide:search','/group/config/67','page',4)
 ON DUPLICATE KEY UPDATE
   `parent_id`=VALUES(`parent_id`),`code`=VALUES(`code`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),
   `route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
 
 -- 首页树纠偏（可重复执行）
-UPDATE `qixi_crm_a_menu` SET `code`='home',`title`='首页',`icon`='lucide:house',`route_path`='/',`kind`='directory',`sort`=1,`parent_id`=0 WHERE `id`=1;
+UPDATE `qixi_crm_a_menu` SET `code`='home',`title`='首页',`icon`='ant-design:home-outlined',`route_path`='/',`kind`='directory',`sort`=1,`parent_id`=0 WHERE `id`=1;
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`) VALUES
   (2,1,'dashboard','控制台','lucide:layout-dashboard','/dashboard','page',1),
   (216,1,'data.screen','数据大屏','lucide:monitor','/data-screen/index','page',2),
@@ -330,16 +345,17 @@ WHERE r.code = 'platform'
       'product','product.audit','order','order.list','order.refund','order.cancellation',
       'accounts','accounts.merchant_settlement','accounts.merchant_settlement.read','merchant.intention.audit','merchant.intention.delete'))
    OR (r.code = 'customer_service' AND m.code IN (
-      'home','dashboard','service',
+      'home','dashboard','service','service.auto_reply','service.customer.list','service.settings',
       'user','user.feedback','user.feedback.list','user.feedback.read','user.feedback.manage'))
    OR (r.code = 'operations' AND m.code IN (
+      'promoter','marketing.spread','marketing.spread.read',
       'marketing','marketing.coupon','marketing.seckill','marketing.combination',
-      'marketing.presell','marketing.spread','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge',
+      'marketing.presell','marketing.broadcast','marketing.assist','marketing.points','marketing.recharge',
       'marketing.discounts','marketing.discounts.read','marketing.discounts.manage',
       'marketing.atmosphere','marketing.atmosphere.read','marketing.atmosphere.manage',
       'marketing.border','marketing.border.read','marketing.border.manage',
       'marketing.topic','marketing.topic.read','marketing.topic.manage',
-      'marketing.application','marketing.application.read','marketing.application.manage','marketing.spread.read',
+      'marketing.application','marketing.application.read','marketing.application.manage',
       'user','user.svip.plan','user.svip.record','user.svip.interest','user.svip.plan.manage','user.svip.record.read','user.svip.interest.manage',
       'content','content.notice','content.community','content.community.category','content.community.topic','content.community.list','content.community.reply','content.attachment','content.article',
       'operations','operations.diy','operations.system_form','operations.system_form.manage','setting','setting.agreements',

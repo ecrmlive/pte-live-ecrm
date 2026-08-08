@@ -13,7 +13,7 @@ import {
 } from 'element-plus';
 
 import AccessApi from '#/api/core/access';
-import { PLATFORM_LUCIDE_ICONS } from '#/constants/platform-lucide-icons';
+import { PLATFORM_MENU_PICKER_ICONS } from '#/constants/platform-lucide-icons';
 import { deepClone, formatModel } from '#/utils/base';
 
 import type { AccessAddType, AccessFormModel, AccessNode } from './types';
@@ -235,12 +235,12 @@ async function handleSubmit() {
         <IconPicker
           v-model="formData.icon"
           :auto-fetch-api="false"
-          :icons="PLATFORM_LUCIDE_ICONS"
+          :icons="[...PLATFORM_MENU_PICKER_ICONS]"
           :input-component="ElInput"
           class="w-full"
           icon-slot="append"
           model-value-prop="model-value"
-          prefix="lucide"
+          prefix=""
           type="input"
         />
       </ElFormItem>

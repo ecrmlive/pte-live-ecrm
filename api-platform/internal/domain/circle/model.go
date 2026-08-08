@@ -19,6 +19,8 @@ type Circle struct {
 	RoleID                uint      `gorm:"column:role_id" json:"role_id"`
 	BusinessStoreCategory uint      `gorm:"column:business_store_category" json:"business_store_category"`
 	BusinessStoreType     uint      `gorm:"column:business_store_type" json:"business_store_type"`
+	GoodsType             string    `gorm:"column:goods_type" json:"goods_type"`
+	PlatformCategoryIDs   string    `gorm:"column:platform_category_ids" json:"platform_category_ids"`
 	CreateTime            time.Time `gorm:"column:create_time" json:"create_time"`
 	UpdateTime            time.Time `gorm:"column:update_time" json:"update_time"`
 }
@@ -61,6 +63,13 @@ const (
 	AgentRevoked  int8 = -2
 )
 
+type CircleListFilter struct {
+	Keyword       string
+	Status        *int8
+	Type          *int8
+	CircleAgentID uint
+}
+
 type CircleInput struct {
 	PID                   uint    `json:"pid"`
 	Name                  string  `json:"name"`
@@ -74,6 +83,9 @@ type CircleInput struct {
 	RoleID                uint    `json:"role_id"`
 	BusinessStoreCategory uint    `json:"business_store_category"`
 	BusinessStoreType     uint    `json:"business_store_type"`
+	GoodsTypes            []int   `json:"goods_type"`
+	PlatformCategoryIDs   []uint  `json:"platform_category_ids"`
+	MerchantIDs           []uint  `json:"merchant_ids"`
 }
 
 type AgentInput struct {
@@ -91,6 +103,8 @@ type AgentInput struct {
 	BusinessName          string `json:"business_name"`
 	BusinessStoreCategory uint   `json:"business_store_category"`
 	BusinessStoreType     uint   `json:"business_store_type"`
+	Account               string `json:"account"`
+	Password              string `json:"password"`
 }
 
 type AuditInput struct {

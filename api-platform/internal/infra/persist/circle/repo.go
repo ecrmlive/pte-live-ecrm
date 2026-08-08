@@ -14,13 +14,19 @@ type Repo struct{ db *gorm.DB }
 
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-func (r *Repo) ListCircles(ctx context.Context, keyword string, status *int8, page, limit int) ([]circle.Circle, int64, error) {
+func (r *Repo) ListCircles(ctx context.Context, filter circle.CircleListFilter, page, limit int) ([]circle.Circle, int64, error) {
 	q := r.db.WithContext(ctx).Model(&circle.Circle{})
-	if keyword != "" {
-		q = q.Where("name LIKE ?", "%"+keyword+"%")
+	if filter.Keyword != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Keyword+"%")
 	}
-	if status != nil {
-		q = q.Where("status = ?", *status)
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	if filter.Type != nil {
+		q = q.Where("type = ?", *filter.Type)
+	}
+	if filter.CircleAgentID > 0 {
+		q = q.Where("circle_agent_id = ?", filter.CircleAgentID)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -49,7 +55,8 @@ func (r *Repo) UpdateCircle(ctx context.Context, row *circle.Circle) error {
 		"commission_type": row.CommissionType, "commission_rate": row.CommissionRate, "level": row.Level,
 		"remark": row.Remark, "sort": row.Sort, "status": row.Status, "type": row.Type,
 		"role_id": row.RoleID, "business_store_category": row.BusinessStoreCategory,
-		"business_store_type": row.BusinessStoreType, "update_time": time.Now(),
+		"business_store_type": row.BusinessStoreType, "goods_type": row.GoodsType,
+		"platform_category_ids": row.PlatformCategoryIDs, "update_time": time.Now(),
 	}).Error
 }
 
@@ -63,13 +70,16 @@ func (r *Repo) CountCircleChildren(ctx context.Context, id uint) (int64, error) 
 	return count, err
 }
 
-func (r *Repo) ListAgents(ctx context.Context, keyword string, status *int8, page, limit int) ([]circle.Agent, int64, error) {
+func (r *Repo) ListAgents(ctx context.Context, keyword string, status, agentType *int8, page, limit int) ([]circle.Agent, int64, error) {
 	q := r.db.WithContext(ctx).Model(&circle.Agent{})
 	if keyword != "" {
 		q = q.Where("name LIKE ? OR phone LIKE ? OR business_name LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
 	if status != nil {
 		q = q.Where("status = ?", *status)
+	}
+	if agentType != nil {
+		q = q.Where("type = ?", *agentType)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {

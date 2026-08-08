@@ -171,10 +171,24 @@ async function save() {
   }
   formDrawerApi.lock();
   try {
+    const payload = {
+      pid: form.pid,
+      name: form.name,
+      circle_agent_id: form.circle_agent_id,
+      commission_type: form.commission_type,
+      commission_rate: form.commission_rate,
+      remark: form.remark,
+      sort: form.sort,
+      status: form.status,
+      type: form.type,
+      role_id: form.role_id,
+      business_store_category: 0,
+      business_store_type: 0,
+    };
     if (editingID.value) {
-      await updateBusinessZone(editingID.value, form);
+      await updateBusinessZone(editingID.value, payload);
     } else {
-      await createBusinessZone(form);
+      await createBusinessZone(payload);
     }
     formDrawerApi.close();
     ElMessage.success('保存成功');

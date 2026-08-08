@@ -32,14 +32,14 @@ type PageResult[T any] struct {
 }
 
 type Store interface {
-	ListCircles(context.Context, string, *int8, int, int) ([]Circle, int64, error)
+	ListCircles(context.Context, CircleListFilter, int, int) ([]Circle, int64, error)
 	GetCircle(context.Context, uint) (*Circle, error)
 	CreateCircle(context.Context, *Circle) error
 	UpdateCircle(context.Context, *Circle) error
 	DeleteCircle(context.Context, uint) error
 	CountCircleChildren(context.Context, uint) (int64, error)
 
-	ListAgents(context.Context, string, *int8, int, int) ([]Agent, int64, error)
+	ListAgents(context.Context, string, *int8, *int8, int, int) ([]Agent, int64, error)
 	GetAgent(context.Context, uint) (*Agent, error)
 	CreateAgent(context.Context, *Agent) error
 	UpdateAgent(context.Context, *Agent) error
@@ -61,9 +61,10 @@ func normalizePage(page, limit int) (int, int) {
 	return page, limit
 }
 
-func (s *Service) ListCircles(ctx context.Context, keyword string, status *int8, page, limit int) (*PageResult[Circle], error) {
+func (s *Service) ListCircles(ctx context.Context, filter CircleListFilter, page, limit int) (*PageResult[Circle], error) {
 	page, limit = normalizePage(page, limit)
-	rows, total, err := s.store.ListCircles(ctx, strings.TrimSpace(keyword), status, page, limit)
+	filter.Keyword = strings.TrimSpace(filter.Keyword)
+	rows, total, err := s.store.ListCircles(ctx, filter, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,14 @@ func (s *Service) UpdateCircle(ctx context.Context, id uint, in CircleInput) (*C
 
 func (s *Service) circleFromInput(ctx context.Context, id uint, in CircleInput) (*Circle, error) {
 	name := strings.TrimSpace(in.Name)
-	if name == "" || len([]rune(name)) > 64 || (in.Status != 0 && in.Status != 1) || (in.Type != 0 && in.Type != 1) || (in.CommissionType != 0 && in.CommissionType != 1) || in.CommissionRate < 0 || in.CommissionRate > 100 {
+	nameLimit := 64
+	if in.Type == 1 {
+		nameLimit = 20
+	}
+	if name == "" || len([]rune(name)) > nameLimit || (in.Status != 0 && in.Status != 1) || (in.Type != 0 && in.Type != 1) || (in.CommissionType != 0 && in.CommissionType != 1) || in.CommissionRate < 0 || in.CommissionRate > 100 {
+		return nil, ErrBadParam
+	}
+	if in.Type == 1 && (in.CircleAgentID == 0 || in.RoleID == 0 || in.BusinessStoreCategory == 0 || in.BusinessStoreType == 0) {
 		return nil, ErrBadParam
 	}
 	level := uint8(0)
@@ -153,7 +161,13 @@ func (s *Service) circleFromInput(ctx context.Context, id uint, in CircleInput) 
 			return nil, ErrBadParam
 		}
 	}
-	return &Circle{CircleID: id, PID: in.PID, Name: name, CircleAgentID: in.CircleAgentID, CommissionType: in.CommissionType, CommissionRate: in.CommissionRate, Remark: strings.TrimSpace(in.Remark), Sort: in.Sort, Status: in.Status, Type: in.Type, RoleID: in.RoleID, BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType, Level: level}, nil
+	return &Circle{
+		CircleID: id, PID: in.PID, Name: name, CircleAgentID: in.CircleAgentID,
+		CommissionType: in.CommissionType, CommissionRate: in.CommissionRate,
+		Remark: strings.TrimSpace(in.Remark), Sort: in.Sort, Status: in.Status, Type: in.Type,
+		RoleID: in.RoleID, BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType,
+		GoodsType: joinInts(in.GoodsTypes), PlatformCategoryIDs: joinUints(in.PlatformCategoryIDs), Level: level,
+	}, nil
 }
 
 func (s *Service) DeleteCircle(ctx context.Context, id uint) error {
@@ -170,9 +184,9 @@ func (s *Service) DeleteCircle(ctx context.Context, id uint) error {
 	return s.store.DeleteCircle(ctx, id)
 }
 
-func (s *Service) ListAgents(ctx context.Context, keyword string, status *int8, page, limit int) (*PageResult[Agent], error) {
+func (s *Service) ListAgents(ctx context.Context, keyword string, status, agentType *int8, page, limit int) (*PageResult[Agent], error) {
 	page, limit = normalizePage(page, limit)
-	rows, total, err := s.store.ListAgents(ctx, strings.TrimSpace(keyword), status, page, limit)
+	rows, total, err := s.store.ListAgents(ctx, strings.TrimSpace(keyword), status, agentType, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +299,69 @@ func agentFromInput(in AgentInput) (*Agent, error) {
 	if name == "" || phone == "" || len([]rune(name)) > 64 || len(phone) > 16 || in.Type < 0 || in.Type > 1 || in.PaymentMethod > 2 {
 		return nil, ErrBadParam
 	}
-	return &Agent{UID: in.UID, Name: name, Phone: phone, Qualification: strings.TrimSpace(in.Qualification), Remark: strings.TrimSpace(in.Remark), PaymentMethod: in.PaymentMethod, PaymentName: strings.TrimSpace(in.PaymentName), PaymentAccount: strings.TrimSpace(in.PaymentAccount), PaymentBank: strings.TrimSpace(in.PaymentBank), PaymentQRImg: strings.TrimSpace(in.PaymentQRImg), Type: in.Type, BusinessName: strings.TrimSpace(in.BusinessName), BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType, Status: AgentPending}, nil
+	status := AgentPending
+	// 平台「添加商户管理员」会带登录账号：直接按已通过资格创建，避免额外审核。
+	if strings.TrimSpace(in.Account) != "" && strings.TrimSpace(in.Password) != "" {
+		if len([]rune(strings.TrimSpace(in.Password))) < 6 {
+			return nil, ErrBadParam
+		}
+		status = AgentApproved
+	}
+	return &Agent{UID: in.UID, Name: name, Phone: phone, Qualification: strings.TrimSpace(in.Qualification), Remark: strings.TrimSpace(in.Remark), PaymentMethod: in.PaymentMethod, PaymentName: strings.TrimSpace(in.PaymentName), PaymentAccount: strings.TrimSpace(in.PaymentAccount), PaymentBank: strings.TrimSpace(in.PaymentBank), PaymentQRImg: strings.TrimSpace(in.PaymentQRImg), Type: in.Type, BusinessName: strings.TrimSpace(in.BusinessName), BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType, Status: status}, nil
 }
 
 func itoa(v uint) string { return strconv.FormatUint(uint64(v), 10) }
+
+func joinInts(values []int) string {
+	if len(values) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(values))
+	for _, v := range values {
+		parts = append(parts, strconv.Itoa(v))
+	}
+	return strings.Join(parts, ",")
+}
+
+func joinUints(values []uint) string {
+	if len(values) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(values))
+	for _, v := range values {
+		parts = append(parts, itoa(v))
+	}
+	return strings.Join(parts, ",")
+}
+
+func ParseIntCSV(raw string) []int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]int, 0, len(parts))
+	for _, part := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(part))
+		if err == nil {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+func ParseUintCSV(raw string) []uint {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]uint, 0, len(parts))
+	for _, part := range parts {
+		n, err := strconv.ParseUint(strings.TrimSpace(part), 10, 64)
+		if err == nil && n > 0 {
+			out = append(out, uint(n))
+		}
+	}
+	return out
+}

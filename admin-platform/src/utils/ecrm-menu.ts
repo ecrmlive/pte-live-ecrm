@@ -43,20 +43,24 @@ function nodeTitle(node: MergersMenuNode) {
  * 运营新建菜单没有填图标时退化为 Vben 的 circle-dot 占位图标。
  */
 const MENU_ICON_FALLBACK: Record<string, string> = {
-  dashboard: 'layout-dashboard',
-  store: 'store',
-  merchant: 'store',
-  region: 'map-pinned',
-  service: 'messages-square',
-  product: 'puzzle',
-  order: 'receipt-text',
-  marketing: 'activity',
-  user: 'users',
-  content: 'images',
-  freight: 'map-plus',
-  accounts: 'wallet',
-  operations: 'pen-line',
-  setting: 'settings',
+  home: 'ant-design:home-outlined',
+  dashboard: 'ant-design:dashboard-outlined',
+  store: 'ant-design:shop-outlined',
+  merchant: 'ant-design:shop-outlined',
+  region: 'ant-design:cluster-outlined',
+  service: 'ant-design:customer-service-outlined',
+  product: 'ant-design:shopping-outlined',
+  order: 'ant-design:file-text-outlined',
+  promoter: 'ant-design:send-outlined',
+  marketing: 'ant-design:flag-outlined',
+  user: 'ant-design:user-outlined',
+  content: 'ant-design:read-outlined',
+  freight: 'lucide:map-plus',
+  accounts: 'ant-design:bar-chart-outlined',
+  app: 'ant-design:appstore-outlined',
+  operations: 'ant-design:format-painter-outlined',
+  setting: 'ant-design:setting-outlined',
+  maintain: 'ant-design:tool-outlined',
 };
 
 function nodeIcon(node: MergersMenuNode, path: string) {

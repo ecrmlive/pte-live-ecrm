@@ -1,10 +1,11 @@
 SET NAMES utf8mb4;
 USE `qixi_crm_admin`;
--- Platform menu icons → Vben offline lucide; 客服 tree → CRMEB.
+-- Platform menu icons → Vben offline Iconify；顶层 ant-design，其余 lucide。
+-- 顶层顺序/结构请优先执行 patch_platform_menu_top_sort.sql。
 
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:house' WHERE `id`=1 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:home-outlined' WHERE `id`=1 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:layout-dashboard' WHERE `id`=2 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:store' WHERE `id`=10 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:shop-outlined' WHERE `id`=10 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:store' WHERE `id`=11 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-check' WHERE `id`=12 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:folder-tree' WHERE `id`=13 AND `kind` IN ('directory','page');
@@ -12,20 +13,20 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:git-branch' WHERE `id`=14 AND `kind`
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:award' WHERE `id`=15 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:shield-check' WHERE `id`=16 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet' WHERE `id`=17 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:layout-grid' WHERE `id`=18 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:settings' WHERE `id`=19 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:map-pinned' WHERE `id`=20 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:shop-outlined' WHERE `id`=18 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:setting-outlined' WHERE `id`=19 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:cluster-outlined' WHERE `id`=20 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:map-pinned' WHERE `id`=21 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=22 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-check' WHERE `id`=23 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:settings-2' WHERE `id`=24 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=25 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:team-outlined' WHERE `id`=25 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:store' WHERE `id`=26 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-check' WHERE `id`=27 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:user-round-cog' WHERE `id`=28 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:settings' WHERE `id`=29 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:headset' WHERE `id`=30 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:package' WHERE `id`=40 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:customer-service-outlined' WHERE `id`=30 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:shopping-outlined' WHERE `id`=40 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:folder-tree' WHERE `id`=41 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:award' WHERE `id`=42 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:shield-check' WHERE `id`=43 AND `kind` IN ('directory','page');
@@ -35,11 +36,11 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:list-tree' WHERE `id`=46 AND `kind` 
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:message-square' WHERE `id`=47 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-dollar-sign' WHERE `id`=48 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge' WHERE `id`=49 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:receipt-text' WHERE `id`=50 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:file-text-outlined' WHERE `id`=50 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:receipt-text' WHERE `id`=51 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet' WHERE `id`=52 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:ban' WHERE `id`=53 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:megaphone' WHERE `id`=60 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:flag-outlined' WHERE `id`=60 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:ticket' WHERE `id`=61 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:radio-tower' WHERE `id`=62 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=63 AND `kind` IN ('directory','page');
@@ -49,7 +50,7 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:radio-tower' WHERE `id`=66 AND `kind
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:hand-heart' WHERE `id`=67 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-plus' WHERE `id`=68 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:circle-dollar-sign' WHERE `id`=69 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=70 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:user-outlined' WHERE `id`=70 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:tags' WHERE `id`=71 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=72 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:award' WHERE `id`=73 AND `kind` IN ('directory','page');
@@ -59,7 +60,7 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:folder-tree' WHERE `id`=76 AND `kind
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:contact-round' WHERE `id`=77 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:badge-dollar-sign' WHERE `id`=78 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:award' WHERE `id`=79 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:newspaper' WHERE `id`=80 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:read-outlined' WHERE `id`=80 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:bell' WHERE `id`=81 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:images' WHERE `id`=82 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:images' WHERE `id`=83 AND `kind` IN ('directory','page');
@@ -70,20 +71,20 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:images' WHERE `id`=87 AND `kind` IN 
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:message-square' WHERE `id`=88 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:truck' WHERE `id`=90 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:truck' WHERE `id`=91 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet' WHERE `id`=100 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:bar-chart-outlined' WHERE `id`=100 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet' WHERE `id`=101 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wallet-cards' WHERE `id`=102 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:landmark' WHERE `id`=103 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:paintbrush' WHERE `id`=110 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:format-painter-outlined' WHERE `id`=110 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:paintbrush' WHERE `id`=111 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:settings' WHERE `id`=120 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:setting-outlined' WHERE `id`=120 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:user-round-cog' WHERE `id`=121 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:shield-check' WHERE `id`=122 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:menu' WHERE `id`=123 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:file-text' WHERE `id`=124 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:key-round' WHERE `id`=125 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:mail' WHERE `id`=126 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:smartphone' WHERE `id`=130 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:appstore-outlined' WHERE `id`=130 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:message-circle' WHERE `id`=131 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:ticket-plus' WHERE `id`=170 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:git-branch-plus' WHERE `id`=171 AND `kind` IN ('directory','page');
@@ -112,7 +113,7 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:receipt-text' WHERE `id`=193 AND `ki
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:package' WHERE `id`=194 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:users' WHERE `id`=195 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:hard-drive' WHERE `id`=196 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:wrench' WHERE `id`=197 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:tool-outlined' WHERE `id`=197 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:eraser' WHERE `id`=198 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:database-backup' WHERE `id`=199 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:layers' WHERE `id`=200 AND `kind` IN ('directory','page');
@@ -131,16 +132,17 @@ UPDATE `qixi_crm_a_menu` SET `icon`='lucide:clipboard-pen' WHERE `id`=212 AND `k
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:key-round' WHERE `id`=213 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:menu' WHERE `id`=214 AND `kind` IN ('directory','page');
 UPDATE `qixi_crm_a_menu` SET `icon`='lucide:file-text' WHERE `id`=215 AND `kind` IN ('directory','page');
-UPDATE `qixi_crm_a_menu` SET `icon`='lucide:share-2' WHERE `id`=220 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:send-outlined' WHERE `id`=220 AND `kind` IN ('directory','page');
+UPDATE `qixi_crm_a_menu` SET `icon`='ant-design:send-outlined' WHERE `id`=65 AND `kind` IN ('directory','page');
 
-UPDATE `qixi_crm_a_menu` SET `kind`='directory', `title`='客服', `icon`='lucide:headset', `route_path`='/service', `code`='service' WHERE `id`=30;
+UPDATE `qixi_crm_a_menu` SET `kind`='directory', `title`='客服', `icon`='ant-design:customer-service-outlined', `route_path`='/service', `code`='service' WHERE `id`=30;
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
   (301,30,'service.auto_reply','客服自动回复','lucide:message-square-reply','/systemForm/customer_keyword','page',1,1),
-  (302,30,'service.customer.list','客服列表','lucide:headset','/service/customer/list','page',2,1),
+  (302,30,'service.customer.list','客服列表','ant-design:customer-service-outlined','/service/customer/list','page',2,1),
   (303,30,'service.settings','客服设置','lucide:settings-2','/systemForm/Basics/service','page',3,1)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`code`=VALUES(`code`),`title`=VALUES(`title`),`icon`=VALUES(`icon`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
 
 INSERT IGNORE INTO `qixi_crm_a_role_menu` (`role_id`,`menu_id`)
 SELECT r.id, m.id FROM `qixi_crm_a_role` r CROSS JOIN `qixi_crm_a_menu` m
-WHERE r.code='platform' AND m.id IN (301,302,303);
+WHERE r.code='platform' AND m.id IN (220,65,301,302,303);
 

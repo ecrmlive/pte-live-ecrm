@@ -35,20 +35,42 @@ const rules = {
   code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
 };
 
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+/** 拉取登录页配置；api-platform 短暂重启时自动重试，避免红条一直卡住 */
 async function loadLoginBase() {
   baseLoading.value = true;
   baseLoadFailed.value = false;
+  const maxAttempts = 3;
+  let lastError: unknown;
   try {
-    const data = await getAdminLoginBaseApi();
-    codeImage.value = data?.codeData?.codeImage || '';
-    codeKey.value = data?.codeData?.codeKey || '';
-    if (!codeImage.value) {
-      form.code = '';
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const data = await getAdminLoginBaseApi();
+        codeImage.value = data?.codeData?.codeImage || '';
+        codeKey.value = data?.codeData?.codeKey || '';
+        if (!codeImage.value) {
+          form.code = '';
+        }
+        baseLoadFailed.value = false;
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxAttempts) {
+          await sleep(400 * attempt);
+        }
+      }
     }
-  } catch {
     codeImage.value = '';
     codeKey.value = '';
     baseLoadFailed.value = true;
+    if (import.meta.env.DEV && lastError) {
+      console.warn('[login] /admin/index/base failed after retries', lastError);
+    }
   } finally {
     baseLoading.value = false;
   }
@@ -88,9 +110,20 @@ onMounted(() => {
       :closable="false"
       class="pte-live-login-form__alert"
       show-icon
-      title="内部错误，请稍后重试"
       type="error"
-    />
+    >
+      <template #title>
+        <span>内部错误，请稍后重试</span>
+        <ElButton
+          class="pte-live-login-form__alert-retry"
+          link
+          type="primary"
+          @click="loadLoginBase"
+        >
+          重试
+        </ElButton>
+      </template>
+    </ElAlert>
 
     <ElForm
       ref="formRef"
@@ -166,6 +199,11 @@ onMounted(() => {
 
 .pte-live-login-form__alert {
   margin-bottom: 16px;
+}
+
+.pte-live-login-form__alert-retry {
+  margin-left: 8px;
+  vertical-align: baseline;
 }
 
 .pte-live-login-form__captcha {

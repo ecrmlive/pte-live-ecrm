@@ -35,6 +35,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/business-zones/options", platform, h.ZoneOptions)
 	r.GET("/business-zones/:id", platform, zoneManage, h.GetCircle)
 	r.PUT("/business-zones/:id", platform, zoneManage, h.UpdateCircle)
+	r.PUT("/business-zones/:id/status", platform, zoneManage, h.UpdateCircleStatus)
 	r.DELETE("/business-zones/:id", platform, zoneManage, h.DeleteCircle)
 	r.GET("/business-zone-agents", platform, agentManage, h.ListAgents)
 	r.GET("/business-zone-agents/options", platform, agentManage, h.AgentOptions)
@@ -79,13 +80,43 @@ func (h *Handler) ListCircles(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
+	filter := circle.CircleListFilter{
+		Keyword: firstNonEmpty(c.Query("keyword"), c.Query("name")),
+		Status:  status,
+	}
+	if raw := strings.TrimSpace(c.Query("type")); raw != "" {
+		n, parseErr := strconv.ParseInt(raw, 10, 8)
+		if parseErr != nil {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		v := int8(n)
+		filter.Type = &v
+	}
+	if raw := strings.TrimSpace(c.Query("circle_agent_id")); raw != "" {
+		n, parseErr := strconv.ParseUint(raw, 10, 64)
+		if parseErr != nil {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		filter.CircleAgentID = uint(n)
+	}
 	p, l := page(c)
-	out, err := h.svc.ListCircles(c.Request.Context(), c.Query("keyword"), status, p, l)
+	out, err := h.svc.ListCircles(c.Request.Context(), filter, p, l)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, out)
+	response.OK(c, h.enrichCirclePage(c, out))
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 type zoneOptionNode struct {
@@ -148,7 +179,7 @@ func (h *Handler) GetCircle(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, row)
+	response.OK(c, h.circleDetail(c, row))
 }
 func (h *Handler) CreateCircle(c *gin.Context) {
 	var in circle.CircleInput
@@ -161,7 +192,11 @@ func (h *Handler) CreateCircle(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, row)
+	if err = h.syncCircleMerchants(c, row.CircleID, in.MerchantIDs); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, h.circleDetail(c, row))
 }
 func (h *Handler) UpdateCircle(c *gin.Context) {
 	key, err := id(c)
@@ -179,7 +214,46 @@ func (h *Handler) UpdateCircle(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, row)
+	if err = h.syncCircleMerchants(c, row.CircleID, in.MerchantIDs); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, h.circleDetail(c, row))
+}
+
+func (h *Handler) UpdateCircleStatus(c *gin.Context) {
+	key, err := id(c)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	var body struct {
+		Status int8 `json:"status"`
+	}
+	if c.ShouldBindJSON(&body) != nil || (body.Status != 0 && body.Status != 1) {
+		writeErr(c, circle.ErrBadParam)
+		return
+	}
+	row, err := h.svc.GetCircle(c.Request.Context(), key)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	in := circle.CircleInput{
+		PID: row.PID, Name: row.Name, CircleAgentID: row.CircleAgentID,
+		CommissionType: row.CommissionType, CommissionRate: row.CommissionRate,
+		Remark: row.Remark, Sort: row.Sort, Status: body.Status, Type: row.Type,
+		RoleID: row.RoleID, BusinessStoreCategory: row.BusinessStoreCategory,
+		BusinessStoreType: row.BusinessStoreType,
+		GoodsTypes:          circle.ParseIntCSV(row.GoodsType),
+		PlatformCategoryIDs: circle.ParseUintCSV(row.PlatformCategoryIDs),
+	}
+	updated, err := h.svc.UpdateCircle(c.Request.Context(), key, in)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, updated)
 }
 func (h *Handler) DeleteCircle(c *gin.Context) {
 	key, err := id(c)
@@ -199,8 +273,19 @@ func (h *Handler) ListAgents(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
+	var agentType *int8
+	if raw := strings.TrimSpace(c.Query("type")); raw != "" {
+		n, parseErr := strconv.ParseInt(raw, 10, 8)
+		if parseErr != nil {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		v := int8(n)
+		agentType = &v
+	}
 	p, l := page(c)
-	out, err := h.svc.ListAgents(c.Request.Context(), c.Query("keyword"), status, p, l)
+	keyword := firstNonEmpty(c.Query("keyword"), c.Query("name"))
+	out, err := h.svc.ListAgents(c.Request.Context(), keyword, status, agentType, p, l)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -223,14 +308,24 @@ func (h *Handler) GetAgent(c *gin.Context) {
 
 func (h *Handler) AgentOptions(c *gin.Context) {
 	approved := int8(circle.AgentApproved)
-	page, err := h.svc.ListAgents(c.Request.Context(), "", &approved, 1, 100)
+	var agentType *int8
+	if raw := strings.TrimSpace(c.Query("type")); raw != "" {
+		n, parseErr := strconv.ParseInt(raw, 10, 8)
+		if parseErr != nil {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		v := int8(n)
+		agentType = &v
+	}
+	page, err := h.svc.ListAgents(c.Request.Context(), "", &approved, agentType, 1, 100)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
 	options := make([]gin.H, 0, len(page.List))
 	for _, item := range page.List {
-		options = append(options, gin.H{"circle_agent_id": item.CircleAgentID, "name": item.Name, "type": item.Type})
+		options = append(options, gin.H{"circle_agent_id": item.CircleAgentID, "name": item.Name, "phone": item.Phone, "type": item.Type})
 	}
 	response.OK(c, gin.H{"list": options})
 }
@@ -310,6 +405,13 @@ func (h *Handler) CreateAgent(c *gin.Context) {
 	if err != nil {
 		writeErr(c, err)
 		return
+	}
+	account, password := strings.TrimSpace(in.Account), strings.TrimSpace(in.Password)
+	if account != "" && password != "" {
+		if err = h.bindAgentAdminAccount(c, row.CircleAgentID, account, password, row.Name, row.Phone); err != nil {
+			writeErr(c, err)
+			return
+		}
 	}
 	response.OK(c, row)
 }
@@ -455,11 +557,137 @@ func (h *Handler) ResetAgentPassword(c *gin.Context) {
 	response.OK(c, gin.H{"circle_agent_id": key, "replayed": false})
 }
 
+func (h *Handler) enrichCirclePage(c *gin.Context, page *circle.PageResult[circle.Circle]) gin.H {
+	list := make([]gin.H, 0, len(page.List))
+	for i := range page.List {
+		list = append(list, h.circleListItem(c, &page.List[i]))
+	}
+	return gin.H{"list": list, "total": page.Total, "page": page.Page, "limit": page.Limit}
+}
+
+func (h *Handler) circleListItem(c *gin.Context, row *circle.Circle) gin.H {
+	item := gin.H{
+		"circle_id": row.CircleID, "pid": row.PID, "path": row.Path, "name": row.Name,
+		"circle_agent_id": row.CircleAgentID, "commission_type": row.CommissionType,
+		"commission_rate": row.CommissionRate, "level": row.Level, "remark": row.Remark,
+		"sort": row.Sort, "status": row.Status, "type": row.Type, "role_id": row.RoleID,
+		"business_store_category": row.BusinessStoreCategory, "business_store_type": row.BusinessStoreType,
+		"goods_type": circle.ParseIntCSV(row.GoodsType),
+		"platform_category_ids": circle.ParseUintCSV(row.PlatformCategoryIDs),
+		"create_time": row.CreateTime, "merchant_count": h.countCircleMerchants(c, row.CircleID),
+	}
+	if row.CircleAgentID > 0 {
+		if agent, err := h.svc.GetAgent(c.Request.Context(), row.CircleAgentID); err == nil {
+			item["circle_agent"] = gin.H{"circle_agent_id": agent.CircleAgentID, "name": agent.Name, "phone": agent.Phone}
+		}
+	}
+	return item
+}
+
+func (h *Handler) circleDetail(c *gin.Context, row *circle.Circle) gin.H {
+	item := h.circleListItem(c, row)
+	merchants := h.listCircleMerchants(c, row.CircleID)
+	ids := make([]uint, 0, len(merchants))
+	for _, m := range merchants {
+		switch v := m["mer_id"].(type) {
+		case uint64:
+			ids = append(ids, uint(v))
+		case int64:
+			ids = append(ids, uint(v))
+		case uint:
+			ids = append(ids, v)
+		}
+	}
+	item["merchant"] = merchants
+	item["merchant_ids"] = ids
+	return item
+}
+
+func (h *Handler) countCircleMerchants(c *gin.Context, circleID uint) int64 {
+	var total int64
+	_ = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_view").
+		Where("business_id = ?", circleID).Count(&total).Error
+	return total
+}
+
+func (h *Handler) listCircleMerchants(c *gin.Context, circleID uint) []gin.H {
+	rows := make([]struct {
+		MerID    uint64 `gorm:"column:merchant_id"`
+		MerName  string `gorm:"column:merchant_name"`
+		RealName string `gorm:"column:contact_name"`
+		MerPhone string `gorm:"column:contact_mobile"`
+	}, 0)
+	_ = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_view").
+		Select("merchant_id, merchant_name, contact_name, contact_mobile").
+		Where("business_id = ?", circleID).Order("merchant_id ASC").Scan(&rows).Error
+	out := make([]gin.H, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, gin.H{
+			"mer_id": row.MerID, "mer_name": row.MerName,
+			"real_name": row.RealName, "mer_phone": row.MerPhone,
+		})
+	}
+	return out
+}
+
+func (h *Handler) syncCircleMerchants(c *gin.Context, circleID uint, merchantIDs []uint) error {
+	if merchantIDs == nil {
+		return nil
+	}
+	ctx := c.Request.Context()
+	return h.adminDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("qixi_crm_a_merchant_view").
+			Where("business_id = ? AND merchant_id NOT IN ?", circleID, nonzeroOrPlaceholder(merchantIDs)).
+			Update("business_id", 0).Error; err != nil {
+			return err
+		}
+		if len(merchantIDs) == 0 {
+			return nil
+		}
+		return tx.Table("qixi_crm_a_merchant_view").
+			Where("merchant_id IN ?", merchantIDs).
+			Update("business_id", circleID).Error
+	})
+}
+
+func nonzeroOrPlaceholder(ids []uint) []uint {
+	if len(ids) == 0 {
+		return []uint{0}
+	}
+	return ids
+}
+
+func (h *Handler) bindAgentAdminAccount(c *gin.Context, agentID uint, account, password, name, phone string) error {
+	var exists int64
+	if err := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
+		Where("username = ? AND deleted_at IS NULL", account).Count(&exists).Error; err != nil {
+		return err
+	}
+	if exists > 0 {
+		return errors.New("登录账号已存在")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	display := strings.TrimSpace(name)
+	if display == "" {
+		display = account
+	}
+	return h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").Create(map[string]any{
+		"username": account, "password_hash": string(hash), "display_name": display,
+		"phone": phone, "status": 1, "auth_version": 1, "data_scope_version": 1,
+		"circle_agent_id": agentID,
+	}).Error
+}
+
 func writeErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, circle.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
 	case errors.Is(err, circle.ErrBadParam), errors.Is(err, circle.ErrHasChildren), errors.Is(err, circle.ErrAlreadyAudited), errors.Is(err, circle.ErrAgentBound), errors.Is(err, circle.ErrAgentBalance), errors.Is(err, circle.ErrAgentAdminBound), errors.Is(err, circle.ErrAgentRevoked), errors.Is(err, circle.ErrAgentNotApproved), errors.Is(err, circle.ErrAgentAdminUnbound), errors.Is(err, circle.ErrCommandConflict):
+		response.Fail(c, http.StatusBadRequest, err.Error())
+	case err != nil && (strings.Contains(err.Error(), "登录账号已存在") || strings.Contains(err.Error(), "区域创建后不支持")):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	default:
 		response.Fail(c, http.StatusInternalServerError, "区域代理服务异常")

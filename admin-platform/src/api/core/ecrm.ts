@@ -712,13 +712,27 @@ export function markUserLabels(uid: number, label_ids: number[]) {
   return requestClient.put(`/user/${uid}/labels`, { label_ids });
 }
 
-/** 区域代理 / 商圈管理。 */
+/** 区域代理 / 商圈管理（type=0 区域；type=1 商户主体）。 */
+export interface BusinessZoneAgentBrief {
+  circle_agent_id: number;
+  name: string;
+  phone?: string;
+}
+
+export interface BusinessZoneMerchantBrief {
+  mer_id: number;
+  mer_name: string;
+  real_name?: string;
+  mer_phone?: string;
+}
+
 export interface BusinessZoneRow {
   circle_id: number;
   pid: number;
   path: string;
   name: string;
   circle_agent_id: number;
+  circle_agent?: BusinessZoneAgentBrief;
   commission_type: number;
   commission_rate: number;
   level: number;
@@ -727,7 +741,32 @@ export interface BusinessZoneRow {
   status: number;
   type: number;
   role_id: number;
+  business_store_category?: number;
+  business_store_type?: number;
+  goods_type?: number[];
+  platform_category_ids?: number[];
+  merchant_count?: number;
+  merchant_ids?: number[];
+  merchant?: BusinessZoneMerchantBrief[];
   create_time: string;
+}
+
+export interface BusinessZoneSaveInput {
+  pid?: number;
+  name: string;
+  circle_agent_id?: number;
+  commission_type?: number;
+  commission_rate?: number;
+  remark?: string;
+  sort?: number;
+  status?: number;
+  type?: number;
+  role_id?: number;
+  business_store_category?: number;
+  business_store_type?: number;
+  goods_type?: number[];
+  platform_category_ids?: number[];
+  merchant_ids?: number[];
 }
 
 export interface BusinessZoneAgentRow {
@@ -751,8 +790,20 @@ export interface BusinessZoneAgentRow {
   create_time: string;
 }
 
-export function fetchBusinessZones(params: { keyword?: string; status?: number; page: number; limit: number }) {
+export function fetchBusinessZones(params: {
+  keyword?: string;
+  name?: string;
+  status?: number;
+  type?: number;
+  circle_agent_id?: number;
+  page: number;
+  limit: number;
+}) {
   return requestClient.get<PageResult<BusinessZoneRow>>('/business-zones', { params });
+}
+
+export function fetchBusinessZone(id: number) {
+  return requestClient.get<BusinessZoneRow>(`/business-zones/${id}`);
 }
 
 export interface BusinessZoneOptionNode {
@@ -768,30 +819,47 @@ export function fetchBusinessZoneOptions(type?: 0 | 1) {
   });
 }
 
-export function createBusinessZone(data: Partial<BusinessZoneRow>) {
+export function createBusinessZone(data: BusinessZoneSaveInput) {
   return requestClient.post<BusinessZoneRow>('/business-zones', data);
 }
 
-export function updateBusinessZone(id: number, data: Partial<BusinessZoneRow>) {
+export function updateBusinessZone(id: number, data: BusinessZoneSaveInput) {
   return requestClient.put<BusinessZoneRow>(`/business-zones/${id}`, data);
+}
+
+export function updateBusinessZoneStatus(id: number, status: number) {
+  return requestClient.put<BusinessZoneRow>(`/business-zones/${id}/status`, { status });
 }
 
 export function deleteBusinessZone(id: number) {
   return requestClient.delete(`/business-zones/${id}`);
 }
 
-export function fetchBusinessZoneAgents(params: { keyword?: string; status?: number; page: number; limit: number }) {
+export function fetchBusinessZoneAgents(params: {
+  keyword?: string;
+  name?: string;
+  status?: number;
+  type?: number;
+  page: number;
+  limit: number;
+}) {
   return requestClient.get<PageResult<BusinessZoneAgentRow>>('/business-zone-agents', { params });
 }
-export interface BusinessZoneAgentOption { circle_agent_id:number; name:string; type:0|1; }
+export interface BusinessZoneAgentOption { circle_agent_id:number; name:string; phone?:string; type:0|1; }
 export interface BusinessZoneAgentMerchant { merchant_id:number; merchant_name:string; region_id:number; status:number; }
-export function fetchBusinessZoneAgentOptions() { return requestClient.get<{list:BusinessZoneAgentOption[]}>('/business-zone-agents/options'); }
+export function fetchBusinessZoneAgentOptions(type?: 0 | 1) {
+  return requestClient.get<{ list: BusinessZoneAgentOption[] }>('/business-zone-agents/options', {
+    params: type === undefined ? undefined : { type },
+  });
+}
 export function fetchBusinessZoneAgentMerchants(id:number) { return requestClient.get<{list:BusinessZoneAgentMerchant[]}>(`/business-zone-agents/${id}/merchants`); }
 export interface BusinessZoneAgentSettings { status_counts:{pending:number;approved:number;rejected:number;revoked:number}; review:{platform_review_required:boolean;rejection_reason_required:boolean}; security:{payment_credentials_write_only:boolean;admin_binding_required:boolean;password_min_length:number;password_max_length:number}; revocation:{hard_delete:boolean;blocked_when:string[]}; }
 export function fetchBusinessZoneAgentSettings() { return requestClient.get<BusinessZoneAgentSettings>('/business-zone-agents/settings'); }
 export function resetBusinessZoneAgentPassword(id:number,input:{password:string;reason:string;idempotency_key:string}) { return requestClient.post<{circle_agent_id:number;replayed:boolean}>(`/business-zone-agents/${id}/password`, input); }
 
-export function createBusinessZoneAgent(data: Partial<BusinessZoneAgentRow>) {
+export function createBusinessZoneAgent(
+  data: Partial<BusinessZoneAgentRow> & { account?: string; password?: string },
+) {
   return requestClient.post<BusinessZoneAgentRow>('/business-zone-agents', data);
 }
 
