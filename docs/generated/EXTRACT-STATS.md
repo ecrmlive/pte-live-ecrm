@@ -60,8 +60,8 @@
 - **区域代理** `/business-zones/manage`
   - 区域列表 `/business-zones/index`
   - 代理人员 `/business-zones/agents`
-  - 代理审核 `/business-zones/agent-review`
   - 代理设置 `/business-zones/settings`
+  - （代理审核 `/business-zones/agent-review` 路由保留、侧栏 `status=0`）
 
 ### 商品 `/product`
 - 商品管理 `/product/examine`

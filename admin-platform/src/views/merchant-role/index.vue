@@ -152,7 +152,7 @@ async function handleDelete(row: MerchantTemplateRoleRow) {
           type="primary"
           @click="openAdd"
         >
-          添加角色
+          新增角色
         </ElButton>
       </template>
 

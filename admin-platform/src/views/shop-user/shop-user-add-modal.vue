@@ -92,7 +92,7 @@ watch(
   open,
   (visible) => {
     if (visible) {
-      drawerApi.setState({ title: '添加商城管理员' }).open();
+      drawerApi.setState({ title: '新增商城管理员' }).open();
       return;
     }
     drawerApi.close();
@@ -119,7 +119,7 @@ async function handleSubmit() {
         true,
       );
       if (res.code === 1) {
-        ElMessage.success(res.msg || '添加成功');
+        ElMessage.success(res.msg || '新增成功');
         open.value = false;
         emit('success');
       }
@@ -136,7 +136,7 @@ async function handleSubmit() {
     :close-on-click-modal="false"
     :confirm-loading="loading"
     :destroy-on-close="true"
-    title="添加商城管理员"
+    title="新增商城管理员"
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="100px">
       <ElFormItem label="用户名" prop="user_name">

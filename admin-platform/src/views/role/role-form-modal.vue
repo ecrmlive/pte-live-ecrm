@@ -48,7 +48,7 @@ const treeProps = {
 };
 
 const dialogTitle = computed(() =>
-  props.mode === 'edit' ? '编辑角色' : '添加角色',
+  props.mode === 'edit' ? '编辑角色' : '新增角色',
 );
 
 async function nextTickSetChecked() {

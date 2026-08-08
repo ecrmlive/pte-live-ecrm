@@ -1,11 +1,10 @@
 <template>
-
+	<DevicePreviewFrame
+		:title="previewTitle"
+		:show-back="true"
+		:side-gutter="0"
+	>
 	<div class="diy-phone-container">
-		<!--顶部设置栏-->
-		<!--顶部设置栏-->
-		<div class="diy-phone-item" :class="{ active: form.selectedIndex < 0 }">
-			<Setpages :diyData="diyData"></Setpages>
-		</div>
 		<div class="wrapper">
 			<div class="diy-phone-item" v-for="(item, index) in diyData.items" :key="item.id">
 				<!-- 搜索栏 -->
@@ -133,10 +132,11 @@
 			</div>
 		</div>
 	</div>
+	</DevicePreviewFrame>
 </template>
 
 <script>
-	import Setpages from './model/Setpages.vue';
+	import { DevicePreviewFrame } from '@pte-live/diy';
 	import Search from './model/Search.vue';
 	import Banner from './model/Banner.vue';
 	import ImageSingle from './model/ImageSingle.vue';
@@ -170,8 +170,7 @@
 	import draggable from 'vuedraggable';
 	export default {
 		components: {
-			/*顶部状态栏*/
-			Setpages,
+			DevicePreviewFrame,
 			/*搜索组件*/
 			Search,
 			/*图片轮播组件*/
@@ -237,8 +236,11 @@
 			diyData: Object,
 			diyType: String
 		},
-		created() {
-			console.log(this.diyData);
+		computed: {
+			previewTitle() {
+				const page = this.diyData?.page;
+				return page?.params?.name || page?.name || '页面标题';
+			}
 		},
 		methods: {
 			/*删除diy元素*/
@@ -299,43 +301,16 @@
 <style lang="scss" scoped>
 	.diy-phone-container {
 		position: relative;
-		height: calc(100vh - 150px);
+		width: 100%;
+		min-height: 100%;
 	}
 
 	.diy-phone-container .wrapper {
-		height: calc(100% - 90px);
-		overflow-y: auto;
+		min-height: 100%;
 	}
-
-	.diy-phone-container :deep(.phone-top) {
-		padding: 0 20px;
-		border-radius: 18px 18px 0 0;
-	}
-
-	.diy-phone-container :deep(.phone-top .status-bar) {
-		height: 20px;
-		display: flex;
-		justify-content: space-between;
-	}
-
-	.diy-phone-container :deep(.phone-top .svg-icon) {
-		width: 20px;
-		height: 20px;
-		color: #333333;
-	}
-
-	.diy-phone-container :deep(.phone-top .navigation) {
-		height: 44px;
-		line-height: 44px;
-		text-align: center;
-		font-size: 18px;
-	}
-
-	.diy-phone-container :deep(.diy-phone-item) {}
 
 	.diy-phone-container :deep(.diy-phone-item > div) {
 		position: relative;
-		border: 2px solid #f1f1f2;
 		border: none;
 	}
 

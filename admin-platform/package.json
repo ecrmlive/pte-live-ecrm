@@ -43,8 +43,10 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
+    "@iconify/json": "catalog:",
     "@tsdown/css": "catalog:",
     "@types/node": "catalog:",
+    "@types/qrcode": "catalog:",
     "@vben/commitlint-config": "workspace:*",
     "@vben/eslint-config": "workspace:*",
     "@vben/oxfmt-config": "workspace:*",
@@ -72,12 +74,11 @@
     "tsdown": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
+    "unplugin-element-plus": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
     "vue": "catalog:",
-    "vue-tsc": "catalog:",
-    "@iconify/json": "catalog:",
-    "unplugin-element-plus": "catalog:"
+    "vue-tsc": "catalog:"
   },
   "engines": {
     "node": "24.18.0",
@@ -90,6 +91,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.1.0",
     "@iconify/vue": "catalog:",
+    "@pte-live/diy": "workspace:*",
     "@vben/access": "workspace:*",
     "@vben/common-ui": "workspace:*",
     "@vben/constants": "workspace:*",
@@ -111,11 +113,12 @@
     "echarts": "^5.4.2",
     "element-plus": "catalog:",
     "pinia": "catalog:",
+    "qrcode": "catalog:",
     "qs": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:",
+    "vuedraggable": "^4.1.0",
     "vxe-pc-ui": "catalog:",
-    "vxe-table": "catalog:",
-    "vuedraggable": "^4.1.0"
+    "vxe-table": "catalog:"
   }
 }

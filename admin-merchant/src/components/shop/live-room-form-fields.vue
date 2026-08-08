@@ -404,7 +404,7 @@ defineExpose({ resetFields, validate });
         </el-select>
         <el-button v-if="!isEdit" type="primary" @click="emit('openAnchorAdd')">
           <el-icon class="mr-1"><Plus /></el-icon>
-          添加
+          新增
         </el-button>
       </div>
       <p v-if="isEdit" class="anchor-lock-tip">创建后不可更换主播</p>
@@ -416,7 +416,7 @@ defineExpose({ resetFields, validate });
         <div class="product-field">
           <div class="product-actions">
             <el-button type="primary" @click="emit('openProductPick')">选择商品</el-button>
-            <el-button @click="emit('openProductAdd')">添加商品</el-button>
+            <el-button @click="emit('openProductAdd')">新增商品</el-button>
           </div>
           <div v-if="!selectedProducts.length" class="product-hint">
             可不选；创建后也可在列表「商品管理」中添加

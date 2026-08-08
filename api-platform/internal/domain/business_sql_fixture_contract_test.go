@@ -743,7 +743,7 @@ func TestBusinessZoneUsesUnifiedAdminTablesRBACAndDoesNotSerializePaymentData(t 
 	if err != nil {
 		t.Fatalf("read platform main: %v", err)
 	}
-	if !strings.Contains(string(mainSource), "platformcircle.NewHandler(circleSvc, gdb)") {
+	if !strings.Contains(string(mainSource), "platformcircle.NewHandler(circleSvc, gdb, businessDB)") {
 		t.Fatal("business-zone handler must use unified admin database RBAC")
 	}
 	handler, err := os.ReadFile(filepath.Join(root, "api-platform/internal/platform/circle/handler.go"))
@@ -964,9 +964,10 @@ func TestAttachmentDomainUsesUnifiedAdminTablesAndChineseFixture(t *testing.T) {
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_asset`",
 		"`is_system`",
 		"store_cover",
-		"INSERT INTO `qixi_crm_a_attachment_asset`",
-		"七禧商城中文演示封面.png",
-		"七禧商城中文演示短片.mp4",
+		"other_image",
+		"store_video",
+		"product_video",
+		"other_video",
 	} {
 		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) && !strings.Contains(string(model), required) {
 			dataSQL, _ := os.ReadFile(filepath.Join(root, "sql/admin/init_data.sql"))

@@ -165,7 +165,7 @@ onMounted(() => {
           type="primary"
           @click="openAdd()"
         >
-          添加菜单&权限
+          新增菜单&权限
         </ElButton>
         <ElForm :inline="true" :model="formSearch" size="small">
           <ElFormItem>
@@ -251,7 +251,7 @@ onMounted(() => {
             type="primary"
             @click="openAdd(row, 'child')"
           >
-            添加子菜单
+            新增子菜单
           </ElButton>
           <ElButton
             v-access:code="'platform:merchantAccess:edit'"

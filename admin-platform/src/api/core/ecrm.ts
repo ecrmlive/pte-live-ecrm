@@ -262,7 +262,7 @@ export function createUserFeedbackCategory(input:{name:string;sort:number;status
 export function updateUserFeedbackCategory(id:number,input:{name:string;sort:number;status:0|1;idempotency_key:string}) { return requestClient.put(`/user-feedback/categories/${id}`,input); }
 export function setUserFeedbackCategoryStatus(id:number,input:{status:0|1;idempotency_key:string}) { return requestClient.put(`/user-feedback/categories/${id}/status`,input); }
 export function deleteUserFeedbackCategory(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/categories/${id}`,{data:input}); }
-export interface PlatformUserRow { id:number; nickname:string; mobile:string; status:0|1; balance:number; points:number; level_name:string; created_at:string; }
+export interface PlatformUserRow { id:number; nickname:string; avatar_url?:string; mobile:string; source_channel?:string; status:0|1; balance:number; points:number; level_name:string; created_at:string; }
 export function fetchPlatformUsers(params:{page:number;limit:number;id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string}) { return requestClient.get<PageResult<PlatformUserRow>>('/user-list',{params}); }
 export interface PlatformUserExport { file_name:string; content:string; row_count:number; truncated:boolean; }
 export function exportPlatformUsers(input:{id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string;reason:string}) { return requestClient.post<PlatformUserExport>('/user-list/export',input); }
@@ -625,6 +625,24 @@ export function fetchMerchantIntentions(params: {
   );
 }
 
+export function fetchMerchantIntention(id: number) {
+  return requestClient.get<MerchantIntentionRow>(`/merchant-intentions/${id}`);
+}
+
+export function createMerchantIntention(data: {
+  mer_name: string;
+  name: string;
+  phone: string;
+  merchant_category_id?: number;
+  mer_type_id?: number;
+  circle_id?: number;
+  images?: string;
+  category_name?: string;
+  type_name?: string;
+}) {
+  return requestClient.post<MerchantIntentionRow>('/merchant-intentions', data);
+}
+
 export function auditMerchantIntention(
   id: number,
   data: {
@@ -748,6 +766,8 @@ export interface BusinessZoneRow {
   merchant_count?: number;
   merchant_ids?: number[];
   merchant?: BusinessZoneMerchantBrief[];
+  /** 是否存在下级（列表懒加载树用） */
+  has_child?: boolean;
   create_time: string;
 }
 
@@ -769,13 +789,27 @@ export interface BusinessZoneSaveInput {
   merchant_ids?: number[];
 }
 
+export interface BusinessZoneAgentCircleBrief {
+  circle_id: number;
+  name: string;
+  type: number;
+  status: number;
+  commission_type?: number;
+  commission_rate?: number;
+}
+
 export interface BusinessZoneAgentRow {
   circle_agent_id: number;
   uid: number;
   name: string;
   phone: string;
+  /** 身份资质：JSON 图片 URL 数组字符串，或历史纯文本。 */
   qualification: string;
   remark: string;
+  /** CRMEB extend JSON；含 avatar。 */
+  extend?: string;
+  /** 区域代理标识图（来自 extend.avatar）。 */
+  avatar?: string;
   audit_admin_id: number;
   audit_reason: string;
   audit_time?: string | null;
@@ -788,6 +822,15 @@ export interface BusinessZoneAgentRow {
   type: number;
   business_name: string;
   create_time: string;
+  /** 关联 C 端用户昵称（列表/详情 enrichment）。 */
+  nickname?: string;
+  /** C 端用户头像（非区域代理标识图）。 */
+  avatar_url?: string;
+  /** 统一后台登录账号（只读回显）。 */
+  account?: string;
+  circle_ids?: number[];
+  circles?: BusinessZoneAgentCircleBrief[];
+  admin?: { admin_id: number; account: string };
 }
 
 export function fetchBusinessZones(params: {
@@ -796,6 +839,8 @@ export function fetchBusinessZones(params: {
   status?: number;
   type?: number;
   circle_agent_id?: number;
+  /** 父级区域 ID；传 0 仅一级区域，传具体 ID 拉下级 */
+  pid?: number;
   page: number;
   limit: number;
 }) {
@@ -835,15 +880,38 @@ export function deleteBusinessZone(id: number) {
   return requestClient.delete(`/business-zones/${id}`);
 }
 
+/** H5 邀请入驻：返回带 region_id 的入驻页 URL，供前端生成二维码。 */
+export interface BusinessZoneInvitePayload {
+  circle_id: number;
+  name: string;
+  site_url: string;
+  h5_url: string;
+  label: string;
+}
+
+export function fetchBusinessZoneInvite(id: number) {
+  return requestClient.get<BusinessZoneInvitePayload>(`/business-zones/${id}/invite`);
+}
+
 export function fetchBusinessZoneAgents(params: {
   keyword?: string;
   name?: string;
+  phone?: string;
   status?: number;
   type?: number;
+  uid?: number;
+  nickname?: string;
+  user_phone?: string;
+  date_from?: string;
+  date_to?: string;
   page: number;
   limit: number;
 }) {
   return requestClient.get<PageResult<BusinessZoneAgentRow>>('/business-zone-agents', { params });
+}
+
+export function fetchBusinessZoneAgent(id: number) {
+  return requestClient.get<BusinessZoneAgentRow>(`/business-zone-agents/${id}`);
 }
 export interface BusinessZoneAgentOption { circle_agent_id:number; name:string; phone?:string; type:0|1; }
 export interface BusinessZoneAgentMerchant { merchant_id:number; merchant_name:string; region_id:number; status:number; }
@@ -857,13 +925,30 @@ export interface BusinessZoneAgentSettings { status_counts:{pending:number;appro
 export function fetchBusinessZoneAgentSettings() { return requestClient.get<BusinessZoneAgentSettings>('/business-zone-agents/settings'); }
 export function resetBusinessZoneAgentPassword(id:number,input:{password:string;reason:string;idempotency_key:string}) { return requestClient.post<{circle_agent_id:number;replayed:boolean}>(`/business-zone-agents/${id}/password`, input); }
 
-export function createBusinessZoneAgent(
-  data: Partial<BusinessZoneAgentRow> & { account?: string; password?: string },
-) {
+export type BusinessZoneAgentSaveInput = Partial<BusinessZoneAgentRow> & {
+  account?: string;
+  password?: string;
+  circle_ids?: number[];
+  /** 区域代理标识图 → 后端写入 extend.avatar */
+  avatar?: string;
+  /** 区域表单内新增代理人时立即通过审核 */
+  auto_approve?: boolean;
+};
+
+export function createBusinessZoneAgent(data: BusinessZoneAgentSaveInput) {
   return requestClient.post<BusinessZoneAgentRow>('/business-zone-agents', data);
 }
 
-export function updateBusinessZoneAgent(id: number, data: Partial<BusinessZoneAgentRow>) {
+/** 区域列表表单内快速新增代理人（zone.manage 权限，立即通过）。 */
+export function createBusinessZoneRegionAgent(data: BusinessZoneAgentSaveInput) {
+  return requestClient.post<BusinessZoneAgentRow>('/business-zones/agents', {
+    ...data,
+    type: 0,
+    auto_approve: true,
+  });
+}
+
+export function updateBusinessZoneAgent(id: number, data: BusinessZoneAgentSaveInput) {
   return requestClient.put<BusinessZoneAgentRow>(`/business-zone-agents/${id}`, data);
 }
 

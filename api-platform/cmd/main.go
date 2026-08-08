@@ -245,7 +245,7 @@ func main() {
 	platformStoreMenuH := platformstoremenu.NewHandler(merchantDB)
 	platformProfitsharingH := platformprofitsharing.NewHandler(gdb)
 	platformStoreGroupH := platformstoregroup.NewHandler(gdb)
-	platformCircleH := platformcircle.NewHandler(circleSvc, gdb)
+	platformCircleH := platformcircle.NewHandler(circleSvc, gdb, businessDB)
 	platformCatH := nativecatalog.NewHandler(gdb, merchantDB, businessDB)
 	platformCatH.StartAuditOutboxDispatcher(context.Background())
 	platformCatH.StartProjectionDispatcher(context.Background())

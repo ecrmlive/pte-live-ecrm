@@ -180,7 +180,7 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 						</template>
 					</draggable>
 				</template>
-				<div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="editor.onEditorAddData">+添加</component>
+				<div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="editor.onEditorAddData">+新增</component>
 				</div>
 				<div class="form-chink"></div>
 				<div class="f16 gray3 form-subtitle">
@@ -218,7 +218,7 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 					</draggable>
 				</template>
 				<div class="d-c-c pb16"><component :is="PrimaryButton" plain
-						@click="editor.onEditorAddImg">+添加一个</component>
+						@click="editor.onEditorAddImg">+新增一个</component>
 				</div>
 			</div>
 			<div v-if="styleType == 'style'">

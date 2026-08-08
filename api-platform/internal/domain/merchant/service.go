@@ -21,6 +21,7 @@ type Store interface {
 
 	ListIntentions(ctx context.Context, keyword string, status *int8, regionIDs []uint, page, limit int, dateFrom, dateTo string, categoryID, typeID *uint) ([]Intention, int64, error)
 	GetIntention(ctx context.Context, id uint, regionIDs []uint) (*Intention, error)
+	CreateIntention(ctx context.Context, row *Intention) error
 	SaveIntention(ctx context.Context, row *Intention) error
 	DeleteIntention(ctx context.Context, id uint, regionIDs []uint) (bool, error)
 	AssignIntentionRegion(ctx context.Context, id, regionID uint) (bool, error)
@@ -387,6 +388,44 @@ func (s *Service) GetIntention(ctx context.Context, id uint, regionIDs []uint) (
 		return nil, err
 	}
 	return row, nil
+}
+
+// CreateIntentionInput 平台后台代录入店铺入驻申请（写入监管投影，待审）。
+type CreateIntentionInput struct {
+	MerName            string `json:"mer_name"`
+	Name               string `json:"name"`
+	Phone              string `json:"phone"`
+	MerchantCategoryID uint   `json:"merchant_category_id"`
+	MerTypeID          uint   `json:"mer_type_id"`
+	CircleID           uint   `json:"circle_id"`
+	Images             string `json:"images"`
+	CategoryName       string `json:"category_name"`
+	TypeName           string `json:"type_name"`
+}
+
+func (s *Service) CreateIntention(ctx context.Context, in CreateIntentionInput) (*Intention, error) {
+	merName := strings.TrimSpace(in.MerName)
+	name := strings.TrimSpace(in.Name)
+	phone := strings.TrimSpace(in.Phone)
+	if len(merName) < 2 || name == "" || len(phone) < 6 {
+		return nil, ErrBadParam
+	}
+	row := &Intention{
+		MerName:            merName,
+		Name:               name,
+		Phone:              phone,
+		MerchantCategoryID: in.MerchantCategoryID,
+		MerTypeID:          in.MerTypeID,
+		CircleID:           in.CircleID,
+		Images:             strings.TrimSpace(in.Images),
+		CategoryName:       strings.TrimSpace(in.CategoryName),
+		TypeName:           strings.TrimSpace(in.TypeName),
+		Status:             IntentionPending,
+	}
+	if err := s.store.CreateIntention(ctx, row); err != nil {
+		return nil, err
+	}
+	return s.GetIntention(ctx, row.MerIntentionID, nil)
 }
 
 type AuditIntentionInput struct {

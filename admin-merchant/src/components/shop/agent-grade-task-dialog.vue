@@ -264,7 +264,7 @@ async function deleteTask(row: AgentTaskItem) {
         type="primary"
         @click="openAddForm"
       >
-        添加任务
+        新增任务
       </el-button>
     </div>
     <Grid>
@@ -301,7 +301,7 @@ async function deleteTask(row: AgentTaskItem) {
     :close-on-click-modal="false"
     :destroy-on-close="true"
     class="w-[600px]"
-    :title="formMode === 'add' ? '添加任务' : '编辑任务'"
+    :title="formMode === 'add' ? '新增任务' : '编辑任务'"
   >
     <TaskForm />
     <template #footer>

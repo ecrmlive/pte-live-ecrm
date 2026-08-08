@@ -34,14 +34,15 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (215,19,'store.description','说明提示','lucide:receipt-text','/merchant/type/description','page',4),
   (25,10,'merchant.mgmt','商户管理','ant-design:team-outlined','/merchant-mgmt','directory',3),
   (26,25,'merchant.mgmt.list','商户列表','lucide:store','/merchant/index','page',1),
-  (27,25,'merchant.mgmt.review','商户入驻审核','lucide:badge-check','/merchant/review','page',2),
+  (27,25,'merchant.mgmt.review','店铺入驻申请','lucide:badge-check','/merchant/review','page',2),
   (28,25,'merchant.mgmt.admins','商户管理员','lucide:user-round-cog','/merchant/admin-list','page',3),
   (29,25,'merchant.mgmt.settings','商户设置','lucide:settings','/merchant/apply-setting','page',4),
+  -- 区域代理侧栏仅 3 页：区域列表 / 代理人员 / 代理设置（代理审核页软隐藏，路由与按钮权限保留）
   (20,10,'region','区域代理','ant-design:cluster-outlined','/business-zones','directory',4),
-  (21,20,'region.index','区域商圈','lucide:map-pinned','/region','page',1),
-  (22,20,'region.agents','区域代理','lucide:users','/business-zones/agents','page',2),
-  (23,20,'region.agent_review','代理审核','lucide:badge-check','/business-zones/agent-review','page',3),
-  (24,20,'region.agent_settings','代理设置','lucide:settings-2','/business-zones/settings','page',4),
+  (21,20,'region.index','区域列表','lucide:map-pinned','/business-zones/index','page',1),
+  (22,20,'region.agents','代理人员','lucide:users','/business-zones/agents','page',2),
+  (23,20,'region.agent_review','代理审核','lucide:badge-check','/business-zones/agent-review','page',99),
+  (24,20,'region.agent_settings','代理设置','lucide:settings-2','/business-zones/settings','page',3),
 
   -- 商品
   (40,0,'product','商品','ant-design:shopping-outlined','/product','directory',3),
@@ -224,19 +225,22 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (20926,103,'accounts.merchant_settlement.review','审核并登记店铺结算凭证','','accounts/merchant-settlement','button',2),
   (20927,65,'marketing.spread.read','查看分销推广与佣金监管','','marketing/spread','button',1),
   (20928,67,'marketing.assist.manage','维护好友助力活动','','marketing/assist','button',1),
-  (20929,21,'region.zone.manage','维护区域商圈','','region','button',1),
-  (20930,22,'region.agent.manage','维护区域代理申请','','business-zones/agents','button',1),
-  (20931,23,'region.agent.review','审核区域代理申请','','business-zones/agent-review','button',1),
+  (20929,21,'region.zone.manage','维护区域列表','','business-zones/index','button',1),
+  (20930,22,'region.agent.manage','维护代理人员','','business-zones/agents','button',1),
+  (20931,22,'region.agent.review','审核区域代理申请','','business-zones/agent-review','button',1),
   (20932,91,'freight.express.manage','维护快递公司与行政区划','','freight/express','button',1),
   (20933,11,'merchant.status.manage','启停店铺经营状态','','merchant/list','button',1),
-  (20934,12,'merchant.intention.audit','审核商户入驻申请','','merchant/audit','button',1),
-  (20935,12,'merchant.intention.assign_region','分配商户入驻审核区域','','merchant/audit','button',2),
+  (20934,12,'merchant.intention.audit','审核店铺入驻申请','','merchant/audit','button',1),
+  (20935,12,'merchant.intention.assign_region','分配店铺入驻申请区域','','merchant/audit','button',2),
+  (21003,12,'merchant.intention.create','新增店铺入驻申请','','merchant/audit','button',0),
   (20936,126,'setting.sms.manage','维护无密钥短信 stub 配置','','setting/sms','button',1),
   (20937,13,'merchant.category.manage','维护商户分类与佣金比例','','merchant/categories','button',1),
   (20938,14,'merchant.group.manage','维护店铺分组、关联店铺与装修模板','','merchant/grouping','button',1)
   ,(20939,15,'merchant.type.manage','维护店铺类型、保证金规则与授权菜单','','merchant/types','button',1)
   ,(20940,16,'merchant.deposit.review','维护保证金、扣减、退款审核及打款登记','','merchant/deposits','button',1)
   ,(21001,213,'store.margin_config.manage','维护保证金补缴提醒配置','','systemForm/Basics/margin','button',1)
+  ,(21002,29,'merchant.mgmt.settings.manage','维护商户入驻页面与表单设置','','merchant/apply-setting','button',1)
+  ,(21004,24,'region.agent_settings.manage','维护区域代理默认提成与申请表单','','business-zones/settings','button',1)
   ,(20941,17,'merchant.profitsharing.review','审核店铺分账申请及维护审核备注','','merchant/applyments','button',1)
   ,(20942,44,'product.label.manage','维护平台商品标签','','product/label','button',1)
   ,(20943,45,'product.guarantee.manage','维护平台保障服务','','product/guarantee','button',1)
@@ -296,8 +300,36 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20997,206,'app.wechat_news.manage','维护图文消息开关','','app/wechat/newsCategory','button',1)
   ,(20998,77,'user.setup.manage','维护用户注册设置','','user/setup_user','button',4)
   ,(20999,101,'accounts.transfer_settings.manage','维护转账监管设置','','accounts/settings','button',2)
-  ,(21000,12,'merchant.intention.delete','删除商户入驻申请','','merchant/audit','button',3)
+  ,(21000,12,'merchant.intention.delete','删除店铺入驻申请','','merchant/audit','button',3)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
+
+-- 商户管理「商户入驻审核」统一为「店铺入驻申请」（与店铺管理入口同功能，路由保持 /merchant/review）
+UPDATE `qixi_crm_a_menu`
+SET `title`='店铺入驻申请', `icon`='lucide:badge-check', `route_path`='/merchant/review', `kind`='page', `sort`=2, `parent_id`=25, `status`=1
+WHERE `id`=27 OR `code`='merchant.mgmt.review';
+
+-- 区域代理：侧栏只保留区域列表 / 代理人员 / 代理设置；代理审核菜单软隐藏（status=0），API 按钮权限仍挂在代理人员下
+UPDATE `qixi_crm_a_menu`
+SET `title`='区域列表', `icon`='lucide:map-pinned', `route_path`='/business-zones/index', `kind`='page', `sort`=1, `parent_id`=20, `status`=1
+WHERE `id`=21 OR `code`='region.index';
+UPDATE `qixi_crm_a_menu`
+SET `title`='代理人员', `icon`='lucide:users', `route_path`='/business-zones/agents', `kind`='page', `sort`=2, `parent_id`=20, `status`=1
+WHERE `id`=22 OR `code`='region.agents';
+UPDATE `qixi_crm_a_menu`
+SET `title`='代理审核', `icon`='lucide:badge-check', `route_path`='/business-zones/agent-review', `kind`='page', `sort`=99, `parent_id`=20, `status`=0
+WHERE `id`=23 OR `code`='region.agent_review';
+UPDATE `qixi_crm_a_menu`
+SET `title`='代理设置', `icon`='lucide:settings-2', `route_path`='/business-zones/settings', `kind`='page', `sort`=3, `parent_id`=20, `status`=1
+WHERE `id`=24 OR `code`='region.agent_settings';
+UPDATE `qixi_crm_a_menu`
+SET `parent_id`=22, `title`='审核区域代理申请', `route_path`='business-zones/agent-review', `kind`='button', `sort`=1, `status`=1
+WHERE `id`=20931 OR `code`='region.agent.review';
+UPDATE `qixi_crm_a_menu`
+SET `title`='维护区域列表', `route_path`='business-zones/index'
+WHERE `id`=20929 OR `code`='region.zone.manage';
+UPDATE `qixi_crm_a_menu`
+SET `title`='维护代理人员'
+WHERE `id`=20930 OR `code`='region.agent.manage';
 
 -- v1 初始化曾用的临时扁平入口。它们会与新的目录结构重复，且没有 icon，
 -- 仅清理这三个系统种子代码，不影响运营在后台维护的正式菜单。
@@ -365,7 +397,7 @@ WHERE r.code = 'platform'
       'content.attachment.manage','content.community.audit','content.community.delete','marketing.broadcast.audit'));
 
 -- 平台素材库系统预设分类（不可增删改；侧栏「全部素材」为虚拟入口不落库）
--- 用途：客户端（H5/小程序/App）与装修页常用的图标、图片、背景
+-- 用途：客户端（H5/小程序/App）与装修页常用的图标、图片、背景、视频
 INSERT INTO `qixi_crm_a_attachment_category`
   (`attachment_category_id`,`pid`,`path`,`attachment_category_name`,`attachment_category_enname`,`sort`,`mer_id`,`is_system`,`create_time`)
 VALUES
@@ -376,7 +408,10 @@ VALUES
   (5105,0,'','商品图片','product_image',50,0,1,NOW()),
   (5106,0,'','背景图片','background_image',40,0,1,NOW()),
   (5107,0,'','列表图标','list_icon',30,0,1,NOW()),
-  (5108,0,'','其他图片','other_image',20,0,1,NOW())
+  (5108,0,'','其他图片','other_image',20,0,1,NOW()),
+  (5111,0,'','店铺视频','store_video',19,0,1,NOW()),
+  (5112,0,'','商品视频','product_video',18,0,1,NOW()),
+  (5113,0,'','其他视频','other_video',17,0,1,NOW())
 ON DUPLICATE KEY UPDATE
   `attachment_category_name`=VALUES(`attachment_category_name`),
   `attachment_category_enname`=VALUES(`attachment_category_enname`),

@@ -118,7 +118,7 @@ const VirtualCardListField = defineComponent({
           ),
         ),
         h('div', { class: 'virtual-info__actions' }, [
-          h(ElButton, { size: 'small', type: 'primary', onClick: addList }, () => '添加卡密'),
+          h(ElButton, { size: 'small', type: 'primary', onClick: addList }, () => '新增卡密'),
           h(
             ElUpload,
             {

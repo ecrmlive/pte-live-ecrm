@@ -58,7 +58,7 @@ function createEmptyForm(): RegionFormModel {
 const form = reactive<RegionFormModel>(createEmptyForm());
 
 const dialogTitle = computed(() =>
-  props.mode === 'edit' ? '编辑地区' : '添加地区',
+  props.mode === 'edit' ? '编辑地区' : '新增地区',
 );
 
 const requiredBlur = {
@@ -250,7 +250,7 @@ async function handleSubmit() {
       } else {
         const res = await RegionApi.addRegion(payload, true);
         if (res.code === 1) {
-          ElMessage.success(res.msg || '添加成功');
+          ElMessage.success(res.msg || '新增成功');
           open.value = false;
           emit('success');
         }

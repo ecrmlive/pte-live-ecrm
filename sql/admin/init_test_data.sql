@@ -19,7 +19,8 @@ INSERT INTO `qixi_crm_a_setting_cache` (`key`,`expire_time`,`result`) VALUES
   ('sys_userr_privacy',0,'七禧商城本地验收隐私政策：不包含真实个人信息。'),
   ('sys_merchant_type',0,'<p>七禧店铺类型说明（本地验收虚构文案）：用于向入驻商户解释不同类型店铺的规则与权益。</p>'),
   ('sys_merchant_category',0,'<p>七禧店铺分类说明（本地验收虚构文案）：用于向入驻商户解释店铺分类的选择指引。</p>'),
-  ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}')
+  ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}'),
+  ('merchant_apply_setting',0,'{"background_image":"","form_fields":[{"id":"demo_area","type":"text","title":"营业面积","content_type":"number","default_value":"","placeholder":"请输入营业面积","required":false}]}')
 ON DUPLICATE KEY UPDATE `expire_time`=VALUES(`expire_time`),`result`=VALUES(`result`);
 
 -- 客服策略夹具只包含虚构中文业务文本，不包含 IM Token、UserSig、云密钥或真实值班信息。
@@ -87,13 +88,13 @@ INSERT INTO `qixi_crm_a_store_group_merchant` (`store_group_id`,`merchant_id`) V
   (801,1),(802,2)
 ON DUPLICATE KEY UPDATE `created_at`=CURRENT_TIMESTAMP;
 
--- 演示素材挂到系统预设分类（店铺封面 / 其他图片）；分类本身由 init_data 种子维护。
+-- 演示素材：勿写入不存在于 COS 的 /demo/* 相对路径（浏览器会显示「加载失败」）。
+-- 分类本身由 init_data 种子维护；真实封面/视频请在素材库上传后选用。
 DELETE FROM `qixi_crm_a_attachment_category`
  WHERE `mer_id`=0 AND `attachment_category_enname` IN ('demo-image','demo-video');
-INSERT INTO `qixi_crm_a_attachment_asset` (`attachment_id`,`attachment_category_id`,`attachment_name`,`attachment_src`,`upload_type`,`user_type`,`user_id`,`create_time`,`attachment_type`) VALUES
-  (5311,5101,'七禧商城中文演示封面.png','/demo/admin-attachment-cover.png',1,0,9001,NOW(),0),
-  (5312,5108,'七禧商城中文演示短片.mp4','/demo/admin-attachment-video.mp4',1,0,9001,NOW(),1)
-ON DUPLICATE KEY UPDATE `attachment_category_id`=VALUES(`attachment_category_id`),`attachment_name`=VALUES(`attachment_name`),`attachment_src`=VALUES(`attachment_src`),`attachment_type`=VALUES(`attachment_type`),`user_type`=VALUES(`user_type`),`user_id`=VALUES(`user_id`);
+DELETE FROM `qixi_crm_a_attachment_asset`
+ WHERE `attachment_id` IN (5311,5312)
+    OR `attachment_src` LIKE '/demo/%';
 -- 不初始化后台账号或密码。管理员必须通过受控初始化命令创建并写入密码哈希。
 
 -- 登录日志夹具不含密码、令牌或真实 IP，仅用于平台安全审计列表验收。
@@ -109,11 +110,12 @@ INSERT INTO `qixi_crm_a_operation_log` (`id`,`admin_user_id`,`role_code`,`action
 ON DUPLICATE KEY UPDATE `role_code`=VALUES(`role_code`),`action`=VALUES(`action`),`resource_type`=VALUES(`resource_type`),`resource_id`=VALUES(`resource_id`),`request_id`=VALUES(`request_id`),`created_at`=VALUES(`created_at`);
 
 -- 本地验收用监管投影：不含真实个人信息；商户事实由 api-merchant 管理。
+-- mer_avatar 初始为空：勿写不存在的 /demo 占位图；已存在行勿覆盖用户真实封面。
 INSERT INTO `qixi_crm_a_merchant_view`
   (`merchant_id`,`merchant_name`,`owner_name`,`contact_name`,`contact_mobile`,`address`,`category_id`,`type_id`,`business_id`,`region_id`,`status`,`is_best`,`offline_pay`,`is_trader`,`is_audit`,`is_bro_room`,`is_bro_goods`,`commission_switch`,`commission_rate`,`mer_keyword`,`mer_info`,`mer_account`,`sub_mchid`,`applyment_id`,`care_count`,`care_ficti`,`sort`,`mark`,`mer_avatar`)
 VALUES
-  (1,'七禧演示店铺','七禧演示商户','演示联系人','13900000000','上海市黄浦区演示路 1 号',701,711,30,10,1,1,0,1,1,0,0,1,2.50,'演示旗舰 居家','七禧本地验收旗舰店简介','demo_store_1','','',128,20,10,'本地验收备注：演示旗舰店','/demo/admin-attachment-cover.png'),
-  (2,'七禧居家优选店','七禧居家商户','演示联系人','13900000001','上海市徐汇区演示路 2 号',702,711,31,20,1,0,1,0,1,1,0,0,0.00,'居家优选','七禧居家优选店简介','demo_store_2','','',56,8,20,'本地验收备注：居家优选','/demo/admin-attachment-cover.png')
+  (1,'七禧演示店铺','七禧演示商户','演示联系人','13900000000','上海市黄浦区演示路 1 号',701,711,30,10,1,1,0,1,1,0,0,1,2.50,'演示旗舰 居家','七禧本地验收旗舰店简介','demo_store_1','','',128,20,10,'本地验收备注：演示旗舰店',''),
+  (2,'七禧居家优选店','七禧居家商户','演示联系人','13900000001','上海市徐汇区演示路 2 号',702,711,31,20,1,0,1,0,1,1,0,0,0.00,'居家优选','七禧居家优选店简介','demo_store_2','','',56,8,20,'本地验收备注：居家优选','')
 ON DUPLICATE KEY UPDATE
   `merchant_name`=VALUES(`merchant_name`),`owner_name`=VALUES(`owner_name`),`contact_name`=VALUES(`contact_name`),
   `contact_mobile`=VALUES(`contact_mobile`),`address`=VALUES(`address`),`category_id`=VALUES(`category_id`),
@@ -123,7 +125,7 @@ ON DUPLICATE KEY UPDATE
   `commission_switch`=VALUES(`commission_switch`),`commission_rate`=VALUES(`commission_rate`),
   `mer_keyword`=VALUES(`mer_keyword`),`mer_info`=VALUES(`mer_info`),`mer_account`=VALUES(`mer_account`),
   `sub_mchid`=VALUES(`sub_mchid`),`applyment_id`=VALUES(`applyment_id`),`care_count`=VALUES(`care_count`),
-  `care_ficti`=VALUES(`care_ficti`),`sort`=VALUES(`sort`),`mark`=VALUES(`mark`),`mer_avatar`=VALUES(`mer_avatar`);
+  `care_ficti`=VALUES(`care_ficti`),`sort`=VALUES(`sort`),`mark`=VALUES(`mark`);
 
 -- 区域商圈与代理夹具仅用于本地验收；结算账号刻意为空，不包含真实收款资料。
 INSERT INTO `qixi_crm_a_business_zone` (`circle_id`,`pid`,`path`,`name`,`circle_agent_id`,`commission_type`,`commission_rate`,`level`,`remark`,`sort`,`status`,`type`,`role_id`,`business_store_category`,`business_store_type`) VALUES

@@ -254,7 +254,7 @@ async function deleteRegion(row: RegionRow) {
           type="primary"
           @click="openAdd"
         >
-          添加地区
+          新增地区
         </ElButton>
       </template>
 

@@ -21,10 +21,8 @@ import {
   ElInput,
   ElInputNumber,
   ElMessage,
-  ElOption,
   ElPagination,
   ElRadio,
-  ElSelect,
   ElSwitch,
   ElTabPane,
   ElTable,
@@ -38,10 +36,7 @@ import { Plus } from '@element-plus/icons-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   deleteStoreGroup,
-  fetchMerchantCategories,
-  fetchMerchantTypes,
   fetchPlatformDiyPages,
-  fetchPlatformMerchants,
   fetchStoreGroup,
   fetchStoreGroupMerchants,
   fetchStoreGroups,
@@ -49,13 +44,13 @@ import {
   setStoreGroupStatus,
   setStoreGroupTemplate,
   type DiyPageOption,
-  type MerchantCategoryRow,
-  type MerchantTypeRow,
-  type PlatformMerchantRow,
   type StoreGroupRow,
 } from '#/api/core/ecrm';
 import { getAccessCodesApi } from '#/api/core/auth';
 import { fetchMapClientConfig } from '#/api/core/cloud-config';
+import StorePickerModal, {
+  type PickedStore,
+} from '#/components/ecrm/store-picker-modal.vue';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
@@ -90,12 +85,11 @@ const DEFAULT_LNG = 113.2644;
 
 const canManage = ref(false);
 const treeRows = ref<StoreGroupRow[]>([]);
-const categories = ref<MerchantCategoryRow[]>([]);
-const types = ref<MerchantTypeRow[]>([]);
 const drawerMode = ref<DrawerMode>('create');
 const editingId = ref(0);
 const activeTab = ref('basic');
 const linkedMerchants = ref<LinkedMerchant[]>([]);
+const storePickerOpen = ref(false);
 const amapKey = ref('');
 const amapSecurityCode = ref('');
 const amapConfigured = ref(false);
@@ -261,7 +255,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [GroupDrawer, groupDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '提交',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => {
@@ -278,34 +272,6 @@ const [GroupDrawer, groupDrawerApi] = useVbenDrawer({
     } else if (form.positioning_status) {
       void nextTick(() => initMap());
     }
-  },
-});
-
-/* ---------- 选择店铺 ---------- */
-const pickerFilter = reactive({
-  keyword: '',
-  category_id: undefined as number | undefined,
-  type_id: undefined as number | undefined,
-});
-const pickerLoading = ref(false);
-const pickerRows = ref<PlatformMerchantRow[]>([]);
-const pickerTotal = ref(0);
-const pickerPage = ref(1);
-const pickerLimit = ref(10);
-const pickerSelected = ref<LinkedMerchant[]>([]);
-const pickerTableRef = ref<{
-  clearSelection: () => void;
-  toggleRowSelection: (row: PlatformMerchantRow, selected?: boolean) => void;
-}>();
-
-const [StorePickerModal, storePickerApi] = useVbenModal({
-  title: '选择店铺',
-  class: 'w-[920px] max-w-[96vw]',
-  confirmText: '确定',
-  cancelText: '取消',
-  onConfirm: () => {
-    linkedMerchants.value = [...pickerSelected.value];
-    storePickerApi.close();
   },
 });
 
@@ -382,7 +348,7 @@ function openCreate() {
   editingId.value = 0;
   resetForm();
   groupDrawerApi
-    .setState({ title: '新增店铺分组', confirmText: '提交', showConfirmButton: true })
+    .setState({ title: '新增店铺分组', confirmText: '保存', showConfirmButton: true })
     .open();
 }
 
@@ -395,7 +361,7 @@ function openCreateChild(row: StoreGroupRow) {
   editingId.value = 0;
   resetForm({ parent_id: row.id });
   groupDrawerApi
-    .setState({ title: '新增下级分组', confirmText: '提交', showConfirmButton: true })
+    .setState({ title: '新增下级分组', confirmText: '保存', showConfirmButton: true })
     .open();
 }
 
@@ -427,7 +393,7 @@ async function openEditById(id: number) {
   editingId.value = id;
   await fillFromGroup(detail);
   groupDrawerApi
-    .setState({ title: '编辑店铺分组', confirmText: '提交', showConfirmButton: true })
+    .setState({ title: '编辑店铺分组', confirmText: '保存', showConfirmButton: true })
     .open();
   if (form.positioning_status) {
     await nextTick();
@@ -577,79 +543,17 @@ function removeLinked(merId: number) {
   linkedMerchants.value = linkedMerchants.value.filter((m) => m.mer_id !== merId);
 }
 
-async function openStorePicker() {
-  pickerFilter.keyword = '';
-  pickerFilter.category_id = undefined;
-  pickerFilter.type_id = undefined;
-  pickerPage.value = 1;
-  pickerSelected.value = [...linkedMerchants.value];
-  await loadPickerMerchants();
-  storePickerApi.open();
-  await nextTick();
-  syncPickerSelection();
+function openStorePicker() {
+  storePickerOpen.value = true;
 }
 
-async function loadPickerMerchants() {
-  pickerLoading.value = true;
-  try {
-    const result = await fetchPlatformMerchants({
-      page: pickerPage.value,
-      limit: pickerLimit.value,
-      keyword: pickerFilter.keyword.trim() || undefined,
-      category_id: pickerFilter.category_id,
-      type_id: pickerFilter.type_id,
-    });
-    pickerRows.value = result.list || [];
-    pickerTotal.value = result.total || 0;
-    await nextTick();
-    syncPickerSelection();
-  } finally {
-    pickerLoading.value = false;
-  }
-}
-
-function syncPickerSelection() {
-  const table = pickerTableRef.value;
-  if (!table) return;
-  table.clearSelection();
-  const selected = new Set(pickerSelected.value.map((m) => m.mer_id));
-  for (const row of pickerRows.value) {
-    if (selected.has(row.mer_id)) {
-      table.toggleRowSelection(row, true);
-    }
-  }
-}
-
-function searchPicker() {
-  pickerPage.value = 1;
-  void loadPickerMerchants();
-}
-
-function resetPicker() {
-  pickerFilter.keyword = '';
-  pickerFilter.category_id = undefined;
-  pickerFilter.type_id = undefined;
-  pickerPage.value = 1;
-  void loadPickerMerchants();
-}
-
-function onPickerPageChange(page: number) {
-  pickerPage.value = page;
-  void loadPickerMerchants();
-}
-
-function onPickerSelectionChange(rows: PlatformMerchantRow[]) {
-  const pageIds = new Set(pickerRows.value.map((r) => r.mer_id));
-  const kept = pickerSelected.value.filter((m) => !pageIds.has(m.mer_id));
-  const added = rows.map((r) => ({
-    mer_id: r.mer_id,
-    mer_name: r.mer_name,
-    real_name: r.real_name || '',
-    mer_phone: r.mer_phone || '',
+function onStoresPicked(stores: PickedStore[]) {
+  linkedMerchants.value = stores.map((item) => ({
+    mer_id: item.mer_id,
+    mer_name: item.mer_name,
+    real_name: item.real_name,
+    mer_phone: item.mer_phone,
   }));
-  const map = new Map<number, LinkedMerchant>();
-  for (const item of [...kept, ...added]) map.set(item.mer_id, item);
-  pickerSelected.value = [...map.values()];
 }
 
 function canAddChild(row: StoreGroupRow) {
@@ -828,15 +732,11 @@ watch(
 );
 
 onMounted(async () => {
-  const [permissions, categoryResult, typeResult] = await Promise.all([
+  const [permissions] = await Promise.all([
     getAccessCodesApi(),
-    fetchMerchantCategories(),
-    fetchMerchantTypes(),
     ensureAmapConfig(),
   ]);
   canManage.value = permissions.includes('merchant.group.manage');
-  categories.value = categoryResult.list || [];
-  types.value = typeResult.list || [];
 });
 
 onBeforeUnmount(() => {
@@ -1110,77 +1010,11 @@ onBeforeUnmount(() => {
       </div>
     </GroupDrawer>
 
-    <StorePickerModal>
-      <div class="picker-filter">
-        <ElForm inline @submit.prevent>
-          <ElFormItem label="店铺名称">
-            <ElInput
-              v-model="pickerFilter.keyword"
-              clearable
-              class="picker-field"
-              placeholder="请输入店铺名称"
-            />
-          </ElFormItem>
-          <ElFormItem label="店铺分类">
-            <ElSelect
-              v-model="pickerFilter.category_id"
-              clearable
-              class="picker-field"
-              placeholder="请选择店铺分类"
-            >
-              <ElOption
-                v-for="item in categories"
-                :key="item.merchant_category_id"
-                :label="item.category_name"
-                :value="item.merchant_category_id"
-              />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem label="店铺类型">
-            <ElSelect
-              v-model="pickerFilter.type_id"
-              clearable
-              class="picker-field"
-              placeholder="请选择店铺类型"
-            >
-              <ElOption
-                v-for="item in types"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </ElSelect>
-          </ElFormItem>
-          <ElFormItem>
-            <ElButton type="primary" @click="searchPicker">搜索</ElButton>
-            <ElButton @click="resetPicker">重置</ElButton>
-          </ElFormItem>
-        </ElForm>
-      </div>
-      <ElTable
-        ref="pickerTableRef"
-        v-loading="pickerLoading"
-        :data="pickerRows"
-        row-key="mer_id"
-        border
-        @selection-change="onPickerSelectionChange"
-      >
-        <ElTableColumn type="selection" width="48" />
-        <ElTableColumn label="店铺ID" prop="mer_id" width="90" />
-        <ElTableColumn label="店铺名称" prop="mer_name" min-width="160" />
-        <ElTableColumn label="店铺电话" prop="mer_phone" width="140" />
-      </ElTable>
-      <div class="picker-pager">
-        <ElPagination
-          background
-          layout="prev, pager, next, jumper"
-          :current-page="pickerPage"
-          :page-size="pickerLimit"
-          :total="pickerTotal"
-          @current-change="onPickerPageChange"
-        />
-      </div>
-    </StorePickerModal>
+    <StorePickerModal
+      v-model:open="storePickerOpen"
+      :selected="linkedMerchants"
+      @confirm="onStoresPicked"
+    />
 
     <TemplateModal>
       <div class="picker-filter">
@@ -1324,23 +1158,6 @@ onBeforeUnmount(() => {
 
 .picker-filter {
   margin-bottom: 12px;
-}
-
-.picker-filter :deep(.el-form--inline) {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  row-gap: 8px;
-}
-
-.picker-filter :deep(.picker-field) {
-  width: 180px;
-  min-width: 180px;
-}
-
-.picker-filter :deep(.picker-field .el-input),
-.picker-filter :deep(.picker-field .el-select__wrapper) {
-  width: 100%;
 }
 
 .picker-pager {

@@ -2,9 +2,9 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElCascader,
@@ -29,29 +29,31 @@ import { Plus } from '@element-plus/icons-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createBusinessZone,
-  createBusinessZoneAgent,
   deleteBusinessZone,
   fetchBusinessZone,
   fetchBusinessZoneAgents,
   fetchBusinessZones,
   fetchMerchantCategories,
   fetchMerchantTypes,
-  fetchPlatformMerchants,
   fetchPlatformRoles,
   updateBusinessZone,
   updateBusinessZoneStatus,
+  type BusinessZoneAgentRow,
   type BusinessZoneMerchantBrief,
   type BusinessZoneRow,
   type BusinessZoneSaveInput,
   type MerchantCategoryRow,
   type MerchantTypeRow,
-  type PlatformMerchantRow,
   type PlatformRoleRow,
 } from '#/api/core/ecrm';
 import {
   listPlatformCategoriesApi,
   type PlatformCategory,
 } from '#/api/core/platform-catalog';
+import MerchantAdminFormDrawer from '#/components/ecrm/merchant-admin-form-drawer.vue';
+import StorePickerModal, {
+  type PickedStore,
+} from '#/components/ecrm/store-picker-modal.vue';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -80,10 +82,51 @@ const editingId = ref(0);
 const activeTab = ref('basic');
 const categories = ref<MerchantCategoryRow[]>([]);
 const types = ref<MerchantTypeRow[]>([]);
-const roles = ref<PlatformRoleRow[]>([]);
+/** 启用中的平台角色；下拉仅展示商户身份，编辑回填可附带历史非商户角色。 */
+const allActiveRoles = ref<PlatformRoleRow[]>([]);
 const agentOptions = ref<{ label: string; value: number; phone?: string }[]>(
   [],
 );
+
+/** 商户侧身份：code=merchant 或 merchant_*（种子数据「商户管理」）。 */
+function isMerchantIdentityRole(row: PlatformRoleRow): boolean {
+  const code = String(row.code || '')
+    .trim()
+    .toLowerCase();
+  return code === 'merchant' || code.startsWith('merchant_');
+}
+
+const roles = computed(() => {
+  const merchant = allActiveRoles.value.filter(isMerchantIdentityRole);
+  const currentId = form.role_id;
+  if (
+    currentId &&
+    !merchant.some((row) => row.role_id === currentId)
+  ) {
+    const orphan = allActiveRoles.value.find(
+      (row) => row.role_id === currentId,
+    );
+    if (orphan) return [...merchant, orphan];
+  }
+  return merchant;
+});
+
+function defaultMerchantRoleId(): number | undefined {
+  const merchant = allActiveRoles.value.filter(isMerchantIdentityRole);
+  return merchant.length === 1 ? merchant[0]?.role_id : undefined;
+}
+
+/** 同名管理员靠手机号区分（如测试多次创建的 daniel）。 */
+function formatAgentOptionLabel(
+  name?: string,
+  phone?: string,
+  id?: number,
+): string {
+  const displayName =
+    (name || '').trim() || (id ? `管理员#${id}` : '管理员');
+  const displayPhone = (phone || '').trim();
+  return displayPhone ? `${displayName} / ${displayPhone}` : displayName;
+}
 const platformCategoryTree = ref<PlatformCategoryCascaderOption[]>([]);
 const linkedMerchants = ref<BusinessZoneMerchantBrief[]>([]);
 
@@ -99,13 +142,10 @@ const form = reactive({
   status: 1,
 });
 
-const adminForm = reactive({
-  name: '',
-  phone: '',
-  account: '',
-  password: '000000',
-  uid: 0,
-});
+const adminFormDrawerRef = ref<{
+  openCreate: () => void;
+  openEdit: (row: BusinessZoneAgentRow) => void;
+}>();
 
 const isReadonly = computed(() => drawerMode.value === 'view');
 const drawerTitle = computed(() => {
@@ -214,7 +254,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '提交',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => {
@@ -226,43 +266,8 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
   },
 });
 
-const [AdminDrawer, adminDrawerApi] = useVbenDrawer({
-  class: 'w-[560px] max-w-[96vw]',
-  confirmText: '确定',
-  cancelText: '取消',
-  placement: 'right',
-  onConfirm: async () => saveAdmin(),
-});
-
 /* ---------- 选择店铺 ---------- */
-const pickerFilter = reactive({ keyword: '' });
-const pickerLoading = ref(false);
-const pickerRows = ref<PlatformMerchantRow[]>([]);
-const pickerTotal = ref(0);
-const pickerPage = ref(1);
-const pickerLimit = ref(10);
-const pickerSelected = ref<BusinessZoneMerchantBrief[]>([]);
-const pickerTableRef = ref<{
-  clearSelection: () => void;
-  toggleRowSelection: (row: PlatformMerchantRow, selected?: boolean) => void;
-}>();
-
-const [StorePickerModal, storePickerApi] = useVbenModal({
-  title: '选择店铺',
-  class: 'w-[920px] max-w-[96vw]',
-  confirmText: '确定',
-  cancelText: '取消',
-  onConfirm: () => {
-    const map = new Map(
-      linkedMerchants.value.map((item) => [item.mer_id, item]),
-    );
-    for (const item of pickerSelected.value) {
-      map.set(item.mer_id, item);
-    }
-    linkedMerchants.value = [...map.values()];
-    storePickerApi.close();
-  },
-});
+const storePickerOpen = ref(false);
 
 function toPlatformCategoryCascaderOptions(
   rows: PlatformCategory[] = [],
@@ -297,9 +302,9 @@ async function loadOptions() {
   ]);
   categories.value = cateRes.list || [];
   types.value = typeRes.list || [];
-  roles.value = (roleRes.list || []).filter((row) => row.status === 1);
+  allActiveRoles.value = (roleRes.list || []).filter((row) => row.status === 1);
   agentOptions.value = (agentRes.list || []).map((row) => ({
-    label: row.name,
+    label: formatAgentOptionLabel(row.name, row.phone, row.circle_agent_id),
     value: row.circle_agent_id,
     phone: row.phone,
   }));
@@ -342,6 +347,7 @@ function openCreate() {
   editingId.value = 0;
   drawerMode.value = 'create';
   resetForm();
+  form.role_id = defaultMerchantRoleId();
   formDrawerApi.setState({ title: drawerTitle.value, showConfirmButton: true }).open();
 }
 
@@ -368,7 +374,11 @@ async function openEdit(row: BusinessZoneRow, mode: DrawerMode = 'edit') {
   ) {
     agentOptions.value = [
       {
-        label: detail.circle_agent?.name || `管理员#${detail.circle_agent_id}`,
+        label: formatAgentOptionLabel(
+          detail.circle_agent?.name,
+          detail.circle_agent?.phone,
+          detail.circle_agent_id,
+        ),
         value: detail.circle_agent_id,
         phone: detail.circle_agent?.phone,
       },
@@ -473,64 +483,12 @@ async function remove(row: BusinessZoneRow) {
 }
 
 function openAdminDrawer() {
-  Object.assign(adminForm, {
-    name: '',
-    phone: '',
-    account: '',
-    password: '000000',
-    uid: 0,
-  });
-  adminDrawerApi.setState({ title: '添加商户管理员' }).open();
+  adminFormDrawerRef.value?.openCreate();
 }
 
-watch(
-  () => adminForm.phone,
-  (phone, prev) => {
-    if (!adminForm.account || adminForm.account === prev) {
-      adminForm.account = phone;
-    }
-  },
-);
-
-async function saveAdmin() {
-  if (!adminForm.name.trim()) {
-    ElMessage.warning('请输入管理姓名');
-    return;
-  }
-  if (!adminForm.phone.trim()) {
-    ElMessage.warning('请输入手机号码');
-    return;
-  }
-  if (!adminForm.account.trim()) {
-    ElMessage.warning('请输入登录账号');
-    return;
-  }
-  if (!adminForm.password.trim()) {
-    ElMessage.warning('请输入登录密码');
-    return;
-  }
-  adminDrawerApi.lock();
-  try {
-    const created = await createBusinessZoneAgent({
-      type: 1,
-      name: adminForm.name.trim(),
-      phone: adminForm.phone.trim(),
-      account: adminForm.account.trim(),
-      password: adminForm.password,
-      uid: adminForm.uid || 0,
-      qualification: '',
-      remark: '',
-      payment_method: 0,
-      payment_name: '',
-      business_name: '',
-    });
-    await loadOptions();
-    form.circle_agent_id = created.circle_agent_id;
-    ElMessage.success('管理员已添加');
-    adminDrawerApi.close();
-  } finally {
-    adminDrawerApi.unlock();
-  }
+async function onAdminSaved(created: BusinessZoneAgentRow) {
+  await loadOptions();
+  form.circle_agent_id = created.circle_agent_id;
 }
 
 function removeLinked(merId: number) {
@@ -539,43 +497,16 @@ function removeLinked(merId: number) {
   );
 }
 
-async function loadPicker() {
-  pickerLoading.value = true;
-  try {
-    const result = await fetchPlatformMerchants({
-      page: pickerPage.value,
-      limit: pickerLimit.value,
-      keyword: pickerFilter.keyword.trim() || undefined,
-      status: 1,
-    });
-    pickerRows.value = result.list || [];
-    pickerTotal.value = result.total || 0;
-    await nextTick();
-    const selectedIds = new Set(pickerSelected.value.map((item) => item.mer_id));
-    for (const row of pickerRows.value) {
-      if (selectedIds.has(row.mer_id)) {
-        pickerTableRef.value?.toggleRowSelection(row, true);
-      }
-    }
-  } finally {
-    pickerLoading.value = false;
-  }
-}
-
 function openStorePicker() {
-  pickerFilter.keyword = '';
-  pickerPage.value = 1;
-  pickerSelected.value = [...linkedMerchants.value];
-  storePickerApi.open();
-  void loadPicker();
+  storePickerOpen.value = true;
 }
 
-function onPickerSelectionChange(rows: PlatformMerchantRow[]) {
-  pickerSelected.value = rows.map((row) => ({
-    mer_id: row.mer_id,
-    mer_name: row.mer_name,
-    real_name: row.real_name,
-    mer_phone: row.mer_phone,
+function onStoresPicked(stores: PickedStore[]) {
+  linkedMerchants.value = stores.map((item) => ({
+    mer_id: item.mer_id,
+    mer_name: item.mer_name,
+    real_name: item.real_name,
+    mer_phone: item.mer_phone,
   }));
 }
 
@@ -702,7 +633,7 @@ onMounted(() => {
                   plain
                   @click="openAdminDrawer"
                 >
-                  + 添加管理员
+                  + 新增管理员
                 </ElButton>
                 <ElSelect
                   v-model="form.circle_agent_id"
@@ -793,77 +724,17 @@ onMounted(() => {
       </ElTabs>
     </FormDrawer>
 
-    <AdminDrawer>
-      <ElForm label-width="110px" class="pt-2">
-        <ElFormItem label="管理姓名" required>
-          <ElInput v-model="adminForm.name" placeholder="请输入管理员姓名" />
-        </ElFormItem>
-        <ElFormItem label="手机号码" required>
-          <ElInput v-model="adminForm.phone" placeholder="请输入手机号码" />
-          <div class="field-tip">
-            手机号码为商户管理的登录账号，登录密码默认000000
-          </div>
-        </ElFormItem>
-        <ElFormItem label="登录账号" required>
-          <ElInput v-model="adminForm.account" placeholder="请输入登录账号" />
-        </ElFormItem>
-        <ElFormItem label="登录密码" required>
-          <ElInput
-            v-model="adminForm.password"
-            type="password"
-            show-password
-            placeholder="请输入登录密码"
-          />
-        </ElFormItem>
-        <ElFormItem label="关联用户">
-          <ElInputNumber v-model="adminForm.uid" :min="0" />
-          <div class="field-tip">可选；填写 C 端用户 UID，0 表示不关联</div>
-        </ElFormItem>
-      </ElForm>
-    </AdminDrawer>
+    <MerchantAdminFormDrawer
+      ref="adminFormDrawerRef"
+      :show-responsible-merchants="false"
+      @saved="onAdminSaved"
+    />
 
-    <StorePickerModal>
-      <div class="picker-filter">
-        <ElForm inline @submit.prevent>
-          <ElFormItem label="关键字">
-            <ElInput
-              v-model="pickerFilter.keyword"
-              clearable
-              class="picker-field"
-              placeholder="店铺名称 / 联系人"
-            />
-          </ElFormItem>
-          <ElFormItem>
-            <ElButton type="primary" @click="loadPicker">搜索</ElButton>
-            <ElButton
-              @click="
-                () => {
-                  pickerFilter.keyword = '';
-                  loadPicker();
-                }
-              "
-            >
-              重置
-            </ElButton>
-          </ElFormItem>
-        </ElForm>
-      </div>
-      <ElTable
-        ref="pickerTableRef"
-        v-loading="pickerLoading"
-        :data="pickerRows"
-        row-key="mer_id"
-        border
-        @selection-change="onPickerSelectionChange"
-      >
-        <ElTableColumn type="selection" width="48" />
-        <ElTableColumn label="店铺ID" prop="mer_id" width="90" />
-        <ElTableColumn label="店铺名称" prop="mer_name" min-width="160" />
-        <ElTableColumn label="联系人" prop="real_name" width="120" />
-        <ElTableColumn label="联系电话" prop="mer_phone" width="140" />
-      </ElTable>
-      <div class="picker-total">共 {{ pickerTotal }} 条</div>
-    </StorePickerModal>
+    <StorePickerModal
+      v-model:open="storePickerOpen"
+      :selected="linkedMerchants"
+      @confirm="onStoresPicked"
+    />
   </Page>
 </template>
 
@@ -891,19 +762,5 @@ onMounted(() => {
 
 .stores-pane {
   padding-top: 4px;
-}
-
-.picker-filter {
-  margin-bottom: 12px;
-}
-
-.picker-field {
-  width: 220px;
-}
-
-.picker-total {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #909399;
 }
 </style>

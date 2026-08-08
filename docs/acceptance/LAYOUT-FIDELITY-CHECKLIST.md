@@ -105,7 +105,7 @@ Element Plus 仅允许作为 **单元格内控件**（如 `ElButton` link、`ElS
 └── 店铺设置 (lucide:settings)
     ├── 店铺保证金 / 保证金配置 / 店铺菜单 / 说明提示
 商户管理 (lucide:users)
-├── 商户列表 / 商户入驻审核 / 商户管理员 / 商户设置
+├── 商户列表 / 店铺入驻申请 / 商户管理员 / 商户设置
 ```
 
 图标统一 `lucide:*`，且必须落在 `admin-platform` 离线白名单（`platform-lucide-icons.ts` / `build-iconify-offline.mjs`）。

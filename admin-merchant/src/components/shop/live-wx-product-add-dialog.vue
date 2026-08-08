@@ -220,7 +220,7 @@ async function submit() {
     :close-on-click-modal="false"
     :destroy-on-close="true"
     class="w-[520px]"
-    title="添加商品"
+    title="新增商品"
   >
     <Form />
     <template #footer>

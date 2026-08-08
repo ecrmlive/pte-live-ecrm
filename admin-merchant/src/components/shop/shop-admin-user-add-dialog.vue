@@ -93,7 +93,7 @@ const [Form, formApi] = useVbenForm(
           user_name: String(values.user_name ?? ''),
         };
         await addShopAdminUserApi(payload);
-        ElMessage.success('恭喜你，添加成功');
+        ElMessage.success('恭喜你，新增成功');
         open.value = false;
         emit('success');
       } finally {
@@ -140,7 +140,7 @@ async function submit() {
   <Modal
     :close-on-click-modal="false"
     :destroy-on-close="true"
-    title="添加管理员"
+    title="新增管理员"
     class="w-[600px]"
   >
     <Form />

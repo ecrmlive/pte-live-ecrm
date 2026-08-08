@@ -14,7 +14,7 @@ withDefaults(
     plain: true,
     showIcon: false,
     size: 'default',
-    text: '添加分类',
+    text: '新增分类',
   },
 );
 

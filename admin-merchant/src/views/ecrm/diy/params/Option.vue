@@ -138,7 +138,7 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 						</template>
 					</draggable>
 				</template>
-				<div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="editor.onEditorAddData">+添加</component>
+				<div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="editor.onEditorAddData">+新增</component>
 				</div>
 			</div>
 			<div v-if="styleType == 'style'">

@@ -144,7 +144,7 @@ function openAdd() {
           type="primary"
           @click="openAdd"
         >
-          添加账号
+          新增账号
         </ElButton>
       </template>
 

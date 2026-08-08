@@ -179,7 +179,7 @@ async function handleSubmit() {
         const initialGb = Number(form.initial_traffic_gb || 0);
         const initialAmount = Number(form.initial_amount_yuan || 0);
         const finish = () => {
-          ElMessage.success('恭喜你，添加成功');
+          ElMessage.success('恭喜你，新增成功');
           open.value = false;
           emit('success');
         };

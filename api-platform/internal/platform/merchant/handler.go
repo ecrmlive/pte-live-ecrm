@@ -57,6 +57,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 
 	r.GET("/merchant-intentions", h.ListIntentions)
 	r.GET("/merchant-intentions/:id", h.GetIntention)
+	r.POST("/merchant-intentions", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.create"), h.CreateIntention)
 	r.POST("/merchant-intentions/:id/assign-region", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.assign_region"), h.AssignIntentionRegion)
 	r.POST("/merchant-intentions/:id/audit", middleware.RequireAdminRoles("platform", "region"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.audit"), h.AuditIntention)
 	r.DELETE("/merchant-intentions/:id", middleware.RequireAdminRoles("platform", "region"), middleware.RequireAdminMenu(h.adminDB, "merchant.intention.delete"), h.DeleteIntention)
@@ -574,7 +575,7 @@ func (h *Handler) ListIntentions(c *gin.Context) {
 	}
 	regionIDs, ok := h.intentionScope(c)
 	if !ok {
-		response.Fail(c, http.StatusForbidden, "当前角色无商户入驻审核范围")
+		response.Fail(c, http.StatusForbidden, "当前角色无店铺入驻申请范围")
 		return
 	}
 	res, err := h.svc.ListIntentions(c.Request.Context(), c.Query("keyword"), statusPtr, regionIDs, page, limit, strings.TrimSpace(c.Query("date_from")), strings.TrimSpace(c.Query("date_to")), categoryID, typeID)
@@ -589,10 +590,24 @@ func (h *Handler) GetIntention(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	regionIDs, ok := h.intentionScope(c)
 	if !ok {
-		response.Fail(c, http.StatusForbidden, "当前角色无商户入驻审核范围")
+		response.Fail(c, http.StatusForbidden, "当前角色无店铺入驻申请范围")
 		return
 	}
 	row, err := h.svc.GetIntention(c.Request.Context(), uint(id), regionIDs)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, row)
+}
+
+func (h *Handler) CreateIntention(c *gin.Context) {
+	var req merchant.CreateIntentionInput
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	row, err := h.svc.CreateIntention(c.Request.Context(), req)
 	if err != nil {
 		writeErr(c, err)
 		return

@@ -418,7 +418,7 @@ onMounted(() => {
   <div class="media-library-panel" :class="{ 'media-library-panel--picker': pickerMode }">
     <div v-if="showManageToolbar" class="media-library-panel__toolbar">
       <div class="media-library-panel__toolbar-left">
-        <ElButton :icon="Plus" type="default" @click="openAddCategory">添加分类</ElButton>
+        <ElButton :icon="Plus" type="default" @click="openAddCategory">新增分类</ElButton>
         <ElDropdown trigger="click" @command="moveSelected">
           <ElButton :icon="CaretBottom" type="default">
             移动至

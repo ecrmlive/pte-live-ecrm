@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 const formRef = ref<InstanceType<typeof ElForm>>();
 const submitting = ref(false);
-const title = ref('添加分类');
+const title = ref('新增分类');
 
 const form = reactive({
   category_id: 0,
@@ -37,7 +37,7 @@ function resetForm() {
   } else {
     form.name = '';
     form.category_id = 0;
-    title.value = '添加分类';
+    title.value = '新增分类';
   }
 }
 
@@ -99,7 +99,7 @@ async function handleSubmit() {
           name: form.name,
         });
         if ((res as { code?: number }).code === 1 || res) {
-          ElMessage.success('添加成功');
+          ElMessage.success('新增成功');
           open.value = false;
           emit('success');
         }

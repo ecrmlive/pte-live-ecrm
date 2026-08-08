@@ -116,8 +116,13 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		username = strings.TrimSpace(req.Username)
 	}
 	roles := normalizedRoleCodes(req)
+	displayName := strings.TrimSpace(req.RealName)
 	if username == "" || len(req.Password) < 8 || len(roles) == 0 {
 		response.Fail(c, http.StatusBadRequest, "账号、至少 8 位密码和角色必填")
+		return
+	}
+	if displayName == "" {
+		response.Fail(c, http.StatusBadRequest, "昵称不能为空")
 		return
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -125,11 +130,14 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		writeError(c, err)
 		return
 	}
-	user := adminUser{Username: username, PasswordHash: string(hash), DisplayName: strings.TrimSpace(req.RealName), Phone: strings.TrimSpace(req.Phone), Status: req.Status, DataScopeVersion: 1}
+	user := adminUser{Username: username, PasswordHash: string(hash), DisplayName: displayName, Phone: strings.TrimSpace(req.Phone), Status: req.Status, DataScopeVersion: 1}
 	if user.Status == 0 {
 		user.Status = 1
 	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := ensureAdminDisplayNameUnique(c, tx, displayName, 0); err != nil {
+			return err
+		}
 		if err := validateCircleAgentBinding(c, tx, req.CircleAgentID, 0, roles); err != nil {
 			return err
 		}
@@ -141,6 +149,10 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		}
 		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.MerchantIDs, req.RegionIDs, req.ServiceStoreIDs)
 	}); err != nil {
+		if errors.Is(err, errDisplayNameExists) || errors.Is(err, errDisplayNameEmpty) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		if isDuplicate(err) {
 			response.Fail(c, http.StatusConflict, "账号已存在")
 			return
@@ -172,15 +184,23 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "至少保留一个角色")
 		return
 	}
+	displayName := strings.TrimSpace(req.RealName)
+	if displayName == "" {
+		response.Fail(c, http.StatusBadRequest, "昵称不能为空")
+		return
+	}
 	if req.Password != "" && len(req.Password) < 8 {
 		response.Fail(c, http.StatusBadRequest, "新密码至少 8 位")
 		return
 	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := ensureAdminDisplayNameUnique(c, tx, displayName, user.ID); err != nil {
+			return err
+		}
 		if err := validateCircleAgentBinding(c, tx, req.CircleAgentID, user.ID, roles); err != nil {
 			return err
 		}
-		updates := map[string]any{"display_name": strings.TrimSpace(req.RealName), "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1"), "circle_agent_id": nullableCircleAgentID(req.CircleAgentID)}
+		updates := map[string]any{"display_name": displayName, "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1"), "circle_agent_id": nullableCircleAgentID(req.CircleAgentID)}
 		if req.Password != "" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 			if err != nil {
@@ -194,6 +214,10 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 		}
 		return h.replaceAdminRolesAndScope(c, tx, user.ID, roles, req.MerchantIDs, req.RegionIDs, req.ServiceStoreIDs)
 	}); err != nil {
+		if errors.Is(err, errDisplayNameExists) || errors.Is(err, errDisplayNameEmpty) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		writeError(c, err)
 		return
 	}

@@ -37,7 +37,12 @@ import {
 
 const editing = ref<PlatformAdminRow>();
 const agentOptions = ref<
-  Array<{ circle_agent_id: number; name: string; type: 0 | 1 }>
+  Array<{
+    circle_agent_id: number;
+    name: string;
+    phone?: string;
+    type: 0 | 1;
+  }>
 >([]);
 const form = reactive({
   account: '',
@@ -58,7 +63,7 @@ const isRegionAccount = computed(() => {
 });
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_KEYWORD_FIELD('账号 / 姓名 / 手机'),
+  LIST_KEYWORD_FIELD('账号 / 昵称 / 手机'),
   LIST_ENABLE_STATUS_FIELD('状态'),
 ]);
 
@@ -66,7 +71,7 @@ const gridOptions: VxeGridProps<PlatformAdminRow> = {
   columns: [
     { field: 'admin_id', title: 'ID', width: 72 },
     { field: 'account', minWidth: 130, title: '账号' },
-    { field: 'real_name', minWidth: 110, title: '姓名' },
+    { field: 'real_name', minWidth: 110, title: '昵称' },
     { field: 'phone', title: '手机号', width: 140 },
     { field: 'roles', minWidth: 144, title: '角色' },
     {
@@ -143,7 +148,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -197,6 +202,10 @@ async function save() {
     (!form.account.trim() || form.password.length < 8)
   ) {
     ElMessage.warning('账号与至少 8 位的初始密码必填');
+    return;
+  }
+  if (!form.real_name.trim()) {
+    ElMessage.warning('请输入昵称');
     return;
   }
   if (
@@ -313,8 +322,12 @@ onMounted(async () => {
             :placeholder="editing ? '留空则不修改' : '至少 8 位'"
           />
         </ElFormItem>
-        <ElFormItem label="姓名">
-          <ElInput v-model="form.real_name" />
+        <ElFormItem label="昵称" required>
+          <ElInput
+            v-model="form.real_name"
+            maxlength="64"
+            placeholder="后台显示昵称，不可重复"
+          />
         </ElFormItem>
         <ElFormItem label="手机号">
           <ElInput v-model="form.phone" />
@@ -371,7 +384,11 @@ onMounted(async () => {
             <ElOption
               v-for="agent in agentOptions"
               :key="agent.circle_agent_id"
-              :label="`${agent.name}（ID ${agent.circle_agent_id}）`"
+              :label="
+                agent.phone
+                  ? `${agent.name} / ${agent.phone}`
+                  : `${agent.name}（ID ${agent.circle_agent_id}）`
+              "
               :value="agent.circle_agent_id"
             />
           </ElSelect>

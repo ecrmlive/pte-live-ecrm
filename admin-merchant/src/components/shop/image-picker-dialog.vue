@@ -40,7 +40,14 @@ async function upload({ file }: { file: File }) {
   ElMessage.success(props.kind === 'image' ? '图片已上传' : '视频已上传');
 }
 function confirm() { const rows = files.value.filter((item) => selected.value.includes(item.attachment_id)); if (!rows.length) { ElMessage.warning('请选择图片'); return; } emit('select', rows); open.value = false; }
-async function initialize() { selected.value = []; await Promise.all([loadCategories(), loadFiles()]); }
+async function initialize() {
+  selected.value = [];
+  // 打开时始终默认「全部素材」
+  categoryID.value = 0;
+  page.value = 1;
+  await loadCategories();
+  await loadFiles();
+}
 watch(open, (visible) => { if (visible) void initialize(); });
 onMounted(() => { if (open.value) void initialize(); });
 </script>

@@ -1,10 +1,13 @@
 package circle
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/circle"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
@@ -16,12 +19,13 @@ import (
 )
 
 type Handler struct {
-	svc     *circle.Service
-	adminDB *gorm.DB
+	svc        *circle.Service
+	adminDB    *gorm.DB
+	businessDB *gorm.DB
 }
 
-func NewHandler(svc *circle.Service, adminDB *gorm.DB) *Handler {
-	return &Handler{svc: svc, adminDB: adminDB}
+func NewHandler(svc *circle.Service, adminDB, businessDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB, businessDB: businessDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
@@ -33,12 +37,15 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/business-zones", platform, zoneManage, h.ListCircles)
 	r.POST("/business-zones", platform, zoneManage, h.CreateCircle)
 	r.GET("/business-zones/options", platform, h.ZoneOptions)
+	r.GET("/business-zones/:id/invite", platform, zoneManage, h.InviteCircle)
+	r.POST("/business-zones/agents", platform, zoneManage, h.CreateRegionAgent)
 	r.GET("/business-zones/:id", platform, zoneManage, h.GetCircle)
 	r.PUT("/business-zones/:id", platform, zoneManage, h.UpdateCircle)
 	r.PUT("/business-zones/:id/status", platform, zoneManage, h.UpdateCircleStatus)
 	r.DELETE("/business-zones/:id", platform, zoneManage, h.DeleteCircle)
 	r.GET("/business-zone-agents", platform, agentManage, h.ListAgents)
-	r.GET("/business-zone-agents/options", platform, agentManage, h.AgentOptions)
+	// 区域表单选代理人：平台角色即可读选项（与 ZoneOptions 一致）。
+	r.GET("/business-zone-agents/options", platform, h.AgentOptions)
 	r.GET("/business-zone-agents/settings", platform, agentManage, h.AgentSettings)
 	r.GET("/business-zone-agents/:id", platform, agentManage, h.GetAgent)
 	r.GET("/business-zone-agents/:id/merchants", platform, agentManage, h.AgentMerchants)
@@ -100,6 +107,15 @@ func (h *Handler) ListCircles(c *gin.Context) {
 			return
 		}
 		filter.CircleAgentID = uint(n)
+	}
+	if raw := strings.TrimSpace(c.Query("pid")); raw != "" {
+		n, parseErr := strconv.ParseUint(raw, 10, 64)
+		if parseErr != nil {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		pid := uint(n)
+		filter.PID = &pid
 	}
 	p, l := page(c)
 	out, err := h.svc.ListCircles(c.Request.Context(), filter, p, l)
@@ -267,6 +283,58 @@ func (h *Handler) DeleteCircle(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"ok": true})
 }
+
+// InviteCircle 返回 H5 邀请入驻 URL（扫码进入商户入驻页并带上区域 ID）。
+func (h *Handler) InviteCircle(c *gin.Context) {
+	key, err := id(c)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	row, err := h.svc.GetCircle(c.Request.Context(), key)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	siteURL := h.loadMallSiteURL(c)
+	h5URL := buildRegionInviteH5URL(siteURL, row.CircleID)
+	response.OK(c, gin.H{
+		"circle_id": row.CircleID,
+		"name":      row.Name,
+		"site_url":  siteURL,
+		"h5_url":    h5URL,
+		"label":     "H5邀请入驻",
+	})
+}
+
+func (h *Handler) loadMallSiteURL(c *gin.Context) string {
+	var raw string
+	_ = h.adminDB.WithContext(c.Request.Context()).
+		Table("qixi_crm_a_setting_cache").
+		Select("result").
+		Where("`key` = ?", "mall_shop_config").
+		Limit(1).
+		Scan(&raw).Error
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	var cfg struct {
+		SiteURL string `json:"site_url"`
+	}
+	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+		return ""
+	}
+	return strings.TrimRight(strings.TrimSpace(cfg.SiteURL), "/")
+}
+
+func buildRegionInviteH5URL(siteURL string, circleID uint) string {
+	path := "/pages/merchant/apply/index?region_id=" + strconv.FormatUint(uint64(circleID), 10)
+	if siteURL == "" {
+		return path
+	}
+	return siteURL + path
+}
 func (h *Handler) ListAgents(c *gin.Context) {
 	status, err := optionalStatus(c)
 	if err != nil {
@@ -284,13 +352,70 @@ func (h *Handler) ListAgents(c *gin.Context) {
 		agentType = &v
 	}
 	p, l := page(c)
-	keyword := firstNonEmpty(c.Query("keyword"), c.Query("name"))
-	out, err := h.svc.ListAgents(c.Request.Context(), keyword, status, agentType, p, l)
+	filter := circle.AgentListFilter{
+		Keyword:  strings.TrimSpace(c.Query("keyword")),
+		Name:     strings.TrimSpace(c.Query("name")),
+		Phone:    strings.TrimSpace(c.Query("phone")),
+		Status:   status,
+		Type:     agentType,
+		DateFrom: strings.TrimSpace(c.Query("date_from")),
+		DateTo:   strings.TrimSpace(c.Query("date_to")),
+	}
+	// 用户搜索三选一：uid | user_phone | nickname（仅生效当前类型，互斥）。
+	uidRaw := strings.TrimSpace(c.Query("uid"))
+	userPhone := strings.TrimSpace(c.Query("user_phone"))
+	nickname := strings.TrimSpace(c.Query("nickname"))
+	switch {
+	case uidRaw != "":
+		n, parseErr := strconv.ParseUint(uidRaw, 10, 64)
+		if parseErr != nil || n == 0 {
+			writeErr(c, circle.ErrBadParam)
+			return
+		}
+		v := uint(n)
+		filter.UID = &v
+	case userPhone != "", nickname != "":
+		if err = h.applyAgentUserSearch(c.Request.Context(), userPhone, nickname, &filter); err != nil {
+			writeErr(c, err)
+			return
+		}
+	}
+	// 兼容旧前端：仅传 name 时按姓名模糊搜；keyword 仍覆盖姓名/手机/商户名。
+	out, err := h.svc.ListAgents(c.Request.Context(), filter, p, l)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, out)
+	response.OK(c, h.enrichAgentPage(c, out))
+}
+
+// applyAgentUserSearch 按 C 端用户手机号或昵称预解析 uid 列表（二者互斥，手机号优先）。
+func (h *Handler) applyAgentUserSearch(ctx context.Context, userPhone, nickname string, filter *circle.AgentListFilter) error {
+	userPhone = strings.TrimSpace(userPhone)
+	nickname = strings.TrimSpace(nickname)
+	if userPhone == "" && nickname == "" {
+		return nil
+	}
+	if h.businessDB == nil {
+		empty := []uint{}
+		filter.UIDs = &empty
+		return nil
+	}
+	q := h.businessDB.WithContext(ctx).Table("qixi_crm_b_user").Select("id")
+	if userPhone != "" {
+		q = q.Where("mobile LIKE ?", "%"+userPhone+"%")
+	} else {
+		q = q.Where("nickname LIKE ?", "%"+nickname+"%")
+	}
+	var ids []uint
+	if err := q.Limit(500).Pluck("id", &ids).Error; err != nil {
+		return err
+	}
+	if ids == nil {
+		ids = []uint{}
+	}
+	filter.UIDs = &ids
+	return nil
 }
 func (h *Handler) GetAgent(c *gin.Context) {
 	key, err := id(c)
@@ -303,7 +428,7 @@ func (h *Handler) GetAgent(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, row)
+	response.OK(c, h.enrichAgentItem(c, row))
 }
 
 func (h *Handler) AgentOptions(c *gin.Context) {
@@ -318,7 +443,9 @@ func (h *Handler) AgentOptions(c *gin.Context) {
 		v := int8(n)
 		agentType = &v
 	}
-	page, err := h.svc.ListAgents(c.Request.Context(), "", &approved, agentType, 1, 100)
+	page, err := h.svc.ListAgents(c.Request.Context(), circle.AgentListFilter{
+		Status: &approved, Type: agentType,
+	}, 1, 100)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -401,19 +528,54 @@ func (h *Handler) CreateAgent(c *gin.Context) {
 		writeErr(c, circle.ErrBadParam)
 		return
 	}
+	h.createAgentWithInput(c, in)
+}
+
+// CreateRegionAgent 区域列表表单内「添加代理人」：强制 type=0 且立即通过。
+func (h *Handler) CreateRegionAgent(c *gin.Context) {
+	var in circle.AgentInput
+	if c.ShouldBindJSON(&in) != nil {
+		writeErr(c, circle.ErrBadParam)
+		return
+	}
+	in.Type = 0
+	in.AutoApprove = true
+	h.createAgentWithInput(c, in)
+}
+
+func (h *Handler) createAgentWithInput(c *gin.Context, in circle.AgentInput) {
+	account, password := strings.TrimSpace(in.Account), strings.TrimSpace(in.Password)
+	// 先校验登录账号与昵称，避免代理行已写入后因冲突留下脏数据。
+	if account != "" && password != "" {
+		if err := h.ensureAdminAccountAvailable(c, account); err != nil {
+			writeErr(c, err)
+			return
+		}
+		display := strings.TrimSpace(in.Name)
+		if display == "" {
+			display = account
+		}
+		if err := h.ensureAdminDisplayNameAvailable(c, display, 0); err != nil {
+			writeErr(c, err)
+			return
+		}
+	}
 	row, err := h.svc.CreateAgent(c.Request.Context(), in)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
-	account, password := strings.TrimSpace(in.Account), strings.TrimSpace(in.Password)
 	if account != "" && password != "" {
 		if err = h.bindAgentAdminAccount(c, row.CircleAgentID, account, password, row.Name, row.Phone); err != nil {
 			writeErr(c, err)
 			return
 		}
 	}
-	response.OK(c, row)
+	if err = h.syncAgentCircles(c, row.CircleAgentID, in.CircleIDs); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, h.enrichAgentItem(c, row))
 }
 func (h *Handler) UpdateAgent(c *gin.Context) {
 	key, err := id(c)
@@ -431,7 +593,15 @@ func (h *Handler) UpdateAgent(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	response.OK(c, row)
+	if err = h.syncBoundAdminProfile(c, key, row.Name, row.Phone, strings.TrimSpace(in.Password)); err != nil {
+		writeErr(c, err)
+		return
+	}
+	if err = h.syncAgentCircles(c, key, in.CircleIDs); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, h.enrichAgentItem(c, row))
 }
 func (h *Handler) AuditAgent(c *gin.Context) {
 	key, err := id(c)
@@ -566,6 +736,12 @@ func (h *Handler) enrichCirclePage(c *gin.Context, page *circle.PageResult[circl
 }
 
 func (h *Handler) circleListItem(c *gin.Context, row *circle.Circle) gin.H {
+	hasChild := false
+	if row.Level < 2 {
+		if n, err := h.svc.CountCircleChildren(c.Request.Context(), row.CircleID); err == nil {
+			hasChild = n > 0
+		}
+	}
 	item := gin.H{
 		"circle_id": row.CircleID, "pid": row.PID, "path": row.Path, "name": row.Name,
 		"circle_agent_id": row.CircleAgentID, "commission_type": row.CommissionType,
@@ -575,6 +751,7 @@ func (h *Handler) circleListItem(c *gin.Context, row *circle.Circle) gin.H {
 		"goods_type": circle.ParseIntCSV(row.GoodsType),
 		"platform_category_ids": circle.ParseUintCSV(row.PlatformCategoryIDs),
 		"create_time": row.CreateTime, "merchant_count": h.countCircleMerchants(c, row.CircleID),
+		"has_child": hasChild,
 	}
 	if row.CircleAgentID > 0 {
 		if agent, err := h.svc.GetAgent(c.Request.Context(), row.CircleAgentID); err == nil {
@@ -657,14 +834,41 @@ func nonzeroOrPlaceholder(ids []uint) []uint {
 	return ids
 }
 
-func (h *Handler) bindAgentAdminAccount(c *gin.Context, agentID uint, account, password, name, phone string) error {
+func (h *Handler) ensureAdminAccountAvailable(c *gin.Context, account string) error {
 	var exists int64
 	if err := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
 		Where("username = ? AND deleted_at IS NULL", account).Count(&exists).Error; err != nil {
 		return err
 	}
 	if exists > 0 {
-		return errors.New("登录账号已存在")
+		return circle.ErrAccountExists
+	}
+	return nil
+}
+
+func (h *Handler) ensureAdminDisplayNameAvailable(c *gin.Context, displayName string, excludeAdminID uint) error {
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" {
+		return circle.ErrBadParam
+	}
+	q := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
+		Where("display_name = ? AND deleted_at IS NULL", displayName)
+	if excludeAdminID > 0 {
+		q = q.Where("id <> ?", excludeAdminID)
+	}
+	var exists int64
+	if err := q.Count(&exists).Error; err != nil {
+		return err
+	}
+	if exists > 0 {
+		return circle.ErrDisplayNameExists
+	}
+	return nil
+}
+
+func (h *Handler) bindAgentAdminAccount(c *gin.Context, agentID uint, account, password, name, phone string) error {
+	if err := h.ensureAdminAccountAvailable(c, account); err != nil {
+		return err
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -674,20 +878,251 @@ func (h *Handler) bindAgentAdminAccount(c *gin.Context, agentID uint, account, p
 	if display == "" {
 		display = account
 	}
-	return h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").Create(map[string]any{
+	if err := h.ensureAdminDisplayNameAvailable(c, display, 0); err != nil {
+		return err
+	}
+	err = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").Create(map[string]any{
 		"username": account, "password_hash": string(hash), "display_name": display,
 		"phone": phone, "status": 1, "auth_version": 1, "data_scope_version": 1,
 		"circle_agent_id": agentID,
 	}).Error
+	if err != nil && isMySQLDuplicate(err) {
+		return circle.ErrAccountExists
+	}
+	return err
+}
+
+func (h *Handler) enrichAgentPage(c *gin.Context, page *circle.PageResult[circle.Agent]) gin.H {
+	agentIDs := make([]uint, 0, len(page.List))
+	for i := range page.List {
+		if page.List[i].CircleAgentID > 0 {
+			agentIDs = append(agentIDs, page.List[i].CircleAgentID)
+		}
+	}
+	circlesByAgent := h.listAgentsCircles(c, agentIDs)
+	list := make([]gin.H, 0, len(page.List))
+	for i := range page.List {
+		list = append(list, h.enrichAgentItem(c, &page.List[i], circlesByAgent[page.List[i].CircleAgentID]))
+	}
+	return gin.H{"list": list, "total": page.Total, "page": page.Page, "limit": page.Limit}
+}
+
+func (h *Handler) enrichAgentItem(c *gin.Context, row *circle.Agent, preloaded ...[]agentCircleBrief) gin.H {
+	if row == nil {
+		return gin.H{
+			"nickname": "", "account": "", "avatar": "", "extend": "",
+			"circles": []gin.H{}, "circle_ids": []uint{},
+		}
+	}
+	item := gin.H{
+		"circle_agent_id": row.CircleAgentID, "uid": row.UID, "name": row.Name, "phone": row.Phone,
+		"qualification": row.Qualification, "remark": row.Remark, "extend": row.Extend,
+		"avatar": circle.AgentAvatar(row.Extend), "audit_admin_id": row.AuditAdminID,
+		"audit_reason": row.AuditReason, "audit_time": row.AuditTime, "status": row.Status,
+		"payment_method": row.PaymentMethod, "payment_name": row.PaymentName,
+		"payment_configured": row.PaymentConfigured, "balance": row.Balance, "type": row.Type,
+		"business_name": row.BusinessName, "business_store_category": row.BusinessStoreCategory,
+		"business_store_type": row.BusinessStoreType, "create_time": row.CreateTime,
+		"nickname": "", "account": "", "circles": []gin.H{}, "circle_ids": []uint{},
+	}
+	var circles []agentCircleBrief
+	if len(preloaded) > 0 {
+		circles = preloaded[0]
+	} else {
+		circles = h.listAgentCircles(c, row.CircleAgentID)
+	}
+	if circles == nil {
+		circles = []agentCircleBrief{}
+	}
+	circlePayload := make([]gin.H, 0, len(circles))
+	ids := make([]uint, 0, len(circles))
+	for _, circleRow := range circles {
+		ids = append(ids, circleRow.CircleID)
+		circlePayload = append(circlePayload, gin.H{
+			"circle_id":        circleRow.CircleID,
+			"name":             circleRow.Name,
+			"type":             circleRow.Type,
+			"status":           circleRow.Status,
+			"commission_type":  circleRow.CommissionType,
+			"commission_rate":  circleRow.CommissionRate,
+		})
+	}
+	item["circles"] = circlePayload
+	item["circle_ids"] = ids
+	if row.UID > 0 && h.businessDB != nil {
+		var user struct {
+			Nickname  string `gorm:"column:nickname"`
+			AvatarURL string `gorm:"column:avatar_url"`
+		}
+		_ = h.businessDB.WithContext(c.Request.Context()).
+			Table("qixi_crm_b_user AS u").
+			Select("u.nickname, COALESCE(p.avatar_url,'') AS avatar_url").
+			Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id = u.id").
+			Where("u.id = ?", row.UID).Limit(1).Scan(&user).Error
+		item["nickname"] = user.Nickname
+		if user.AvatarURL != "" {
+			item["avatar_url"] = user.AvatarURL
+		}
+	}
+	var admin struct {
+		ID       uint   `gorm:"column:id"`
+		Username string `gorm:"column:username"`
+	}
+	if err := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
+		Select("id, username").
+		Where("circle_agent_id = ? AND deleted_at IS NULL", row.CircleAgentID).
+		Limit(1).Scan(&admin).Error; err == nil && admin.ID > 0 {
+		item["account"] = admin.Username
+		item["admin"] = gin.H{"admin_id": admin.ID, "account": admin.Username}
+	}
+	return item
+}
+
+type agentCircleBrief struct {
+	CircleID       uint    `gorm:"column:circle_id" json:"circle_id"`
+	Name           string  `gorm:"column:name" json:"name"`
+	Type           int8    `gorm:"column:type" json:"type"`
+	Status         int8    `gorm:"column:status" json:"status"`
+	CommissionType int8    `gorm:"column:commission_type" json:"commission_type"`
+	CommissionRate float64 `gorm:"column:commission_rate" json:"commission_rate"`
+}
+
+// listAgentCircles 返回代理绑定的区域/商户（含提成比例，对齐 CRMEB「负责区域」展示）。
+func (h *Handler) listAgentCircles(c *gin.Context, agentID uint) []agentCircleBrief {
+	if agentID == 0 {
+		return []agentCircleBrief{}
+	}
+	return h.listAgentsCircles(c, []uint{agentID})[agentID]
+}
+
+func (h *Handler) listAgentsCircles(c *gin.Context, agentIDs []uint) map[uint][]agentCircleBrief {
+	out := make(map[uint][]agentCircleBrief, len(agentIDs))
+	for _, id := range agentIDs {
+		out[id] = []agentCircleBrief{}
+	}
+	if len(agentIDs) == 0 || h.adminDB == nil {
+		return out
+	}
+	type agentCircleRow struct {
+		CircleID       uint    `gorm:"column:circle_id"`
+		Name           string  `gorm:"column:name"`
+		Type           int8    `gorm:"column:type"`
+		Status         int8    `gorm:"column:status"`
+		CommissionType int8    `gorm:"column:commission_type"`
+		CommissionRate float64 `gorm:"column:commission_rate"`
+		CircleAgentID  uint    `gorm:"column:circle_agent_id"`
+	}
+	bound := make([]agentCircleRow, 0)
+	_ = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_business_zone").
+		Select("circle_id, name, type, status, commission_type, commission_rate, circle_agent_id").
+		Where("circle_agent_id IN ?", agentIDs).
+		Order("type ASC, circle_id ASC").Scan(&bound).Error
+	for _, row := range bound {
+		out[row.CircleAgentID] = append(out[row.CircleAgentID], agentCircleBrief{
+			CircleID:       row.CircleID,
+			Name:           row.Name,
+			Type:           row.Type,
+			Status:         row.Status,
+			CommissionType: row.CommissionType,
+			CommissionRate: row.CommissionRate,
+		})
+	}
+	return out
+}
+
+func (h *Handler) syncAgentCircles(c *gin.Context, agentID uint, circleIDs *[]uint) error {
+	if circleIDs == nil || agentID == 0 {
+		return nil
+	}
+	ids := uniqueUints(*circleIDs)
+	now := time.Now()
+	return h.adminDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("qixi_crm_a_business_zone").
+			Where("circle_agent_id = ? AND type = 1 AND circle_id NOT IN ?", agentID, nonzeroOrPlaceholder(ids)).
+			Updates(map[string]any{"circle_agent_id": 0, "update_time": now}).Error; err != nil {
+			return err
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		return tx.Table("qixi_crm_a_business_zone").
+			Where("circle_id IN ? AND type = 1", ids).
+			Updates(map[string]any{"circle_agent_id": agentID, "update_time": now}).Error
+	})
+}
+
+func (h *Handler) syncBoundAdminProfile(c *gin.Context, agentID uint, name, phone, password string) error {
+	var admin struct {
+		ID uint `gorm:"column:id"`
+	}
+	if err := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
+		Select("id").Where("circle_agent_id = ? AND deleted_at IS NULL", agentID).
+		Limit(1).Scan(&admin).Error; err != nil {
+		return err
+	}
+	if admin.ID == 0 {
+		return nil
+	}
+	display := strings.TrimSpace(name)
+	if display == "" {
+		return circle.ErrBadParam
+	}
+	if err := h.ensureAdminDisplayNameAvailable(c, display, admin.ID); err != nil {
+		return err
+	}
+	updates := map[string]any{
+		"display_name": display,
+		"phone":        strings.TrimSpace(phone),
+	}
+	if password != "" {
+		if len([]rune(password)) < 6 {
+			return circle.ErrBadParam
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		updates["password_hash"] = string(hash)
+		updates["auth_version"] = gorm.Expr("auth_version + 1")
+	}
+	return h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user").
+		Where("id = ?", admin.ID).Updates(updates).Error
+}
+
+func uniqueUints(values []uint) []uint {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[uint]struct{}, len(values))
+	out := make([]uint, 0, len(values))
+	for _, v := range values {
+		if v == 0 {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
+}
+
+func isMySQLDuplicate(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "Error 1062") || strings.Contains(msg, "Duplicate entry")
 }
 
 func writeErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, circle.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
-	case errors.Is(err, circle.ErrBadParam), errors.Is(err, circle.ErrHasChildren), errors.Is(err, circle.ErrAlreadyAudited), errors.Is(err, circle.ErrAgentBound), errors.Is(err, circle.ErrAgentBalance), errors.Is(err, circle.ErrAgentAdminBound), errors.Is(err, circle.ErrAgentRevoked), errors.Is(err, circle.ErrAgentNotApproved), errors.Is(err, circle.ErrAgentAdminUnbound), errors.Is(err, circle.ErrCommandConflict):
+	case errors.Is(err, circle.ErrBadParam), errors.Is(err, circle.ErrHasChildren), errors.Is(err, circle.ErrAlreadyAudited), errors.Is(err, circle.ErrAgentBound), errors.Is(err, circle.ErrAgentBalance), errors.Is(err, circle.ErrAgentAdminBound), errors.Is(err, circle.ErrAgentRevoked), errors.Is(err, circle.ErrAgentNotApproved), errors.Is(err, circle.ErrAgentAdminUnbound), errors.Is(err, circle.ErrCommandConflict), errors.Is(err, circle.ErrAccountExists), errors.Is(err, circle.ErrDisplayNameExists):
 		response.Fail(c, http.StatusBadRequest, err.Error())
-	case err != nil && (strings.Contains(err.Error(), "登录账号已存在") || strings.Contains(err.Error(), "区域创建后不支持")):
+	case err != nil && strings.Contains(err.Error(), "区域创建后不支持"):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	default:
 		response.Fail(c, http.StatusInternalServerError, "区域代理服务异常")

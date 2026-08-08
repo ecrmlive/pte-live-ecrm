@@ -208,7 +208,7 @@ async function handleSubmit() {
     :title="title"
   >
     <div class="mb-3">
-      <ElButton :icon="Plus" type="primary" @click="addField">添加字段</ElButton>
+      <ElButton :icon="Plus" type="primary" @click="addField">新增字段</ElButton>
     </div>
 
     <Grid>

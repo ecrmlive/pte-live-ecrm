@@ -9,7 +9,7 @@
 | `app-auth.yaml` | C 端用户身份（阶段 1） |
 | `health.yaml` | api-platform / api-business / api-merchant 健康检查 |
 | `platform-merchant-catalog.yaml` | 平台商户审核/类目品牌/商品审核（阶段 2） |
-| `platform-business-zones.yaml` | 平台区域商圈、代理人员与代理审核（建设中） |
+| `platform-business-zones.yaml` | 平台区域列表、代理人员与代理设置（建设中；代理审核 API 仍保留） |
 | `merchant-catalog.yaml` | 商户商品 CRUD / 库存 / 上下架（阶段 2） |
 | `app-catalog.yaml` | C 端可售商品只读（阶段 2） |
 | `app-trade.yaml` | C 端购物车/地址/`v2/order`下单/支付（阶段 3） |

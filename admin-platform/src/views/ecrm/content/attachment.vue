@@ -22,6 +22,8 @@ const SYSTEM_ROOT_ID = -1;
 const categories = ref<AttachmentCategory[]>([]);
 const files = ref<AttachmentItem[]>([]);
 const categoryID = ref(0);
+/** all=普通库；system=侧栏「系统素材」模式（仅行级 is_system=1） */
+const libraryMode = ref<'all' | 'system'>('all');
 const kind = ref<AttachmentKind>('image');
 const loading = ref(false);
 const page = ref(1);
@@ -36,41 +38,57 @@ const accept = computed(() =>
 /** 图片上传上限 10MB（与后端 upload 包一致） */
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
-/** 「全部素材」下上传时默认落入系统分类「其他图片」 */
-const DEFAULT_UPLOAD_CATEGORY_ENNAME = 'other_image';
+/** 「系统素材」模式下上传时默认落入对应系统分类 */
+const DEFAULT_SYSTEM_UPLOAD_ENNAME = computed(() =>
+  kind.value === 'video' ? 'other_video' : 'other_image',
+);
 
 const systemCategories = computed(() =>
-  categories.value.filter((row) => row.is_system === 1),
+  categories.value.filter((row) => Number(row.is_system) === 1),
 );
 const customCategories = computed(() =>
-  categories.value.filter((row) => row.is_system !== 1),
+  categories.value.filter((row) => Number(row.is_system) !== 1),
 );
 
-/** 当前选中分类；「全部素材」/「系统素材」根入口时回退到系统「其他图片」 */
-function resolveUploadCategoryID() {
-  if (categoryID.value > 0) return categoryID.value;
-  const other = categories.value.find(
-    (row) => row.attachment_category_enname === DEFAULT_UPLOAD_CATEGORY_ENNAME,
-  );
-  return other?.attachment_category_id ?? 0;
+function resolveUploadTarget() {
+  if (libraryMode.value === 'system') {
+    const cateID =
+      categoryID.value > 0
+        ? categoryID.value
+        : (categories.value.find(
+            (row) =>
+              row.attachment_category_enname === DEFAULT_SYSTEM_UPLOAD_ENNAME.value,
+          )?.attachment_category_id ?? 0);
+    return { cateID, isSystem: true as const };
+  }
+  if (categoryID.value > 0) {
+    return { cateID: categoryID.value, isSystem: false as const };
+  }
+  return { cateID: 0, isSystem: false as const };
 }
 
 async function loadCategories() {
-  const result = await listAttachmentCategoriesApi();
+  const result = await listAttachmentCategoriesApi({ type: kind.value });
   categories.value = result.list ?? [];
 }
 
 async function loadFiles() {
   loading.value = true;
   try {
-    const systemRoot = categoryID.value === SYSTEM_ROOT_ID;
-    const result = await listAttachmentsApi({
-      category_id: categoryID.value > 0 ? categoryID.value : undefined,
-      is_system: systemRoot ? 1 : undefined,
+    const params: Parameters<typeof listAttachmentsApi>[0] = {
       limit: pageSize,
       page: page.value,
       type: kind.value,
-    });
+    };
+    if (libraryMode.value === 'system') {
+      params.is_system = 1;
+      if (categoryID.value > 0) {
+        params.category_id = categoryID.value;
+      }
+    } else if (categoryID.value > 0) {
+      params.category_id = categoryID.value;
+    }
+    const result = await listAttachmentsApi(params);
     files.value = result.list ?? [];
     total.value = result.total ?? 0;
   } finally {
@@ -79,15 +97,30 @@ async function loadFiles() {
 }
 
 function selectCategory(id: number) {
-  categoryID.value = id;
+  if (id === SYSTEM_ROOT_ID) {
+    libraryMode.value = 'system';
+    categoryID.value = SYSTEM_ROOT_ID;
+  } else if (id === 0) {
+    libraryMode.value = 'all';
+    categoryID.value = 0;
+  } else {
+    const row = categories.value.find((item) => item.attachment_category_id === id);
+    if (!row || Number(row.is_system) !== 1) {
+      libraryMode.value = 'all';
+    }
+    categoryID.value = id;
+  }
   page.value = 1;
   void loadFiles();
 }
 
-function selectKind(value: AttachmentKind) {
+async function selectKind(value: AttachmentKind) {
   kind.value = value;
+  libraryMode.value = 'all';
+  categoryID.value = 0;
   page.value = 1;
-  void loadFiles();
+  await loadCategories();
+  await loadFiles();
 }
 
 async function addCategory() {
@@ -101,7 +134,7 @@ async function addCategory() {
 }
 
 async function editCategory(row: AttachmentCategory) {
-  if (row.is_system === 1) {
+  if (Number(row.is_system) === 1) {
     ElMessage.warning('系统素材分类不可修改');
     return;
   }
@@ -121,7 +154,7 @@ async function editCategory(row: AttachmentCategory) {
 }
 
 async function removeCategory(row: AttachmentCategory) {
-  if (row.is_system === 1) {
+  if (Number(row.is_system) === 1) {
     ElMessage.warning('系统素材分类不可删除');
     return;
   }
@@ -131,7 +164,10 @@ async function removeCategory(row: AttachmentCategory) {
     { type: 'warning' },
   );
   await deleteAttachmentCategoryApi(row.attachment_category_id);
-  if (categoryID.value === row.attachment_category_id) categoryID.value = 0;
+  if (categoryID.value === row.attachment_category_id) {
+    libraryMode.value = 'all';
+    categoryID.value = 0;
+  }
   await Promise.all([loadCategories(), loadFiles()]);
   ElMessage.success('分类已删除');
 }
@@ -147,7 +183,12 @@ async function upload({ file }: { file: File }) {
     ElMessage.error('图片不能超过 10MB');
     return;
   }
-  await uploadAttachmentApi(file, resolveUploadCategoryID());
+  const target = resolveUploadTarget();
+  if (target.isSystem && !target.cateID) {
+    ElMessage.warning('请先选择系统分类再上传系统素材');
+    return;
+  }
+  await uploadAttachmentApi(file, target.cateID, { isSystem: target.isSystem });
   page.value = 1;
   await loadFiles();
   ElMessage.success('素材已上传');
@@ -232,7 +273,7 @@ onMounted(async () => {
         <div v-if="systemCategories.length" class="attachment-page__footer">
           <button
             class="attachment-page__category"
-            :class="{ active: categoryID === SYSTEM_ROOT_ID }"
+            :class="{ active: libraryMode === 'system' }"
             @click="selectCategory(SYSTEM_ROOT_ID)"
           >
             系统素材

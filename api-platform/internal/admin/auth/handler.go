@@ -18,6 +18,8 @@ var (
 	errInvalidCredentials = errors.New("账号或密码错误")
 	errAccountNotFound    = errors.New("账号不存在")
 	errNoRole             = errors.New("账号未分配后台角色")
+	errDisplayNameExists  = errors.New("昵称已存在")
+	errDisplayNameEmpty   = errors.New("昵称不能为空")
 )
 
 type adminUser struct {
@@ -375,5 +377,30 @@ func writeError(c *gin.Context, err error) {
 		response.Fail(c, http.StatusForbidden, err.Error())
 		return
 	}
+	if errors.Is(err, errDisplayNameExists) || errors.Is(err, errDisplayNameEmpty) {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
 	response.Fail(c, http.StatusInternalServerError, "服务异常")
+}
+
+// ensureAdminDisplayNameUnique 保证统一后台登录用户昵称（display_name）在未删除账号中唯一。
+func ensureAdminDisplayNameUnique(c *gin.Context, tx *gorm.DB, displayName string, excludeID uint64) error {
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" {
+		return errDisplayNameEmpty
+	}
+	q := tx.WithContext(c.Request.Context()).Table((adminUser{}).TableName()).
+		Where("display_name = ? AND deleted_at IS NULL", displayName)
+	if excludeID > 0 {
+		q = q.Where("id <> ?", excludeID)
+	}
+	var exists int64
+	if err := q.Count(&exists).Error; err != nil {
+		return err
+	}
+	if exists > 0 {
+		return errDisplayNameExists
+	}
+	return nil
 }

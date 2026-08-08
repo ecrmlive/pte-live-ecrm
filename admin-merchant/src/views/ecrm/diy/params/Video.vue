@@ -4,7 +4,7 @@ import type { VbenFormSchema } from '#/adapter/form';
 import { ElButton } from 'element-plus';
 import { computed, ref } from 'vue';
 
-import ImagePickerDialog from '#/components/shop/image-picker-dialog.vue';
+import VideoPickerDialog from '#/components/shop/video-picker-dialog.vue';
 import {
   diyColor,
   diyInput,
@@ -81,7 +81,7 @@ function selectVideo(items: Array<{ file_path: string }>) {
         />
       </div>
     </div>
-    <ImagePickerDialog v-model:open="videoPickerOpen" kind="video" @select="selectVideo" />
+    <VideoPickerDialog v-model:open="videoPickerOpen" @select="selectVideo" />
   </div>
 </template>
 

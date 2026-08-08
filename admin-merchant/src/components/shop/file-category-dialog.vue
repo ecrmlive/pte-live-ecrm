@@ -61,7 +61,7 @@ const [Form, formApi] = useVbenForm(
             group_name: name,
             group_type: props.fileType,
           });
-          ElMessage.success('添加成功');
+          ElMessage.success('新增成功');
         }
         open.value = false;
         emit('success');
@@ -108,7 +108,7 @@ async function submit() {
   <Modal
     :close-on-click-modal="false"
     :destroy-on-close="true"
-    :title="groupId != null ? '编辑分类' : '添加分类'"
+    :title="groupId != null ? '编辑分类' : '新增分类'"
     :z-index="2200"
     class="w-[420px]"
   >

@@ -96,7 +96,11 @@ func (r *Repo) merchantListBase(ctx context.Context) *gorm.DB {
 func (r *Repo) applyMerchantListFilter(q *gorm.DB, f ListMerchantsFilter) *gorm.DB {
 	if f.Keyword != "" {
 		like := "%" + f.Keyword + "%"
-		q = q.Where("v.merchant_name LIKE ? OR v.contact_name LIKE ? OR v.contact_mobile LIKE ? OR v.owner_name LIKE ?", like, like, like, like)
+		// keyword：店铺ID / 店铺名称 / 联系人（顺带电话、归属名）
+		q = q.Where(
+			"CAST(v.merchant_id AS CHAR) LIKE ? OR v.merchant_name LIKE ? OR v.contact_name LIKE ? OR v.contact_mobile LIKE ? OR v.owner_name LIKE ?",
+			like, like, like, like, like,
+		)
 	}
 	if f.Status != nil {
 		q = q.Where("v.status = ?", *f.Status)
@@ -469,6 +473,58 @@ func (r *Repo) GetIntention(ctx context.Context, id uint, regionIDs []uint) (*me
 		return nil, err
 	}
 	return &row, nil
+}
+
+func (r *Repo) CreateIntention(ctx context.Context, row *merchant.Intention) error {
+	if row == nil {
+		return fmt.Errorf("nil intention")
+	}
+	categoryName := strings.TrimSpace(row.CategoryName)
+	typeName := strings.TrimSpace(row.TypeName)
+	if categoryName == "" && row.MerchantCategoryID > 0 {
+		_ = r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_category").
+			Select("name").Where("id = ?", row.MerchantCategoryID).Limit(1).Scan(&categoryName).Error
+	}
+	if typeName == "" && row.MerTypeID > 0 {
+		_ = r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_type").
+			Select("name").Where("id = ?", row.MerTypeID).Limit(1).Scan(&typeName).Error
+	}
+	images := strings.TrimSpace(row.Images)
+	insert := struct {
+		ID             uint   `gorm:"column:id;primaryKey"`
+		MerchantName   string `gorm:"column:merchant_name"`
+		ContactName    string `gorm:"column:contact_name"`
+		ContactMobile  string `gorm:"column:contact_mobile"`
+		CategoryName   string `gorm:"column:category_name"`
+		MerchantType   string `gorm:"column:merchant_type"`
+		LicenseKey     string `gorm:"column:license_key"`
+		LicenseURL     string `gorm:"column:license_url"`
+		RegionID       *uint  `gorm:"column:region_id"`
+		Status         string `gorm:"column:status"`
+		ReviewNote     string `gorm:"column:review_note"`
+	}{
+		MerchantName:  strings.TrimSpace(row.MerName),
+		ContactName:   strings.TrimSpace(row.Name),
+		ContactMobile: strings.TrimSpace(row.Phone),
+		CategoryName:  categoryName,
+		MerchantType:  typeName,
+		LicenseKey:    images,
+		LicenseURL:    images,
+		Status:        "pending",
+		ReviewNote:    "",
+	}
+	if row.CircleID > 0 {
+		rid := row.CircleID
+		insert.RegionID = &rid
+	}
+	if err := r.adminDB.WithContext(ctx).Table("qixi_crm_a_merchant_application").Create(&insert).Error; err != nil {
+		return err
+	}
+	row.MerIntentionID = insert.ID
+	row.CategoryName = categoryName
+	row.TypeName = typeName
+	row.Status = merchant.IntentionPending
+	return nil
 }
 
 func (r *Repo) SaveIntention(ctx context.Context, row *merchant.Intention) error {

@@ -86,7 +86,7 @@ func TestAgentRevocationHTTPRBACAcrossFiveRoles(t *testing.T) {
 		middleware.RestrictRoleConsole(),
 		middleware.RestrictRegionConsole(),
 	)
-	NewHandler(domaincircle.NewService(circlepersist.NewRepo(db)), db).Register(authed)
+	NewHandler(domaincircle.NewService(circlepersist.NewRepo(db)), db, nil).Register(authed)
 	call := func(role string, userID uint) int {
 		pair, issueErr := jwtManager.IssueAdminConsole(userID, "circle-revoke-rbac-"+role, []string{role}, 1)
 		if issueErr != nil {
@@ -196,7 +196,7 @@ func TestAgentPasswordResetHTTPRBACAndSessionInvalidation(t *testing.T) {
 		middleware.RestrictRoleConsole(),
 		middleware.RestrictRegionConsole(),
 	)
-	NewHandler(domaincircle.NewService(circlepersist.NewRepo(db)), db).Register(authed)
+	NewHandler(domaincircle.NewService(circlepersist.NewRepo(db)), db, nil).Register(authed)
 	staleBoundSession, err := jwtManager.IssueAdminConsoleWithIdentityVersion(boundAdminID, "circle-bound-region-user", []string{"region"}, 1, 1)
 	if err != nil {
 		t.Fatal(err)

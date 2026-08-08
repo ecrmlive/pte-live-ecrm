@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * CRMEB 列表页骨架（结构对齐 mer.crmeb.net，颜色跟 Vben 主题）：
- * 筛选区 → 状态 Tab → 主操作（如「添加」）→ 表格（操作列可 fixed）→ 分页。
+ * 筛选区 → 状态 Tab → 主操作（如「新增」）→ 表格（操作列可 fixed）→ 分页。
  */
 defineProps<{
   /** @deprecated 菜单/面包屑已够用；仅特殊页需要时再传 */

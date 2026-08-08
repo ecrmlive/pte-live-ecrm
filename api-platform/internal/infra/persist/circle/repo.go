@@ -28,6 +28,9 @@ func (r *Repo) ListCircles(ctx context.Context, filter circle.CircleListFilter, 
 	if filter.CircleAgentID > 0 {
 		q = q.Where("circle_agent_id = ?", filter.CircleAgentID)
 	}
+	if filter.PID != nil {
+		q = q.Where("pid = ?", *filter.PID)
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -70,23 +73,45 @@ func (r *Repo) CountCircleChildren(ctx context.Context, id uint) (int64, error) 
 	return count, err
 }
 
-func (r *Repo) ListAgents(ctx context.Context, keyword string, status, agentType *int8, page, limit int) ([]circle.Agent, int64, error) {
+func (r *Repo) ListAgents(ctx context.Context, filter circle.AgentListFilter, page, limit int) ([]circle.Agent, int64, error) {
 	q := r.db.WithContext(ctx).Model(&circle.Agent{})
-	if keyword != "" {
-		q = q.Where("name LIKE ? OR phone LIKE ? OR business_name LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	if filter.Keyword != "" {
+		like := "%" + filter.Keyword + "%"
+		q = q.Where("name LIKE ? OR phone LIKE ? OR business_name LIKE ?", like, like, like)
 	}
-	if status != nil {
-		q = q.Where("status = ?", *status)
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
-	if agentType != nil {
-		q = q.Where("type = ?", *agentType)
+	if filter.Phone != "" {
+		q = q.Where("phone LIKE ?", "%"+filter.Phone+"%")
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	if filter.Type != nil {
+		q = q.Where("type = ?", *filter.Type)
+	}
+	if filter.UID != nil {
+		q = q.Where("uid = ?", *filter.UID)
+	}
+	if filter.UIDs != nil {
+		if len(*filter.UIDs) == 0 {
+			return []circle.Agent{}, 0, nil
+		}
+		q = q.Where("uid IN ?", *filter.UIDs)
+	}
+	if filter.DateFrom != "" {
+		q = q.Where("create_time >= ?", filter.DateFrom+" 00:00:00")
+	}
+	if filter.DateTo != "" {
+		q = q.Where("create_time <= ?", filter.DateTo+" 23:59:59")
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	var rows []circle.Agent
-	err := q.Order("status ASC, circle_agent_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	err := q.Order("create_time DESC, circle_agent_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
 }
 
@@ -105,7 +130,7 @@ func (r *Repo) CreateAgent(ctx context.Context, row *circle.Agent) error {
 func (r *Repo) UpdateAgent(ctx context.Context, row *circle.Agent) error {
 	return r.db.WithContext(ctx).Model(&circle.Agent{}).Where("circle_agent_id = ?", row.CircleAgentID).Updates(map[string]any{
 		"uid": row.UID, "name": row.Name, "phone": row.Phone, "qualification": row.Qualification,
-		"remark": row.Remark, "payment_method": row.PaymentMethod, "payment_name": row.PaymentName,
+		"remark": row.Remark, "extend": row.Extend, "payment_method": row.PaymentMethod, "payment_name": row.PaymentName,
 		"payment_account": row.PaymentAccount, "payment_bank": row.PaymentBank, "payment_qr_img": row.PaymentQRImg,
 		"type": row.Type, "business_name": row.BusinessName, "business_store_category": row.BusinessStoreCategory,
 		"business_store_type": row.BusinessStoreType, "update_time": time.Now(),
@@ -147,19 +172,36 @@ func (r *Repo) RevokeAgent(ctx context.Context, id uint, reason, idempotencyKey 
 		if agent.Balance != 0 {
 			return circle.ErrAgentBalance
 		}
-		var bound int64
-		if err := tx.Table("qixi_crm_a_business_zone").Where("circle_agent_id=?", id).Count(&bound).Error; err != nil {
-			return err
-		}
-		if bound > 0 {
-			return circle.ErrAgentBound
-		}
-		var adminBound int64
-		if err := tx.Table("qixi_crm_a_admin_user").Where("circle_agent_id=?", id).Count(&adminBound).Error; err != nil {
-			return err
-		}
-		if adminBound > 0 {
-			return circle.ErrAgentAdminBound
+		// 商户管理员删除：解绑负责商户与后台账号后再撤销（对齐 CRMEB 商户管理员列表删除）。
+		if agent.Type == 1 {
+			if err := tx.Table("qixi_crm_a_business_zone").
+				Where("circle_agent_id=? AND type=1", id).
+				Updates(map[string]any{"circle_agent_id": 0, "update_time": now}).Error; err != nil {
+				return err
+			}
+			if err := tx.Table("qixi_crm_a_admin_user").
+				Where("circle_agent_id=? AND deleted_at IS NULL", id).
+				Updates(map[string]any{
+					"status": 0, "deleted_at": now, "circle_agent_id": nil,
+					"auth_version": gorm.Expr("auth_version + 1"),
+				}).Error; err != nil {
+				return err
+			}
+		} else {
+			var bound int64
+			if err := tx.Table("qixi_crm_a_business_zone").Where("circle_agent_id=?", id).Count(&bound).Error; err != nil {
+				return err
+			}
+			if bound > 0 {
+				return circle.ErrAgentBound
+			}
+			var adminBound int64
+			if err := tx.Table("qixi_crm_a_admin_user").Where("circle_agent_id=?", id).Count(&adminBound).Error; err != nil {
+				return err
+			}
+			if adminBound > 0 {
+				return circle.ErrAgentAdminBound
+			}
 		}
 		if err := tx.Model(&circle.Agent{}).Where("circle_agent_id=? AND status<>?", id, circle.AgentRevoked).Updates(map[string]any{"status": circle.AgentRevoked, "update_time": now}).Error; err != nil {
 			return err

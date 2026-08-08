@@ -23,7 +23,7 @@ func (s *serviceStoreStub) DeleteCircle(context.Context, uint) error         { r
 func (s *serviceStoreStub) CountCircleChildren(context.Context, uint) (int64, error) {
 	return 0, nil
 }
-func (s *serviceStoreStub) ListAgents(context.Context, string, *int8, *int8, int, int) ([]Agent, int64, error) {
+func (s *serviceStoreStub) ListAgents(context.Context, AgentListFilter, int, int) ([]Agent, int64, error) {
 	if s.agent == nil {
 		return nil, 0, nil
 	}
@@ -68,7 +68,7 @@ func TestListAgentsDoesNotReturnPaymentCredentials(t *testing.T) {
 		PaymentBank:    "local-demo-bank",
 		PaymentQRImg:   "/demo/payment-qr.png",
 	}}
-	res, err := NewService(store).ListAgents(context.Background(), "", nil, nil, 1, 20)
+	res, err := NewService(store).ListAgents(context.Background(), AgentListFilter{}, 1, 20)
 	if err != nil {
 		t.Fatalf("list agents: %v", err)
 	}
@@ -101,6 +101,58 @@ func TestUpdateAgentKeepsPaymentCredentialsWhenInputIsBlank(t *testing.T) {
 	}
 	if store.updatedAgent.PaymentAccount != "local-demo-account" || store.updatedAgent.PaymentBank != "local-demo-bank" || store.updatedAgent.PaymentQRImg != "/demo/payment-qr.png" {
 		t.Fatalf("blank update must retain write-only payment data: %+v", store.updatedAgent)
+	}
+}
+
+func TestCreateAgentSetsCreateAndUpdateTime(t *testing.T) {
+	store := &serviceStoreStub{}
+	before := time.Now().Add(-time.Second)
+	row, err := NewService(store).CreateAgent(context.Background(), AgentInput{
+		Type: 1, Name: "测试管理员", Phone: "13333333334", Account: "13333333334", Password: "000000",
+	})
+	if err != nil {
+		t.Fatalf("create agent: %v", err)
+	}
+	if row.Status != AgentApproved {
+		t.Fatalf("expected approved status, got %d", row.Status)
+	}
+	if row.CreateTime.Before(before) || row.UpdateTime.Before(before) || row.CreateTime.IsZero() || row.UpdateTime.IsZero() {
+		t.Fatalf("create/update time must be set: create=%v update=%v", row.CreateTime, row.UpdateTime)
+	}
+}
+
+func TestUpdateApprovedMerchantAdminAllowed(t *testing.T) {
+	store := &serviceStoreStub{agent: &Agent{
+		CircleAgentID: 9, Type: 1, Status: AgentApproved,
+		Name: "原管理员", Phone: "13900000011",
+	}}
+	row, err := NewService(store).UpdateAgent(context.Background(), 9, AgentInput{
+		Type: 1, Name: "新管理员", Phone: "13900000012", UID: 88,
+	})
+	if err != nil {
+		t.Fatalf("update approved merchant admin: %v", err)
+	}
+	if row.Name != "新管理员" || row.Phone != "13900000012" || row.Status != AgentApproved || row.Type != 1 {
+		t.Fatalf("unexpected updated row: %+v", row)
+	}
+}
+
+func TestUpdateApprovedRegionAgentAllowed(t *testing.T) {
+	store := &serviceStoreStub{agent: &Agent{
+		CircleAgentID: 8, Type: 0, Status: AgentApproved,
+		Name: "区域代理", Phone: "13900000013",
+	}}
+	row, err := NewService(store).UpdateAgent(context.Background(), 8, AgentInput{
+		Type: 0, Name: "改名代理", Phone: "13900000013", Avatar: "/demo/agent-avatar.png",
+	})
+	if err != nil {
+		t.Fatalf("update approved region agent: %v", err)
+	}
+	if row.Name != "改名代理" || row.Status != AgentApproved || row.Type != 0 {
+		t.Fatalf("unexpected updated row: %+v", row)
+	}
+	if AgentAvatar(store.updatedAgent.Extend) != "/demo/agent-avatar.png" {
+		t.Fatalf("avatar not persisted into extend: %q", store.updatedAgent.Extend)
 	}
 }
 

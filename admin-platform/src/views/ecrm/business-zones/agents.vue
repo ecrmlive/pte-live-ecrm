@@ -1,148 +1,313 @@
 <script setup lang="ts">
+import type { PropType } from 'vue';
+
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, reactive, ref } from 'vue';
+import { computed, defineComponent, h, markRaw, reactive, ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
+  ElAvatar,
   ElButton,
   ElForm,
   ElFormItem,
   ElInput,
-  ElInputNumber,
   ElMessage,
   ElMessageBox,
   ElOption,
-  ElRadio,
-  ElRadioGroup,
   ElSelect,
-  ElTable,
-  ElTableColumn,
-  ElTag,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createBusinessZoneAgent,
-  fetchBusinessZoneAgentMerchants,
+  fetchBusinessZoneAgent,
   fetchBusinessZoneAgents,
-  revokeBusinessZoneAgent,
   resetBusinessZoneAgentPassword,
+  revokeBusinessZoneAgent,
   updateBusinessZoneAgent,
   type BusinessZoneAgentRow,
 } from '#/api/core/ecrm';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
-import { LIST_KEYWORD_FIELD, listFormOptionsDefaults } from '#/utils/list-form-defaults';
+import UserPickerModal, {
+  type PickedPlatformUser,
+} from '#/components/ecrm/user-picker-modal.vue';
+import ImageField from '#/components/shop/image-field.vue';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import {
+  LIST_DATE_RANGE_FIELD,
+  listFormOptionsDefaults,
+} from '#/utils/list-form-defaults';
 
-const merchantRows = ref<
-  Array<{
-    merchant_id: number;
-    merchant_name: string;
-    region_id: number;
-    status: number;
-  }>
->([]);
+type DrawerMode = 'create' | 'edit';
+type UserSearchField = 'uid' | 'user_phone' | 'nickname';
+type UserSearchValue = { field: UserSearchField; keyword: string };
+
+const QUALIFICATION_MAX = 5;
+
+const USER_SEARCH_OPTIONS: Array<{ label: string; value: UserSearchField }> = [
+  { label: 'UID', value: 'uid' },
+  { label: '手机号', value: 'user_phone' },
+  { label: '用户昵称', value: 'nickname' },
+];
+
+function userSearchPlaceholder(field: UserSearchField) {
+  if (field === 'uid') return '请输入UID';
+  if (field === 'user_phone') return '请输入手机号';
+  if (field === 'nickname') return '请输入用户昵称';
+  return '请输入用户信息';
+}
+
+/** 用户搜索：左侧类型 Select + 右侧关键词 Input，绑定同一表单项。 */
+const UserSearchComposite = defineComponent({
+  name: 'UserSearchComposite',
+  props: {
+    modelValue: {
+      type: Object as PropType<UserSearchValue>,
+      default: () => ({ field: 'uid' as UserSearchField, keyword: '' }),
+    },
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    function patch(partial: Partial<UserSearchValue>) {
+      emit('update:modelValue', {
+        field: props.modelValue?.field || 'uid',
+        keyword: props.modelValue?.keyword || '',
+        ...partial,
+      });
+    }
+    return () => {
+      const field = (props.modelValue?.field || 'uid') as UserSearchField;
+      const keyword = props.modelValue?.keyword || '';
+      return h('div', { class: 'agent-user-search' }, [
+        h(
+          ElSelect,
+          {
+            modelValue: field,
+            'onUpdate:modelValue': (value: UserSearchField) =>
+              patch({ field: value }),
+            class: 'agent-user-search__type',
+          },
+          () =>
+            USER_SEARCH_OPTIONS.map((opt) =>
+              h(ElOption, {
+                key: opt.value,
+                label: opt.label,
+                value: opt.value,
+              }),
+            ),
+        ),
+        h(ElInput, {
+          modelValue: keyword,
+          'onUpdate:modelValue': (value: string) => patch({ keyword: value }),
+          clearable: true,
+          class: 'agent-user-search__keyword',
+          placeholder: userSearchPlaceholder(field),
+        }),
+      ]);
+    };
+  },
+});
+
+const drawerMode = ref<DrawerMode>('create');
+const editingID = ref(0);
 const resetTarget = ref<BusinessZoneAgentRow>();
-const editingID = ref<number>();
+const linkedUser = ref<PickedPlatformUser | null>(null);
+const userPickerOpen = ref(false);
+
 const form = reactive({
-  uid: 0,
   name: '',
   phone: '',
-  qualification: '',
+  qualificationImages: [''] as string[],
+  uid: 0,
   remark: '',
-  payment_method: 0,
-  payment_name: '',
-  payment_account: '',
-  payment_bank: '',
-  payment_qr_img: '',
-  type: 0,
-  business_name: '',
-  business_store_category: 0,
-  business_store_type: 0,
 });
+
 const passwordReset = reactive({
   password: '',
   confirmPassword: '',
   reason: '',
 });
 
-const statusText = (value: number) =>
-  ({
-    '-2': '已撤销',
-    '-1': '已驳回',
-    '0': '待审核',
-    '1': '已通过',
-  })[String(value)] || '未知';
-const statusTag = (value: number) =>
-  ({
-    '-2': 'info',
-    '-1': 'danger',
-    '0': 'warning',
-    '1': 'success',
-  })[String(value)] || 'info';
-const payText = (value: number) =>
-  ['银行卡', '微信', '支付宝'][value] || '银行卡';
-const dialogTitle = computed(() =>
-  editingID.value ? '编辑代理申请' : '新增代理申请',
+const drawerTitle = computed(() =>
+  drawerMode.value === 'edit' ? '编辑区域代理' : '新增区域代理',
 );
 
+function normalizeQualificationSlots(urls: string[]): string[] {
+  const filled = urls.map((item) => item.trim()).filter(Boolean);
+  if (!filled.length) return [''];
+  if (filled.length >= QUALIFICATION_MAX) {
+    return filled.slice(0, QUALIFICATION_MAX);
+  }
+  return [...filled, ''];
+}
+
+function parseQualificationImages(raw?: string): string[] {
+  const text = String(raw ?? '').trim();
+  if (!text) return [''];
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (Array.isArray(parsed)) {
+      return normalizeQualificationSlots(
+        parsed.map((item) => String(item ?? '').trim()),
+      );
+    }
+  } catch {
+    /* 兼容历史纯文本/单 URL */
+  }
+  if (text.startsWith('http') || text.startsWith('/')) {
+    return normalizeQualificationSlots([text]);
+  }
+  return [''];
+}
+
+function serializeQualificationImages(images: string[]): string {
+  const urls = images.map((item) => item.trim()).filter(Boolean);
+  return urls.length ? JSON.stringify(urls) : '';
+}
+
+function setQualificationImage(index: number, value?: string | null) {
+  form.qualificationImages[index] = String(value ?? '').trim();
+  form.qualificationImages = normalizeQualificationSlots(
+    form.qualificationImages,
+  );
+}
+
+function addQualificationSlot() {
+  if (form.qualificationImages.length >= QUALIFICATION_MAX) return;
+  const last = form.qualificationImages[form.qualificationImages.length - 1];
+  if (!String(last ?? '').trim()) return;
+  form.qualificationImages.push('');
+}
+
+/** 负责区域：名称(提成%)，顿号连接。 */
+function formatResponsibleRegions(row: BusinessZoneAgentRow) {
+  const parts = (row.circles || [])
+    .filter((item) => Number(item?.type ?? 0) === 0)
+    .map((item) => {
+      const name = String(item?.name ?? '').trim();
+      if (!name) return '';
+      const rate = Number(item?.commission_rate ?? 0);
+      return `${name}(${Number.isFinite(rate) ? rate : 0}%)`;
+    })
+    .filter(Boolean);
+  if (parts.length) return parts.join('、');
+  // 无 type=0 时回退全部绑定（兼容旧数据）
+  const fallback = (row.circles || [])
+    .map((item) => {
+      const name = String(item?.name ?? '').trim();
+      if (!name) return '';
+      const rate = Number(item?.commission_rate ?? 0);
+      return `${name}(${Number.isFinite(rate) ? rate : 0}%)`;
+    })
+    .filter(Boolean);
+  return fallback.length ? fallback.join('、') : '—';
+}
+
+function formatUserInfo(row: BusinessZoneAgentRow) {
+  if (!row.uid) return '—';
+  return `${row.nickname || '用户'} | ${row.uid}`;
+}
+
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_KEYWORD_FIELD('姓名 / 手机号 / 商户名'),
   {
-    component: 'Select',
+    component: 'Input',
     componentProps: {
       clearable: true,
-      options: [
-        { label: '待审核', value: 0 },
-        { label: '已通过', value: 1 },
-        { label: '已驳回', value: -1 },
-      ],
-      placeholder: '全部状态',
+      placeholder: '请输入代理名称',
     },
-    fieldName: 'status',
-    label: '审核状态',
+    fieldName: 'name',
+    label: '代理名称',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '请输入联系电话',
+    },
+    fieldName: 'phone',
+    label: '联系电话',
+  },
+  {
+    ...LIST_DATE_RANGE_FIELD,
+    label: '创建时间',
+    componentProps: {
+      ...LIST_DATE_RANGE_FIELD.componentProps,
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+    },
+  },
+  {
+    component: markRaw(UserSearchComposite),
+    defaultValue: { field: 'uid', keyword: '' } satisfies UserSearchValue,
+    fieldName: 'user_search',
+    label: '用户搜索',
   },
 ]);
 
 const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
   columns: [
-    { field: 'circle_agent_id', title: 'ID', width: 72 },
-    { field: 'name', minWidth: 110, title: '代理姓名' },
-    { field: 'phone', title: '手机号', width: 140 },
-    { field: 'business_name', minWidth: 140, title: '关联商户' },
+    { field: 'name', minWidth: 120, title: '代理名称' },
+    { field: 'phone', title: '联系电话', width: 140 },
     {
-      field: 'payment_method',
-      formatter: ({ cellValue }) => payText(Number(cellValue)),
-      title: '结算方式',
-      width: 100,
+      field: 'uid',
+      formatter: ({ row }) => formatUserInfo(row),
+      minWidth: 160,
+      title: '用户信息',
     },
-    { field: 'balance', title: '佣金余额', width: 110 },
     {
-      field: 'status',
-      slots: { default: 'status' },
-      title: '审核状态',
-      width: 100,
+      field: 'circles',
+      minWidth: 200,
+      slots: { default: 'circles' },
+      title: '负责区域',
     },
-    platformListActionColumn({ minWidth: 270 }),
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 170,
+      title: '创建时间',
+    },
+    platformListActionColumn({ minWidth: 200, title: '代理操作' }),
   ],
-  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        const statusRaw = formValues?.status;
-        const result = await fetchBusinessZoneAgents({
+        const range = Array.isArray(formValues?.date_range)
+          ? formValues.date_range
+          : [];
+        const userSearch = (formValues?.user_search ||
+          {}) as Partial<UserSearchValue>;
+        const userField = (userSearch.field || 'uid') as UserSearchField;
+        const userKeyword = String(userSearch.keyword ?? '').trim();
+        // 仅下发当前用户搜索类型对应参数，不附带其它类型键。
+        const params: Parameters<typeof fetchBusinessZoneAgents>[0] = {
           page: page.currentPage,
           limit: page.pageSize,
-          keyword: String(formValues?.keyword ?? '').trim() || undefined,
-          status:
-            statusRaw === 0 || statusRaw === 1 || statusRaw === -1
-              ? Number(statusRaw)
-              : undefined,
-        });
-        return { items: result.list, total: result.total };
+          type: 0,
+          name: String(formValues?.name ?? '').trim() || undefined,
+          phone: String(formValues?.phone ?? '').trim() || undefined,
+          date_from: range[0] ? String(range[0]) : undefined,
+          date_to: range[1] ? String(range[1]) : undefined,
+        };
+        if (userKeyword) {
+          if (userField === 'uid') {
+            const uid = Number(userKeyword);
+            if (Number.isFinite(uid) && uid > 0) params.uid = uid;
+          } else if (userField === 'user_phone') {
+            params.user_phone = userKeyword;
+          } else if (userField === 'nickname') {
+            params.nickname = userKeyword;
+          }
+        }
+        const result = await fetchBusinessZoneAgents(params);
+        return { items: result.list || [], total: result.total || 0 };
       },
     },
   },
@@ -151,18 +316,18 @@ const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
     custom: false,
     export: false,
     refresh: false,
-    search: false,
     zoom: false,
   },
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [MerchantsDrawer, merchantsDrawerApi] = useVbenDrawer({
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  footer: false,
+  confirmText: '保存',
+  cancelText: '取消',
   placement: 'right',
-  title: '代理关联商户',
+  onConfirm: async () => save(),
 });
 
 const [ResetDrawer, resetDrawerApi] = useVbenDrawer({
@@ -174,126 +339,132 @@ const [ResetDrawer, resetDrawerApi] = useVbenDrawer({
   onConfirm: async () => submitPasswordReset(),
 });
 
-const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
-  cancelText: '取消',
-  placement: 'right',
-  onConfirm: async () => save(),
-});
-
 function resetForm() {
   Object.assign(form, {
-    uid: 0,
     name: '',
     phone: '',
-    qualification: '',
+    qualificationImages: [''],
+    uid: 0,
     remark: '',
-    payment_method: 0,
-    payment_name: '',
-    payment_account: '',
-    payment_bank: '',
-    payment_qr_img: '',
-    type: 0,
-    business_name: '',
-    business_store_category: 0,
-    business_store_type: 0,
   });
+  linkedUser.value = null;
+}
+
+function fillForm(row: BusinessZoneAgentRow) {
+  Object.assign(form, {
+    name: row.name || '',
+    phone: row.phone || '',
+    qualificationImages: parseQualificationImages(row.qualification),
+    uid: row.uid || 0,
+    remark: row.remark || '',
+  });
+  if (row.uid) {
+    linkedUser.value = {
+      id: row.uid,
+      nickname: row.nickname || `用户#${row.uid}`,
+      avatar_url: row.avatar_url || '',
+      mobile: row.phone || '',
+    };
+  } else {
+    linkedUser.value = null;
+  }
 }
 
 function openCreate() {
-  editingID.value = undefined;
+  drawerMode.value = 'create';
+  editingID.value = 0;
   resetForm();
-  formDrawerApi.setState({ title: dialogTitle.value }).open();
+  formDrawerApi
+    .setState({
+      title: drawerTitle.value,
+      showConfirmButton: true,
+      confirmText: '保存',
+    })
+    .open();
 }
 
-function openEdit(row: BusinessZoneAgentRow) {
-  if (row.status !== 0) {
-    ElMessage.warning('已审核的代理资料不可编辑');
-    return;
-  }
+async function openEdit(row: BusinessZoneAgentRow) {
+  drawerMode.value = 'edit';
   editingID.value = row.circle_agent_id;
-  Object.assign(form, {
-    uid: row.uid,
-    name: row.name,
-    phone: row.phone,
-    qualification: row.qualification,
-    remark: row.remark,
-    payment_method: row.payment_method,
-    payment_name: row.payment_name,
-    payment_account: '',
-    payment_bank: '',
-    payment_qr_img: '',
-    type: row.type,
-    business_name: row.business_name,
-    business_store_category: 0,
-    business_store_type: 0,
-  });
-  formDrawerApi.setState({ title: dialogTitle.value }).open();
+  resetForm();
+  formDrawerApi
+    .setState({
+      title: drawerTitle.value,
+      showConfirmButton: true,
+      confirmText: '保存',
+    })
+    .open();
+  formDrawerApi.lock();
+  try {
+    const detail = await fetchBusinessZoneAgent(row.circle_agent_id);
+    fillForm(detail);
+  } finally {
+    formDrawerApi.unlock();
+  }
+}
+
+function openUserPicker() {
+  userPickerOpen.value = true;
+}
+
+function onUserPicked(user: PickedPlatformUser) {
+  linkedUser.value = user;
+  form.uid = user.id;
+  if (!form.phone.trim() && user.mobile) {
+    form.phone = user.mobile;
+  }
+}
+
+function clearLinkedUser() {
+  linkedUser.value = null;
+  form.uid = 0;
 }
 
 async function save() {
-  if (!form.name.trim() || !form.phone.trim()) {
-    ElMessage.warning('代理姓名和手机号必填');
+  if (!form.name.trim()) {
+    ElMessage.warning('请输入代理名称');
+    return;
+  }
+  if (!form.phone.trim()) {
+    ElMessage.warning('请输入联系电话');
+    return;
+  }
+  if (!form.uid || form.uid <= 0) {
+    ElMessage.warning('请选择区域代理关联用户');
     return;
   }
   formDrawerApi.lock();
+  const isEdit = drawerMode.value === 'edit' && editingID.value > 0;
   try {
-    if (editingID.value) {
-      await updateBusinessZoneAgent(editingID.value, form);
+    const payload = {
+      type: 0 as const,
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      uid: form.uid,
+      qualification: serializeQualificationImages(form.qualificationImages),
+      remark: form.remark.trim(),
+      auto_approve: true,
+    };
+    if (isEdit) {
+      await updateBusinessZoneAgent(editingID.value, payload);
     } else {
-      await createBusinessZoneAgent(form);
+      await createBusinessZoneAgent(payload);
     }
     formDrawerApi.close();
-    ElMessage.success('已保存，新增申请需在代理审核中处理');
+    ElMessage.success(isEdit ? '已保存' : '已新增区域代理');
     gridApi.reload();
   } finally {
     formDrawerApi.unlock();
   }
 }
 
-async function revoke(row: BusinessZoneAgentRow) {
-  try {
-    const { value } = await ElMessageBox.prompt(
-      `撤销“${row.name}”的代理资格不会删除其历史审核、结算或关联事实。已关联区域或仍有佣金余额的代理不能撤销。`,
-      '撤销代理资格',
-      {
-        inputPattern: /.{2,}/,
-        inputErrorMessage: '撤销原因至少 2 个字符',
-        confirmButtonText: '确认撤销',
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
-    );
-    await revokeBusinessZoneAgent(row.circle_agent_id, {
-      reason: value.trim(),
-      idempotency_key: `agent-revoke-${row.circle_agent_id}-${Date.now()}`,
-    });
-    ElMessage.success('代理资格已撤销');
-    gridApi.reload();
-  } catch {
-    /* 取消 */
-  }
-}
-
-async function openMerchants(row: BusinessZoneAgentRow) {
-  merchantsDrawerApi.open();
-  merchantRows.value = [];
-  try {
-    merchantRows.value =
-      (await fetchBusinessZoneAgentMerchants(row.circle_agent_id)).list || [];
-  } catch {
-    merchantsDrawerApi.close();
-  }
-}
-
 function openPasswordReset(row: BusinessZoneAgentRow) {
-  if (row.status !== 1) {
-    ElMessage.warning('仅审核通过的代理可以重置后台密码');
-    return;
-  }
   resetTarget.value = row;
-  Object.assign(passwordReset, { password: '', confirmPassword: '', reason: '' });
+  Object.assign(passwordReset, {
+    password: '',
+    confirmPassword: '',
+    reason: '',
+  });
   resetDrawerApi.open();
 }
 
@@ -313,13 +484,45 @@ async function submitPasswordReset() {
     );
     return;
   }
-  await resetBusinessZoneAgentPassword(target.circle_agent_id, {
-    password: passwordReset.password,
-    reason,
-    idempotency_key: `agent-password-${target.circle_agent_id}-${crypto.randomUUID()}`,
-  });
-  ElMessage.success('后台密码已重置，该代理旧后台会话已失效');
-  resetDrawerApi.close();
+  resetDrawerApi.lock();
+  try {
+    await resetBusinessZoneAgentPassword(target.circle_agent_id, {
+      password: passwordReset.password,
+      reason,
+      idempotency_key: `agent-password-${target.circle_agent_id}-${crypto.randomUUID()}`,
+    });
+    ElMessage.success('后台密码已重置，该代理旧后台会话已失效');
+    resetDrawerApi.close();
+  } finally {
+    resetDrawerApi.unlock();
+  }
+}
+
+async function remove(row: BusinessZoneAgentRow) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除代理「${row.name}」吗？删除为资格撤销，不会硬删历史审核与结算事实；已关联区域或仍有佣金余额时无法撤销。`,
+      '提示',
+      {
+        type: 'warning',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+      },
+    );
+    await revokeBusinessZoneAgent(row.circle_agent_id, {
+      reason: `删除区域代理 ${row.name}`,
+      idempotency_key: `agent-delete-${row.circle_agent_id}-${Date.now()}`,
+    });
+    ElMessage.success('已删除');
+    gridApi.reload();
+  } catch {
+    /* 取消 */
+  }
+}
+
+/** TODO: 待对接区域代理导出 API（当前无独立 export 接口） */
+function exportList() {
+  ElMessage.info('导出功能待对接，暂不可用');
 }
 </script>
 
@@ -328,111 +531,110 @@ async function submitPasswordReset() {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增代理
+          新增
         </ElButton>
+        <ElButton @click="exportList">导出</ElButton>
       </template>
-      <template #status="{ row }">
-        <ElTag :type="statusTag(row.status)">{{ statusText(row.status) }}</ElTag>
+      <template #circles="{ row }">
+        {{ formatResponsibleRegions(row) }}
       </template>
       <template #action="{ row }">
-        <ElButton
-          v-if="row.status === 0"
-          link
-          type="primary"
-          @click="openEdit(row)"
-        >
-          编辑
-        </ElButton>
-        <ElButton link @click="openMerchants(row)">关联商户</ElButton>
-        <ElButton
-          v-if="row.status === 1"
-          link
-          type="warning"
-          @click="openPasswordReset(row)"
-        >
+        <ElButton link type="warning" @click="openPasswordReset(row)">
           重置密码
         </ElButton>
-        <ElButton
-          v-if="row.status === 1"
-          link
-          type="danger"
-          @click="revoke(row)"
-        >
-          撤销
-        </ElButton>
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
       </template>
     </Grid>
 
-    <FormDrawer :title="dialogTitle">
+    <FormDrawer :title="drawerTitle">
       <ElForm label-width="110px">
-        <ElFormItem label="关联用户ID">
-          <ElInputNumber v-model="form.uid" :min="0" />
-        </ElFormItem>
-        <ElFormItem label="代理姓名" required>
-          <ElInput v-model="form.name" />
+        <ElFormItem label="代理名称" required>
+          <ElInput
+            v-model="form.name"
+            clearable
+            maxlength="64"
+            placeholder="请输入代理名称"
+          />
         </ElFormItem>
         <ElFormItem label="联系电话" required>
-          <ElInput v-model="form.phone" />
-        </ElFormItem>
-        <ElFormItem label="代理类型">
-          <ElRadioGroup v-model="form.type">
-            <ElRadio :value="0">区域代理</ElRadio>
-            <ElRadio :value="1">商户型代理</ElRadio>
-          </ElRadioGroup>
-        </ElFormItem>
-        <ElFormItem label="关联商户">
-          <ElInput v-model="form.business_name" placeholder="商户型代理填写" />
-        </ElFormItem>
-        <ElFormItem label="结算方式">
-          <ElSelect v-model="form.payment_method">
-            <ElOption label="银行卡" :value="0" />
-            <ElOption label="微信" :value="1" />
-            <ElOption label="支付宝" :value="2" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="结算名称">
-          <ElInput v-model="form.payment_name" />
-        </ElFormItem>
-        <ElFormItem label="结算账号">
           <ElInput
-            v-model="form.payment_account"
-            autocomplete="off"
-            :placeholder="
-              editingID ? '留空保持原资料，系统不会回显' : '仅写入，不会在列表或详情回显'
-            "
+            v-model="form.phone"
+            clearable
+            maxlength="16"
+            placeholder="请输入联系电话"
           />
         </ElFormItem>
-        <ElFormItem label="开户行">
+        <ElFormItem label="身份资质">
+          <div class="agent-image-slots">
+            <ImageField
+              v-for="(_, index) in form.qualificationImages"
+              :key="`qual-${index}`"
+              :model-value="form.qualificationImages[index]"
+              :preview-size="72"
+              :show-button="false"
+              default-library="system"
+              @update:model-value="(value) => setQualificationImage(index, value)"
+            />
+            <ElButton
+              v-if="
+                form.qualificationImages.length < QUALIFICATION_MAX &&
+                !!String(
+                  form.qualificationImages[
+                    form.qualificationImages.length - 1
+                  ] || '',
+                ).trim()
+              "
+              plain
+              type="primary"
+              @click="addQualificationSlot"
+            >
+              新增
+            </ElButton>
+          </div>
+        </ElFormItem>
+        <ElFormItem label="区域代理" required>
+          <div class="linked-user-row">
+            <div v-if="linkedUser" class="linked-user-summary">
+              <ElAvatar
+                v-if="linkedUser.avatar_url"
+                :size="32"
+                :src="linkedUser.avatar_url"
+              />
+              <ElAvatar v-else :size="32">
+                {{ (linkedUser.nickname || '?').slice(0, 1) }}
+              </ElAvatar>
+              <div class="linked-user-meta">
+                <div class="linked-user-name">{{ linkedUser.nickname }}</div>
+                <div class="linked-user-id">
+                  UID {{ linkedUser.id
+                  }}<template v-if="linkedUser.mobile">
+                    · {{ linkedUser.mobile }}</template
+                  >
+                </div>
+              </div>
+              <ElButton link type="danger" @click="clearLinkedUser">
+                清空
+              </ElButton>
+            </div>
+            <ElButton type="primary" plain @click="openUserPicker">
+              选择用户
+            </ElButton>
+          </div>
+          <div class="field-tip">必选；选择 C 端用户并绑定其 UID</div>
+        </ElFormItem>
+        <ElFormItem label="说明">
           <ElInput
-            v-model="form.payment_bank"
-            autocomplete="off"
-            :placeholder="editingID ? '留空保持原资料' : '仅写入，不会回显'"
+            v-model="form.remark"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            placeholder="请输入说明"
           />
-        </ElFormItem>
-        <ElFormItem label="资质材料">
-          <ElInput v-model="form.qualification" type="textarea" />
-        </ElFormItem>
-        <ElFormItem label="备注">
-          <ElInput v-model="form.remark" type="textarea" />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
-
-    <MerchantsDrawer>
-      <ElTable :data="merchantRows" border>
-        <ElTableColumn label="商户ID" prop="mer_id" width="100" />
-        <ElTableColumn label="商户名称" min-width="180" prop="mer_name" />
-        <ElTableColumn label="状态" width="100">
-          <template #default="{ row }">
-            <ElTag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '启用' : '停用' }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-    </MerchantsDrawer>
-
-    
 
     <ResetDrawer>
       <ElAlert
@@ -472,5 +674,75 @@ async function submitPasswordReset() {
         </ElFormItem>
       </ElForm>
     </ResetDrawer>
+
+    <UserPickerModal v-model:open="userPickerOpen" @select="onUserPicked" />
   </Page>
 </template>
+
+<style scoped>
+.agent-image-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.field-tip {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #909399;
+}
+
+.linked-user-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.linked-user-summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+}
+
+.linked-user-meta {
+  min-width: 0;
+}
+
+.linked-user-name {
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--el-text-color-primary);
+}
+
+.linked-user-id {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--el-text-color-secondary);
+}
+
+:deep(.agent-user-search) {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+}
+
+:deep(.agent-user-search__type) {
+  width: 112px;
+  flex-shrink: 0;
+}
+
+:deep(.agent-user-search__keyword) {
+  flex: 1;
+  min-width: 0;
+}
+</style>

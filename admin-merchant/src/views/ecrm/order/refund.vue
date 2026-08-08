@@ -341,7 +341,7 @@ async function addRemark(row: MerchantRefundOrder) {
   try {
     const { value } = await ElMessageBox.prompt(
       '备注仅记录在店铺操作审计中，不会更改退款原因、状态或资金处理。',
-      '添加售后备注',
+      '新增售后备注',
       {
         inputPattern: /\S/,
         inputErrorMessage: '备注不能为空',

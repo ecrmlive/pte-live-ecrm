@@ -42,6 +42,14 @@ func (h *Handler) Register(r gin.IRoutes) {
 	marginManage := middleware.RequireAdminMenu(h.adminDB, "store.margin_config.manage")
 	r.GET("/setting/margin", marginSetting, marginManage, h.GetMargin)
 	r.PUT("/setting/margin", marginSetting, marginManage, h.SaveMargin)
+	merchantApplySetting := middleware.RequireAdminRoles("platform")
+	merchantApplyManage := middleware.RequireAdminMenu(h.adminDB, "merchant.mgmt.settings.manage")
+	r.GET("/setting/merchant-apply", merchantApplySetting, merchantApplyManage, h.GetMerchantApply)
+	r.PUT("/setting/merchant-apply", merchantApplySetting, merchantApplyManage, h.SaveMerchantApply)
+	agentZoneSetting := middleware.RequireAdminRoles("platform")
+	agentZoneManage := middleware.RequireAdminMenu(h.adminDB, "region.agent_settings.manage")
+	r.GET("/setting/agent-zone", agentZoneSetting, agentZoneManage, h.GetAgentZone)
+	r.PUT("/setting/agent-zone", agentZoneSetting, agentZoneManage, h.SaveAgentZone)
 	paySetting := middleware.RequireAdminRoles("platform")
 	payManage := middleware.RequireAdminMenu(h.adminDB, "setting.pay.manage")
 	r.GET("/setting/pay", paySetting, payManage, h.GetPay)
@@ -246,6 +254,58 @@ func (h *Handler) SaveMargin(c *gin.Context) {
 		return
 	}
 	raw, err := h.svc.SaveMarginConfig(c.Request.Context(), req.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"config": raw})
+}
+
+func (h *Handler) GetMerchantApply(c *gin.Context) {
+	raw, err := h.svc.GetMerchantApplyConfig(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, gin.H{
+		"config": raw,
+		"note":   "商户入驻页背景图与自定义表单字段；系统表单字段固定展示不可删",
+	})
+}
+
+func (h *Handler) SaveMerchantApply(c *gin.Context) {
+	var req jsonConfigSaveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	raw, err := h.svc.SaveMerchantApplyConfig(c.Request.Context(), req.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"config": raw})
+}
+
+func (h *Handler) GetAgentZone(c *gin.Context) {
+	raw, err := h.svc.GetAgentZoneConfig(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, gin.H{
+		"config": raw,
+		"note":   "区域代理默认三级提成与代理申请自定义表单；系统字段固定展示不可删",
+	})
+}
+
+func (h *Handler) SaveAgentZone(c *gin.Context) {
+	var req jsonConfigSaveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	raw, err := h.svc.SaveAgentZoneConfig(c.Request.Context(), req.Config)
 	if err != nil {
 		writeErr(c, err)
 		return

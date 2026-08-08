@@ -95,3 +95,103 @@ export function savePlatformMarginConfigApi(config: PlatformMarginConfig) {
     .put<{ config: string }>('/setting/margin', { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformMarginConfig>(data.config));
 }
+
+/** 对齐 CRMEB 商户设置：入驻页背景 + 自定义表单字段 */
+export type MerchantApplyFieldType =
+  | 'checkbox'
+  | 'city'
+  | 'date'
+  | 'daterange'
+  | 'radio'
+  | 'select'
+  | 'text'
+  | 'textarea'
+  | 'time'
+  | 'timerange'
+  | 'image';
+
+export type MerchantApplyContentType =
+  | 'text'
+  | 'number'
+  | 'mobile'
+  | 'idcard'
+  | 'email';
+
+export type MerchantApplyCityLevel =
+  | 'province_city'
+  | 'province_city_district'
+  | 'province_city_district_street';
+
+export type MerchantApplyDefaultVisible = 'show' | 'hide';
+
+export type MerchantApplyDefaultMode = 'current' | 'specify';
+
+export interface MerchantApplyFormField {
+  id: string;
+  type: MerchantApplyFieldType;
+  title: string;
+  content_type: MerchantApplyContentType;
+  default_value: string;
+  placeholder: string;
+  required: boolean;
+  options?: string[];
+  /** image：最多上传 */
+  max_upload?: number;
+  /** city：省市级别 */
+  city_level?: MerchantApplyCityLevel;
+  /** date/time 类：默认值显示/隐藏 */
+  default_visible?: MerchantApplyDefaultVisible;
+  /** date/time 类：当前 / 指定 */
+  default_mode?: MerchantApplyDefaultMode;
+  /** date/time 类：指定值 */
+  specify_value?: string;
+}
+
+export interface PlatformMerchantApplyConfig {
+  background_image: string;
+  form_fields: MerchantApplyFormField[];
+}
+
+export function getPlatformMerchantApplyConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/merchant-apply')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformMerchantApplyConfig>(data.config),
+    }));
+}
+
+export function savePlatformMerchantApplyConfigApi(
+  config: PlatformMerchantApplyConfig,
+) {
+  return requestClient
+    .put<{ config: string }>('/setting/merchant-apply', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformMerchantApplyConfig>(data.config));
+}
+
+/** 对齐 CRMEB circle_config：默认三级提成 + 代理申请表单字段 */
+export interface PlatformAgentZoneConfig {
+  one_agent_commission: number;
+  two_agent_commission: number;
+  three_agent_commission: number;
+  form_fields: MerchantApplyFormField[];
+}
+
+export function getPlatformAgentZoneConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/agent-zone')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformAgentZoneConfig>(data.config),
+    }));
+}
+
+export function savePlatformAgentZoneConfigApi(config: PlatformAgentZoneConfig) {
+  return requestClient
+    .put<{ config: string }>('/setting/agent-zone', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformAgentZoneConfig>(data.config));
+}

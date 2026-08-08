@@ -189,7 +189,7 @@ watch(
           type="primary"
           @click="openAdd"
         >
-          添加管理员
+          新增管理员
         </ElButton>
       </template>
 

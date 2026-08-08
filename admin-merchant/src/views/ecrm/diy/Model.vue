@@ -32,14 +32,20 @@
 				</el-icon>
 			</div>
 		</div>
-		<div class="scroll-ybox" style="padding: 10px 0; box-sizing: border-box;">
+		<div class="scroll-ybox phone-frame-host">
+			<DevicePreviewFrame
+				:title="previewTitle"
+				:show-back="diyType != 'center'"
+				:nav-active="form.selectedIndex < 0"
+				:side-gutter="96"
+				:side-gutter-left="96"
+				@nav-click="onEditer(-1)"
+			>
 			<div class="diy-phone-container">
-				<!--顶部设置栏-->
-				<div class="diy-phone-item" :class="{ active: form.selectedIndex < 0 }">
-					<div @click="onEditer(-1)" class="draggable-title" style="left:auto;right: -90px;top: 20px;">页面设置
+				<!-- 页面设置选中态：导航栏由 DevicePreviewFrame 承担，此处仅保留外侧标签 -->
+				<div class="diy-phone-item diy-phone-item--page" :class="{ active: form.selectedIndex < 0 }">
+					<div @click="onEditer(-1)" class="draggable-title" style="left:auto;right: -90px;top: 8px;">页面设置
 					</div>
-					<Setpages v-if="diyType != 'center'" :diyData="diyData" :isDiy="isDiy"></Setpages>
-					<Setcenter v-if="diyType == 'center'" :diyData="diyData"></Setcenter>
 				</div>
 				<draggable class="wrapper" v-model="diyData.items" item-key="_diyUid" :move="checkMove"
 					:options="{ animation: 120, filter: '.drag__nomove' }" draggable=".draggable">
@@ -196,6 +202,7 @@
 				</draggable>
 				<div style="width: 100%;height: 10px;"></div>
 			</div>
+			</DevicePreviewFrame>
 		</div>
 	</div>
 </template>
@@ -204,8 +211,7 @@
 	import { ArrowDownBold, ArrowUpBold, Delete, DocumentCopy } from '@element-plus/icons-vue';
 	import { ElMessageBox } from 'element-plus';
 
-	import Setpages from './model/Setpages.vue';
-	import Setcenter from './model/Setcenter.vue';
+	import { DevicePreviewFrame } from '@pte-live/diy';
 	import Search from './model/Search.vue';
 	import Banner from './model/Banner.vue';
 	import ImageSingle from './model/ImageSingle.vue';
@@ -244,9 +250,7 @@
 			ArrowUpBold,
 			Delete,
 			DocumentCopy,
-			/*顶部状态栏*/
-			Setpages,
-			Setcenter,
+			DevicePreviewFrame,
 			/*搜索组件*/
 			Search,
 			/*图片轮播组件*/
@@ -328,14 +332,16 @@
 			};
 		},
 		computed: {
+			previewTitle() {
+				const page = this.diyData?.page;
+				if (this.diyType === 'center') {
+					return page?.params?.name || page?.name || '个人中心';
+				}
+				return page?.params?.name || page?.name || '页面标题';
+			},
 			isSpecialItem() {
 				const n = this.form.selectedIndex;
 				if (n < 0) return false;
-				console.log('isSpecialItem');
-				console.log(this.diyData.items);
-				console.log(n);
-				console.log(this.diyData.items[n]);
-				console.log(this.diyData.items[n].type);
 				const t = this.diyData.items[n].type;
 				return ['topMerge', 'option', 'search'].includes(t);
 			}

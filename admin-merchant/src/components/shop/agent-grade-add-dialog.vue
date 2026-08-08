@@ -117,7 +117,7 @@ const [Form, formApi] = useVbenForm(
           second_percent: Number(values.second_percent ?? 0),
           weight: Number(values.weight ?? 100),
         });
-        ElMessage.success('添加成功');
+        ElMessage.success('新增成功');
         open.value = false;
         emit('success');
       } finally {
@@ -174,7 +174,7 @@ void loadMeta();
     :close-on-press-escape="false"
     :destroy-on-close="true"
     class="w-[640px]"
-    title="添加等级"
+    title="新增等级"
   >
     <Form />
 

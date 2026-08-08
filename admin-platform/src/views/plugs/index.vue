@@ -135,7 +135,7 @@ onMounted(() => {
               </ElIcon>
             </span>
             <span class="text-sm text-muted-foreground">
-              添加插件到此类别下
+              新增插件到此类别下
             </span>
           </button>
         </div>

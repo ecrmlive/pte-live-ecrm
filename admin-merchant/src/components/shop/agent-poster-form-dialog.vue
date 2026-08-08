@@ -46,7 +46,7 @@ const previewImage = ref('');
 
 const posterId = computed(() => Number(props.posterId ?? 0));
 const isEdit = computed(() => posterId.value > 0);
-const modalTitle = computed(() => (isEdit.value ? '编辑分销海报' : '添加分销海报'));
+const modalTitle = computed(() => (isEdit.value ? '编辑分销海报' : '新增分销海报'));
 
 const backdropUrl = computed(() =>
   resolveCosMediaUrl(previewImage.value || previewData.value.backdrop.src || ''),
@@ -110,7 +110,7 @@ const [Form, formApi] = useVbenForm(
           ElMessage.success('编辑成功');
         } else {
           await addAgentPosterApi(payload);
-          ElMessage.success('添加成功');
+          ElMessage.success('新增成功');
         }
         open.value = false;
         emit('success');

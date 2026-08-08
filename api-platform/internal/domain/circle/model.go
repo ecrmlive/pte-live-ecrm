@@ -28,6 +28,7 @@ type Circle struct {
 func (Circle) TableName() string { return "qixi_crm_a_business_zone" }
 
 // Agent 区域或商户型商圈的代理申请与结算信息。结算账号资料只写入，不经统一后台列表或详情接口回传。
+// Extend 对齐 CRMEB extend（JSON）；其中 avatar 为「区域代理」标识图。
 type Agent struct {
 	CircleAgentID         uint       `gorm:"column:circle_agent_id;primaryKey" json:"circle_agent_id"`
 	UID                   uint       `gorm:"column:uid" json:"uid"`
@@ -35,6 +36,7 @@ type Agent struct {
 	Phone                 string     `gorm:"column:phone" json:"phone"`
 	Qualification         string     `gorm:"column:qualification" json:"qualification"`
 	Remark                string     `gorm:"column:remark" json:"remark"`
+	Extend                string     `gorm:"column:extend" json:"extend"`
 	AuditAdminID          uint       `gorm:"column:audit_admin_id" json:"audit_admin_id"`
 	AuditReason           string     `gorm:"column:audit_reason" json:"audit_reason"`
 	AuditTime             *time.Time `gorm:"column:audit_time" json:"audit_time,omitempty"`
@@ -68,6 +70,8 @@ type CircleListFilter struct {
 	Status        *int8
 	Type          *int8
 	CircleAgentID uint
+	// PID 非 nil 时按父级筛选：0=一级区域，>0=指定父级的下级。
+	PID *uint
 }
 
 type CircleInput struct {
@@ -88,12 +92,28 @@ type CircleInput struct {
 	MerchantIDs           []uint  `json:"merchant_ids"`
 }
 
+type AgentListFilter struct {
+	Keyword   string
+	Name      string
+	Phone     string
+	Status    *int8
+	Type      *int8
+	UID       *uint
+	// UIDs 非 nil 时按 uid IN 过滤；空切片表示无匹配（返回空列表）。
+	UIDs      *[]uint
+	DateFrom  string
+	DateTo    string
+}
+
 type AgentInput struct {
 	UID                   uint   `json:"uid"`
 	Name                  string `json:"name"`
 	Phone                 string `json:"phone"`
 	Qualification         string `json:"qualification"`
 	Remark                string `json:"remark"`
+	// Avatar 区域代理标识图；写入 extend.avatar（对齐 CRMEB extend）。
+	Avatar                string `json:"avatar"`
+	Extend                string `json:"extend"`
 	PaymentMethod         uint8  `json:"payment_method"`
 	PaymentName           string `json:"payment_name"`
 	PaymentAccount        string `json:"payment_account"`
@@ -105,6 +125,10 @@ type AgentInput struct {
 	BusinessStoreType     uint   `json:"business_store_type"`
 	Account               string `json:"account"`
 	Password              string `json:"password"`
+	// AutoApprove 区域表单内「添加代理人」时立即通过，便于立刻绑定区域。
+	AutoApprove bool `json:"auto_approve"`
+	// CircleIDs 负责商户（type=1 商圈）多选；nil 表示不改绑定。
+	CircleIDs *[]uint `json:"circle_ids"`
 }
 
 type AuditInput struct {

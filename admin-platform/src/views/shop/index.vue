@@ -302,7 +302,7 @@ async function deleteShop(row: ShopRow) {
           type="primary"
           @click="openAdd"
         >
-          添加商城
+          新增商城
         </ElButton>
       </template>
 

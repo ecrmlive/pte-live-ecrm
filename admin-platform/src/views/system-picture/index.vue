@@ -217,7 +217,7 @@ onMounted(async () => {
           :icon="Plus"
           @click="openAddCategory"
         >
-          添加分类
+          新增分类
         </ElButton>
         <ElButton
           v-access:code="'platform:picture:deleteFiles'"

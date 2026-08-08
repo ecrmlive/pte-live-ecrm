@@ -585,14 +585,16 @@ type distributionView struct {
 }
 
 type row struct {
-	ID        uint64    `gorm:"column:id" json:"id"`
-	Nickname  string    `gorm:"column:nickname" json:"nickname"`
-	Mobile    string    `gorm:"column:mobile" json:"mobile"`
-	Status    int       `gorm:"column:status" json:"status"`
-	Balance   float64   `gorm:"column:balance" json:"balance"`
-	Points    int64     `gorm:"column:points" json:"points"`
-	LevelName string    `gorm:"column:level_name" json:"level_name"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	ID            uint64    `gorm:"column:id" json:"id"`
+	Nickname      string    `gorm:"column:nickname" json:"nickname"`
+	AvatarURL     string    `gorm:"column:avatar_url" json:"avatar_url"`
+	Mobile        string    `gorm:"column:mobile" json:"mobile"`
+	SourceChannel string    `gorm:"column:source_channel" json:"source_channel"`
+	Status        int       `gorm:"column:status" json:"status"`
+	Balance       float64   `gorm:"column:balance" json:"balance"`
+	Points        int64     `gorm:"column:points" json:"points"`
+	LevelName     string    `gorm:"column:level_name" json:"level_name"`
+	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 type userExportInput struct {
@@ -610,9 +612,12 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	q := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_user AS u").
-		Select("u.id,u.nickname,u.mobile,u.status,u.created_at,COALESCE(a.balance,0) AS balance,COALESCE(a.points,0) AS points,COALESCE(l.name,'') AS level_name").
-		Joins("LEFT JOIN qixi_crm_b_member_account AS a ON a.user_id=u.id").Joins("LEFT JOIN qixi_crm_b_member_level AS l ON l.id=a.level_id")
+		Select("u.id,u.nickname,u.mobile,u.status,u.created_at,COALESCE(p.avatar_url,'') AS avatar_url,COALESCE(p.source_channel,'') AS source_channel,COALESCE(a.balance,0) AS balance,COALESCE(a.points,0) AS points,COALESCE(l.name,'') AS level_name").
+		Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id=u.id").
+		Joins("LEFT JOIN qixi_crm_b_member_account AS a ON a.user_id=u.id").
+		Joins("LEFT JOIN qixi_crm_b_member_level AS l ON l.id=a.level_id")
 	if status != "" {
+		// status=1：启用且未注销（注销会把 status 置 0，见 auth.CancelAccount）
 		q = q.Where("u.status=?", status)
 	}
 	if idRaw := strings.TrimSpace(c.Query("id")); idRaw != "" {

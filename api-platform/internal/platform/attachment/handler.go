@@ -38,7 +38,12 @@ func (h *Handler) Register(r gin.IRoutes) {
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {
-	list, err := h.svc.ListCategories(c.Request.Context(), 0)
+	typeValue, err := attachmentType(c.Query("type"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "素材类型错误")
+		return
+	}
+	list, err := h.svc.ListCategories(c.Request.Context(), 0, typeValue)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
@@ -109,12 +114,13 @@ func (h *Handler) Upload(c *gin.Context) {
 		return
 	}
 	cateID, _ := strconv.ParseUint(c.DefaultPostForm("category_id", "0"), 10, 64)
+	isSystem := c.DefaultPostForm("is_system", "0") == "1"
 	src, name, err := h.upload.Save("platform", fh)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	row, err := h.svc.CreateFile(c.Request.Context(), 0, middleware.AdminID(c), uint(cateID), name, src, uploadType(fh.Filename, fh.Header.Get("Content-Type")))
+	row, err := h.svc.CreateFile(c.Request.Context(), 0, middleware.AdminID(c), uint(cateID), name, src, uploadType(fh.Filename, fh.Header.Get("Content-Type")), isSystem)
 	if err != nil {
 		writeErr(c, err)
 		return

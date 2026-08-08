@@ -81,7 +81,7 @@ async function handleSubmit() {
         true,
       );
       if (res.code === 1) {
-        ElMessage.success(res.msg || '添加成功');
+        ElMessage.success(res.msg || '新增成功');
         open.value = false;
         emit('success');
       }

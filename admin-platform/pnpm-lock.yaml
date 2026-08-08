@@ -484,6 +484,9 @@ importers:
       '@iconify/vue':
         specifier: 'catalog:'
         version: 5.0.1(vue@3.5.38(typescript@6.0.3))
+      '@pte-live/diy':
+        specifier: workspace:*
+        version: link:packages/business/diy
       '@vben/access':
         specifier: workspace:*
         version: link:packages/effects/access
@@ -547,6 +550,9 @@ importers:
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@6.0.3)(vue@3.5.38(typescript@6.0.3))
+      qrcode:
+        specifier: 'catalog:'
+        version: 1.5.4
       qs:
         specifier: 'catalog:'
         version: 6.15.2
@@ -581,6 +587,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.3
+      '@types/qrcode':
+        specifier: 'catalog:'
+        version: 1.5.6
       '@vben/commitlint-config':
         specifier: workspace:*
         version: link:internal/lint-configs/commitlint-config
@@ -683,6 +692,9 @@ importers:
       '@iconify/vue':
         specifier: 'catalog:'
         version: 5.0.1(vue@3.5.38(typescript@6.0.3))
+      '@pte-live/diy':
+        specifier: workspace:*
+        version: link:../admin-platform/packages/business/diy
       '@vben/access':
         specifier: workspace:*
         version: link:../admin-platform/packages/effects/access
@@ -1359,6 +1371,16 @@ importers:
       unplugin-vue:
         specifier: 'catalog:'
         version: 7.2.0(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(less@4.6.6)(sass-embedded@1.100.0)(sass@1.101.0)(terser@5.48.0)(vue@3.5.38(typescript@6.0.3))(yaml@2.9.0)
+
+  packages/business/diy:
+    dependencies:
+      vue:
+        specifier: ^3.5.38
+        version: 3.5.38(typescript@6.0.3)
+    devDependencies:
+      '@vben/tsconfig':
+        specifier: workspace:*
+        version: link:../../../internal/tsconfig
 
   packages/constants:
     dependencies:

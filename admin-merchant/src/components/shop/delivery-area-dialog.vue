@@ -223,7 +223,7 @@ watch(open, (visible) => {
     :close-on-click-modal="false"
     :destroy-on-close="true"
     class="w-[700px]"
-    title="添加可配送区域"
+    title="新增可配送区域"
   >
     <div class="flex gap-3">
       <div class="h-[400px] flex-1 overflow-y-auto border p-2">

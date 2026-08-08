@@ -27,13 +27,31 @@ type Service struct{ store Store }
 
 func NewService(store Store) *Service { return &Service{store: store} }
 
-func (s *Service) ListCategories(ctx context.Context, merID uint) ([]Category, error) {
+func (s *Service) ListCategories(ctx context.Context, merID uint, mediaType *int8) ([]Category, error) {
 	if merID == 0 {
 		if err := s.EnsureSystemCategories(ctx); err != nil {
 			return nil, err
 		}
 	}
-	return s.store.ListCategories(ctx, merID)
+	list, err := s.store.ListCategories(ctx, merID)
+	if err != nil || mediaType == nil || merID != 0 {
+		return list, err
+	}
+	// 平台侧按图片/视频系统 enname 过滤系统分类；自定义分类始终保留。
+	allowed := make(map[string]struct{}, len(SystemCategories))
+	for _, en := range SystemCategoryEnnames(mediaType) {
+		allowed[en] = struct{}{}
+	}
+	out := make([]Category, 0, len(list))
+	for _, row := range list {
+		if row.IsSystem == 1 || IsSystemCategoryEnname(row.AttachmentCategoryEnname) {
+			if _, ok := allowed[row.AttachmentCategoryEnname]; !ok {
+				continue
+			}
+		}
+		out = append(out, row)
+	}
+	return out, nil
 }
 
 // EnsureSystemCategories 幂等写入平台固定系统分类。
@@ -162,12 +180,13 @@ func (s *Service) List(ctx context.Context, userType int, cateID uint, systemOnl
 	return &PageResult[Attachment]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) CreateFile(ctx context.Context, userType int, userID, cateID uint, name, src string, attachmentType int8) (*Attachment, error) {
+func (s *Service) CreateFile(ctx context.Context, userType int, userID, cateID uint, name, src string, attachmentType int8, isSystem bool) (*Attachment, error) {
 	name = strings.TrimSpace(name)
 	src = strings.TrimSpace(src)
 	if name == "" || src == "" || (attachmentType != 0 && attachmentType != 1) {
 		return nil, ErrBadParam
 	}
+	var cat *Category
 	if cateID > 0 {
 		c, err := s.store.GetCategory(ctx, cateID)
 		if err != nil {
@@ -184,11 +203,20 @@ func (s *Service) CreateFile(ctx context.Context, userType int, userID, cateID u
 		if c.MerID != wantMer {
 			return nil, ErrForbidden
 		}
+		cat = c
+	}
+	sysFlag := int8(0)
+	if isSystem {
+		// 仅允许把系统预置素材写入固定系统分类
+		if cat == nil || cat.IsSystem != 1 || !IsSystemCategoryEnname(cat.AttachmentCategoryEnname) {
+			return nil, ErrBadParam
+		}
+		sysFlag = 1
 	}
 	a := &Attachment{
 		AttachmentCategoryID: cateID, AttachmentName: name, AttachmentSrc: src,
 		UploadType: 1, UserType: userType, UserID: userID,
-		CreateTime: time.Now(), AttachmentType: attachmentType,
+		CreateTime: time.Now(), AttachmentType: attachmentType, IsSystem: sysFlag,
 	}
 	if err := s.store.Create(ctx, a); err != nil {
 		return nil, err

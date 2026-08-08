@@ -54,11 +54,11 @@ export default {
     },
     pageTitle() {
       const titles: Record<DiyEditorMode, string> = {
-        'center-add': '添加个人中心页',
+        'center-add': '新增个人中心页',
         'center-edit': '个人中心',
         'custom-add': '返回 页面列表',
         'custom-edit': '编辑页面',
-        'home-add': '添加首页',
+        'home-add': '新增首页',
         'home-edit': '首页装修',
       };
       return titles[this.mode] ?? '页面装修';

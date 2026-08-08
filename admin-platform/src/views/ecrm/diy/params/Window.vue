@@ -143,7 +143,7 @@ function closeLinkset(e: { name?: string; type?: string; url?: string } | null) 
       </draggable>
     </template>
     <div class="d-c-c pb16">
-      <component :is="PrimaryButton" plain @click="editor.onEditorAddData()">+添加一个</component>
+      <component :is="PrimaryButton" plain @click="editor.onEditorAddData()">+新增一个</component>
     </div>
     <DiyLinkPickerDialog
       v-if="isLinkset"

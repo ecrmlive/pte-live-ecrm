@@ -309,8 +309,10 @@
 	}
 
 	.diy-editor-shell .diy-phone-container {
-		min-height: 667px;
+		/* 内容区由 DevicePreviewFrame 定高，容器随内容伸展 */
+		min-height: 0;
 		height: auto;
+		width: 100%;
 	}
 
 	.diy-editor-shell .diy-phone-container .wrapper {
@@ -318,12 +320,36 @@
 		overflow: visible;
 	}
 
+	.diy-editor-shell .phone-frame-host {
+		position: relative;
+		display: flex;
+		flex: 1;
+		justify-content: center;
+		align-items: flex-start;
+		width: 100%;
+		min-height: 0;
+		padding: 12px 0;
+		overflow: auto;
+		box-sizing: border-box;
+		/* 页面 DIY 预览列：隐藏外层滚动条，滚轮仍可用 */
+		scrollbar-width: none;
+		scrollbar-gutter: auto;
+		-ms-overflow-style: none;
+
+		&::-webkit-scrollbar {
+			display: none;
+			width: 0;
+			height: 0;
+		}
+	}
+
 	.operate-pop {
 		position: absolute;
 		width: 42px;
 		background: #409eff;
+		/* iPhone 17 Pro 屏宽 402：中心到机身右缘约 209，再偏出工具条 */
 		left: 50%;
-		margin-left: 206px;
+		margin-left: 220px;
 		top: 20%;
 		border-radius: 4px;
 		text-align: center;
@@ -361,10 +387,11 @@
 	}
 
 	.diy-phone-container {
+		/* 内容宽跟随 DevicePreviewFrame 屏宽 402pt */
 		box-sizing: border-box;
 		position: relative;
-		width: 375px;
-		min-height: 667px;
+		width: 100%;
+		min-height: 0;
 		margin: auto;
 		color: #333;
 
@@ -387,35 +414,16 @@
 		}
 
 		.wrapper {
-			height: calc(100% - 88px);
-		}
-
-		.phone-top {
-			padding: 0 20px;
-			border-radius: 18px 18px 0 0;
-		}
-
-		.phone-top .status-bar {
-			height: 20px;
-			display: flex;
-			justify-content: space-between;
-		}
-
-		.phone-top .svg-icon {
-			width: 20px;
-			height: 20px;
-			color: #333;
-		}
-
-		.phone-top .navigation {
-			height: 44px;
-			line-height: 44px;
-			text-align: center;
-			font-size: 18px;
+			height: auto;
+			min-height: 0;
 		}
 
 		.diy-phone-item {
 			position: relative;
+		}
+
+		.diy-phone-item--page {
+			min-height: 0;
 		}
 
 		.diy-phone-item.pstatic {

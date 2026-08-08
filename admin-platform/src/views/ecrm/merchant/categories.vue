@@ -103,7 +103,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [CategoryDrawer, categoryDrawerApi] = useVbenDrawer({
   class: 'w-[560px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -116,7 +116,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  categoryDrawerApi.setState({ title: '添加店铺分类' }).open();
+  categoryDrawerApi.setState({ title: '新增店铺分类' }).open();
 }
 
 function openEdit(row: MerchantCategoryRow) {
@@ -201,7 +201,7 @@ onMounted(async () => {
               type="primary"
               @click="openCreate"
             >
-              添加店铺分类
+              新增店铺分类
             </ElButton>
           </div>
         </div>

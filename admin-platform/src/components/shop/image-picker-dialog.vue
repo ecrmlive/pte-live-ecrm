@@ -18,6 +18,7 @@ const SYSTEM_ROOT_ID = -1;
 const open = defineModel<boolean>('open', { default: false });
 const props = withDefaults(
   defineProps<{
+    /** @deprecated 打开时始终默认「全部素材」；保留 prop 以免调用方报错 */
     defaultLibrary?: 'merchant' | 'system';
     kind?: 'image' | 'video';
     limit?: number;
@@ -28,6 +29,8 @@ const emit = defineEmits<{ select: [PickerItem[]] }>();
 
 const categories = ref<AttachmentCategory[]>([]);
 const categoryID = ref(0);
+/** all=普通库；system=侧栏「系统素材」模式（仅行级 is_system=1） */
+const libraryMode = ref<'all' | 'system'>('all');
 const files = ref<PickerItem[]>([]);
 const selected = ref<number[]>([]);
 const loading = ref(false);
@@ -37,8 +40,8 @@ const pageSize = 24;
 /** 图片上传上限 10MB（与后端 upload 包一致） */
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
-/** 与后端 SystemCategories enname 对齐，作 is_system 缺失时的兜底 */
-const SYSTEM_CATEGORY_ENNAMES = new Set([
+/** 与后端 SystemCategories 图片 enname 对齐 */
+const IMAGE_SYSTEM_ENNAMES = new Set([
   'store_cover',
   'pay_icon',
   'logistics_icon',
@@ -48,23 +51,45 @@ const SYSTEM_CATEGORY_ENNAMES = new Set([
   'list_icon',
   'other_image',
 ]);
-/** 「全部素材」下上传时默认落入系统分类「其他图片」 */
-const DEFAULT_UPLOAD_CATEGORY_ENNAME = 'other_image';
+/** 与后端 SystemCategories 视频 enname 对齐 */
+const VIDEO_SYSTEM_ENNAMES = new Set([
+  'store_video',
+  'product_video',
+  'other_video',
+]);
+/** 「系统素材」模式下上传时默认落入的系统分类 */
+const DEFAULT_SYSTEM_UPLOAD_ENNAME = computed(() =>
+  props.kind === 'video' ? 'other_video' : 'other_image',
+);
+
+function systemEnnames() {
+  return props.kind === 'video' ? VIDEO_SYSTEM_ENNAMES : IMAGE_SYSTEM_ENNAMES;
+}
 
 function isSystemCategory(row: AttachmentCategory) {
   return (
     Number(row.is_system) === 1 ||
-    SYSTEM_CATEGORY_ENNAMES.has(row.attachment_category_enname ?? '')
+    systemEnnames().has(row.attachment_category_enname ?? '')
   );
 }
 
-/** 当前选中分类；「全部素材」/「系统素材」根入口时回退到系统「其他图片」 */
-function resolveUploadCategoryID() {
-  if (categoryID.value > 0) return categoryID.value;
-  const other = categories.value.find(
-    (row) => row.attachment_category_enname === DEFAULT_UPLOAD_CATEGORY_ENNAME,
-  );
-  return other?.attachment_category_id ?? 0;
+function resolveUploadTarget() {
+  if (libraryMode.value === 'system') {
+    const cateID =
+      categoryID.value > 0
+        ? categoryID.value
+        : (categories.value.find(
+            (row) =>
+              row.attachment_category_enname ===
+              DEFAULT_SYSTEM_UPLOAD_ENNAME.value,
+          )?.attachment_category_id ?? 0);
+    return { cateID, isSystem: true as const };
+  }
+  // 全部素材：不强制落入系统分类，避免运营图被误标
+  if (categoryID.value > 0) {
+    return { cateID: categoryID.value, isSystem: false as const };
+  }
+  return { cateID: 0, isSystem: false as const };
 }
 
 const systemCategories = computed(() =>
@@ -77,21 +102,28 @@ const customCategories = computed(() =>
 const mediaLabel = computed(() => (props.kind === 'image' ? '图片' : '视频'));
 
 async function loadCategories() {
-  const result = await listAttachmentCategoriesApi();
+  const result = await listAttachmentCategoriesApi({ type: props.kind });
   categories.value = result.list ?? [];
 }
 
 async function loadFiles() {
   loading.value = true;
   try {
-    const systemRoot = categoryID.value === SYSTEM_ROOT_ID;
-    const result = await listAttachmentsApi({
-      category_id: categoryID.value > 0 ? categoryID.value : undefined,
-      is_system: systemRoot ? 1 : undefined,
+    const params: Parameters<typeof listAttachmentsApi>[0] = {
       limit: pageSize,
       page: page.value,
       type: props.kind,
-    });
+    };
+    if (libraryMode.value === 'system') {
+      // 行级系统预置素材；可叠加具体系统分类
+      params.is_system = 1;
+      if (categoryID.value > 0) {
+        params.category_id = categoryID.value;
+      }
+    } else if (categoryID.value > 0) {
+      params.category_id = categoryID.value;
+    }
+    const result = await listAttachmentsApi(params);
     files.value = (result.list ?? []).map((item) => ({
       ...item,
       file_id: item.attachment_id,
@@ -104,7 +136,20 @@ async function loadFiles() {
 }
 
 function selectCategory(id: number) {
-  categoryID.value = id;
+  if (id === SYSTEM_ROOT_ID) {
+    libraryMode.value = 'system';
+    categoryID.value = SYSTEM_ROOT_ID;
+  } else if (id === 0) {
+    libraryMode.value = 'all';
+    categoryID.value = 0;
+  } else {
+    const row = categories.value.find((item) => item.attachment_category_id === id);
+    if (!row || !isSystemCategory(row)) {
+      libraryMode.value = 'all';
+    }
+    // 系统子分类：保留当前 libraryMode（从「系统素材」点进来仍只看预置）
+    categoryID.value = id;
+  }
   page.value = 1;
   selected.value = [];
   void loadFiles();
@@ -136,7 +181,12 @@ async function upload({ file }: { file: File }) {
     ElMessage.error('图片不能超过 10MB');
     return;
   }
-  await uploadAttachmentApi(file, resolveUploadCategoryID());
+  const target = resolveUploadTarget();
+  if (target.isSystem && !target.cateID) {
+    ElMessage.warning('请先选择系统分类再上传系统素材');
+    return;
+  }
+  await uploadAttachmentApi(file, target.cateID, { isSystem: target.isSystem });
   page.value = 1;
   await loadFiles();
   ElMessage.success(`${mediaLabel.value}已上传`);
@@ -156,13 +206,11 @@ function confirm() {
 
 async function initialize() {
   selected.value = [];
+  // 打开时始终默认「全部素材」，不落在子分类或系统素材根入口
+  libraryMode.value = 'all';
   categoryID.value = 0;
   page.value = 1;
   await loadCategories();
-  // 装修等场景可默认落在系统素材根入口
-  if (props.defaultLibrary === 'system' && systemCategories.value.length) {
-    categoryID.value = SYSTEM_ROOT_ID;
-  }
   await loadFiles();
 }
 
@@ -224,7 +272,7 @@ onMounted(() => {
           <button
             type="button"
             class="picker__cat"
-            :class="{ active: categoryID === SYSTEM_ROOT_ID }"
+            :class="{ active: libraryMode === 'system' }"
             @click="selectCategory(SYSTEM_ROOT_ID)"
           >
             系统素材

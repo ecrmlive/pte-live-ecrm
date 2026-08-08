@@ -98,7 +98,7 @@ const offlineForm = reactive({
 const [OfflineDrawer, offlineDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
   placement: 'right',
-  confirmText: '确定',
+  confirmText: '保存',
   cancelText: '取消',
   onConfirm: async () => submitOffline(),
   title: '线下缴纳保证金',
@@ -114,7 +114,7 @@ const deductForm = reactive({
 const [DeductDrawer, deductDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
   placement: 'right',
-  confirmText: '确定',
+  confirmText: '保存',
   cancelText: '取消',
   onConfirm: async () => submitDeduct(),
   title: '扣除保证金',

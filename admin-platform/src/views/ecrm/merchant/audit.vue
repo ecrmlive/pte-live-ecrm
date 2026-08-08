@@ -12,15 +12,20 @@ import {
   ElImage,
   ElInput,
   ElMessage,
+  ElOption,
   ElRadio,
   ElRadioGroup,
+  ElSelect,
   ElTag,
 } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   auditMerchantIntention,
+  createMerchantIntention,
   fetchMerchantCategories,
+  fetchMerchantIntention,
   fetchMerchantIntentions,
   fetchMerchantTypes,
   type MerchantCategoryRow,
@@ -28,6 +33,7 @@ import {
   type MerchantTypeRow,
 } from '#/api/core/ecrm';
 import { getAccessCodesApi } from '#/api/core/auth';
+import ImageField from '#/components/shop/image-field.vue';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -42,13 +48,23 @@ import {
 const selected = ref<MerchantIntentionRow>();
 const submitting = ref(false);
 const canAudit = ref(false);
+const canCreate = ref(false);
 const categories = ref<MerchantCategoryRow[]>([]);
 const types = ref<MerchantTypeRow[]>([]);
 
-const form = reactive({
+const auditForm = reactive({
   fail_msg: '',
   mark: '',
   status: 1,
+});
+
+const createForm = reactive({
+  mer_name: '',
+  name: '',
+  phone: '',
+  merchant_category_id: undefined as number | undefined,
+  mer_type_id: undefined as number | undefined,
+  images: '',
 });
 
 const statusText = (status: number) =>
@@ -199,7 +215,7 @@ const gridOptions: VxeGridProps<MerchantIntentionRow> = {
       title: '审核备注',
       width: 180,
     },
-    platformListActionColumn({ width: 120 }),
+    platformListActionColumn({ width: 160 }),
   ],
   pagerConfig: platformListPagerConfig(),
   proxyConfig: {
@@ -222,6 +238,18 @@ const gridOptions: VxeGridProps<MerchantIntentionRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
+const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  footer: false,
+  placement: 'right',
+});
+
+const [CreateDrawer, createDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  confirmText: '保存',
+  placement: 'right',
+  onConfirm: async () => submitCreate(),
+});
 const [AuditDrawer, auditDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
   placement: 'right',
@@ -266,30 +294,103 @@ async function loadFilterOptions() {
   }
 }
 
+function resetCreateForm() {
+  createForm.mer_name = '';
+  createForm.name = '';
+  createForm.phone = '';
+  createForm.merchant_category_id = undefined;
+  createForm.mer_type_id = undefined;
+  createForm.images = '';
+}
+
+function openCreate() {
+  resetCreateForm();
+  createDrawerApi.setState({ title: '新增店铺入驻申请' }).open();
+}
+
+async function openDetail(row: MerchantIntentionRow) {
+  try {
+    selected.value = await fetchMerchantIntention(row.mer_intention_id);
+  } catch {
+    selected.value = row;
+  }
+  detailDrawerApi.setState({ title: '店铺入驻申请详情' }).open();
+}
+
 function openAudit(row: MerchantIntentionRow) {
   selected.value = row;
-  form.status = 1;
-  form.mark = row.mark || '';
-  form.fail_msg = '';
+  auditForm.status = 1;
+  auditForm.mark = row.mark || '';
+  auditForm.fail_msg = '';
   auditDrawerApi.setState({ title: '审核店铺入驻' }).open();
+}
+
+async function submitCreate() {
+  const merName = createForm.mer_name.trim();
+  const name = createForm.name.trim();
+  const phone = createForm.phone.trim();
+  if (merName.length < 2) {
+    ElMessage.warning('请填写店铺名称');
+    return;
+  }
+  if (!name) {
+    ElMessage.warning('请填写联系人姓名');
+    return;
+  }
+  if (phone.length < 6) {
+    ElMessage.warning('请填写有效联系方式');
+    return;
+  }
+  if (!createForm.merchant_category_id) {
+    ElMessage.warning('请选择店铺分类');
+    return;
+  }
+  if (!createForm.mer_type_id) {
+    ElMessage.warning('请选择店铺类型');
+    return;
+  }
+  const categoryName =
+    categories.value.find((c) => c.merchant_category_id === createForm.merchant_category_id)
+      ?.category_name || '';
+  const typeName =
+    types.value.find((t) => t.id === createForm.mer_type_id)?.name || '';
+  createDrawerApi.lock();
+  submitting.value = true;
+  try {
+    await createMerchantIntention({
+      mer_name: merName,
+      name,
+      phone,
+      merchant_category_id: createForm.merchant_category_id,
+      mer_type_id: createForm.mer_type_id,
+      images: createForm.images.trim(),
+      category_name: categoryName,
+      type_name: typeName,
+    });
+    ElMessage.success('入驻申请已提交');
+    createDrawerApi.close();
+    gridApi.reload();
+  } finally {
+    submitting.value = false;
+    createDrawerApi.unlock();
+  }
 }
 
 async function submitAudit() {
   if (!selected.value) return;
-  if (form.status === 2 && !form.fail_msg.trim()) {
+  if (auditForm.status === 2 && !auditForm.fail_msg.trim()) {
     ElMessage.warning('请填写驳回原因');
     return;
   }
   auditDrawerApi.lock();
   submitting.value = true;
   try {
-    // 账号/初始密码/区域由申请资料自动带出（对齐 CRMEB：手机号作账号，区域用申请已分配 circle_id）
     await auditMerchantIntention(selected.value.mer_intention_id, {
-      fail_msg: form.fail_msg.trim(),
-      mark: form.mark.trim(),
-      status: form.status,
+      fail_msg: auditForm.fail_msg.trim(),
+      mark: auditForm.mark.trim(),
+      status: auditForm.status,
     });
-    ElMessage.success(form.status === 1 ? '入驻审核已通过' : '入驻申请已驳回');
+    ElMessage.success(auditForm.status === 1 ? '入驻审核已通过' : '入驻申请已驳回');
     auditDrawerApi.close();
     gridApi.reload();
   } finally {
@@ -301,6 +402,7 @@ async function submitAudit() {
 onMounted(async () => {
   const permissions = await getAccessCodesApi();
   canAudit.value = permissions.includes('merchant.intention.audit');
+  canCreate.value = permissions.includes('merchant.intention.create');
   await loadFilterOptions();
 });
 </script>
@@ -308,6 +410,17 @@ onMounted(async () => {
 <template>
   <Page auto-content-height>
     <Grid>
+      <template #toolbar-actions>
+        <ElButton
+          v-if="canCreate"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          新增
+        </ElButton>
+      </template>
+
       <template #images="{ row }">
         <template v-if="imageUrls(row.images).length">
           <ElImage
@@ -326,6 +439,7 @@ onMounted(async () => {
         <ElTag :type="statusType(row.status)">{{ statusText(row.status) }}</ElTag>
       </template>
       <template #action="{ row }">
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
         <ElButton
           v-if="canAudit && row.status === 0"
           link
@@ -334,9 +448,110 @@ onMounted(async () => {
         >
           审核
         </ElButton>
-        <span v-else>—</span>
       </template>
     </Grid>
+
+    <DetailDrawer>
+      <ElForm label-width="105px">
+        <ElFormItem label="申请 ID">
+          <span>{{ displayOrDash(selected?.mer_intention_id) }}</span>
+        </ElFormItem>
+        <ElFormItem label="店铺名称">
+          <span>{{ displayOrDash(selected?.mer_name) }}</span>
+        </ElFormItem>
+        <ElFormItem label="店铺分类">
+          <span>{{ displayOrDash(selected?.category_name) }}</span>
+        </ElFormItem>
+        <ElFormItem label="店铺类型">
+          <span>{{ displayOrDash(selected?.type_name) }}</span>
+        </ElFormItem>
+        <ElFormItem label="联系人">
+          <span>{{ displayOrDash(selected?.name) }}</span>
+        </ElFormItem>
+        <ElFormItem label="联系方式">
+          <span>{{ displayOrDash(selected?.phone) }}</span>
+        </ElFormItem>
+        <ElFormItem label="审核状态">
+          <ElTag v-if="selected" :type="statusType(selected.status)">
+            {{ statusText(selected.status) }}
+          </ElTag>
+          <span v-else>—</span>
+        </ElFormItem>
+        <ElFormItem label="申请时间">
+          <span>{{ formatTime(selected?.create_time) }}</span>
+        </ElFormItem>
+        <ElFormItem label="资质图片">
+          <template v-if="imageUrls(selected?.images).length">
+            <ElImage
+              v-for="url in imageUrls(selected?.images)"
+              :key="url"
+              :preview-src-list="imageUrls(selected?.images)"
+              :src="url"
+              class="mr-2 h-16 w-16"
+              fit="cover"
+              preview-teleported
+            />
+          </template>
+          <span v-else>—</span>
+        </ElFormItem>
+        <ElFormItem label="审核备注">
+          <span>{{ displayOrDash(selected?.mark) }}</span>
+        </ElFormItem>
+        <ElFormItem v-if="selected?.status === 2" label="驳回原因">
+          <span>{{ displayOrDash(selected?.fail_msg) }}</span>
+        </ElFormItem>
+        <ElFormItem v-if="canAudit && selected?.status === 0" label="操作">
+          <ElButton type="primary" @click="openAudit(selected!)">去审核</ElButton>
+        </ElFormItem>
+      </ElForm>
+    </DetailDrawer>
+
+    <CreateDrawer>
+      <ElForm label-width="105px">
+        <ElFormItem label="店铺名称" required>
+          <ElInput v-model="createForm.mer_name" maxlength="64" placeholder="请输入店铺名称" />
+        </ElFormItem>
+        <ElFormItem label="联系人" required>
+          <ElInput v-model="createForm.name" maxlength="32" placeholder="请输入联系人姓名" />
+        </ElFormItem>
+        <ElFormItem label="联系方式" required>
+          <ElInput v-model="createForm.phone" maxlength="32" placeholder="请输入手机号" />
+        </ElFormItem>
+        <ElFormItem label="店铺分类" required>
+          <ElSelect
+            v-model="createForm.merchant_category_id"
+            class="w-full"
+            clearable
+            placeholder="请选择"
+          >
+            <ElOption
+              v-for="c in categories"
+              :key="c.merchant_category_id"
+              :label="c.category_name"
+              :value="c.merchant_category_id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="店铺类型" required>
+          <ElSelect
+            v-model="createForm.mer_type_id"
+            class="w-full"
+            clearable
+            placeholder="请选择"
+          >
+            <ElOption
+              v-for="t in types"
+              :key="t.id"
+              :label="t.name"
+              :value="t.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="资质图片">
+          <ImageField v-model="createForm.images" />
+        </ElFormItem>
+      </ElForm>
+    </CreateDrawer>
 
     <AuditDrawer>
       <ElForm label-width="105px">
@@ -344,14 +559,14 @@ onMounted(async () => {
           <span>{{ selected?.mer_name }}</span>
         </ElFormItem>
         <ElFormItem label="审核状态" required>
-          <ElRadioGroup v-model="form.status">
+          <ElRadioGroup v-model="auditForm.status">
             <ElRadio :value="1">同意</ElRadio>
             <ElRadio :value="2">拒绝</ElRadio>
           </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem v-if="form.status === 2" label="驳回原因" required>
+        <ElFormItem v-if="auditForm.status === 2" label="驳回原因" required>
           <ElInput
-            v-model="form.fail_msg"
+            v-model="auditForm.fail_msg"
             :rows="3"
             maxlength="300"
             show-word-limit
@@ -360,7 +575,7 @@ onMounted(async () => {
         </ElFormItem>
         <ElFormItem label="审核备注">
           <ElInput
-            v-model="form.mark"
+            v-model="auditForm.mark"
             :rows="3"
             maxlength="300"
             show-word-limit

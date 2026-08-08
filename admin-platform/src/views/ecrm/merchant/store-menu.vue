@@ -36,7 +36,7 @@ type FormMode = 'create' | 'create-child' | 'edit';
 /**
  * 本页 CRUD 对已进入页面的管理员开放。
  * 注意：/auth/permissions 只返回 button 码，不能用 page 码 store.menu 判断，
- * 否则会把「添加菜单」和操作列全部隐藏。
+ * 否则会把「新增菜单」和操作列全部隐藏。
  */
 const canManage = true;
 const editing = ref<MerchantStoreMenuRow>();
@@ -132,7 +132,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -155,7 +155,7 @@ function openCreate() {
   parentId.value = 0;
   editing.value = undefined;
   resetForm();
-  formDrawerApi.setState({ title: '添加菜单' }).open();
+  formDrawerApi.setState({ title: '新增菜单' }).open();
 }
 
 function openCreateChild(row: MerchantStoreMenuRow) {
@@ -164,7 +164,7 @@ function openCreateChild(row: MerchantStoreMenuRow) {
   editing.value = undefined;
   resetForm();
   form.is_route = row.is_menu === 1 ? 1 : 0;
-  formDrawerApi.setState({ title: `添加子菜单：${row.menu_name}` }).open();
+  formDrawerApi.setState({ title: `新增子菜单：${row.menu_name}` }).open();
 }
 
 function openEdit(row: MerchantStoreMenuRow) {
@@ -247,7 +247,7 @@ async function onDelete(row: MerchantStoreMenuRow) {
           type="primary"
           @click="openCreate"
         >
-          添加菜单
+          新增菜单
         </ElButton>
       </template>
       <template #menu_name="{ row }">
@@ -267,7 +267,7 @@ async function onDelete(row: MerchantStoreMenuRow) {
             type="primary"
             @click="openCreateChild(row)"
           >
-            添加子菜单
+            新增子菜单
           </ElButton>
           <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
           <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>

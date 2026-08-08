@@ -63,7 +63,7 @@ watch(
   open,
   (visible) => {
     if (visible) {
-      drawerApi.setState({ title: '添加消息' }).open();
+      drawerApi.setState({ title: '新增消息' }).open();
       return;
     }
     drawerApi.close();
@@ -80,7 +80,7 @@ async function handleSubmit() {
     try {
       const res = await MessageApi.addMessage({ ...form }, true);
       if (res.code === 1) {
-        ElMessage.success('恭喜你，添加成功');
+        ElMessage.success('恭喜你，新增成功');
         open.value = false;
         emit('success');
       }
@@ -97,7 +97,7 @@ async function handleSubmit() {
     :close-on-click-modal="false"
     :confirm-loading="loading"
     :destroy-on-close="true"
-    title="添加消息"
+    title="新增消息"
   >
     <ElForm ref="formRef" :model="form" label-width="132px">
       <ElFormItem

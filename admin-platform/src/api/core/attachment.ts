@@ -17,6 +17,7 @@ export interface AttachmentItem {
   attachment_name: string;
   attachment_src: string;
   attachment_type: 0 | 1;
+  is_system?: number;
   create_time: string;
 }
 
@@ -27,8 +28,10 @@ export interface AttachmentPage {
   total: number;
 }
 
-export function listAttachmentCategoriesApi() {
-  return requestClient.get<{ list: AttachmentCategory[] }>('/attachments/categories');
+export function listAttachmentCategoriesApi(params?: { type?: AttachmentKind }) {
+  return requestClient.get<{ list: AttachmentCategory[] }>('/attachments/categories', {
+    params,
+  });
 }
 
 export function createAttachmentCategoryApi(data: {
@@ -58,7 +61,7 @@ export function deleteAttachmentCategoryApi(id: number) {
 
 export function listAttachmentsApi(params: {
   category_id?: number;
-  /** 1 = 仅系统分类素材（侧栏「系统素材」根入口） */
+  /** 1 = 仅行级系统预置素材（侧栏「系统素材」） */
   is_system?: 0 | 1;
   limit?: number;
   page?: number;
@@ -67,10 +70,17 @@ export function listAttachmentsApi(params: {
   return requestClient.get<AttachmentPage>('/attachments', { params });
 }
 
-export function uploadAttachmentApi(file: File, categoryID = 0) {
+export function uploadAttachmentApi(
+  file: File,
+  categoryID = 0,
+  options?: { isSystem?: boolean },
+) {
   const form = new FormData();
   form.append('file', file);
   form.append('category_id', String(categoryID));
+  if (options?.isSystem) {
+    form.append('is_system', '1');
+  }
   return requestClient.post<AttachmentItem>('/attachments/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

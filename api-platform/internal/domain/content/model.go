@@ -26,7 +26,8 @@ type Cache struct {
 	Key        string    `gorm:"column:key;primaryKey" json:"key"`
 	ExpireTime int       `gorm:"column:expire_time" json:"expire_time"`
 	Result     string    `gorm:"column:result" json:"result"`
-	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
+	// autoCreateTime：避免零值写入 MySQL 非法 '0000-00-00'（严格模式 Error 1292）。
+	CreateTime time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`
 }
 
 func (Cache) TableName() string { return "qixi_crm_a_setting_cache" }

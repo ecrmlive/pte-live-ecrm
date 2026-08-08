@@ -2,6 +2,7 @@ package circle
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ var (
 	ErrAgentNotApproved  = errors.New("仅已审核通过的代理可以重置后台密码")
 	ErrAgentAdminUnbound = errors.New("代理未关联启用的统一后台账号")
 	ErrCommandConflict   = errors.New("幂等键与既有代理命令不一致")
+	ErrAccountExists     = errors.New("登录账号已存在")
+	ErrDisplayNameExists = errors.New("昵称已存在")
 )
 
 type PageResult[T any] struct {
@@ -39,7 +42,7 @@ type Store interface {
 	DeleteCircle(context.Context, uint) error
 	CountCircleChildren(context.Context, uint) (int64, error)
 
-	ListAgents(context.Context, string, *int8, *int8, int, int) ([]Agent, int64, error)
+	ListAgents(context.Context, AgentListFilter, int, int) ([]Agent, int64, error)
 	GetAgent(context.Context, uint) (*Agent, error)
 	CreateAgent(context.Context, *Agent) error
 	UpdateAgent(context.Context, *Agent) error
@@ -55,7 +58,8 @@ func normalizePage(page, limit int) (int, int) {
 	if page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	// 区域树列表需一次拉全量一级/同级节点，允许较大 limit。
+	if limit < 1 || limit > 9999 {
 		limit = 20
 	}
 	return page, limit
@@ -131,11 +135,13 @@ func (s *Service) UpdateCircle(ctx context.Context, id uint, in CircleInput) (*C
 
 func (s *Service) circleFromInput(ctx context.Context, id uint, in CircleInput) (*Circle, error) {
 	name := strings.TrimSpace(in.Name)
-	nameLimit := 64
-	if in.Type == 1 {
-		nameLimit = 20
-	}
+	// 区域名称对齐 CRMEB 表单 20 字；商户型商圈名称同样 20 字。
+	nameLimit := 20
 	if name == "" || len([]rune(name)) > nameLimit || (in.Status != 0 && in.Status != 1) || (in.Type != 0 && in.Type != 1) || (in.CommissionType != 0 && in.CommissionType != 1) || in.CommissionRate < 0 || in.CommissionRate > 100 {
+		return nil, ErrBadParam
+	}
+	// type=0 区域：代理与身份权限必填；type=1 商户型另需店铺分类/类型。
+	if in.Type == 0 && (in.CircleAgentID == 0 || in.RoleID == 0) {
 		return nil, ErrBadParam
 	}
 	if in.Type == 1 && (in.CircleAgentID == 0 || in.RoleID == 0 || in.BusinessStoreCategory == 0 || in.BusinessStoreType == 0) {
@@ -161,13 +167,22 @@ func (s *Service) circleFromInput(ctx context.Context, id uint, in CircleInput) 
 			return nil, ErrBadParam
 		}
 	}
+	now := time.Now()
 	return &Circle{
 		CircleID: id, PID: in.PID, Name: name, CircleAgentID: in.CircleAgentID,
 		CommissionType: in.CommissionType, CommissionRate: in.CommissionRate,
 		Remark: strings.TrimSpace(in.Remark), Sort: in.Sort, Status: in.Status, Type: in.Type,
 		RoleID: in.RoleID, BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType,
 		GoodsType: joinInts(in.GoodsTypes), PlatformCategoryIDs: joinUints(in.PlatformCategoryIDs), Level: level,
+		CreateTime: now, UpdateTime: now,
 	}, nil
+}
+
+func (s *Service) CountCircleChildren(ctx context.Context, id uint) (int64, error) {
+	if id == 0 {
+		return 0, ErrBadParam
+	}
+	return s.store.CountCircleChildren(ctx, id)
 }
 
 func (s *Service) DeleteCircle(ctx context.Context, id uint) error {
@@ -184,9 +199,12 @@ func (s *Service) DeleteCircle(ctx context.Context, id uint) error {
 	return s.store.DeleteCircle(ctx, id)
 }
 
-func (s *Service) ListAgents(ctx context.Context, keyword string, status, agentType *int8, page, limit int) (*PageResult[Agent], error) {
+func (s *Service) ListAgents(ctx context.Context, filter AgentListFilter, page, limit int) (*PageResult[Agent], error) {
 	page, limit = normalizePage(page, limit)
-	rows, total, err := s.store.ListAgents(ctx, strings.TrimSpace(keyword), status, agentType, page, limit)
+	filter.Keyword = strings.TrimSpace(filter.Keyword)
+	filter.Name = strings.TrimSpace(filter.Name)
+	filter.Phone = strings.TrimSpace(filter.Phone)
+	rows, total, err := s.store.ListAgents(ctx, filter, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +253,9 @@ func (s *Service) UpdateAgent(ctx context.Context, id uint, in AgentInput) (*Age
 	if err != nil {
 		return nil, err
 	}
-	if old.Status != AgentPending {
+	// 待审申请可改；已通过的区域代理 / 商户管理员也可维护资料。
+	approvedEditable := old.Status == AgentApproved && (old.Type == 0 || old.Type == 1)
+	if old.Status != AgentPending && !approvedEditable {
 		return nil, ErrAlreadyAudited
 	}
 	row, err := agentFromInput(in)
@@ -243,6 +263,12 @@ func (s *Service) UpdateAgent(ctx context.Context, id uint, in AgentInput) (*Age
 		return nil, err
 	}
 	row.CircleAgentID = id
+	if approvedEditable {
+		// 编辑已通过代理时保留审核状态与类型，且不因未带账号/密码被 agentFromInput 置为待审。
+		row.Status = old.Status
+		row.Type = old.Type
+		row.CreateTime = old.CreateTime
+	}
 	// 支付账号、开户行、二维码只支持非空覆盖，避免脱敏读模型在编辑时把既有资料清空。
 	if row.PaymentAccount == "" {
 		row.PaymentAccount = old.PaymentAccount
@@ -307,7 +333,75 @@ func agentFromInput(in AgentInput) (*Agent, error) {
 		}
 		status = AgentApproved
 	}
-	return &Agent{UID: in.UID, Name: name, Phone: phone, Qualification: strings.TrimSpace(in.Qualification), Remark: strings.TrimSpace(in.Remark), PaymentMethod: in.PaymentMethod, PaymentName: strings.TrimSpace(in.PaymentName), PaymentAccount: strings.TrimSpace(in.PaymentAccount), PaymentBank: strings.TrimSpace(in.PaymentBank), PaymentQRImg: strings.TrimSpace(in.PaymentQRImg), Type: in.Type, BusinessName: strings.TrimSpace(in.BusinessName), BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType, Status: status}, nil
+	// 区域列表 / 代理人员表单新增区域代理：立即通过。
+	if in.AutoApprove && in.Type == 0 {
+		status = AgentApproved
+	}
+	extend, err := mergeAgentExtend(in.Extend, in.Avatar)
+	if err != nil {
+		return nil, ErrBadParam
+	}
+	now := time.Now()
+	return &Agent{
+		UID: in.UID, Name: name, Phone: phone, Qualification: strings.TrimSpace(in.Qualification),
+		Remark: strings.TrimSpace(in.Remark), Extend: extend, PaymentMethod: in.PaymentMethod, PaymentName: strings.TrimSpace(in.PaymentName),
+		PaymentAccount: strings.TrimSpace(in.PaymentAccount), PaymentBank: strings.TrimSpace(in.PaymentBank),
+		PaymentQRImg: strings.TrimSpace(in.PaymentQRImg), Type: in.Type, BusinessName: strings.TrimSpace(in.BusinessName),
+		BusinessStoreCategory: in.BusinessStoreCategory, BusinessStoreType: in.BusinessStoreType, Status: status,
+		CreateTime: now, UpdateTime: now,
+	}, nil
+}
+
+// AgentAvatar 从 extend JSON 读取区域代理标识图。
+func AgentAvatar(extend string) string {
+	extend = strings.TrimSpace(extend)
+	if extend == "" {
+		return ""
+	}
+	var payload map[string]any
+	if json.Unmarshal([]byte(extend), &payload) != nil {
+		return ""
+	}
+	raw, ok := payload["avatar"]
+	if !ok {
+		return ""
+	}
+	switch v := raw.(type) {
+	case string:
+		return strings.TrimSpace(v)
+	default:
+		return ""
+	}
+}
+
+func mergeAgentExtend(rawExtend, avatar string) (string, error) {
+	payload := map[string]any{}
+	rawExtend = strings.TrimSpace(rawExtend)
+	if rawExtend != "" {
+		if err := json.Unmarshal([]byte(rawExtend), &payload); err != nil {
+			return "", err
+		}
+	}
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	avatar = strings.TrimSpace(avatar)
+	if avatar == "" {
+		delete(payload, "avatar")
+	} else {
+		if len(avatar) > 1024 {
+			return "", ErrBadParam
+		}
+		payload["avatar"] = avatar
+	}
+	if len(payload) == 0 {
+		return "", nil
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }
 
 func itoa(v uint) string { return strconv.FormatUint(uint64(v), 10) }

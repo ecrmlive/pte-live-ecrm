@@ -231,7 +231,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div class="d-c-c mt-2">
-        <component :is="PrimaryButton" plain size="small" @click="addHotspot">添加热区</component>
+        <component :is="PrimaryButton" plain size="small" @click="addHotspot">新增热区</component>
       </div>
     </div>
     <div v-if="curItem.data && curItem.data.length > 0" class="mt-2">

@@ -119,7 +119,7 @@ const [Form, formApi] = useVbenForm(
           status: Number(values.status ?? 1),
           wechat: String(values.wechat ?? ''),
         });
-        ElMessage.success(res.msg || '添加成功');
+        ElMessage.success(res.msg || '新增成功');
         open.value = false;
         emit('success');
       } finally {
@@ -177,7 +177,7 @@ async function submit() {
     :close-on-click-modal="false"
     :destroy-on-close="true"
     class="w-[640px]"
-    title="添加主播"
+    title="新增主播"
   >
     <Form />
 

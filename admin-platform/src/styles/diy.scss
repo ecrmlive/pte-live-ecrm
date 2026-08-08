@@ -223,7 +223,8 @@
 		flex-direction: column;
 		align-items: stretch;
 		margin: 0;
-		padding: 16px 56px 16px 100px;
+		/* 右侧留白给 operate-pop / DevicePreviewFrame sideGutter（402 屏宽） */
+		padding: 16px 72px 16px 72px;
 		overflow: hidden;
 		background: hsl(var(--muted) / 35%);
 

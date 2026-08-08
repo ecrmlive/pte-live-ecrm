@@ -86,7 +86,7 @@ watch(
   open,
   (visible) => {
     if (visible) {
-      drawerApi.setState({ title: '添加插件' }).open();
+      drawerApi.setState({ title: '新增插件' }).open();
       return;
     }
     drawerApi.close();
@@ -115,7 +115,7 @@ async function handleAdd(row: PlugCandidate) {
       true,
     );
     if (res.code === 1) {
-      ElMessage.success('添加成功');
+      ElMessage.success('新增成功');
       open.value = false;
       emit('success');
     }
@@ -130,7 +130,7 @@ async function handleAdd(row: PlugCandidate) {
     :close-on-click-modal="false"
     :destroy-on-close="true"
     :footer="false"
-    title="添加插件"
+    title="新增插件"
   >
     <Grid>
       <template #action="{ row }">
@@ -140,7 +140,7 @@ async function handleAdd(row: PlugCandidate) {
           type="primary"
           @click="handleAdd(row)"
         >
-          添加
+          新增
         </ElButton>
       </template>
     </Grid>

@@ -204,7 +204,9 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_attachment_asset` (
   `attachment_name` varchar(255) NOT NULL, `attachment_src` varchar(1024) NOT NULL,
   `upload_type` tinyint NOT NULL DEFAULT 1, `user_type` int NOT NULL DEFAULT 0, `user_id` bigint unsigned NOT NULL DEFAULT 0,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `attachment_type` tinyint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`attachment_id`), KEY `idx_owner_category` (`user_type`,`attachment_category_id`,`attachment_type`)
+  `is_system` tinyint NOT NULL DEFAULT 0 COMMENT '1=系统预置素材（侧栏系统素材）',
+  PRIMARY KEY (`attachment_id`), KEY `idx_owner_category` (`user_type`,`attachment_category_id`,`attachment_type`),
+  KEY `idx_owner_system` (`user_type`,`is_system`,`attachment_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_content` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `content_type` enum('article','notice','agreement','banner') NOT NULL,
@@ -329,7 +331,8 @@ PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stm
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_business_zone_agent` (
   `circle_agent_id` bigint unsigned NOT NULL AUTO_INCREMENT, `uid` bigint unsigned NOT NULL DEFAULT 0,
   `name` varchar(64) NOT NULL, `phone` varchar(32) NOT NULL, `qualification` varchar(2000) NOT NULL DEFAULT '',
-  `remark` varchar(500) NOT NULL DEFAULT '', `audit_admin_id` bigint unsigned NOT NULL DEFAULT 0,
+  `remark` varchar(500) NOT NULL DEFAULT '', `extend` text,
+  `audit_admin_id` bigint unsigned NOT NULL DEFAULT 0,
   `audit_reason` varchar(500) NOT NULL DEFAULT '', `audit_time` datetime DEFAULT NULL,
   `status` tinyint NOT NULL DEFAULT 0, `payment_method` tinyint unsigned NOT NULL DEFAULT 0,
   `payment_name` varchar(128) NOT NULL DEFAULT '', `payment_account` varchar(255) NOT NULL DEFAULT '',
@@ -340,6 +343,14 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_business_zone_agent` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`circle_agent_id`), KEY `idx_status_listing` (`status`,`circle_agent_id`), KEY `idx_uid` (`uid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_a_business_zone_agent' AND COLUMN_NAME='extend')=0,
+    'ALTER TABLE `qixi_crm_a_business_zone_agent` ADD COLUMN `extend` text NULL AFTER `remark`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 代理撤销不可硬删：保留资格状态与幂等审计，避免破坏已结算或关联区域的事实链路。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_business_zone_agent_command_audit` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `circle_agent_id` bigint unsigned NOT NULL,

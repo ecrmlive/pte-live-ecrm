@@ -59,7 +59,7 @@ const formRules = {
 };
 
 const dialogTitle = computed(() =>
-  props.mode === 'edit' ? '修改菜单&权限' : '添加菜单&权限',
+  props.mode === 'edit' ? '修改菜单&权限' : '新增菜单&权限',
 );
 
 const accessList = computed(() => {

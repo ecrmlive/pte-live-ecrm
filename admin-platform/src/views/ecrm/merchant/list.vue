@@ -24,6 +24,7 @@ import {
   ElRadio,
   ElRadioGroup,
   ElSelect,
+  ElImage,
   ElSwitch,
   ElTabPane,
   ElTable,
@@ -34,6 +35,7 @@ import {
 import { MoreFilled, Plus, Shop } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 import {
   createPlatformMerchant,
   fetchBusinessZoneOptions,
@@ -599,7 +601,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => {
@@ -691,7 +693,7 @@ const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
         ElMessage.success('店铺已更新');
       } else {
         await createPlatformMerchant(payload);
-        ElMessage.success('店铺已添加');
+        ElMessage.success('店铺已新增');
       }
       shopDrawerApi.close();
       await loadCounts();
@@ -755,9 +757,9 @@ function openCreate() {
   void loadPlatformCategories();
   shopDrawerApi
     .setState({
-      title: '添加店铺',
+      title: '新增店铺',
       showConfirmButton: true,
-      confirmText: '提交',
+      confirmText: '保存',
     })
     .open();
 }
@@ -772,7 +774,7 @@ async function openEdit(row: PlatformMerchantRow) {
       loading: true,
       title: `编辑店铺 · ${row.mer_name}`,
       showConfirmButton: true,
-      confirmText: '完成',
+      confirmText: '保存',
     })
     .open();
   try {
@@ -815,7 +817,7 @@ function switchToEditFromDetail() {
   shopDrawerApi.setState({
     title: `编辑店铺 · ${form.mer_name || ''}`,
     showConfirmButton: true,
-    confirmText: '完成',
+    confirmText: '保存',
     cancelText: '取消',
   });
 }
@@ -1033,19 +1035,24 @@ onMounted(async () => {
               type="primary"
               @click="openCreate"
             >
-              添加店铺
+              新增店铺
             </ElButton>
           </div>
         </div>
       </template>
 
       <template #cover="{ row }">
-        <img
+        <ElImage
           v-if="row.mer_avatar"
           class="shop-list-cover"
-          :src="row.mer_avatar"
+          :src="resolveCosMediaUrl(row.mer_avatar)"
+          fit="cover"
           alt="店铺封面"
-        />
+        >
+          <template #error>
+            <span>—</span>
+          </template>
+        </ElImage>
         <span v-else>—</span>
       </template>
 

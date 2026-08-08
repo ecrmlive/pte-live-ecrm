@@ -160,7 +160,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [TypeDrawer, typeDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => {
@@ -308,9 +308,9 @@ async function openCreate() {
   resetForm();
   typeDrawerApi
     .setState({
-      title: '添加店铺类型',
+      title: '新增店铺类型',
       showConfirmButton: true,
-      confirmText: '提交',
+      confirmText: '保存',
       cancelText: '取消',
     })
     .open();
@@ -326,7 +326,7 @@ async function openEdit(row: MerchantTypeRow) {
       loading: true,
       title: '编辑店铺类型',
       showConfirmButton: true,
-      confirmText: '完成',
+      confirmText: '保存',
       cancelText: '取消',
     })
     .open();
@@ -367,7 +367,7 @@ async function switchToEdit() {
   typeDrawerApi.setState({
     title: '编辑店铺类型',
     showConfirmButton: true,
-    confirmText: '完成',
+    confirmText: '保存',
     cancelText: '取消',
   });
   // 详情→编辑：保留并回填同一 id，避免 checkbox 树重挂载后丢状态
@@ -459,7 +459,7 @@ onMounted(async () => {
               type="primary"
               @click="openCreate"
             >
-              添加店铺类型
+              新增店铺类型
             </ElButton>
           </div>
         </div>

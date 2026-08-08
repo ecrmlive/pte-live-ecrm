@@ -3,6 +3,7 @@ package contentpersist
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/content"
 	"gorm.io/gorm"
@@ -75,6 +76,10 @@ func (r *Repo) UpsertCache(ctx context.Context, row *content.Cache) error {
 	err := r.db.WithContext(ctx).Where("`key` = ?", row.Key).First(&exist).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 首次写入必须带合法 create_time；零值会被 GORM 写成 '0000-00-00' 触发 MySQL 1292。
+			if row.CreateTime.IsZero() {
+				row.CreateTime = time.Now()
+			}
 			return r.db.WithContext(ctx).Create(row).Error
 		}
 		return err

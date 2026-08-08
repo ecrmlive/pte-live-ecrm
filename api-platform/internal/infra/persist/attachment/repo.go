@@ -76,11 +76,20 @@ func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly b
 	q := r.db.WithContext(ctx).Model(&attachment.Attachment{}).Where("user_type = ?", userType)
 	if cateID > 0 {
 		q = q.Where("attachment_category_id = ?", cateID)
-	} else if systemOnly {
-		q = q.Where(
-			"attachment_category_id IN (?)",
-			r.db.Model(&attachment.Category{}).Select("attachment_category_id").Where("is_system = ?", 1),
-		)
+	}
+	if systemOnly {
+		// 「系统素材」= 行级 is_system=1 的预置素材，且必须落在固定系统分类下。
+		// 运营图可挂在「背景图片」等系统分类，但 is_system=0，不得出现在此入口。
+		q = q.Where("is_system = ?", 1)
+		ennames := attachment.SystemCategoryEnnames(attachmentType)
+		if len(ennames) == 0 {
+			q = q.Where("1 = 0")
+		} else {
+			sub := r.db.WithContext(ctx).Model(&attachment.Category{}).
+				Select("attachment_category_id").
+				Where("mer_id = ? AND is_system = ? AND attachment_category_enname IN ?", 0, 1, ennames)
+			q = q.Where("attachment_category_id IN (?)", sub)
+		}
 	}
 	if attachmentType != nil {
 		q = q.Where("attachment_type = ?", *attachmentType)

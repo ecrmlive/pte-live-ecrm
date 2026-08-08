@@ -45,7 +45,7 @@ func TestResetAgentPasswordIntegrationSingleSubmit(t *testing.T) {
 	if err := db.Exec("INSERT INTO qixi_crm_a_admin_user (id,username,password_hash,display_name,status,auth_version,data_scope_version,circle_agent_id) VALUES (?,?,?,?,1,1,1,?)", adminID, "agent-password-local", string(oldHash), "中文代理后台账号", agentID).Error; err != nil {
 		t.Fatal(err)
 	}
-	h := NewHandler(nil, db)
+	h := NewHandler(nil, db, nil)
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.POST("/reset/:id", func(c *gin.Context) { c.Set(middleware.CtxAdminID, uint(987670013)); h.ResetAgentPassword(c) })

@@ -78,7 +78,7 @@
 | 店铺 | `/mer` | ✓ | ✓ | — | — | 2 |
 | 店铺 / 区域代理 | `/business-zones/manage` | — | ✓ | — | — | 0 |
 | 店铺 / 区域代理 / 代理人员 | `/business-zones/agents` | ✓ | ✓ | ✓ | ✓ | 6 |
-| 店铺 / 区域代理 / 代理审核 | `/business-zones/agent-review` | — | — | ✓ | — | 1 |
+| 店铺 / 区域代理 / 代理审核（侧栏隐藏） | `/business-zones/agent-review` | — | — | ✓ | — | 1 |
 | 店铺 / 区域代理 / 代理设置 | `/business-zones/settings` | — | ✓ | — | — | 0 |
 | 店铺 / 区域代理 / 区域列表 | `/business-zones/index` | ✓ | ✓ | ✓ | ✓ | 7 |
 | 店铺 / 商户管理 | `/merchant` | ✓ | ✓ | — | — | 2 |
@@ -1038,14 +1038,14 @@
 | 代理选项 | `O` | `systemCircleAgentOptions` | 菜单权限 |
 | 重置密码 | `O` | `systemCircleAgentResetPassword` | 菜单权限 |
 
-#### 店铺 / 区域代理 / 代理审核
+#### 店铺 / 区域代理 / 代理审核（侧栏隐藏，路由保留）
 
-- 页面路由：`/business-zones/agent-review`
+- 页面路由：`/business-zones/agent-review`（`qixi_crm_a_menu.status=0`，不出现在侧栏）
 - CRUD：C=— R=— U=✓ D=—
 
 | 操作 | CRUD | 标识 | 来源 |
 | --- | --- | --- | --- |
-| 商圈代理审核 | `U` | `systemCircleAgentAudit` | 菜单权限 |
+| 商圈代理审核 | `U` | `systemCircleAgentAudit` | 按钮权限挂在代理人员下 |
 
 #### 店铺 / 区域代理 / 代理设置
 

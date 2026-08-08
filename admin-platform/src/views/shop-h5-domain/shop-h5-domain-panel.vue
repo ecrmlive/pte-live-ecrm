@@ -155,7 +155,7 @@ const [AddForm, addFormApi] = useVbenForm(
           true,
         );
         if (res.code === 1) {
-          ElMessage.success(res.msg || '添加成功');
+          ElMessage.success(res.msg || '新增成功');
           addOpen.value = false;
           reload();
         }
@@ -396,7 +396,7 @@ watch(
           type="primary"
           @click="openAdd"
         >
-          添加域名
+          新增域名
         </ElButton>
         <span class="ml-3 text-xs text-muted-foreground">
           最多添加 {{ maxCount }} 条记录
@@ -491,7 +491,7 @@ watch(
       :close-on-click-modal="false"
       :destroy-on-close="true"
       class="w-[640px]"
-      title="添加域名"
+      title="新增域名"
     >
       <AddForm />
       <template #footer>

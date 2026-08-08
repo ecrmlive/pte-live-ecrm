@@ -73,7 +73,7 @@ onMounted(() => {
       <span>{{ curItem.name }}</span>
     </div>
     <Form />
-    <div class="mx-auto w-[375px]">
+    <div class="mx-auto w-[402px]">
       <RichTextField v-model="content" />
     </div>
   </div>

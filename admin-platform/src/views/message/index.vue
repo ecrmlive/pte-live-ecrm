@@ -170,7 +170,7 @@ async function deleteMessage(row: MessageItem) {
           type="primary"
           @click="addModalOpen = true"
         >
-          添加消息
+          新增消息
         </ElButton>
       </template>
 
