@@ -48,6 +48,12 @@ disable-model-invocation: false
 - 未经用户明确授权：禁止 commit、push、创建 PR、重置分支、覆盖用户已有修改。
 - 部署/服务器操作必须用户明确授权；部署完成后反馈服务器 IP。
 
+## Model policy（强制）
+
+- **仅允许**：Claude Opus 5、GPT-5.6 Terra、Cursor Grok 4.5 High Fast。
+- **禁止**白名单以外一切模型（含 Composer / `composer-2.5-fast`）。见 `.cursor/rules/agent-model-policy.mdc`。
+- 当前会话若不在白名单：先请用户切换，再改列表/布局类代码。
+
 ## Product shape
 
 三角色：

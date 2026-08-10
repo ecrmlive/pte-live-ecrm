@@ -6,7 +6,8 @@ export function resolveCosMediaUrl(path = '') {
 	if (!s) {
 		return '';
 	}
-	if (/^https?:\/\//i.test(s)) {
+	// 已是完整 URL / data URI / blob，勿拼 COS 域名（分销等级预设 SVG 等）
+	if (/^(https?:|data:|blob:)/i.test(s)) {
 		return s;
 	}
 	return `${COS_BASE}/${s.replace(/^\//, '')}`;

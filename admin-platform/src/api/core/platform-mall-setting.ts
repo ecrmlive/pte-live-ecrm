@@ -96,6 +96,51 @@ export function savePlatformMarginConfigApi(config: PlatformMarginConfig) {
     .then((data) => parseConfig<PlatformMarginConfig>(data.config));
 }
 
+/** 对齐 CRMEB ConfigOthers::update（分销配置 distribution_tabs） */
+export interface PlatformDistributionConfig {
+  extension_status: boolean;
+  extension_self: boolean;
+  extension_limit: boolean;
+  extension_limit_day: number;
+  /** 0礼包 1手动 2人人 3满额 */
+  promoter_type: number;
+  promoter_low_money: number;
+  /** 0全部 1推广员 2非推广员 3关闭 */
+  extension_pop: number;
+  /** 0～1，例 0.15 = 15% */
+  extension_one_rate: number;
+  extension_two_rate: number;
+  user_extract_min: number;
+  lock_brokerage_timer: number;
+  /** 0线下 1企业付款到零钱 2商家转账到零钱 */
+  sys_extension_type: number;
+  /** 0银行卡 1微信 2支付宝 4余额 */
+  withdraw_type: string[];
+  /** 1线下转账 2自动转账 */
+  extract_switch: number;
+  transfer_scene_id: number;
+  max_bag_number: number;
+}
+
+export function getPlatformDistributionConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/distribution')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformDistributionConfig>(data.config),
+    }));
+}
+
+export function savePlatformDistributionConfigApi(
+  config: PlatformDistributionConfig,
+) {
+  return requestClient
+    .put<{ config: string }>('/setting/distribution', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformDistributionConfig>(data.config));
+}
+
 /** 对齐 CRMEB 商户设置：入驻页背景 + 自定义表单字段 */
 export type MerchantApplyFieldType =
   | 'checkbox'

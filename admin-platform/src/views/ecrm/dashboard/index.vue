@@ -131,7 +131,7 @@ const allTodos = computed(() => {
   const d = dashboard.value;
   return [
     { icon: Goods, label: '待审核商品', route: '/product/audit', tone: 'blue', value: d.pending_product_audit },
-    { icon: Shop, label: '待审核分销礼包', route: '/marketing/spread', tone: 'cyan', value: d.pending_spread_gift },
+    { icon: Shop, label: '待审核分销礼包', route: '/promoter/gift', tone: 'cyan', value: d.pending_spread_gift },
     { icon: Shop, label: '待审核商户入驻', route: '/merchant/audit', tone: 'orange', value: d.pending_store_audit },
     { icon: Wallet, label: '待审核提现', route: '/accounts/withdraw', tone: 'green', value: d.pending_withdraw },
     { icon: Money, label: '待审核转账', route: '/accounts/transferRecord', tone: 'purple', value: d.pending_transfer },

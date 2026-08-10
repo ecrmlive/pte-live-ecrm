@@ -17,6 +17,7 @@
 
 /* 表本体随行高，避免 JS 按父级写入的像素高在 pager 上方留白 */
 .platform-vxe-grid .vxe-table {
+  width: 100%;
   height: auto !important;
   max-height: none !important;
 }
@@ -25,20 +26,32 @@
  * vxe 默认 layouts 把 Toolbar/Table/Pager 放进 flex-grow:1 的 body；
  * 再叠加 Page auto-content-height / 旧外层 h-full / height:auto→100% 时，
  * 表体会被撑出大块空白（expand 行 + fixed 列后更明显）。列表页要内容撑开、整页滚动。
- * 只关 flex-grow，勿设 flex-shrink:0：否则表宽随列撑开、外层横滑，
- * fixed:right 操作列会跟着卷走。
+ *
+ * 只在「列方向 flex 子项」上关 flex-grow（挡纵向空洞）。
+ * 勿对行方向子项（content-wrapper / table-wrapper / viewport）关 flex-grow：
+ * 否则表宽 shrink-wrap 成列宽之和，宽屏右侧大块 gutter，且 autoCellWidth
+ * 读到的 bodyWidth≈内容宽、minWidth 列无法吸收剩余空间。
+ * 亦勿设 flex-shrink:0：否则表宽随列撑开、外层横滑，fixed:right 会跟着卷走。
  */
 .platform-vxe-grid .vxe-grid--layout-body-wrapper,
+.platform-vxe-grid .vxe-grid--table-container {
+  flex-grow: 0 !important;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* 行方向铺满卡片宽度，供 vxe fit / minWidth 列分配剩余空间 */
 .platform-vxe-grid .vxe-grid--layout-body-content-wrapper,
-.platform-vxe-grid .vxe-grid--table-container,
 .platform-vxe-grid .vxe-grid--table-wrapper,
 .platform-vxe-grid .vxe-table--viewport-wrapper {
-  flex-grow: 0 !important;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* 双列等窄内容区：收缩 + 裁切，强制横向滚动落在 vxe body/header 内 */
 .platform-vxe-grid .vxe-grid--layout-body-content-wrapper {
-  min-width: 0;
   overflow: hidden;
 }
 
@@ -60,6 +73,7 @@
   max-height: none !important;
   height: auto !important;
   min-height: 0 !important;
+  width: 100%;
   max-width: 100%;
   overflow-x: hidden !important;
   overflow-y: visible !important;

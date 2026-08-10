@@ -83,6 +83,7 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (9169,220,'promoter.order','分销订单','lucide:receipt','/promoter/orderList','page',8),
   (9368,220,'promoter.explain','分销说明','lucide:book-open','/promoter/retail','page',9),
   (5122,220,'promoter.config','分销配置','lucide:settings-2','/systemForm/Basics/distribution_tabs','page',10),
+  (21051,5122,'promoter.config.manage','保存分销配置','','systemForm/Basics/distribution_tabs','button',1),
 
   -- 营销（嵌套结构见 patch_marketing_menus.sql；下列为正式导航树）
   (60,0,'marketing','营销','ant-design:flag-outlined','/marketing','directory',6),
@@ -511,7 +512,7 @@ WHERE r.code = 'platform'
    OR (r.code = 'operations' AND m.code IN (
       'promoter','promoter.user','promoter.brokerage','promoter.brokerage.level','promoter.brokerage.rule',
       'promoter.bank','promoter.privilege','promoter.poster','promoter.gift','promoter.commission',
-      'promoter.order','promoter.explain','promoter.config','marketing.spread.read',
+      'promoter.order','promoter.explain','promoter.config','promoter.config.manage','marketing.spread.read',
       'marketing','marketing.platform_coupon','marketing.platform_coupon.list','marketing.platform_coupon.record',
       'marketing.platform_coupon.send','marketing.platform_coupon.help',
       'marketing.store_coupon','marketing.store_coupon.list','marketing.store_coupon.user',

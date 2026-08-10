@@ -76,6 +76,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	transferManage := middleware.RequireAdminMenu(h.adminDB, "accounts.transfer_settings.manage")
 	r.GET("/setting/transfer-settings", transferSetting, transferManage, h.GetTransferSettings)
 	r.PUT("/setting/transfer-settings", transferSetting, transferManage, h.SaveTransferSettings)
+	distributionSetting := middleware.RequireAdminRoles("platform", "operations")
+	distributionManage := middleware.RequireAdminMenu(h.adminDB, "promoter.config.manage")
+	r.GET("/setting/distribution", distributionSetting, distributionManage, h.GetDistribution)
+	r.PUT("/setting/distribution", distributionSetting, distributionManage, h.SaveDistribution)
 
 	appSetting := middleware.RequireAdminRoles("platform")
 	routineManage := middleware.RequireAdminMenu(h.adminDB, "app.routine.manage")
@@ -431,6 +435,14 @@ func (h *Handler) GetTransferSettings(c *gin.Context) {
 
 func (h *Handler) SaveTransferSettings(c *gin.Context) {
 	h.saveJSONSetting(c, h.svc.SaveTransferSettingsConfig)
+}
+
+func (h *Handler) GetDistribution(c *gin.Context) {
+	h.getJSONSetting(c, h.svc.GetDistributionConfig, "分销配置")
+}
+
+func (h *Handler) SaveDistribution(c *gin.Context) {
+	h.saveJSONSetting(c, h.svc.SaveDistributionConfig)
 }
 
 func (h *Handler) GetRoutineApp(c *gin.Context) {

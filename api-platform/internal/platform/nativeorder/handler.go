@@ -473,6 +473,13 @@ func applyOrderListFiltersExceptTab(q *gorm.DB, c *gin.Context, adminDB *gorm.DB
 				SELECT 1 FROM qixi_crm_b_user u
 				WHERE u.id = o.user_id AND u.mobile LIKE ?
 			)`, like)
+		case "any":
+			q = q.Where(`EXISTS (
+				SELECT 1 FROM qixi_crm_b_user u
+				WHERE u.id = o.user_id AND (
+					u.nickname LIKE ? OR IFNULL(u.mobile,'') LIKE ? OR CAST(u.id AS CHAR) = ?
+				)
+			)`, like, like, userKW)
 		default:
 			q = q.Where(`EXISTS (
 				SELECT 1 FROM qixi_crm_b_user u
@@ -487,6 +494,32 @@ func applyOrderListFiltersExceptTab(q *gorm.DB, c *gin.Context, adminDB *gorm.DB
 			"o.order_no LIKE ? OR o.recipient_snapshot LIKE ? OR CAST(o.id AS CHAR) = ?",
 			like, like, keyword,
 		)
+	}
+	// 分销订单：仅展示产生佣金流水的订单（对齐 CRMEB 分销订单列表）
+	if strings.TrimSpace(c.Query("is_spread")) == "1" {
+		q = q.Where(`EXISTS (
+			SELECT 1 FROM qixi_crm_b_commission_ledger c
+			WHERE c.order_id = o.id AND c.status <> 'voided'
+		)`)
+	}
+	if spreadKW := strings.TrimSpace(c.Query("spread_keyword")); spreadKW != "" {
+		like := "%" + spreadKW + "%"
+		q = q.Where(`EXISTS (
+			SELECT 1 FROM qixi_crm_b_distribution_relation r
+			JOIN qixi_crm_b_user u ON u.id = r.parent_user_id
+			WHERE r.user_id = o.user_id AND r.parent_user_id IS NOT NULL
+			  AND (u.nickname LIKE ? OR IFNULL(u.mobile,'') LIKE ? OR CAST(u.id AS CHAR) = ?)
+		)`, like, like, spreadKW)
+	}
+	if topKW := strings.TrimSpace(c.Query("top_spread_keyword")); topKW != "" {
+		like := "%" + topKW + "%"
+		q = q.Where(`EXISTS (
+			SELECT 1 FROM qixi_crm_b_distribution_relation r
+			JOIN qixi_crm_b_distribution_relation rp ON rp.user_id = r.parent_user_id
+			JOIN qixi_crm_b_user u ON u.id = rp.parent_user_id
+			WHERE r.user_id = o.user_id AND rp.parent_user_id IS NOT NULL
+			  AND (u.nickname LIKE ? OR IFNULL(u.mobile,'') LIKE ? OR CAST(u.id AS CHAR) = ?)
+		)`, like, like, topKW)
 	}
 	if from := strings.TrimSpace(c.Query("date_from")); from != "" {
 		if t, err := time.ParseInLocation("2006-01-02", from, time.Local); err == nil {

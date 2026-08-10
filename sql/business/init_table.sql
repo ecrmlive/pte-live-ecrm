@@ -227,16 +227,42 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_seckill_time` (
   `pic` varchar(1024) NOT NULL DEFAULT '',
   PRIMARY KEY (`seckill_time_id`), UNIQUE KEY `uk_start_end` (`start_time`,`end_time`), KEY `idx_status_start` (`status`,`start_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台秒杀活动（场次活动）；秒杀商品见 qixi_crm_b_seckill_active
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_seckill_activity` (
+  `seckill_activity_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(128) NOT NULL DEFAULT '',
+  `seckill_time_ids` varchar(255) NOT NULL DEFAULT '',
+  `start_day` date NOT NULL, `end_day` date NOT NULL,
+  `once_pay_count` int NOT NULL DEFAULT 1, `all_pay_count` int NOT NULL DEFAULT 0,
+  `product_category_ids` varchar(255) NOT NULL DEFAULT '',
+  `border_pic` varchar(1024) NOT NULL DEFAULT '' COMMENT '活动边框图',
+  `status` tinyint NOT NULL DEFAULT 1,
+  `active_status` tinyint NOT NULL DEFAULT 0 COMMENT '0未开始 1进行中 -1已结束',
+  `product_count` int NOT NULL DEFAULT 0, `merchant_count` int NOT NULL DEFAULT 0,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `delete_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`seckill_activity_id`),
+  KEY `idx_status_day` (`status`,`active_status`,`start_day`,`end_day`),
+  KEY `idx_delete` (`delete_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_seckill_active` (
   `seckill_active_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint unsigned NOT NULL DEFAULT 0,
   `name` varchar(128) NOT NULL, `seckill_time_ids` varchar(255) NOT NULL DEFAULT '',
   `start_day` date NOT NULL, `end_day` date NOT NULL, `mer_id` bigint unsigned NOT NULL,
   `product_id` bigint unsigned NOT NULL, `seckill_price` decimal(12,2) NOT NULL,
   `once_pay_count` int NOT NULL DEFAULT 1, `all_pay_count` int NOT NULL DEFAULT 0,
   `active_status` tinyint NOT NULL DEFAULT 1, `status` tinyint NOT NULL DEFAULT 1,
+  `is_show` tinyint NOT NULL DEFAULT 1,
+  `product_status` tinyint NOT NULL DEFAULT 1 COMMENT '1通过 0待审 -1未通过 -2强制下架',
+  `star` tinyint NOT NULL DEFAULT 0, `sort` int NOT NULL DEFAULT 0,
+  `stock` int NOT NULL DEFAULT 0, `sales` int NOT NULL DEFAULT 0,
+  `sys_labels` varchar(255) NOT NULL DEFAULT '', `refusal` varchar(500) NOT NULL DEFAULT '',
   `create_time` bigint NOT NULL, `update_time` bigint NOT NULL, `delete_time` bigint DEFAULT NULL,
   PRIMARY KEY (`seckill_active_id`), KEY `idx_listing` (`delete_time`,`status`,`active_status`,`start_day`,`end_day`),
-  KEY `idx_merchant` (`mer_id`,`delete_time`), KEY `idx_product` (`product_id`,`delete_time`)
+  KEY `idx_merchant` (`mer_id`,`delete_time`), KEY `idx_product` (`product_id`,`delete_time`),
+  KEY `idx_product_status` (`product_status`,`is_show`,`delete_time`), KEY `idx_activity` (`activity_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- 拼团状态机：活动定义、开团记录、团员记录三表。订单支付前仅占位，支付成功后由业务服务推进成员和成团状态。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_combination_group` (
@@ -464,11 +490,53 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_order_delivery` (
   `carrier_code` varchar(64) DEFAULT NULL, `tracking_no` varchar(128) DEFAULT NULL, `status` varchar(32) NOT NULL,
   `delivered_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `idx_order` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_store_coupon` (
+  `coupon_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `mer_id` bigint unsigned NOT NULL DEFAULT 0,
+  `is_timeout` tinyint NOT NULL DEFAULT 0,
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `is_limited` tinyint NOT NULL DEFAULT 0,
+  `total_count` int unsigned NOT NULL DEFAULT 0,
+  `remain_count` int unsigned NOT NULL DEFAULT 0,
+  `send_type` tinyint NOT NULL DEFAULT 0,
+  `full_reduction` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `title` varchar(64) NOT NULL DEFAULT '',
+  `coupon_price` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `use_min_price` int NOT NULL DEFAULT 0,
+  `coupon_type` tinyint NOT NULL DEFAULT 0,
+  `coupon_time` int unsigned NOT NULL DEFAULT 0,
+  `use_start_time` datetime DEFAULT NULL,
+  `use_end_time` datetime DEFAULT NULL,
+  `sort` int unsigned NOT NULL DEFAULT 0,
+  `status` tinyint NOT NULL DEFAULT 1,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `type` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`coupon_id`),
+  KEY `idx_mer_type_status` (`mer_id`,`type`,`status`,`is_del`),
+  KEY `idx_sort` (`sort`,`coupon_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_coupon_user` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_id` bigint unsigned NOT NULL, `coupon_id` bigint unsigned NOT NULL,
-  `source` varchar(32) NOT NULL, `status` enum('unused','locked','used','expired') NOT NULL DEFAULT 'unused',
-  `obtained_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `used_order_id` bigint unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`), UNIQUE KEY `uk_user_coupon` (`user_id`,`coupon_id`), KEY `idx_user_status` (`user_id`,`status`), KEY `idx_coupon` (`coupon_id`)
+  `source` varchar(32) NOT NULL, `send_id` bigint unsigned NOT NULL DEFAULT 0,
+  `status` enum('unused','locked','used','expired') NOT NULL DEFAULT 'unused',
+  `obtained_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `used_at` datetime DEFAULT NULL COMMENT '核销/使用时间',
+  `used_order_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_user_coupon` (`user_id`,`coupon_id`), KEY `idx_user_status` (`user_id`,`status`), KEY `idx_coupon` (`coupon_id`), KEY `idx_send_id` (`send_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_store_coupon_send` (
+  `coupon_send_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `mer_id` bigint unsigned NOT NULL DEFAULT 0,
+  `coupon_id` bigint unsigned NOT NULL,
+  `coupon_num` int unsigned NOT NULL DEFAULT 0,
+  `mark` json DEFAULT NULL,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` tinyint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`coupon_send_id`),
+  KEY `idx_mer_time` (`mer_id`,`create_time`),
+  KEY `idx_coupon` (`coupon_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- 平台人工发券/撤销审计。撤销只改变未锁定券为 expired，绝不删除已被订单引用的用户券。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_coupon_command_audit` (
@@ -958,6 +1026,41 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_withdrawal_application` (
   `idempotency_key` varchar(128) NOT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `paid_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_withdrawal_no` (`withdrawal_no`), UNIQUE KEY `uk_user_withdrawal_key` (`user_id`,`idempotency_key`), UNIQUE KEY `uk_user_payout_key` (`user_id`,`payout_idempotency_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台分销「提现银行」配置（用户银行卡提现时可选银行列表）
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_withdraw_bank` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL DEFAULT '',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1显示 0隐藏',
+  `sort` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_sort` (`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 分销特权（对齐 CRMEB /group/config/75）
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_privilege` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(64) NOT NULL DEFAULT '' COMMENT '标题',
+  `img_url` varchar(1024) NOT NULL DEFAULT '' COMMENT '图片(90*90px)',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1显示 0隐藏',
+  `sort` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_sort` (`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 分销海报（对齐 CRMEB /group/config/68 spread_banner）
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_poster` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
+  `pic_url` varchar(1024) NOT NULL DEFAULT '' COMMENT '背景图(600*1000px)',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1显示 0隐藏',
+  `sort` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_sort` (`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SET @qixi_ddl := (
   SELECT IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_withdrawal_application' AND COLUMN_NAME='reviewed_by')=0,
@@ -974,10 +1077,60 @@ SET @qixi_ddl := (
   )
 );
 PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
-CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_promoter` (
-  `user_id` bigint unsigned NOT NULL, `status` tinyint NOT NULL DEFAULT 1, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`), KEY `idx_status` (`status`)
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_level` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL DEFAULT '',
+  `rank` int NOT NULL DEFAULT 0,
+  `icon_url` varchar(1024) NOT NULL DEFAULT '',
+  `task_rule` json DEFAULT NULL,
+  `extension_one` decimal(8,2) unsigned NOT NULL DEFAULT 0.00,
+  `extension_two` decimal(8,2) unsigned NOT NULL DEFAULT 0.00,
+  `status` tinyint NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_rank` (`rank`), KEY `idx_status_rank` (`status`,`rank`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_distribution_level' AND COLUMN_NAME='task_rule')=0,
+    'ALTER TABLE `qixi_crm_b_distribution_level` ADD COLUMN `task_rule` json DEFAULT NULL AFTER `icon_url`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_distribution_level' AND COLUMN_NAME='extension_one')=0,
+    'ALTER TABLE `qixi_crm_b_distribution_level` ADD COLUMN `extension_one` decimal(8,2) unsigned NOT NULL DEFAULT 0.00 AFTER `task_rule`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_distribution_level' AND COLUMN_NAME='extension_two')=0,
+    'ALTER TABLE `qixi_crm_b_distribution_level` ADD COLUMN `extension_two` decimal(8,2) unsigned NOT NULL DEFAULT 0.00 AFTER `extension_one`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_promoter` (
+  `user_id` bigint unsigned NOT NULL, `status` tinyint NOT NULL DEFAULT 1, `level_id` bigint unsigned NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`), KEY `idx_status` (`status`), KEY `idx_level_id` (`level_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_distribution_promoter' AND COLUMN_NAME='level_id')=0,
+    'ALTER TABLE `qixi_crm_b_distribution_promoter` ADD COLUMN `level_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `status`, ADD KEY `idx_level_id` (`level_id`)',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 -- 平台批量设置推广员资格的审计；资格仅影响后续分销准入，不重算历史佣金或关系事实。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_promoter_command_audit` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `user_ids_json` json NOT NULL,

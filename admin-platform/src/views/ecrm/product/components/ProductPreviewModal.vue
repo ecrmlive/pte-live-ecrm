@@ -1,66 +1,62 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import { useVbenModal } from '@vben/common-ui';
 import { DevicePreviewFrame } from '@pte-live/diy';
-import { ElButton, ElLink, ElSkeleton } from 'element-plus';
+import { ElSkeleton } from 'element-plus';
 
 import {
   getPlatformProductEditApi,
   type PlatformProductEditDetail,
 } from '#/api/core/platform-catalog';
-import { getPlatformShopConfigApi } from '#/api/core/platform-mall-setting';
 
 import ProductDetailDiyPreview, {
   type ProductDetailDiyPreviewData,
 } from './ProductDetailDiyPreview.vue';
 
-const props = defineProps<{
-  productId?: number;
-  productTitle?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    /** 弹窗标题，默认「商品预览」 */
+    modalTitle?: string;
+    productId?: number;
+    productTitle?: string;
+    /** 覆盖机框内展示售价（如秒杀价） */
+    displayPrice?: number;
+    /** 覆盖划线价 */
+    displayOtPrice?: number;
+  }>(),
+  {
+    modalTitle: '商品预览',
+  },
+);
 
 const emit = defineEmits<{
   closed: [];
 }>();
 
-const router = useRouter();
-const siteUrl = ref('');
-const loadingConfig = ref(false);
 const loadingProduct = ref(false);
 const detail = ref<PlatformProductEditDetail>();
 
-/** 对齐 app-uni H5 hash 路由：pages/goods/detail?id= */
-function buildGoodsDetailURL(base: string, productId: number) {
-  const trimmed = base.replace(/\/+$/, '');
-  return `${trimmed}/#/pages/goods/detail?id=${productId}`;
-}
-
-const previewURL = computed(() => {
-  const id = Number(props.productId || 0);
-  const base = siteUrl.value.trim();
-  if (!id || !base) return '';
-  return buildGoodsDetailURL(base, id);
-});
-
-const hasSiteURL = computed(() => Boolean(siteUrl.value.trim()));
-
-const displayTitle = computed(
-  () => detail.value?.title || props.productTitle || '',
-);
-
 const previewProduct = computed<ProductDetailDiyPreviewData | null>(() => {
-  if (detail.value) return detail.value;
-  if (!props.productTitle) return null;
-  return { title: props.productTitle };
+  const base = detail.value
+    ? { ...detail.value }
+    : props.productTitle
+      ? ({ title: props.productTitle } as ProductDetailDiyPreviewData)
+      : null;
+  if (!base) return null;
+  if (props.displayPrice !== undefined && props.displayPrice !== null) {
+    base.price = Number(props.displayPrice);
+  }
+  if (props.displayOtPrice !== undefined && props.displayOtPrice !== null) {
+    base.ot_price = Number(props.displayOtPrice);
+  }
+  return base;
 });
 
 const [Modal, modalApi] = useVbenModal({
-  title: '商品预览',
+  title: props.modalTitle,
   class: 'w-[520px] max-w-[96vw]',
-  showConfirmButton: false,
-  cancelText: '关闭',
+  footer: false,
   destroyOnClose: true,
   onOpenChange(isOpen: boolean) {
     if (!isOpen) {
@@ -68,21 +64,10 @@ const [Modal, modalApi] = useVbenModal({
       emit('closed');
       return;
     }
-    void Promise.all([loadSiteURL(), loadProduct()]);
+    modalApi.setState({ title: props.modalTitle || '商品预览' });
+    void loadProduct();
   },
 });
-
-async function loadSiteURL() {
-  loadingConfig.value = true;
-  try {
-    const data = await getPlatformShopConfigApi();
-    siteUrl.value = String(data.config?.site_url || '').trim();
-  } catch {
-    siteUrl.value = '';
-  } finally {
-    loadingConfig.value = false;
-  }
-}
 
 async function loadProduct() {
   const id = Number(props.productId || 0);
@@ -101,21 +86,11 @@ async function loadProduct() {
 }
 
 function open() {
-  modalApi.open();
+  modalApi.setState({ title: props.modalTitle || '商品预览' }).open();
 }
 
 function close() {
   modalApi.close();
-}
-
-function goShopSetting() {
-  close();
-  void router.push('/setting/shop');
-}
-
-function openInNewTab() {
-  if (!previewURL.value) return;
-  window.open(previewURL.value, '_blank', 'noopener,noreferrer');
 }
 
 defineExpose({ open, close });
@@ -124,14 +99,12 @@ defineExpose({ open, close });
 <template>
   <Modal>
     <div class="product-preview-modal">
-      <p v-if="displayTitle" class="product-preview-modal__name">
-        {{ displayTitle }}
-      </p>
-
       <div class="product-preview-modal__frame">
         <DevicePreviewFrame
           :show-device-switcher="true"
-          :hide-nav="true"
+          :show-back="true"
+          :show-expand="true"
+          :hide-nav="false"
           :side-gutter="0"
           content-bg="#f5f5f5"
           title="商品详情"
@@ -148,25 +121,6 @@ defineExpose({ open, close });
           </ElSkeleton>
         </DevicePreviewFrame>
       </div>
-
-      <div class="product-preview-modal__tips">
-        <p class="product-preview-modal__warn">
-          若页面未加载出，请前往系统配置页面填写网站域名
-        </p>
-        <ElButton type="primary" link @click="goShopSetting">点击前往</ElButton>
-      </div>
-
-      <div
-        v-if="!loadingConfig && hasSiteURL"
-        class="product-preview-modal__footer"
-      >
-        <ElLink type="primary" :underline="false" @click="openInNewTab">
-          新窗口打开 H5
-        </ElLink>
-        <span class="product-preview-modal__url" :title="previewURL">
-          {{ previewURL }}
-        </span>
-      </div>
     </div>
   </Modal>
 </template>
@@ -175,17 +129,8 @@ defineExpose({ open, close });
 .product-preview-modal {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   align-items: center;
   min-height: 420px;
-}
-
-.product-preview-modal__name {
-  align-self: stretch;
-  margin: 0;
-  color: hsl(var(--foreground));
-  font-size: 14px;
-  font-weight: 600;
 }
 
 .product-preview-modal__frame {
@@ -199,39 +144,5 @@ defineExpose({ open, close });
 .product-preview-modal__skeleton {
   min-height: 480px;
   padding: 12px;
-}
-
-.product-preview-modal__tips {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  width: 100%;
-  padding: 4px 8px 0;
-  text-align: center;
-}
-
-.product-preview-modal__warn {
-  margin: 0;
-  color: #f56c6c;
-  font-size: 13px;
-  line-height: 20px;
-}
-
-.product-preview-modal__footer {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  width: 100%;
-}
-
-.product-preview-modal__url {
-  max-width: 100%;
-  overflow: hidden;
-  color: hsl(var(--muted-foreground));
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 </style>

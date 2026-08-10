@@ -19,8 +19,13 @@ INSERT INTO `qixi_crm_a_setting_cache` (`key`,`expire_time`,`result`) VALUES
   ('sys_userr_privacy',0,'七禧商城本地验收隐私政策：不包含真实个人信息。'),
   ('sys_merchant_type',0,'<p>七禧店铺类型说明（本地验收虚构文案）：用于向入驻商户解释不同类型店铺的规则与权益。</p>'),
   ('sys_merchant_category',0,'<p>七禧店铺分类说明（本地验收虚构文案）：用于向入驻商户解释店铺分类的选择指引。</p>'),
+  ('sys_brokerage',0,'<ol><li><p>第一级</p></li><li><p>第二级</p></li></ol>'),
+  ('sys_extension_agree',0,'<p>我是佣金说明</p>'),
+  ('promoter_explain',0,'<p>这个是分销说明</p>'),
+  ('sys_coupon_agree',0,'<p>1. 优惠券领取后请在有效期内使用；</p><p>2. 每张优惠券限使用一次，不可叠加；</p><p>3. 最终解释权归平台所有。</p>'),
   ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}'),
-  ('merchant_apply_setting',0,'{"background_image":"","form_fields":[{"id":"demo_area","type":"text","title":"营业面积","content_type":"number","default_value":"","placeholder":"请输入营业面积","required":false}]}')
+  ('merchant_apply_setting',0,'{"background_image":"","form_fields":[{"id":"demo_area","type":"text","title":"营业面积","content_type":"number","default_value":"","placeholder":"请输入营业面积","required":false}]}'),
+  ('distribution_config',0,'{"extension_status":true,"extension_self":true,"extension_limit":false,"extension_limit_day":15,"promoter_type":0,"promoter_low_money":0,"extension_pop":0,"extension_one_rate":0.15,"extension_two_rate":0.05,"user_extract_min":10,"lock_brokerage_timer":7,"sys_extension_type":0,"withdraw_type":["0","1","2"],"extract_switch":1,"transfer_scene_id":0,"max_bag_number":10}')
 ON DUPLICATE KEY UPDATE `expire_time`=VALUES(`expire_time`),`result`=VALUES(`result`);
 
 -- 客服策略夹具只包含虚构中文业务文本，不包含 IM Token、UserSig、云密钥或真实值班信息。

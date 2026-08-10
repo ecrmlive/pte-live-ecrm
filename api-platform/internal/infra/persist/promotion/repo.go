@@ -2,6 +2,7 @@ package promotionpersist
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
@@ -26,15 +27,23 @@ func (r *Repo) CreateCoupon(ctx context.Context, c *promotion.Coupon) error {
 
 func (r *Repo) UpdateCoupon(ctx context.Context, c *promotion.Coupon) error {
 	return r.db.WithContext(ctx).Model(c).Where("coupon_id = ?", c.CouponID).Updates(map[string]interface{}{
-		"title":         c.Title,
-		"coupon_price":  c.CouponPrice,
-		"use_min_price": c.UseMinPrice,
-		"coupon_time":   c.CouponTime,
-		"status":        c.Status,
-		"total_count":   c.TotalCount,
-		"remain_count":  c.RemainCount,
-		"is_limited":    c.IsLimited,
-		"sort":          c.Sort,
+		"title":          c.Title,
+		"coupon_price":   c.CouponPrice,
+		"use_min_price":  c.UseMinPrice,
+		"coupon_type":    c.CouponType,
+		"coupon_time":    c.CouponTime,
+		"use_start_time": c.UseStartTime,
+		"use_end_time":   c.UseEndTime,
+		"is_timeout":     c.IsTimeout,
+		"start_time":     c.StartTime,
+		"end_time":       c.EndTime,
+		"send_type":      c.SendType,
+		"full_reduction": c.FullReduction,
+		"status":         c.Status,
+		"total_count":    c.TotalCount,
+		"remain_count":   c.RemainCount,
+		"is_limited":     c.IsLimited,
+		"sort":           c.Sort,
 	}).Error
 }
 
@@ -71,14 +80,29 @@ func (r *Repo) GetCoupon(ctx context.Context, id uint) (*promotion.Coupon, error
 	return &row, nil
 }
 
-func (r *Repo) ListCoupons(ctx context.Context, merID *uint, typ *int, page, limit int) ([]promotion.Coupon, int64, error) {
+func (r *Repo) ListCoupons(ctx context.Context, merID *uint, typ *int, page, limit int, filter promotion.CouponListFilter) ([]promotion.Coupon, int64, error) {
 	page, limit = normalize(page, limit)
 	q := r.db.WithContext(ctx).Model(&promotion.Coupon{}).Where("is_del = 0")
 	if merID != nil {
 		q = q.Where("mer_id = ?", *merID)
 	}
+	if filter.StoreOnly {
+		q = q.Where("mer_id > 0")
+	}
+	if len(filter.MerIDs) > 0 {
+		q = q.Where("mer_id IN ?", filter.MerIDs)
+	}
 	if typ != nil {
 		q = q.Where("type = ?", *typ)
+	}
+	if kw := strings.TrimSpace(filter.Keyword); kw != "" {
+		q = q.Where("title LIKE ?", "%"+kw+"%")
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
+	}
+	if filter.SendType != nil {
+		q = q.Where("send_type = ?", *filter.SendType)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -87,6 +111,42 @@ func (r *Repo) ListCoupons(ctx context.Context, merID *uint, typ *int, page, lim
 	var rows []promotion.Coupon
 	err := q.Order("sort DESC, coupon_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+func (r *Repo) UpsertCouponTemplateView(ctx context.Context, c *promotion.Coupon) error {
+	if c == nil || c.CouponID == 0 {
+		return nil
+	}
+	starts, ends := c.UseStartTime, c.UseEndTime
+	if c.CouponType == int8(promotion.TemplateDays) {
+		starts, ends = nil, nil
+	}
+	var existing struct {
+		Version uint64 `gorm:"column:version"`
+	}
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_coupon_template_view").
+		Select("version").Where("coupon_id = ?", c.CouponID).Take(&existing).Error
+	row := map[string]interface{}{
+		"coupon_id":      c.CouponID,
+		"store_id":       c.MerID,
+		"name":           c.Title,
+		"discount_type":  "amount",
+		"discount_value": c.CouponPrice,
+		"min_amount":     float64(c.UseMinPrice),
+		"starts_at":      starts,
+		"ends_at":        ends,
+		"status":         c.Status,
+		"version":        uint64(1),
+	}
+	if err == nil {
+		row["version"] = existing.Version + 1
+		return r.db.WithContext(ctx).Table("qixi_crm_b_coupon_template_view").
+			Where("coupon_id = ?", c.CouponID).Updates(row).Error
+	}
+	if err != gorm.ErrRecordNotFound {
+		return err
+	}
+	return r.db.WithContext(ctx).Table("qixi_crm_b_coupon_template_view").Create(row).Error
 }
 
 func (r *Repo) ListCenter(ctx context.Context, page, limit int) ([]promotion.Coupon, int64, error) {
@@ -111,6 +171,44 @@ func (r *Repo) DecRemain(ctx context.Context, couponID uint) (bool, error) {
 		return false, res.Error
 	}
 	return res.RowsAffected > 0, nil
+}
+
+// CountCouponUsage 统计业务库用户券领取/使用量（qixi_crm_b_coupon_user）。
+func (r *Repo) CountCouponUsage(ctx context.Context, couponID uint) (received, used int64, err error) {
+	if err = r.db.WithContext(ctx).Table("qixi_crm_b_coupon_user").
+		Where("coupon_id = ?", couponID).Count(&received).Error; err != nil {
+		return 0, 0, err
+	}
+	if err = r.db.WithContext(ctx).Table("qixi_crm_b_coupon_user").
+		Where("coupon_id = ? AND status = ?", couponID, "used").Count(&used).Error; err != nil {
+		return 0, 0, err
+	}
+	return received, used, nil
+}
+
+func (r *Repo) CountCouponUsageBatch(ctx context.Context, couponIDs []uint) (map[uint][2]int64, error) {
+	out := make(map[uint][2]int64, len(couponIDs))
+	if len(couponIDs) == 0 {
+		return out, nil
+	}
+	type row struct {
+		CouponID uint  `gorm:"column:coupon_id"`
+		Received int64 `gorm:"column:received"`
+		Used     int64 `gorm:"column:used"`
+	}
+	var rows []row
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_coupon_user").
+		Select("coupon_id, COUNT(1) AS received, SUM(CASE WHEN status = 'used' THEN 1 ELSE 0 END) AS used").
+		Where("coupon_id IN ?", couponIDs).
+		Group("coupon_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		out[item.CouponID] = [2]int64{item.Received, item.Used}
+	}
+	return out, nil
 }
 
 func (r *Repo) HasReceived(ctx context.Context, uid, couponID uint) (bool, error) {
@@ -193,6 +291,186 @@ func (r *Repo) ListMerchantCouponSends(ctx context.Context, merID uint, page, li
 	}
 	var rows []promotion.CouponSend
 	err := q.Order("coupon_send_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	return rows, total, err
+}
+
+func (r *Repo) ListPlatformCouponSends(ctx context.Context, page, limit int, filter promotion.CouponSendListFilter) ([]promotion.CouponSendListItem, int64, error) {
+	page, limit = normalize(page, limit)
+	q := r.db.WithContext(ctx).Table("qixi_crm_b_store_coupon_send AS s").
+		Joins("INNER JOIN qixi_crm_b_store_coupon AS c ON c.coupon_id = s.coupon_id").
+		Where("s.mer_id = 0")
+	if filter.DateFrom != "" {
+		q = q.Where("s.create_time >= ?", filter.DateFrom+" 00:00:00")
+	}
+	if filter.DateTo != "" {
+		q = q.Where("s.create_time <= ?", filter.DateTo+" 23:59:59")
+	}
+	if filter.CouponType != nil {
+		q = q.Where("c.type = ?", *filter.CouponType)
+	}
+	if name := strings.TrimSpace(filter.CouponName); name != "" {
+		q = q.Where("c.title LIKE ?", "%"+name+"%")
+	}
+	if filter.SendStatus != nil {
+		q = q.Where("s.status = ?", *filter.SendStatus)
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	type row struct {
+		CouponSendID uint       `gorm:"column:coupon_send_id"`
+		CouponID     uint       `gorm:"column:coupon_id"`
+		Title        string     `gorm:"column:title"`
+		Type         int        `gorm:"column:type"`
+		CreateTime   time.Time  `gorm:"column:create_time"`
+		CouponType   int8       `gorm:"column:coupon_type"`
+		CouponTime   uint       `gorm:"column:coupon_time"`
+		UseStartTime *time.Time `gorm:"column:use_start_time"`
+		UseEndTime   *time.Time `gorm:"column:use_end_time"`
+		Mark         *string    `gorm:"column:mark"`
+		CouponNum    uint       `gorm:"column:coupon_num"`
+		SendStatus   int8       `gorm:"column:send_status"`
+		UseCount     int64      `gorm:"column:use_count"`
+	}
+	var raw []row
+	err := q.Select(`
+s.coupon_send_id, s.coupon_id, c.title, c.type, s.create_time,
+c.coupon_type, c.coupon_time, c.use_start_time, c.use_end_time,
+CAST(s.mark AS CHAR) AS mark, s.coupon_num, s.status AS send_status,
+(SELECT COUNT(1) FROM qixi_crm_b_coupon_user cu
+  WHERE cu.send_id = s.coupon_send_id AND cu.status = 'used') AS use_count
+`).
+		Order("s.coupon_send_id DESC").
+		Offset((page - 1) * limit).Limit(limit).
+		Scan(&raw).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]promotion.CouponSendListItem, 0, len(raw))
+	for _, item := range raw {
+		mark := ""
+		if item.Mark != nil {
+			mark = *item.Mark
+		}
+		out = append(out, promotion.CouponSendListItem{
+			CouponSendID: item.CouponSendID,
+			CouponID:     item.CouponID,
+			Title:        item.Title,
+			Type:         item.Type,
+			CreateTime:   item.CreateTime,
+			CouponType:   item.CouponType,
+			CouponTime:   item.CouponTime,
+			UseStartTime: item.UseStartTime,
+			UseEndTime:   item.UseEndTime,
+			Mark:         mark,
+			CouponNum:    item.CouponNum,
+			UseCount:     item.UseCount,
+			SendStatus:   item.SendStatus,
+		})
+	}
+	return out, total, nil
+}
+
+func (r *Repo) GetPlatformCouponSend(ctx context.Context, sendID uint) (*promotion.CouponSendDetail, error) {
+	type row struct {
+		CouponSendID uint       `gorm:"column:coupon_send_id"`
+		CouponID     uint       `gorm:"column:coupon_id"`
+		Title        string     `gorm:"column:title"`
+		Type         int        `gorm:"column:type"`
+		CreateTime   time.Time  `gorm:"column:create_time"`
+		CouponType   int8       `gorm:"column:coupon_type"`
+		CouponTime   uint       `gorm:"column:coupon_time"`
+		UseStartTime *time.Time `gorm:"column:use_start_time"`
+		UseEndTime   *time.Time `gorm:"column:use_end_time"`
+		Mark         *string    `gorm:"column:mark"`
+		CouponNum    uint       `gorm:"column:coupon_num"`
+		SendStatus   int8       `gorm:"column:send_status"`
+		UseCount     int64      `gorm:"column:use_count"`
+		CouponPrice  float64    `gorm:"column:coupon_price"`
+		UseMinPrice  int        `gorm:"column:use_min_price"`
+		IsTimeout    int8       `gorm:"column:is_timeout"`
+		StartTime    *time.Time `gorm:"column:start_time"`
+		EndTime      *time.Time `gorm:"column:end_time"`
+		SendType     int8       `gorm:"column:send_type"`
+		IsLimited    int8       `gorm:"column:is_limited"`
+		TotalCount   uint       `gorm:"column:total_count"`
+		RemainCount  uint       `gorm:"column:remain_count"`
+		Status       int8       `gorm:"column:status"`
+		Sort         uint       `gorm:"column:sort"`
+	}
+	var item row
+	err := r.db.WithContext(ctx).Table("qixi_crm_b_store_coupon_send AS s").
+		Joins("INNER JOIN qixi_crm_b_store_coupon AS c ON c.coupon_id = s.coupon_id").
+		Where("s.mer_id = 0 AND s.coupon_send_id = ?", sendID).
+		Select(`
+s.coupon_send_id, s.coupon_id, c.title, c.type, s.create_time,
+c.coupon_type, c.coupon_time, c.use_start_time, c.use_end_time,
+CAST(s.mark AS CHAR) AS mark, s.coupon_num, s.status AS send_status,
+(SELECT COUNT(1) FROM qixi_crm_b_coupon_user cu
+  WHERE cu.send_id = s.coupon_send_id AND cu.status = 'used') AS use_count,
+c.coupon_price, c.use_min_price, c.is_timeout, c.start_time, c.end_time,
+c.send_type, c.is_limited, c.total_count, c.remain_count, c.status, c.sort
+`).
+		Take(&item).Error
+	if err != nil {
+		return nil, err
+	}
+	mark := ""
+	if item.Mark != nil {
+		mark = *item.Mark
+	}
+	return &promotion.CouponSendDetail{
+		CouponSendListItem: promotion.CouponSendListItem{
+			CouponSendID: item.CouponSendID,
+			CouponID:     item.CouponID,
+			Title:        item.Title,
+			Type:         item.Type,
+			CreateTime:   item.CreateTime,
+			CouponType:   item.CouponType,
+			CouponTime:   item.CouponTime,
+			UseStartTime: item.UseStartTime,
+			UseEndTime:   item.UseEndTime,
+			Mark:         mark,
+			CouponNum:    item.CouponNum,
+			UseCount:     item.UseCount,
+			SendStatus:   item.SendStatus,
+		},
+		CouponPrice: item.CouponPrice,
+		UseMinPrice: item.UseMinPrice,
+		IsTimeout:   item.IsTimeout,
+		StartTime:   item.StartTime,
+		EndTime:     item.EndTime,
+		SendType:    item.SendType,
+		IsLimited:   item.IsLimited,
+		TotalCount:  item.TotalCount,
+		RemainCount: item.RemainCount,
+		Status:      item.Status,
+		Sort:        item.Sort,
+	}, nil
+}
+
+func (r *Repo) ListPlatformCouponSendUsers(ctx context.Context, sendID uint, page, limit int) ([]promotion.CouponSendUserRow, int64, error) {
+	page, limit = normalize(page, limit)
+	q := r.db.WithContext(ctx).Table("qixi_crm_b_coupon_user AS cu").
+		Where("cu.send_id = ?", sendID)
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var rows []promotion.CouponSendUserRow
+	err := q.Joins("LEFT JOIN qixi_crm_b_user AS u ON u.id = cu.user_id").
+		Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id = cu.user_id").
+		Select(`
+cu.user_id AS user_id,
+COALESCE(NULLIF(u.nickname,''), CONCAT('用户', cu.user_id)) AS nickname,
+COALESCE(p.avatar_url,'') AS avatar_url,
+cu.source AS source,
+cu.status AS status
+`).
+		Order("cu.id DESC").
+		Offset((page - 1) * limit).Limit(limit).
+		Scan(&rows).Error
 	return rows, total, err
 }
 

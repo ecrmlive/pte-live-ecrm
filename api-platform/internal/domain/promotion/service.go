@@ -2,6 +2,7 @@ package promotion
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,9 +19,12 @@ type Store interface {
 	UpdateCoupon(ctx context.Context, c *Coupon) error
 	UpdateCouponStatus(ctx context.Context, id uint, merID *uint, status int8) (bool, error)
 	SoftDeleteCoupon(ctx context.Context, id uint, merID *uint) (bool, error)
-	ListCoupons(ctx context.Context, merID *uint, typ *int, page, limit int) ([]Coupon, int64, error)
+	ListCoupons(ctx context.Context, merID *uint, typ *int, page, limit int, filter CouponListFilter) ([]Coupon, int64, error)
+	UpsertCouponTemplateView(ctx context.Context, c *Coupon) error
 	ListCenter(ctx context.Context, page, limit int) ([]Coupon, int64, error)
 	DecRemain(ctx context.Context, couponID uint) (bool, error)
+	CountCouponUsage(ctx context.Context, couponID uint) (received, used int64, err error)
+	CountCouponUsageBatch(ctx context.Context, couponIDs []uint) (map[uint][2]int64, error)
 
 	HasReceived(ctx context.Context, uid, couponID uint) (bool, error)
 	CreateIssueUser(ctx context.Context, row *IssueUser) error
@@ -32,6 +36,9 @@ type Store interface {
 	HasMerchantCouponUser(ctx context.Context, merID, uid, couponID uint) (bool, error)
 	ListMerchantCouponUsers(ctx context.Context, merID uint, couponID *uint, page, limit int) ([]CouponUser, int64, error)
 	ListMerchantCouponSends(ctx context.Context, merID uint, page, limit int) ([]CouponSend, int64, error)
+	ListPlatformCouponSends(ctx context.Context, page, limit int, filter CouponSendListFilter) ([]CouponSendListItem, int64, error)
+	GetPlatformCouponSend(ctx context.Context, sendID uint) (*CouponSendDetail, error)
+	ListPlatformCouponSendUsers(ctx context.Context, sendID uint, page, limit int) ([]CouponSendUserRow, int64, error)
 	ListCouponUsersByIDs(ctx context.Context, uid uint, ids []uint) ([]CouponUser, error)
 	ListUsablePlatform(ctx context.Context, uid uint, orderAmount float64) ([]CouponUser, error)
 	MarkCouponUsersUsed(ctx context.Context, uid uint, ids []uint, at time.Time) (int64, error)
@@ -70,42 +77,21 @@ func (s *Service) CreateMerchantCoupon(ctx context.Context, merID uint, in Creat
 }
 
 func (s *Service) createCoupon(ctx context.Context, merID uint, typ int, in CreateCouponInput) (*Coupon, error) {
-	title := strings.TrimSpace(in.Title)
-	if title == "" || in.CouponPrice <= 0 {
-		return nil, ErrBadParam
-	}
-	if in.CouponTime == 0 {
-		in.CouponTime = 30
-	}
-	c := &Coupon{
-		MerID:       merID,
-		Title:       title,
-		CouponPrice: round2(in.CouponPrice),
-		UseMinPrice: in.UseMinPrice,
-		CouponType:  int8(TemplateDays),
-		CouponTime:  in.CouponTime,
-		IsLimited:   in.IsLimited,
-		TotalCount:  in.TotalCount,
-		RemainCount: in.TotalCount,
-		SendType:    0,
-		Sort:        1,
-		Status:      1,
-		Type:        typ,
-	}
-	if c.IsLimited == 0 {
-		c.TotalCount = 0
-		c.RemainCount = 0
+	c := &Coupon{MerID: merID, Type: typ, Sort: 1, Status: 1, SendType: SendTypeReceive, CouponType: int8(TemplateDays)}
+	if err := applyCouponInput(c, in, true); err != nil {
+		return nil, err
 	}
 	if err := s.store.CreateCoupon(ctx, c); err != nil {
 		return nil, err
 	}
+	_ = s.store.UpsertCouponTemplateView(ctx, c)
 	return c, nil
 }
 
-func (s *Service) ListPlatformCoupons(ctx context.Context, page, limit int) (*PageResult[Coupon], error) {
+func (s *Service) ListPlatformCoupons(ctx context.Context, page, limit int, filter CouponListFilter) (*PageResult[Coupon], error) {
 	typ := CouponTypePlatform
 	mer := uint(0)
-	list, total, err := s.store.ListCoupons(ctx, &mer, &typ, page, limit)
+	list, total, err := s.store.ListCoupons(ctx, &mer, &typ, page, limit, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +101,7 @@ func (s *Service) ListPlatformCoupons(ctx context.Context, page, limit int) (*Pa
 
 func (s *Service) ListMerchantCoupons(ctx context.Context, merID uint, page, limit int) (*PageResult[Coupon], error) {
 	typ := CouponTypeStore
-	list, total, err := s.store.ListCoupons(ctx, &merID, &typ, page, limit)
+	list, total, err := s.store.ListCoupons(ctx, &merID, &typ, page, limit, CouponListFilter{})
 	if err != nil {
 		return nil, err
 	}
@@ -123,12 +109,145 @@ func (s *Service) ListMerchantCoupons(ctx context.Context, merID uint, page, lim
 	return &PageResult[Coupon]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
+// ListStoreCouponsAdmin 平台查看全部商户优惠券（mer_id > 0）。
+func (s *Service) ListStoreCouponsAdmin(ctx context.Context, page, limit int, filter CouponListFilter) (*PageResult[Coupon], error) {
+	filter.StoreOnly = true
+	list, total, err := s.store.ListCoupons(ctx, nil, nil, page, limit, filter)
+	if err != nil {
+		return nil, err
+	}
+	page, limit = normalizePage(page, limit)
+	return &PageResult[Coupon]{List: list, Total: total, Page: page, Limit: limit}, nil
+}
+
+func (s *Service) CountCouponUsageBatch(ctx context.Context, couponIDs []uint) (map[uint][2]int64, error) {
+	return s.store.CountCouponUsageBatch(ctx, couponIDs)
+}
+
+// GetStoreCouponDetail 平台查看商户券详情。
+func (s *Service) GetStoreCouponDetail(ctx context.Context, id uint) (*CouponDetail, error) {
+	c, err := s.store.GetCoupon(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if c.IsDel == 1 || c.MerID == 0 {
+		return nil, ErrNotFound
+	}
+	received, used, err := s.store.CountCouponUsage(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	useType := int8(0)
+	if c.UseMinPrice > 0 {
+		useType = 1
+	}
+	d := &CouponDetail{Coupon: *c, ReceivedTotal: received, UsedTotal: used, UseType: useType}
+	d.CouponTypeName = storeCouponKindName(c.Type)
+	d.ClaimText = couponClaimText(c)
+	d.ValidityText = couponValidityText(c.CouponType, c.CouponTime)
+	return d, nil
+}
+
+func storeCouponKindName(typ int) string {
+	switch typ {
+	case CouponTypeProduct:
+		return "商品券"
+	case CouponTypePlatform:
+		return "平台通用券"
+	default:
+		return "店铺券"
+	}
+}
+
+func couponClaimText(c *Coupon) string {
+	if c == nil {
+		return "不限时"
+	}
+	if c.IsTimeout == 1 && c.StartTime != nil && c.EndTime != nil {
+		return c.StartTime.Format("2006-01-02 15:04:05") + " ~ " + c.EndTime.Format("2006-01-02 15:04:05")
+	}
+	return "不限时"
+}
+
 // ListAdmin / CreateAdmin / UpdateAdmin / SetStatus / DeleteAdmin：管理端统一入口。
-func (s *Service) ListAdmin(ctx context.Context, merID uint, typ int, page, limit int) (*PageResult[Coupon], error) {
+func (s *Service) ListAdmin(ctx context.Context, merID uint, typ int, page, limit int, filter CouponListFilter) (*PageResult[Coupon], error) {
 	if typ == CouponTypePlatform {
-		return s.ListPlatformCoupons(ctx, page, limit)
+		return s.ListPlatformCoupons(ctx, page, limit, filter)
 	}
 	return s.ListMerchantCoupons(ctx, merID, page, limit)
+}
+
+// GetAdminDetail 管理端优惠券详情（基本信息 + 领取/使用统计）。
+func (s *Service) GetAdminDetail(ctx context.Context, merID uint, typ int, id uint) (*CouponDetail, error) {
+	c, err := s.store.GetCoupon(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if c.IsDel == 1 || c.MerID != merID || c.Type != typ {
+		return nil, ErrForbidden
+	}
+	received, used, err := s.store.CountCouponUsage(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	useType := int8(0)
+	if c.UseMinPrice > 0 {
+		useType = 1
+	}
+	return &CouponDetail{Coupon: *c, ReceivedTotal: received, UsedTotal: used, UseType: useType}, nil
+}
+
+// CloneAdmin 复制优惠券（新建一条，标题加「-复制」）。
+func (s *Service) CloneAdmin(ctx context.Context, merID uint, typ int, id uint) (*Coupon, error) {
+	src, err := s.store.GetCoupon(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if src.IsDel == 1 || src.MerID != merID || src.Type != typ {
+		return nil, ErrForbidden
+	}
+	title := strings.TrimSpace(src.Title)
+	if title == "" {
+		title = "优惠券"
+	}
+	if !strings.HasSuffix(title, "-复制") {
+		title += "-复制"
+	}
+	in := CreateCouponInput{
+		Title:         title,
+		CouponPrice:   src.CouponPrice,
+		UseMinPrice:   src.UseMinPrice,
+		CouponTime:    src.CouponTime,
+		TotalCount:    src.TotalCount,
+		IsLimited:     src.IsLimited,
+		Sort:          src.Sort,
+		FullReduction: src.FullReduction,
+	}
+	ct, st, it := src.CouponType, src.SendType, src.IsTimeout
+	status := src.Status
+	in.CouponType, in.SendType, in.IsTimeout, in.Status = &ct, &st, &it, &status
+	if src.UseStartTime != nil {
+		in.UseStartTime = src.UseStartTime.Format("2006-01-02 15:04:05")
+	}
+	if src.UseEndTime != nil {
+		in.UseEndTime = src.UseEndTime.Format("2006-01-02 15:04:05")
+	}
+	if src.StartTime != nil {
+		in.StartTime = src.StartTime.Format("2006-01-02 15:04:05")
+	}
+	if src.EndTime != nil {
+		in.EndTime = src.EndTime.Format("2006-01-02 15:04:05")
+	}
+	return s.createCoupon(ctx, merID, typ, in)
 }
 
 // SendMerchantCoupon 将一张已启用的店铺券定向发给本商户已有支付订单的用户。
@@ -246,6 +365,166 @@ func (s *Service) ListMerchantCouponSends(ctx context.Context, merID uint, page,
 	return &PageResult[CouponSend]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
+func (s *Service) ListPlatformCouponSends(ctx context.Context, page, limit int, filter CouponSendListFilter) (*PageResult[CouponSendListItem], error) {
+	list, total, err := s.store.ListPlatformCouponSends(ctx, page, limit, filter)
+	if err != nil {
+		return nil, err
+	}
+	for i := range list {
+		enrichCouponSendListItem(&list[i])
+	}
+	page, limit = normalizePage(page, limit)
+	return &PageResult[CouponSendListItem]{List: list, Total: total, Page: page, Limit: limit}, nil
+}
+
+func (s *Service) GetPlatformCouponSend(ctx context.Context, sendID uint) (*CouponSendDetail, error) {
+	if sendID == 0 {
+		return nil, ErrBadParam
+	}
+	row, err := s.store.GetPlatformCouponSend(ctx, sendID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	enrichCouponSendListItem(&row.CouponSendListItem)
+	row.SentTotal = row.CouponNum
+	row.UsedTotal = row.UseCount
+	row.SendTypeName = sendTypeName(row.SendType)
+	return row, nil
+}
+
+func (s *Service) ListPlatformCouponSendUsers(ctx context.Context, sendID uint, page, limit int) (*PageResult[CouponSendUserRow], error) {
+	if sendID == 0 {
+		return nil, ErrBadParam
+	}
+	if _, err := s.store.GetPlatformCouponSend(ctx, sendID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	list, total, err := s.store.ListPlatformCouponSendUsers(ctx, sendID, page, limit)
+	if err != nil {
+		return nil, err
+	}
+	for i := range list {
+		list[i].SourceName = couponUserSourceName(list[i].Source)
+		list[i].StatusName = couponUserStatusName(list[i].Status)
+		if strings.TrimSpace(list[i].Nickname) == "" {
+			list[i].Nickname = "用户"
+		}
+	}
+	page, limit = normalizePage(page, limit)
+	return &PageResult[CouponSendUserRow]{List: list, Total: total, Page: page, Limit: limit}, nil
+}
+
+func enrichCouponSendListItem(row *CouponSendListItem) {
+	row.CouponTypeName = couponKindName(row.Type)
+	row.ValidityText = couponValidityText(row.CouponType, row.CouponTime)
+	row.FilterText = formatCouponSendFilter(row.Mark)
+}
+
+func couponKindName(typ int) string {
+	switch typ {
+	case 11:
+		return "平台品类券"
+	case 12:
+		return "平台跨店券"
+	case CouponTypePlatform:
+		return "平台通用券"
+	default:
+		return "店铺券"
+	}
+}
+
+func couponValidityText(couponType int8, days uint) string {
+	if couponType == 1 {
+		return "时间段"
+	}
+	return fmt.Sprintf("%d天", days)
+}
+
+func sendTypeName(sendType int8) string {
+	switch sendType {
+	case SendTypeAdmin:
+		return "后台赠送"
+	case SendTypeGift:
+		return "赠送券"
+	default:
+		return "领取"
+	}
+}
+
+func couponUserSourceName(source string) string {
+	switch strings.TrimSpace(source) {
+	case "platform_manual", "admin", "send":
+		return "后台发送"
+	case "receive", "fixture", "manual":
+		return "手动领取"
+	case "onboarding", "newcomer", "new":
+		return "新人赠送"
+	case "":
+		return "—"
+	default:
+		return source
+	}
+}
+
+func couponUserStatusName(status string) string {
+	switch strings.TrimSpace(status) {
+	case "unused":
+		return "未使用"
+	case "locked":
+		return "已锁定"
+	case "used":
+		return "已使用"
+	case "expired":
+		return "已过期"
+	default:
+		return status
+	}
+}
+
+func formatCouponSendFilter(mark string) string {
+	mark = strings.TrimSpace(mark)
+	if mark == "" || mark == "null" || mark == "{}" {
+		return "无"
+	}
+	var payload struct {
+		Type   any `json:"type"`
+		Search map[string]any `json:"search"`
+	}
+	if err := json.Unmarshal([]byte(mark), &payload); err != nil {
+		return "无"
+	}
+	if len(payload.Search) == 0 {
+		return "无"
+	}
+	parts := make([]string, 0, len(payload.Search))
+	if v, ok := payload.Search["user_type"]; ok {
+		switch fmt.Sprint(v) {
+		case "1":
+			parts = append(parts, "用户类型:小程序用户")
+		case "2":
+			parts = append(parts, "用户类型:微信用户")
+		default:
+			parts = append(parts, "用户类型:"+fmt.Sprint(v))
+		}
+	}
+	for k, v := range payload.Search {
+		if k == "user_type" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s:%v", k, v))
+	}
+	if len(parts) == 0 {
+		return "无"
+	}
+	return strings.Join(parts, "；")
+}
+
 func (s *Service) CreateAdmin(ctx context.Context, merID uint, typ int, in CouponSaveInput) (*Coupon, error) {
 	if typ == CouponTypePlatform {
 		return s.CreatePlatformCoupon(ctx, in)
@@ -264,37 +543,13 @@ func (s *Service) UpdateAdmin(ctx context.Context, merID uint, typ int, id uint,
 	if c.IsDel == 1 || c.MerID != merID || c.Type != typ {
 		return nil, ErrForbidden
 	}
-	title := strings.TrimSpace(in.Title)
-	if title == "" || in.CouponPrice <= 0 {
-		return nil, ErrBadParam
-	}
-	c.Title = title
-	c.CouponPrice = round2(in.CouponPrice)
-	c.UseMinPrice = in.UseMinPrice
-	c.IsLimited = in.IsLimited
-	if in.IsLimited == 1 {
-		if in.TotalCount > 0 {
-			c.TotalCount = in.TotalCount
-			if c.RemainCount > in.TotalCount {
-				c.RemainCount = in.TotalCount
-			}
-		}
-	} else {
-		c.TotalCount = 0
-		c.RemainCount = 0
-	}
-	if in.CouponTime > 0 {
-		c.CouponTime = in.CouponTime
-	}
-	if in.Sort > 0 {
-		c.Sort = in.Sort
-	}
-	if in.Status != nil {
-		c.Status = *in.Status
+	if err := applyCouponInput(c, in, false); err != nil {
+		return nil, err
 	}
 	if err := s.store.UpdateCoupon(ctx, c); err != nil {
 		return nil, err
 	}
+	_ = s.store.UpsertCouponTemplateView(ctx, c)
 	return c, nil
 }
 
@@ -413,7 +668,7 @@ func (s *Service) ListReceivable(ctx context.Context, uid uint, merID *uint) ([]
 	var err error
 	if merID != nil && *merID > 0 {
 		typ := CouponTypeStore
-		list, _, err = s.store.ListCoupons(ctx, merID, &typ, 1, 50)
+		list, _, err = s.store.ListCoupons(ctx, merID, &typ, 1, 50, CouponListFilter{})
 	} else {
 		// 领券中心：平台券 + 各店可领店铺券
 		list, _, err = s.store.ListCenter(ctx, 1, 50)
@@ -727,6 +982,169 @@ func normalizePage(page, limit int) (int, int) {
 		limit = 20
 	}
 	return page, limit
+}
+
+func applyCouponInput(c *Coupon, in CreateCouponInput, creating bool) error {
+	title := strings.TrimSpace(in.Title)
+	if title == "" || in.CouponPrice <= 0 {
+		return ErrBadParam
+	}
+	c.Title = title
+	c.CouponPrice = round2(in.CouponPrice)
+
+	useType := int8(0)
+	if in.UseType != nil {
+		useType = *in.UseType
+	} else if in.UseMinPrice > 0 {
+		useType = 1
+	}
+	if useType == 0 {
+		c.UseMinPrice = 0
+	} else {
+		if in.UseMinPrice < 0 {
+			return ErrBadParam
+		}
+		c.UseMinPrice = in.UseMinPrice
+	}
+
+	couponType := int8(TemplateDays)
+	if in.CouponType != nil {
+		couponType = *in.CouponType
+	}
+	if couponType != int8(TemplateDays) && couponType != int8(TemplateFixed) {
+		return ErrBadParam
+	}
+	c.CouponType = couponType
+	if couponType == int8(TemplateDays) {
+		if in.CouponTime == 0 {
+			if creating {
+				in.CouponTime = 30
+			} else if c.CouponTime == 0 {
+				return ErrBadParam
+			}
+		}
+		if in.CouponTime > 0 {
+			c.CouponTime = in.CouponTime
+		}
+		c.UseStartTime = nil
+		c.UseEndTime = nil
+	} else {
+		start, err := parseCouponTime(in.UseStartTime)
+		if err != nil {
+			return ErrBadParam
+		}
+		end, err := parseCouponTime(in.UseEndTime)
+		if err != nil {
+			return ErrBadParam
+		}
+		if start == nil || end == nil || !end.After(*start) {
+			return ErrBadParam
+		}
+		c.UseStartTime = start
+		c.UseEndTime = end
+		c.CouponTime = 0
+	}
+
+	isTimeout := int8(0)
+	if in.IsTimeout != nil {
+		isTimeout = *in.IsTimeout
+	}
+	c.IsTimeout = isTimeout
+	if isTimeout == 1 {
+		start, err := parseCouponTime(in.StartTime)
+		if err != nil {
+			return ErrBadParam
+		}
+		end, err := parseCouponTime(in.EndTime)
+		if err != nil {
+			return ErrBadParam
+		}
+		if start != nil && end != nil && !end.After(*start) {
+			return ErrBadParam
+		}
+		c.StartTime = start
+		c.EndTime = end
+	} else {
+		c.StartTime = nil
+		c.EndTime = nil
+	}
+
+	sendType := SendTypeReceive
+	if in.SendType != nil {
+		sendType = *in.SendType
+	}
+	switch sendType {
+	case SendTypeReceive, SendTypeAdmin, SendTypeGift:
+		c.SendType = sendType
+	default:
+		return ErrBadParam
+	}
+	c.FullReduction = round2(in.FullReduction)
+	if sendType != SendTypeGift {
+		c.FullReduction = 0
+	}
+
+	c.IsLimited = in.IsLimited
+	if in.IsLimited == 1 {
+		if in.TotalCount == 0 {
+			return ErrBadParam
+		}
+		if creating || c.TotalCount == 0 {
+			c.TotalCount = in.TotalCount
+			c.RemainCount = in.TotalCount
+		} else {
+			// 编辑：按总量差调整剩余
+			if in.TotalCount >= c.TotalCount {
+				c.RemainCount += in.TotalCount - c.TotalCount
+			} else {
+				used := uint(0)
+				if c.TotalCount > c.RemainCount {
+					used = c.TotalCount - c.RemainCount
+				}
+				c.RemainCount = 0
+				if in.TotalCount > used {
+					c.RemainCount = in.TotalCount - used
+				}
+			}
+			c.TotalCount = in.TotalCount
+		}
+	} else {
+		c.TotalCount = 0
+		c.RemainCount = 0
+	}
+
+	if in.Sort > 0 || creating {
+		c.Sort = in.Sort
+	}
+	if in.Status != nil {
+		if *in.Status != 0 && *in.Status != 1 {
+			return ErrBadParam
+		}
+		c.Status = *in.Status
+	} else if creating {
+		c.Status = 1
+	}
+	return nil
+}
+
+func parseCouponTime(raw string) (*time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	layouts := []string{
+		"2006-01-02 15:04:05",
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02",
+	}
+	for _, layout := range layouts {
+		if t, err := time.ParseInLocation(layout, raw, time.Local); err == nil {
+			tt := t
+			return &tt, nil
+		}
+	}
+	return nil, ErrBadParam
 }
 
 func truncate(s string, n int) string {

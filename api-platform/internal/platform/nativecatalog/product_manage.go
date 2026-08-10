@@ -64,17 +64,11 @@ func (h *Handler) statusFilter(c *gin.Context) {
 		return
 	}
 	if merchantIDs != nil && len(merchantIDs) == 0 {
-		response.OK(c, gin.H{"list": emptyStatusFilters()})
+		response.OK(c, gin.H{"list": emptyStatusFilters(h.listFilterParams(c).IsGiftBag)})
 		return
 	}
 	baseFilters := h.listFilterParams(c)
-	items := []statusFilterItem{
-		{Type: 1, Name: "出售中商品"},
-		{Type: 2, Name: "仓库中商品"},
-		{Type: 6, Name: "待审核商品"},
-		{Type: 7, Name: "审核未通过商品"},
-		{Type: 5, Name: "回收站商品"},
-	}
+	items := statusFilterLabels(baseFilters.IsGiftBag)
 	for i := range items {
 		q := h.filteredBase(c, merchantIDs, baseFilters)
 		q = applyTabType(q, items[i].Type)
@@ -86,14 +80,31 @@ func (h *Handler) statusFilter(c *gin.Context) {
 	response.OK(c, gin.H{"list": items})
 }
 
-func emptyStatusFilters() []statusFilterItem {
-	return []statusFilterItem{
-		{Type: 1, Name: "出售中商品", Count: 0},
-		{Type: 2, Name: "仓库中商品", Count: 0},
-		{Type: 6, Name: "待审核商品", Count: 0},
-		{Type: 7, Name: "审核未通过商品", Count: 0},
-		{Type: 5, Name: "回收站商品", Count: 0},
+func statusFilterLabels(isGiftBag *int8) []statusFilterItem {
+	if isGiftBag != nil && *isGiftBag == 1 {
+		return []statusFilterItem{
+			{Type: 1, Name: "出售中礼包"},
+			{Type: 2, Name: "仓库中礼包"},
+			{Type: 6, Name: "待审核礼包"},
+			{Type: 7, Name: "审核未通过礼包"},
+			{Type: 5, Name: "回收站礼包"},
+		}
 	}
+	return []statusFilterItem{
+		{Type: 1, Name: "出售中商品"},
+		{Type: 2, Name: "仓库中商品"},
+		{Type: 6, Name: "待审核商品"},
+		{Type: 7, Name: "审核未通过商品"},
+		{Type: 5, Name: "回收站商品"},
+	}
+}
+
+func emptyStatusFilters(isGiftBag *int8) []statusFilterItem {
+	items := statusFilterLabels(isGiftBag)
+	for i := range items {
+		items[i].Count = 0
+	}
+	return items
 }
 
 type listFilters struct {
@@ -104,6 +115,7 @@ type listFilters struct {
 	MerID         uint64
 	MerTypeID     uint64
 	MerCategoryID uint64
+	IsTrader      *int8 // 1 自营店商品（秒杀活动添加用）
 	SVIPType      *int8
 	ProductType   *int8
 	Star          *int8
@@ -111,6 +123,7 @@ type listFilters struct {
 	IsHot         *int8
 	CateHot       *int8
 	UsStatus      *int8
+	IsGiftBag     *int8
 	TabType       int
 }
 
@@ -125,6 +138,13 @@ func (h *Handler) listFilterParams(c *gin.Context) listFilters {
 	f.MerTypeID, _ = strconv.ParseUint(c.Query("mer_type_id"), 10, 64)
 	f.MerCategoryID, _ = strconv.ParseUint(c.Query("mer_category_id"), 10, 64)
 	f.TabType, _ = strconv.Atoi(c.DefaultQuery("type", "1"))
+	if v := strings.TrimSpace(c.Query("is_trader")); v != "" {
+		n, err := strconv.ParseInt(v, 10, 8)
+		if err == nil && (n == 0 || n == 1) {
+			x := int8(n)
+			f.IsTrader = &x
+		}
+	}
 	if v := strings.TrimSpace(c.Query("svip_price_type")); v != "" {
 		n, _ := strconv.ParseInt(v, 10, 8)
 		x := int8(n)
@@ -159,6 +179,18 @@ func (h *Handler) listFilterParams(c *gin.Context) listFilters {
 		n, _ := strconv.ParseInt(v, 10, 8)
 		x := int8(n)
 		f.UsStatus = &x
+	}
+	if v := strings.TrimSpace(c.Query("is_gift_bag")); v != "" {
+		switch v {
+		case "0", "1":
+			n, _ := strconv.ParseInt(v, 10, 8)
+			x := int8(n)
+			f.IsGiftBag = &x
+		}
+	} else {
+		// 普通商品列表默认排除分销礼包
+		zero := int8(0)
+		f.IsGiftBag = &zero
 	}
 	// legacy status query still accepted when type omitted from old clients
 	if strings.TrimSpace(c.Query("type")) == "" {
@@ -215,6 +247,13 @@ func (h *Handler) filteredBase(c *gin.Context, merchantIDs []uint64, f listFilte
 		}
 		q = q.Where("s.merchant_id IN ?", ids)
 	}
+	if f.IsTrader != nil {
+		ids, err := h.merchantIDsByTrader(c, *f.IsTrader)
+		if err != nil || len(ids) == 0 {
+			return q.Where("1 = 0")
+		}
+		q = q.Where("s.merchant_id IN ?", ids)
+	}
 	if f.UsStatus != nil {
 		q = q.Where("p.status = ?", statusName(strconv.Itoa(int(*f.UsStatus))))
 	}
@@ -225,6 +264,9 @@ func (h *Handler) filteredBase(c *gin.Context, merchantIDs []uint64, f listFilte
 			return q.Where("1 = 0")
 		}
 		q = q.Where("p.id IN ?", ids)
+	}
+	if f.IsGiftBag != nil {
+		q = q.Where("p.is_gift_bag = ?", *f.IsGiftBag)
 	}
 	return q
 }
@@ -326,6 +368,24 @@ func (h *Handler) merchantIDsByAdminMeta(c *gin.Context, typeID, categoryID uint
 		MerchantID uint64 `gorm:"column:merchant_id"`
 	}
 	if err := q.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		if row.MerchantID > 0 {
+			ids = append(ids, row.MerchantID)
+		}
+	}
+	return ids, nil
+}
+
+func (h *Handler) merchantIDsByTrader(c *gin.Context, isTrader int8) ([]uint64, error) {
+	var rows []struct {
+		MerchantID uint64 `gorm:"column:merchant_id"`
+	}
+	err := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_view").
+		Select("merchant_id").Where("is_trader = ?", isTrader).Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 	ids := make([]uint64, 0, len(rows))

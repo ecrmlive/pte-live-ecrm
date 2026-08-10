@@ -39,9 +39,10 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_m_product` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `store_id` bigint unsigned NOT NULL, `title` varchar(255) NOT NULL,
   `category_id` bigint unsigned DEFAULT NULL, `store_category_id` bigint unsigned NOT NULL DEFAULT 0,
   `brand_name` varchar(64) NOT NULL DEFAULT '', `svip_price_type` tinyint NOT NULL DEFAULT 0, `svip_price` decimal(12,2) NOT NULL DEFAULT 0, `status` enum('draft','pending_review','on_sale','off_sale','rejected') NOT NULL DEFAULT 'draft',
+  `is_gift_bag` tinyint NOT NULL DEFAULT 0 COMMENT '1分销礼包',
   `version` bigint unsigned NOT NULL DEFAULT 1, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_store_category` (`store_category_id`)
+  PRIMARY KEY (`id`), KEY `idx_store_status` (`store_id`,`status`), KEY `idx_store_category` (`store_category_id`), KEY `idx_gift_bag_status` (`is_gift_bag`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- 既有库补齐店铺分类（幂等）
 SET @qixi_ddl := (
@@ -49,6 +50,15 @@ SET @qixi_ddl := (
     (SELECT COUNT(*) FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product' AND COLUMN_NAME='store_category_id')=0,
     'ALTER TABLE `qixi_crm_m_product` ADD COLUMN `store_category_id` bigint unsigned NOT NULL DEFAULT 0 AFTER `category_id`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_m_product' AND COLUMN_NAME='is_gift_bag')=0,
+    'ALTER TABLE `qixi_crm_m_product` ADD COLUMN `is_gift_bag` tinyint NOT NULL DEFAULT 0 COMMENT ''1分销礼包'' AFTER `status`, ADD KEY `idx_gift_bag_status` (`is_gift_bag`,`status`)',
     'SELECT 1'
   )
 );

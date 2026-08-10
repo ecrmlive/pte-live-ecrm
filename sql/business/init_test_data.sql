@@ -108,13 +108,13 @@ ON DUPLICATE KEY UPDATE `slot_key`=VALUES(`slot_key`),`start_time`=VALUES(`start
 -- 拼团公开展示夹具。活动规则、价格和库存仍由服务端状态机校验，前端不伪造团购成功。
 -- 秒杀夹具只包含虚构中文商品和商户，不含个人信息；时段和活动均在业务库内验收。
 INSERT INTO `qixi_crm_b_seckill_time` (`seckill_time_id`,`title`,`start_time`,`end_time`,`status`,`pic`) VALUES
-  (1,'上午场',9,12,1,''),(2,'晚间场',19,22,1,'')
+  (1,'午夜',0,6,1,''),(2,'早上',7,12,1,''),(3,'下午',14,19,1,''),(4,'晚上',19,24,1,'')
 ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`start_time`=VALUES(`start_time`),`end_time`=VALUES(`end_time`),`status`=VALUES(`status`),`pic`=VALUES(`pic`);
 INSERT INTO `qixi_crm_b_seckill_active` (`seckill_active_id`,`name`,`seckill_time_ids`,`start_day`,`end_day`,`mer_id`,`product_id`,`seckill_price`,`once_pay_count`,`all_pay_count`,`active_status`,`status`,`create_time`,`update_time`,`delete_time`) VALUES
   (6001,'轻奢羊绒针织衫限时秒杀','1,2',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),1,1001,199.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL),
   (6002,'头层牛皮托特包限时秒杀','2',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),1,1002,329.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL),
-  (6003,'无火藤条香氛礼盒限时秒杀','1',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),2,1101,169.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL),
-  (6004,'智能数显保温杯限时秒杀','2',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),3,1201,149.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL)
+  (6003,'轻奢羊绒针织衫限时秒杀·下午场','1',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),1,1001,169.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL),
+  (6004,'头层牛皮托特包限时秒杀·早上场','2',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),1,1002,149.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL)
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`seckill_time_ids`=VALUES(`seckill_time_ids`),`start_day`=VALUES(`start_day`),`end_day`=VALUES(`end_day`),`mer_id`=VALUES(`mer_id`),`product_id`=VALUES(`product_id`),`seckill_price`=VALUES(`seckill_price`),`once_pay_count`=VALUES(`once_pay_count`),`active_status`=VALUES(`active_status`),`status`=VALUES(`status`),`update_time`=VALUES(`update_time`),`delete_time`=VALUES(`delete_time`);
 
 INSERT INTO `qixi_crm_b_combination_group` (`product_group_id`,`product_id`,`start_time`,`end_time`,`time`,`buying_count_num`,`buying_num`,`pay_count`,`once_pay_count`,`status`,`mer_id`,`is_show`,`is_del`,`success_num`,`product_status`,`price`,`action_status`) VALUES
@@ -199,10 +199,35 @@ INSERT INTO `qixi_crm_b_withdrawal_application` (`id`,`withdrawal_no`,`user_id`,
   (9201001,'WD-DEMO-20260803-001',9101,8.50,'wechat',JSON_OBJECT('account_name','虚构用户','account_no','已脱敏演示账户'),'approved','中文演示审批通过，等待登记内部打款凭证。',9001,NOW(),'fixture-withdraw-9101-01')
 ON DUPLICATE KEY UPDATE `amount`=VALUES(`amount`),`status`=VALUES(`status`),`review_note`=VALUES(`review_note`),`reviewed_by`=VALUES(`reviewed_by`),`reviewed_at`=VALUES(`reviewed_at`),`payout_idempotency_key`=NULL,`payout_reference`=NULL,`paid_by`=NULL,`paid_at`=NULL;
 
+-- 分销提现银行夹具（中文银行名，供平台「提现银行」列表验收）
+INSERT INTO `qixi_crm_b_withdraw_bank` (`id`,`name`,`status`,`sort`) VALUES
+  (1,'中国银行',1,1),
+  (2,'招商银行',1,2),
+  (3,'工商银行',1,3)
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`status`=VALUES(`status`),`sort`=VALUES(`sort`);
+
 -- 分销夹具：推广资格由业务后台授权，用户绑定关系一经建立不可更换。
-INSERT INTO `qixi_crm_b_distribution_promoter` (`user_id`,`status`) VALUES
-  (9001,1),(9101,1)
-ON DUPLICATE KEY UPDATE `status`=VALUES(`status`);
+INSERT INTO `qixi_crm_b_distribution_level` (`id`,`name`,`rank`,`icon_url`,`task_rule`,`extension_one`,`extension_two`,`status`) VALUES
+  (1,'普通分销员',1,'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2214%22%20y%3D%2210%22%20width%3D%2236%22%20height%3D%2244%22%20rx%3D%224%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3Cpath%20d%3D%22M22%2024h20M22%2034h20M22%2044h12%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E',
+   CAST('{"spread_user":{"name":"邀请新人","num":3,"info":""},"pay_money":{"name":"","num":0,"info":""},"pay_num":{"name":"","num":0,"info":""},"spread_money":{"name":"","num":0,"info":""},"spread_pay_num":{"name":"","num":0,"info":""}}' AS JSON),
+   0.00,0.00,1),
+  (2,'金牌分销员',2,'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%2216%22%20height%3D%2216%22%20rx%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2212%22%20width%3D%2216%22%20height%3D%2216%22%20rx%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3Crect%20x%3D%2212%22%20y%3D%2236%22%20width%3D%2216%22%20height%3D%2216%22%20rx%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2236%22%20width%3D%2216%22%20height%3D%2216%22%20rx%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3C/svg%3E',
+   CAST('{"spread_user":{"name":"邀请新人","num":5,"info":""},"pay_money":{"name":"消费门槛","num":5000,"info":""},"pay_num":{"name":"消费单量","num":3,"info":""},"spread_money":{"name":"下级消费金额","num":3000,"info":""},"spread_pay_num":{"name":"下级消费单量","num":5,"info":""}}' AS JSON),
+   1.50,1.50,1),
+  (3,'钻石分销员',3,'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2224%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22/%3E%3Cpath%20d%3D%22M14%2052c2-10%2010-16%2018-16s16%206%2018%2016%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E',
+   CAST('{"spread_user":{"name":"邀请新人","num":10,"info":""},"pay_money":{"name":"消费门槛","num":20000,"info":""},"pay_num":{"name":"消费单量","num":5,"info":""},"spread_money":{"name":"下级消费金额","num":10000,"info":""},"spread_pay_num":{"name":"下级消费单量","num":10,"info":""}}' AS JSON),
+   3.00,2.00,1)
+ON DUPLICATE KEY UPDATE
+  `name`=VALUES(`name`),
+  `rank`=VALUES(`rank`),
+  `icon_url`=IF(`icon_url` IS NULL OR `icon_url`='',VALUES(`icon_url`),`icon_url`),
+  `task_rule`=VALUES(`task_rule`),
+  `extension_one`=VALUES(`extension_one`),
+  `extension_two`=VALUES(`extension_two`),
+  `status`=VALUES(`status`);
+INSERT INTO `qixi_crm_b_distribution_promoter` (`user_id`,`status`,`level_id`) VALUES
+  (9001,1,2),(9101,1,1)
+ON DUPLICATE KEY UPDATE `status`=VALUES(`status`),`level_id`=VALUES(`level_id`);
 -- 推荐关系只使用虚构演示账号；已绑定关系不可由平台用户详情页修改。
 INSERT INTO `qixi_crm_b_distribution_relation` (`user_id`,`parent_user_id`,`bound_at`) VALUES
   (9101,9001,DATE_SUB(NOW(),INTERVAL 7 DAY))
@@ -322,6 +347,7 @@ INSERT INTO `qixi_crm_b_content_view` (`content_id`,`content_type`,`title`,`cove
   (2102,'agreement','sys_userr_privacy','','CRM Live仅在提供服务所必需的范围内处理您的个人信息。',1,1,NOW(),NOW()),
   (2103,'agreement','sys_integral_agree','','积分可用于积分商城兑换。兑换订单独立结算，积分余额与订单状态以服务端实时校验结果为准。',1,1,NOW(),NOW()),
   (2104,'agreement','sys_about_us','','CRM Live 致力于为消费者提供清晰、可靠的多商户购物服务。平台持续完善商品、订单、售后和权益保障能力。',1,1,NOW(),NOW()),
+  (2105,'agreement','sys_brokerage','','<ol><li><p>第一级</p></li><li><p>第二级</p></li></ol>',1,1,NOW(),NOW()),
   (2201,'article','夏日焕新购物指南','/demo/home-hero-v1.png','精选商品已按类目、销量与价格开放筛选。下单前请确认商品规格、配送方式与售后说明。',1,1,NOW(),NOW()),
   (2202,'article','积分商城兑换说明','/demo/home-service-wide-v1.png','积分兑换订单独立结算，积分余额与库存以提交订单时服务端实时校验结果为准。',1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),NOW())
 ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`cover_url`=VALUES(`cover_url`),`body`=VALUES(`body`),`status`=VALUES(`status`),`version`=VALUES(`version`),`published_at`=VALUES(`published_at`),`updated_at`=NOW();

@@ -144,11 +144,17 @@ func TestBusinessSchemaAndChineseFixtureContract(t *testing.T) {
 		}
 	}
 	for _, required := range []string{
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_level`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_promoter`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_relation`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_commission_ledger`",
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_withdraw_bank`",
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_privilege`",
+		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_distribution_poster`",
 		"INSERT INTO `qixi_crm_b_distribution_promoter`",
+		"INSERT INTO `qixi_crm_b_withdraw_bank`",
 		"分销夹具：推广资格由业务后台授权",
+		"中国银行",
 		"fixture-commission-9101-01",
 	} {
 		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) {

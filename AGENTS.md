@@ -24,8 +24,14 @@ Skill：`.cursor/skills/pte-live-ecrm/SKILL.md`（Codex 镜像：`codex-skills/p
 
 ## 任务边界
 
-收到开发、修改的任务只做：制定方案、开发功能、查找原因、提供解决方案、修复问题。  
+收到开发、修改的任务只做：制定方案、开发功能、查找原因、提供解决方案、修复问题。 
 **验证和部署**由用户独立明确要求后再做。
+
+## Agent 模型（强制）
+
+- **仅允许**：Claude Opus 5、GPT-5.6 Terra、Cursor Grok 4.5 High Fast。
+- **禁止**上述三者以外的一切模型（含 Composer / `composer-2.5-fast`）。
+- 细则：`.cursor/rules/agent-model-policy.mdc`。若当前会话不在白名单，先切换模型再改列表/布局。
 
 ## 通用工作方式
 

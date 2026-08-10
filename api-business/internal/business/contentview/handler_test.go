@@ -13,6 +13,18 @@ func TestAgreementLabel(t *testing.T) {
 	if !ok || label != "用户协议" {
 		t.Fatalf("agreementLabel(sys_user_agree) = (%q, %v)", label, ok)
 	}
+	label, ok = agreementLabel("sys_coupon_agree")
+	if !ok || label != "优惠券使用说明" {
+		t.Fatalf("agreementLabel(sys_coupon_agree) = (%q, %v)", label, ok)
+	}
+	label, ok = agreementLabel("sys_extension_agree")
+	if !ok || label != "佣金说明" {
+		t.Fatalf("agreementLabel(sys_extension_agree) = (%q, %v)", label, ok)
+	}
+	label, ok = agreementLabel("sys_brokerage")
+	if !ok || label != "分销等级规则" {
+		t.Fatalf("agreementLabel(sys_brokerage) = (%q, %v)", label, ok)
+	}
 	if _, ok := agreementLabel("not-a-contract"); ok {
 		t.Fatal("unknown agreement key must be rejected")
 	}

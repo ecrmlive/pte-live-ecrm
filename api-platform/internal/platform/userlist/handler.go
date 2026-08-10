@@ -105,18 +105,31 @@ type couponCommandRow struct {
 	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
-// couponRecordRow is a user coupon lifecycle projection. It never joins a user
-// profile so the platform record page does not expose account or phone data.
+// couponRecordRow 领取记录投影（对齐 CRMEB 领取列表字段；手机号仅脱敏展示）。
 type couponRecordRow struct {
-	ID          uint64    `gorm:"column:id" json:"id"`
-	UserID      uint64    `gorm:"column:user_id" json:"user_id"`
-	CouponID    uint64    `gorm:"column:coupon_id" json:"coupon_id"`
-	CouponName  string    `gorm:"column:coupon_name" json:"coupon_name"`
-	StoreID     uint64    `gorm:"column:store_id" json:"store_id"`
-	Source      string    `gorm:"column:source" json:"source"`
-	Status      string    `gorm:"column:status" json:"status"`
-	ObtainedAt  time.Time `gorm:"column:obtained_at" json:"obtained_at"`
-	UsedOrderID *uint64   `gorm:"column:used_order_id" json:"used_order_id"`
+	ID             uint64     `gorm:"column:id" json:"id"`
+	UserID         uint64     `gorm:"column:user_id" json:"user_id"`
+	CouponID       uint64     `gorm:"column:coupon_id" json:"coupon_id"`
+	CouponName     string     `gorm:"column:coupon_name" json:"coupon_name"`
+	StoreID        uint64     `gorm:"column:store_id" json:"store_id"`
+	StoreName      string     `gorm:"-" json:"store_name"`
+	Source         string     `gorm:"column:source" json:"source"`
+	Status         string     `gorm:"column:status" json:"status"`
+	ObtainedAt     time.Time  `gorm:"column:obtained_at" json:"obtained_at"`
+	UsedAt         *time.Time `gorm:"column:used_at" json:"used_at"`
+	UseTime        *time.Time `gorm:"column:use_time" json:"use_time"`
+	UsedOrderID    *uint64    `gorm:"column:used_order_id" json:"used_order_id"`
+	Recipient      string     `gorm:"-" json:"recipient"`
+	Nickname       string     `gorm:"column:nickname" json:"nickname"`
+	AvatarURL      string     `gorm:"column:avatar_url" json:"avatar_url"`
+	CouponTypeName string     `gorm:"-" json:"coupon_type_name"`
+	CouponPrice    float64    `gorm:"column:coupon_price" json:"coupon_price"`
+	UseMinPrice    float64    `gorm:"column:use_min_price" json:"use_min_price"`
+	UseStartTime   *time.Time `gorm:"column:use_start_time" json:"use_start_time"`
+	UseEndTime     *time.Time `gorm:"column:use_end_time" json:"use_end_time"`
+	SourceName     string     `gorm:"-" json:"source_name"`
+	Available      bool       `gorm:"-" json:"available"`
+	Mobile         string     `gorm:"column:mobile" json:"-"`
 }
 
 type userGroup struct {
@@ -218,9 +231,21 @@ func (h *Handler) ListCouponRecords(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "优惠券状态错误")
 		return
 	}
+	source := strings.TrimSpace(c.Query("source"))
+	couponScope := strings.TrimSpace(c.Query("coupon_scope")) // platform | store
+	recipient := strings.TrimSpace(c.Query("recipient"))
+	couponName := strings.TrimSpace(c.Query("coupon_name"))
+	merID, ok := optionalPositiveQuery(c, "mer_id")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "店铺 ID 参数错误")
+		return
+	}
 
 	db := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_coupon_user AS cu").
-		Joins("LEFT JOIN qixi_crm_b_coupon_template_view AS ct ON ct.coupon_id=cu.coupon_id")
+		Joins("LEFT JOIN qixi_crm_b_coupon_template_view AS ct ON ct.coupon_id=cu.coupon_id").
+		Joins("LEFT JOIN qixi_crm_b_store_coupon AS sc ON sc.coupon_id=cu.coupon_id AND sc.is_del=0").
+		Joins("LEFT JOIN qixi_crm_b_user AS u ON u.id=cu.user_id").
+		Joins("LEFT JOIN qixi_crm_b_user_profile AS up ON up.user_id=cu.user_id")
 	if userID != 0 {
 		db = db.Where("cu.user_id=?", userID)
 	}
@@ -230,6 +255,35 @@ func (h *Handler) ListCouponRecords(c *gin.Context) {
 	if status != "" {
 		db = db.Where("cu.status=?", status)
 	}
+	if source != "" {
+		switch source {
+		case "receive":
+			db = db.Where("cu.source IN ?", []string{"receive", "fixture", "manual"})
+		case "onboarding":
+			db = db.Where("cu.source IN ?", []string{"onboarding", "newcomer", "new"})
+		case "platform_manual":
+			db = db.Where("cu.source IN ?", []string{"platform_manual", "admin"})
+		default:
+			db = db.Where("cu.source=?", source)
+		}
+	}
+	switch couponScope {
+	case "platform":
+		db = db.Where("COALESCE(ct.store_id, sc.mer_id, 0)=0")
+	case "store":
+		db = db.Where("COALESCE(ct.store_id, sc.mer_id, 0)>0")
+	}
+	if merID != 0 {
+		db = db.Where("COALESCE(ct.store_id, sc.mer_id, 0)=?", merID)
+	}
+	if couponName != "" {
+		like := "%" + couponName + "%"
+		db = db.Where("(ct.name LIKE ? OR sc.title LIKE ?)", like, like)
+	}
+	if recipient != "" {
+		like := "%" + recipient + "%"
+		db = db.Where("(u.nickname LIKE ? OR u.mobile LIKE ? OR CAST(cu.user_id AS CHAR) LIKE ?)", like, like, like)
+	}
 	db = queryfilter.ApplyCreatedAtRange(db, c, "cu.obtained_at")
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -238,12 +292,82 @@ func (h *Handler) ListCouponRecords(c *gin.Context) {
 	}
 	page, limit := paging(c)
 	rows := make([]couponRecordRow, 0)
-	if err := db.Select("cu.id,cu.user_id,cu.coupon_id,COALESCE(ct.name,'已删除优惠券模板') AS coupon_name,COALESCE(ct.store_id,0) AS store_id,cu.source,cu.status,cu.obtained_at,cu.used_order_id").
+	if err := db.Select(`
+cu.id,cu.user_id,cu.coupon_id,
+COALESCE(NULLIF(ct.name,''), NULLIF(sc.title,''), '已删除优惠券模板') AS coupon_name,
+COALESCE(ct.store_id, sc.mer_id, 0) AS store_id,
+cu.source,cu.status,cu.obtained_at,cu.used_at,cu.used_order_id,
+CASE
+  WHEN cu.status='used' THEN COALESCE(cu.used_at, cu.obtained_at)
+  ELSE NULL
+END AS use_time,
+COALESCE(ct.discount_value, sc.coupon_price, 0) AS coupon_price,
+COALESCE(ct.min_amount, sc.use_min_price, 0) AS use_min_price,
+COALESCE(ct.starts_at, cu.obtained_at) AS use_start_time,
+COALESCE(ct.ends_at, CASE WHEN sc.coupon_time > 0 THEN DATE_ADD(cu.obtained_at, INTERVAL sc.coupon_time DAY) ELSE NULL END) AS use_end_time,
+COALESCE(u.nickname,'') AS nickname,
+COALESCE(up.avatar_url,'') AS avatar_url,
+COALESCE(u.mobile,'') AS mobile`).
 		Order("cu.id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "优惠券领取记录查询失败")
 		return
 	}
+	storeNames := h.lookupMerchantNames(c, rows)
+	for i := range rows {
+		rows[i].Recipient = couponRecipientDisplay(rows[i].Nickname, rows[i].Mobile, rows[i].UserID)
+		if rows[i].Nickname == "" {
+			rows[i].Nickname = rows[i].Recipient
+		}
+		rows[i].CouponTypeName = couponScopeName(rows[i].StoreID)
+		rows[i].SourceName = couponSourceName(rows[i].Source)
+		rows[i].Available = rows[i].Status == "unused"
+		if rows[i].StoreID > 0 {
+			if name := storeNames[rows[i].StoreID]; name != "" {
+				rows[i].StoreName = name
+			} else {
+				rows[i].StoreName = "店铺#" + strconv.FormatUint(rows[i].StoreID, 10)
+			}
+		} else {
+			rows[i].StoreName = "平台"
+		}
+		rows[i].Mobile = ""
+	}
 	response.OK(c, gin.H{"list": rows, "total": total})
+}
+
+func (h *Handler) lookupMerchantNames(c *gin.Context, rows []couponRecordRow) map[uint64]string {
+	out := map[uint64]string{}
+	if h.admin == nil || len(rows) == 0 {
+		return out
+	}
+	ids := make([]uint64, 0, len(rows))
+	seen := map[uint64]struct{}{}
+	for _, row := range rows {
+		if row.StoreID == 0 {
+			continue
+		}
+		if _, ok := seen[row.StoreID]; ok {
+			continue
+		}
+		seen[row.StoreID] = struct{}{}
+		ids = append(ids, row.StoreID)
+	}
+	if len(ids) == 0 {
+		return out
+	}
+	type merRow struct {
+		MerchantID   uint64 `gorm:"column:merchant_id"`
+		MerchantName string `gorm:"column:merchant_name"`
+	}
+	list := make([]merRow, 0, len(ids))
+	_ = h.admin.WithContext(c.Request.Context()).Table("qixi_crm_a_merchant_view").
+		Select("merchant_id, merchant_name").
+		Where("merchant_id IN ?", ids).
+		Scan(&list)
+	for _, item := range list {
+		out[item.MerchantID] = item.MerchantName
+	}
+	return out
 }
 
 func (h *Handler) ListGroups(c *gin.Context) {
@@ -829,6 +953,49 @@ func mask(v string) string {
 		return ""
 	}
 	return string(r[:3]) + "****" + string(r[len(r)-4:])
+}
+
+func couponRecipientDisplay(nickname, mobile string, userID uint64) string {
+	m := strings.TrimSpace(mobile)
+	if len(m) >= 7 {
+		digits := true
+		for _, ch := range m {
+			if ch < '0' || ch > '9' {
+				digits = false
+				break
+			}
+		}
+		if digits {
+			return m[:3] + "****" + m[len(m)-4:]
+		}
+	}
+	if n := strings.TrimSpace(nickname); n != "" {
+		return n
+	}
+	return "用户#" + strconv.FormatUint(userID, 10)
+}
+
+func couponScopeName(storeID uint64) string {
+	if storeID == 0 {
+		return "平台通用券"
+	}
+	return "店铺券"
+}
+
+func couponSourceName(source string) string {
+	switch strings.TrimSpace(source) {
+	case "fixture", "receive", "manual":
+		return "自己领取"
+	case "platform_manual", "admin", "send":
+		return "后台发送"
+	case "onboarding", "newcomer", "new":
+		return "新人赠送"
+	default:
+		if source == "" {
+			return "—"
+		}
+		return source
+	}
 }
 
 func positiveID(raw string) (uint64, bool) {

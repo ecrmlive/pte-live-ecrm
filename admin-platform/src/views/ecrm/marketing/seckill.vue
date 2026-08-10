@@ -2,107 +2,354 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { Page, useVbenModal } from '@vben/common-ui';
 import {
-  ElAlert,
   ElButton,
+  ElDropdown,
+  ElDropdownItem,
+  ElDropdownMenu,
   ElForm,
   ElFormItem,
+  ElImage,
   ElInput,
-  ElInputNumber,
   ElMessage,
   ElMessageBox,
-  ElRadio,
-  ElRadioGroup,
-  ElTag,
+  ElRate,
+  ElSwitch,
 } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
+import { fetchPlatformMerchants } from '#/api/core/ecrm';
 import {
   deletePlatformSeckillApi,
-  getPlatformSeckillApi,
+  forceOffPlatformSeckillApi,
+  getPlatformSeckillStatusFilterApi,
   listPlatformSeckillApi,
-  updatePlatformSeckillApi,
+  setPlatformSeckillLabelsApi,
+  setPlatformSeckillShowApi,
+  setPlatformSeckillStarApi,
   type PlatformSeckillActive,
-  type PlatformSeckillInput,
 } from '#/api/core/platform-seckill';
+import SeckillDetailDrawer from '#/components/marketing/seckill-detail-drawer.vue';
+import SeckillEditDrawer from '#/components/marketing/seckill-edit-drawer.vue';
+import ProductLabelSelectModal from '#/views/ecrm/product/components/ProductLabelSelectModal.vue';
+import ProductPreviewModal from '#/views/ecrm/product/components/ProductPreviewModal.vue';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
-import {
-  buildStandardListParams,
-  LIST_DATE_RANGE_FIELD,
-  LIST_ENABLE_STATUS_FIELD,
-  LIST_KEYWORD_FIELD,
-  LIST_MER_ID_FIELD,
-  listFormOptionsDefaults,
-} from '#/utils/list-form-defaults';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
+import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
 
-const saving = ref(false);
-const canManage = ref(false);
-const editingID = ref<number>();
-const form = reactive<Required<PlatformSeckillInput>>({
-  name: '',
-  seckill_time_ids: '',
-  start_day: '',
-  end_day: '',
-  seckill_price: 0,
-  once_pay_count: 1,
-  status: 1,
+const STATUS_TABS: Array<{ type: number; name: string }> = [
+  { type: 1, name: '出售中秒杀商品' },
+  { type: 2, name: '仓库中秒杀商品' },
+  { type: 6, name: '待审核秒杀商品' },
+  { type: 7, name: '审核未通过秒杀商品' },
+  { type: 5, name: '回收站秒杀商品' },
+];
+
+const tabType = ref(1);
+const tabCounts = ref<Record<number, number>>({
+  1: 0,
+  2: 0,
+  5: 0,
+  6: 0,
+  7: 0,
 });
+const canManage = ref(false);
+const selectedIds = ref<number[]>([]);
+const lastFormValues = ref<Record<string, unknown>>({});
+const merchantOptions = ref<{ label: string; value: number }[]>([]);
+const detailDrawerRef = ref<InstanceType<typeof SeckillDetailDrawer>>();
+const editDrawerRef = ref<InstanceType<typeof SeckillEditDrawer>>();
+const previewModalRef = ref<InstanceType<typeof ProductPreviewModal>>();
+const labelModalRef = ref<InstanceType<typeof ProductLabelSelectModal>>();
+const forceOffIds = ref<number[]>([]);
+const forceOffReason = ref('');
+const labelEditingID = ref(0);
+const previewProductId = ref(0);
+const previewProductTitle = ref('');
+const previewDisplayPrice = ref<number>();
+const previewDisplayOtPrice = ref<number>();
+
+function buildParams(
+  page: { currentPage: number; pageSize: number },
+  formValues?: Record<string, unknown>,
+) {
+  const values = formValues || {};
+  lastFormValues.value = values;
+  const merRaw = values.mer_id;
+  const usRaw = values.us_status;
+  const starRaw = values.star;
+  const traderRaw = values.is_trader;
+  const goodsStatus = Number(values.goods_status);
+  // 商品状态下拉可快速切到对应 Tab（与状态条一致）
+  const type = [1, 2, 6, 7].includes(goodsStatus)
+    ? goodsStatus
+    : tabType.value;
+  if (type !== tabType.value) {
+    tabType.value = type;
+  }
+  return {
+    page: page.currentPage,
+    limit: page.pageSize,
+    type,
+    mer_id:
+      merRaw === 0 || merRaw === undefined || merRaw === null || merRaw === ''
+        ? undefined
+        : Number(merRaw),
+    active_name: String(values.active_name ?? '').trim() || undefined,
+    keyword: String(values.keyword ?? '').trim() || undefined,
+    is_trader:
+      traderRaw === 0 || traderRaw === 1 ? Number(traderRaw) : undefined,
+    star: starRaw === 0 || starRaw ? Number(starRaw) : undefined,
+    us_status:
+      usRaw === 0 || usRaw === 1 || usRaw === -1 || usRaw === -2
+        ? Number(usRaw)
+        : undefined,
+    sys_labels: String(values.sys_labels ?? '').trim() || undefined,
+  };
+}
+
+async function loadTabCounts(formValues?: Record<string, unknown>) {
+  const values = formValues || lastFormValues.value || {};
+  try {
+    const data = await getPlatformSeckillStatusFilterApi({
+      mer_id:
+        values.mer_id === 0 ||
+        values.mer_id === undefined ||
+        values.mer_id === null ||
+        values.mer_id === ''
+          ? undefined
+          : Number(values.mer_id),
+      active_name: String(values.active_name ?? '').trim() || undefined,
+      keyword: String(values.keyword ?? '').trim() || undefined,
+      is_trader:
+        values.is_trader === 0 || values.is_trader === 1
+          ? Number(values.is_trader)
+          : undefined,
+      star:
+        values.star === 0 || values.star ? Number(values.star) : undefined,
+      us_status:
+        values.us_status === 0 ||
+        values.us_status === 1 ||
+        values.us_status === -1 ||
+        values.us_status === -2
+          ? Number(values.us_status)
+          : undefined,
+    });
+    const next: Record<number, number> = { 1: 0, 2: 0, 5: 0, 6: 0, 7: 0 };
+    for (const item of data.list || []) {
+      next[item.type] = item.count;
+    }
+    tabCounts.value = next;
+  } catch {
+    /* ignore */
+  }
+}
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
-  LIST_KEYWORD_FIELD('活动名称'),
-  LIST_MER_ID_FIELD,
-  LIST_ENABLE_STATUS_FIELD(),
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '开启', value: 1 },
+        { label: '关闭显示', value: 0 },
+        { label: '审核未通过', value: -1 },
+        { label: '强制下架', value: -2 },
+      ],
+      placeholder: '请选择',
+    },
+    fieldName: 'us_status',
+    label: '活动状态',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '出售中', value: 1 },
+        { label: '仓库中', value: 2 },
+        { label: '待审核', value: 6 },
+        { label: '审核未通过', value: 7 },
+      ],
+      placeholder: '请选择',
+    },
+    fieldName: 'goods_status',
+    label: '商品状态',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '标签 ID，多个逗号分隔',
+    },
+    fieldName: 'sys_labels',
+    label: '标签',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      filterable: true,
+      options: [],
+      placeholder: '请选择',
+    },
+    fieldName: 'mer_id',
+    label: '店铺名称',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '请输入活动名称',
+    },
+    fieldName: 'active_name',
+    label: '活动名称',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: '自营', value: 1 },
+        { label: '非自营', value: 0 },
+      ],
+      placeholder: '请选择',
+    },
+    fieldName: 'is_trader',
+    label: '店铺类别',
+  },
+  {
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [0, 1, 2, 3, 4, 5].map((n) => ({
+        label: n === 0 ? '未设置' : `${n} 星`,
+        value: n,
+      })),
+      placeholder: '全部',
+    },
+    fieldName: 'star',
+    label: '推荐级别',
+  },
+  {
+    component: 'Input',
+    componentProps: {
+      clearable: true,
+      placeholder: '请输入商品名称、关键字、编号',
+    },
+    fieldName: 'keyword',
+    label: '商品搜索',
+  },
 ]);
 
 const gridOptions: VxeGridProps<PlatformSeckillActive> = {
+  checkboxConfig: { highlight: true, reserve: true },
   columns: [
+    { type: 'checkbox', width: 48 },
     { field: 'seckill_active_id', title: 'ID', width: 80 },
-    { field: 'name', minWidth: 160, showOverflow: false, title: '活动' },
     {
       field: 'mer_name',
-      minWidth: 130,
+      minWidth: 120,
       showOverflow: false,
-      title: '商户',
-      formatter: ({ row }) => row.mer_name || `商户 #${row.mer_id}`,
+      title: '店铺名称',
+      formatter: ({ row }) => row.mer_name || `店铺#${row.mer_id}`,
+    },
+    {
+      field: 'trader_name',
+      title: '店铺类别',
+      width: 90,
+      formatter: ({ cellValue, row }) =>
+        cellValue || (row.is_trader === 1 ? '自营' : '非自营'),
+    },
+    {
+      field: 'image',
+      slots: { default: 'image' },
+      title: '商品图片',
+      width: 90,
     },
     {
       field: 'store_name',
-      minWidth: 150,
+      minWidth: 160,
       showOverflow: false,
-      title: '商品',
-      formatter: ({ row }) => row.store_name || `商品 #${row.product_id}`,
+      title: '商品名称',
+      formatter: ({ row }) => row.store_name || `商品#${row.product_id}`,
+    },
+    {
+      field: 'time_titles',
+      minWidth: 100,
+      showOverflow: false,
+      title: '活动名称',
+      formatter: ({ row }) => row.time_titles || row.name || '—',
+    },
+    {
+      field: 'sales',
+      title: '已售数量',
+      width: 90,
+    },
+    {
+      field: 'stock',
+      title: '限量剩余',
+      width: 90,
     },
     {
       field: 'seckill_price',
       title: '秒杀价',
-      width: 110,
+      width: 100,
       formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
     },
     {
-      field: 'start_day',
-      minWidth: 200,
-      showOverflow: false,
-      title: '活动日期',
-      formatter: ({ row }) => `${row.start_day} 至 ${row.end_day}`,
+      field: 'star',
+      slots: { default: 'star' },
+      title: '推荐星级',
+      width: 130,
+    },
+    { field: 'sort', title: '排序', width: 70 },
+    {
+      field: 'product_status_name',
+      title: '商品状态',
+      width: 110,
+      formatter: ({ cellValue, row }) =>
+        cellValue ||
+        ({
+          1: row.is_show === 1 ? '出售中' : '仓库中',
+          0: '待审核',
+          [-1]: '审核未通过',
+          [-2]: '平台关闭',
+        }[row.product_status as 1 | 0 | -1 | -2] || '—'),
     },
     {
-      field: 'status',
-      slots: { default: 'status' },
-      title: '状态',
-      width: 88,
+      field: 'activity_status_text',
+      title: '活动状态',
+      width: 100,
+      formatter: ({ cellValue, row }) => {
+        if (cellValue) return cellValue;
+        const map: Record<number, string> = {
+          0: '未开始',
+          1: '进行中',
+          [-1]: '已结束',
+        };
+        return map[Number(row.activity_status)] || '—';
+      },
     },
-    platformListActionColumn({ width: 172 }),
+    {
+      field: 'is_show',
+      slots: { default: 'isShow' },
+      title: '是否显示',
+      width: 100,
+    },
+    platformListActionColumn({ width: 180 }),
   ],
   pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        const data = await listPlatformSeckillApi(buildStandardListParams(page, formValues));
+        if (!canManage.value) return { items: [], total: 0 };
+        const data = await listPlatformSeckillApi(buildParams(page, formValues));
+        await loadTabCounts(formValues);
         return { items: data.list || [], total: data.total || 0 };
       },
     },
@@ -117,163 +364,345 @@ const gridOptions: VxeGridProps<PlatformSeckillActive> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
-
-const [EditDrawer, editDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
-  cancelText: '取消',
-  placement: 'right',
-  onConfirm: async () => save(),
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions,
+  gridOptions,
+  gridEvents: {
+    checkboxAll({ records }: { records: PlatformSeckillActive[] }) {
+      selectedIds.value = records.map((r) => r.seckill_active_id);
+    },
+    checkboxChange({ records }: { records: PlatformSeckillActive[] }) {
+      selectedIds.value = records.map((r) => r.seckill_active_id);
+    },
+  },
 });
 
-async function edit(row: PlatformSeckillActive) {
-  const detail = await getPlatformSeckillApi(row.seckill_active_id);
-  editingID.value = row.seckill_active_id;
-  Object.assign(form, {
-    name: detail.name,
-    seckill_time_ids: detail.seckill_time_ids || '',
-    start_day: detail.start_day,
-    end_day: detail.end_day,
-    seckill_price: Number(detail.seckill_price),
-    once_pay_count: detail.once_pay_count || 1,
-    status: detail.status,
-  });
-  editDrawerApi.setState({ title: '编辑秒杀活动' }).open();
+const [ForceOffModal, forceOffModalApi] = useVbenModal({
+  title: '强制下架',
+  class: 'w-[520px] max-w-[96vw]',
+  confirmText: '确认下架',
+  onConfirm: () => void submitForceOff(),
+});
+
+function setStatusTab(type: number) {
+  tabType.value = type;
+  selectedIds.value = [];
+  gridApi.reload();
 }
 
-async function save() {
-  if (
-    !editingID.value ||
-    !form.name.trim() ||
-    !form.start_day ||
-    !form.end_day ||
-    form.end_day < form.start_day ||
-    form.seckill_price <= 0 ||
-    form.once_pay_count < 1
-  ) {
-    ElMessage.warning('请填写活动名称、有效日期、正数秒杀价和限购数量');
+function openDetail(row: PlatformSeckillActive) {
+  void detailDrawerRef.value?.open(row.seckill_active_id);
+}
+
+function openPreview(row: PlatformSeckillActive) {
+  previewProductId.value = Number(row.product_id || 0);
+  previewProductTitle.value = row.store_name || row.name || '';
+  previewDisplayPrice.value = Number(row.seckill_price || 0);
+  previewDisplayOtPrice.value =
+    row.price !== undefined && row.price !== null
+      ? Number(row.price)
+      : undefined;
+  previewModalRef.value?.open();
+}
+
+function openEdit(row: PlatformSeckillActive) {
+  void editDrawerRef.value?.open(row.seckill_active_id);
+}
+
+function onEditSaved() {
+  void gridApi.reload();
+  void loadTabCounts();
+}
+
+function parseLabelIds(raw?: string) {
+  if (!raw?.trim()) return [] as string[];
+  return raw
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function openLabels(row: PlatformSeckillActive) {
+  labelEditingID.value = row.seckill_active_id;
+  labelModalRef.value?.open({
+    selectedIds: parseLabelIds(row.sys_labels),
+  });
+}
+
+async function onLabelSubmit(ids: string[]) {
+  if (!labelEditingID.value) return;
+  try {
+    await setPlatformSeckillLabelsApi(
+      labelEditingID.value,
+      ids.map(String).join(','),
+    );
+    ElMessage.success('标签已更新');
+    void gridApi.reload();
+  } catch {
+    ElMessage.error('标签更新失败');
+  }
+}
+
+async function toggleShow(row: PlatformSeckillActive) {
+  const next = row.is_show === 1 ? 0 : 1;
+  await setPlatformSeckillShowApi(row.seckill_active_id, next);
+  row.is_show = next;
+  ElMessage.success(next === 1 ? '已显示' : '已隐藏');
+  await loadTabCounts();
+}
+
+async function changeStar(row: PlatformSeckillActive, value: number) {
+  await setPlatformSeckillStarApi(row.seckill_active_id, value);
+  row.star = value;
+}
+
+function openForceOff(ids: number[]) {
+  if (!ids.length) {
+    ElMessage.warning('请先选择秒杀商品');
     return;
   }
-  editDrawerApi.lock();
-  saving.value = true;
-  try {
-    await updatePlatformSeckillApi(editingID.value, {
-      ...form,
-      name: form.name.trim(),
-      seckill_time_ids: form.seckill_time_ids.trim(),
-    });
-    editDrawerApi.close();
-    ElMessage.success('秒杀活动已更新');
-    gridApi.reload();
-  } finally {
-    saving.value = false;
-    editDrawerApi.unlock();
-  }
+  forceOffIds.value = ids;
+  forceOffReason.value = '';
+  forceOffModalApi.open();
 }
 
-async function setStatus(row: PlatformSeckillActive, status: number) {
-  const action = status === 1 ? '启用' : '停用';
+async function submitForceOff() {
+  if (!forceOffReason.value.trim()) {
+    ElMessage.warning('请填写下架原因');
+    return;
+  }
+  forceOffModalApi.lock();
   try {
-    await ElMessageBox.confirm(`确认${action}秒杀活动“${row.name}”？`, `${action}确认`, {
-      cancelButtonText: '取消',
-      confirmButtonText: `确认${action}`,
-      type: 'warning',
-    });
-    await updatePlatformSeckillApi(row.seckill_active_id, { status });
-    ElMessage.success(`活动已${action}`);
+    await forceOffPlatformSeckillApi(
+      forceOffIds.value,
+      forceOffReason.value.trim(),
+    );
+    ElMessage.success('已强制下架');
+    forceOffModalApi.close();
+    selectedIds.value = [];
     gridApi.reload();
-  } catch {
-    /* 用户取消 */
+  } finally {
+    forceOffModalApi.unlock();
   }
 }
 
 async function remove(row: PlatformSeckillActive) {
   try {
     await ElMessageBox.confirm(
-      `删除“${row.name}”只会软删除活动配置，已产生订单不会被修改。是否继续？`,
-      '删除秒杀活动',
-      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+      `将「${row.store_name || row.name}」移入回收站？`,
+      '加入回收站',
+      { type: 'warning' },
     );
     await deletePlatformSeckillApi(row.seckill_active_id);
-    ElMessage.success('秒杀活动已软删除');
+    ElMessage.success('已移入回收站');
     gridApi.reload();
   } catch {
-    /* 用户取消 */
+    /* cancel */
   }
 }
 
+async function loadMerchants() {
+  const data = await fetchPlatformMerchants({ page: 1, limit: 200 });
+  merchantOptions.value = (data.list || []).map((row) => ({
+    label: row.mer_name || `店铺#${row.mer_id}`,
+    value: row.mer_id,
+  }));
+  await gridApi.formApi?.updateSchema?.([
+    {
+      fieldName: 'mer_id',
+      componentProps: {
+        clearable: true,
+        filterable: true,
+        options: merchantOptions.value,
+        placeholder: '请选择',
+      },
+    },
+  ]);
+}
+
 onMounted(async () => {
-  const [profile, permissions] = await Promise.all([getUserInfoApi(), getAccessCodesApi()]);
+  const [profile, codes] = await Promise.all([
+    getUserInfoApi(),
+    getAccessCodesApi(),
+  ]);
   canManage.value =
-    profile.roles.some((role) => role === 'platform' || role === 'operations') &&
-    permissions.includes('marketing.seckill.manage');
+    profile.roles.some((r) => r === 'platform' || r === 'operations') &&
+    (codes.includes('marketing.seckill.manage') ||
+      codes.includes('marketing.seckill.manage.page'));
+  await loadMerchants().catch(() => undefined);
+  if (canManage.value) {
+    await loadTabCounts();
+    gridApi.reload();
+  }
 });
 </script>
 
 <template>
-  <Page
-    auto-content-height
-    description="监管各商户秒杀活动；运营可维护活动配置或软删除，已产生订单、商品归属和历史价格快照不会被改写。"
-    title="秒杀监管"
-  >
+  <Page auto-content-height>
     <Grid>
-      <template #status="{ row }">
-        <ElTag :type="row.status === 1 ? 'success' : 'info'">
-          {{ row.status === 1 ? '启用' : '停用' }}
-        </ElTag>
+      <template #toolbar-actions>
+        <div class="seckill-toolbar">
+          <div class="seckill-tabs" role="tablist">
+            <button
+              v-for="tab in STATUS_TABS"
+              :key="tab.type"
+              type="button"
+              role="tab"
+              class="seckill-tabs__item"
+              :aria-selected="tabType === tab.type"
+              :class="{ 'is-active': tabType === tab.type }"
+              @click="setStatusTab(tab.type)"
+            >
+              {{ tab.name }}({{ tabCounts[tab.type] || 0 }})
+            </button>
+          </div>
+          <div class="seckill-toolbar__actions">
+            <ElButton
+              v-if="canManage && tabType === 1"
+              :disabled="!selectedIds.length"
+              @click="openForceOff(selectedIds)"
+            >
+              批量强制下架
+            </ElButton>
+          </div>
+        </div>
       </template>
+
+      <template #image="{ row }">
+        <ElImage
+          v-if="row.image"
+          :src="resolveCosMediaUrl(row.image)"
+          fit="cover"
+          class="seckill-thumb"
+        >
+          <template #error>
+            <div class="seckill-thumb seckill-thumb--empty">无图</div>
+          </template>
+        </ElImage>
+        <div v-else class="seckill-thumb seckill-thumb--empty">—</div>
+      </template>
+
+      <template #star="{ row }">
+        <ElRate
+          :model-value="Number(row.star || 0)"
+          :max="5"
+          @change="(v: number) => changeStar(row, v)"
+        />
+      </template>
+
+      <template #isShow="{ row }">
+        <ElSwitch
+          :model-value="row.is_show === 1"
+          :disabled="!canManage || tabType === 5"
+          inline-prompt
+          active-text="显示"
+          inactive-text="隐藏"
+          @change="() => toggleShow(row)"
+        />
+      </template>
+
       <template #action="{ row }">
-        <template v-if="canManage">
-          <ElButton link type="primary" @click="edit(row)">编辑</ElButton>
-          <ElButton
-            link
-            :type="row.status === 1 ? 'danger' : 'success'"
-            @click="setStatus(row, row.status === 1 ? 0 : 1)"
-          >
-            {{ row.status === 1 ? '停用' : '启用' }}
-          </ElButton>
-          <ElButton link type="danger" @click="remove(row)">删除</ElButton>
-        </template>
-        <span v-else>—</span>
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
+        <ElButton link type="primary" @click="openPreview(row)">预览</ElButton>
+        <ElDropdown v-if="canManage && tabType !== 5" trigger="click">
+          <ElButton link type="primary">更多</ElButton>
+          <template #dropdown>
+            <ElDropdownMenu>
+              <ElDropdownItem @click="openEdit(row)">编辑</ElDropdownItem>
+              <ElDropdownItem @click="openLabels(row)">选择标签</ElDropdownItem>
+              <ElDropdownItem
+                v-if="tabType === 1"
+                @click="openForceOff([row.seckill_active_id])"
+              >
+                强制下架
+              </ElDropdownItem>
+              <ElDropdownItem @click="remove(row)">加入回收站</ElDropdownItem>
+            </ElDropdownMenu>
+          </template>
+        </ElDropdown>
       </template>
     </Grid>
 
-    <EditDrawer class="w-[620px]">
-      <ElAlert
-        class="mb-4"
-        type="warning"
-        :closable="false"
-        title="仅修改活动配置；商品、商户和已产生订单快照不可在此变更。"
-      />
-      <ElForm label-width="118px">
-        <ElFormItem label="活动名称" required>
-          <ElInput v-model="form.name" maxlength="128" show-word-limit />
-        </ElFormItem>
-        <ElFormItem label="秒杀场次 ID">
+    <SeckillDetailDrawer ref="detailDrawerRef" />
+    <SeckillEditDrawer ref="editDrawerRef" @saved="onEditSaved" />
+    <ProductPreviewModal
+      ref="previewModalRef"
+      modal-title="秒杀预览"
+      :product-id="previewProductId"
+      :product-title="previewProductTitle"
+      :display-price="previewDisplayPrice"
+      :display-ot-price="previewDisplayOtPrice"
+    />
+    <ProductLabelSelectModal ref="labelModalRef" @submit="onLabelSubmit" />
+
+    <ForceOffModal>
+      <ElForm label-width="90px">
+        <ElFormItem label="下架原因" required>
           <ElInput
-            v-model="form.seckill_time_ids"
-            placeholder="多个场次用英文逗号分隔，例如 1,2"
+            v-model="forceOffReason"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+            placeholder="请填写强制下架原因"
           />
         </ElFormItem>
-        <ElFormItem label="活动日期" required>
-          <ElInput v-model="form.start_day" class="!w-40" placeholder="YYYY-MM-DD" />
-          <span class="mx-2">至</span>
-          <ElInput v-model="form.end_day" class="!w-40" placeholder="YYYY-MM-DD" />
-        </ElFormItem>
-        <ElFormItem label="秒杀价" required>
-          <ElInputNumber v-model="form.seckill_price" :min="0.01" :precision="2" :step="1" />
-        </ElFormItem>
-        <ElFormItem label="单次限购" required>
-          <ElInputNumber v-model="form.once_pay_count" :min="1" :max="9999" />
-        </ElFormItem>
-        <ElFormItem label="活动状态">
-          <ElRadioGroup v-model="form.status">
-            <ElRadio :value="1">启用</ElRadio>
-            <ElRadio :value="0">停用</ElRadio>
-          </ElRadioGroup>
-        </ElFormItem>
       </ElForm>
-    </EditDrawer>
+    </ForceOffModal>
   </Page>
 </template>
+
+<style scoped>
+.seckill-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.seckill-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 8px;
+}
+
+.seckill-tabs__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px 0;
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+
+.seckill-tabs__item.is-active {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 hsl(var(--primary));
+}
+
+.seckill-toolbar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.seckill-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seckill-thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--muted) / 0.4);
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+
+</style>

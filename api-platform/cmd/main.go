@@ -199,7 +199,8 @@ func main() {
 	merSvc := merchant.NewService(merchantpersist.NewStoreAdapter(merchantpersist.NewRepo(gdb)))
 	cartSvc := cart.NewService(cartpersist.NewStoreAdapter(cartpersist.NewRepo(gdb)))
 	circleSvc := circle.NewService(circlepersist.NewRepo(gdb))
-	promoSvc := promotion.NewService(promotionpersist.NewStoreAdapter(promotionpersist.NewRepo(gdb)))
+	// 优惠券模板落在业务库 qixi_crm_b_store_coupon（禁止再查已废弃的 qixi_m_admin_store_coupon）。
+	promoSvc := promotion.NewService(promotionpersist.NewStoreAdapter(promotionpersist.NewRepo(businessDB)))
 	tradeSvc := trade.NewService(tradepersist.NewStoreAdapter(tradepersist.NewRepo(gdb)), cartSvc, promoSvc)
 	contentSvc := content.NewService(contentpersist.NewRepo(gdb))
 	cloudConfigSvc, err := cloudconfig.NewService(cloudconfigpersist.NewRepo(gdb), cfg.JWT.Secret)

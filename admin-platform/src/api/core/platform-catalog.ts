@@ -48,7 +48,9 @@ export function listPlatformProductsApi(params: {
   cate_id?: number;
   date_from?: string;
   date_to?: string;
+  is_gift_bag?: 0 | 1;
   is_hot?: number;
+  is_trader?: 0 | 1;
   is_used?: number;
   keyword?: string;
   limit: number;
@@ -70,6 +72,7 @@ export function listPlatformProductsApi(params: {
 export function getPlatformProductStatusFilterApi(params?: {
   brand_name?: string;
   cate_id?: number;
+  is_gift_bag?: 0 | 1;
   keyword?: string;
   mer_category_id?: number;
   mer_id?: number;

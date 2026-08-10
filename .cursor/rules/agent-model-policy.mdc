@@ -1,0 +1,28 @@
+---
+description: 仅允许 Claude Opus 5 / GPT-5.6 Terra / Cursor Grok 4.5 High Fast
+alwaysApply: true
+---
+
+# Agent 模型策略（强制）
+
+## 仅允许（白名单）
+
+1. **Claude Opus 5**
+2. **GPT-5.6 Terra**
+3. **Cursor Grok 4.5 High Fast**（子任务 slug：`cursor-grok-4.5-high-fast`）
+
+## 禁止
+
+- **禁止**使用白名单以外的任何模型。
+- **禁止** Composer 系（含会话默认 Composer、`composer-2.5-fast`、Composer 路由）。
+- 不得以「列表没有就降级到 Composer / 其他模型」绕过本规则。
+
+## 执行要求
+
+1. 主会话须为白名单三者之一；若当前是 Composer 或其他非白名单模型：先请用户切换，再继续改代码（尤其列表/布局）。
+2. Task / 子代理：
+   - 父会话已是白名单 → 优先 `inherit`；
+   - 用户指定 Grok → 可用 `cursor-grok-4.5-high-fast`；
+   - **禁止**传 `composer-2.5-fast`；
+   - 若父会话非白名单且无法 `inherit` 到允许模型 → 停止委派并请用户切换父会话。
+3. 对用户称呼模型时用其常用名（Claude Opus 5 / GPT-5.6 Terra / Cursor Grok 4.5 High Fast），勿擅自换成未授权型号。

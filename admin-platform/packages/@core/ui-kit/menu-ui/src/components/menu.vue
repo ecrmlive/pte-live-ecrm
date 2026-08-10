@@ -557,12 +557,13 @@ $namespace: vben;
   list-style: none;
   background: hsl(var(--menu-background-color));
 
-  // 垂直菜单：全局 L1–L4 左对齐 + 等步缩进 + 右侧 chevron 贴边。
-  // 同层 directory（sub-menu-content）与 page（menu-item）必须共用同一 padding-left，
-  // 且行宽 100%，否则绝对定位箭头会贴在文字旁、深层缩进看起来像居中。
+  // 垂直菜单：全局 L1–L4 左对齐 + 等步缩进。
+  // 同层 directory（sub-menu-content）与 page（menu-item）共用同一 padding-left。
+  // 展开箭头用 flex 贴右（勿对 L2+ directory 用 absolute，否则易相对错误包含块漂到子项中间）。
   &.is-vertical {
     &:not(.#{$namespace}-menu.is-collapse) {
       .#{$namespace}-sub-menu {
+        position: static;
         width: 100%;
       }
 
@@ -573,8 +574,6 @@ $namespace: vben;
         max-width: 100%;
         justify-content: flex-start;
         text-align: left;
-        // 给右侧展开箭头留位，避免与标题重叠
-        padding-right: 28px;
         white-space: nowrap;
       }
 
@@ -596,6 +595,20 @@ $namespace: vben;
       & > .#{$namespace}-sub-menu > .#{$namespace}-sub-menu-content,
       & > .#{$namespace}-menu-item {
         padding-left: calc(var(--menu-item-indent) - 8px);
+      }
+
+      // 垂直侧栏：箭头跟行走，贴在标题行最右侧
+      .#{$namespace}-sub-menu-content__icon-arrow {
+        position: static;
+        top: auto;
+        right: auto;
+        z-index: auto;
+        flex-shrink: 0;
+        width: 1em;
+        height: 1em;
+        margin-top: 0;
+        margin-left: auto;
+        pointer-events: none;
       }
     }
   }
@@ -814,6 +827,9 @@ $namespace: vben;
 }
 
 .#{$namespace}-sub-menu {
+  // 勿设 relative：否则子项 absolute 箭头会以整块（含展开子菜单）为包含块，
+  // 出现「箭头漂在子菜单中间、不跟标题行对齐」的错位。
+  position: static;
   padding-left: 0;
   margin: 0;
   list-style: none;

@@ -251,10 +251,15 @@ func (h *Handler) fillExtraTodos(c *gin.Context, scope dashboardScope, out *Summ
 		Where("is_del = 0 AND status = 0"), &out.PendingCommunity)
 	safeCount(h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_user_feedback").
 		Where("deleted_at IS NULL AND status = 'pending'"), &out.PendingFeedback)
-	// 分销礼包 / 积分订单发货：当前 schema 无独立待审表，固定 0，结构占位。
-	out.PendingSpreadGift = 0
+	giftQ := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").
+		Joins("LEFT JOIN qixi_crm_m_product_recycle_bin AS rb ON rb.product_id = p.id").
+		Where("rb.product_id IS NULL AND p.is_gift_bag = 1 AND p.status IN ?", []string{"pending_review", "draft"})
+	if !scope.Full {
+		giftQ = giftQ.Where("p.store_id IN ?", scope.StoreIDs)
+	}
+	safeCount(giftQ, &out.PendingSpreadGift)
+	// 积分订单发货：当前 schema 无独立待审表，固定 0，结构占位。
 	out.PendingIntegralShip = 0
-	_ = scope
 }
 
 func metricFor(db *gorm.DB, table, timeColumn, where string, distinctUser bool, out *Metric, args ...any) error {

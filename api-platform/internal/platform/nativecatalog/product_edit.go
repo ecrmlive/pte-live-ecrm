@@ -377,7 +377,7 @@ func (h *Handler) buildEditDetail(c *gin.Context, row productRow) (*productEditD
 		CommissionText:  "—",
 		ActivityLabels:  []string{},
 		SysLabelNames:   sysLabelNames,
-		IsGiftBag:      0,
+		IsGiftBag:      row.IsGiftBag,
 	}, nil
 }
 

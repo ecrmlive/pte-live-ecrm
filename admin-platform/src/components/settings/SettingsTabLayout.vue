@@ -16,7 +16,7 @@ defineSlots<{
 
 <template>
   <div class="settings-tab-layout">
-    <div class="settings-tab-layout__tabs">
+    <div v-if="$slots.tabs" class="settings-tab-layout__tabs">
       <slot name="tabs" />
     </div>
 

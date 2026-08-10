@@ -4,6 +4,7 @@ import "time"
 
 const (
 	CouponTypeStore    int = 0  // 店铺券
+	CouponTypeProduct  int = 1  // 商品券
 	CouponTypePlatform int = 10 // 平台通用券
 )
 
@@ -53,7 +54,7 @@ type Coupon struct {
 	Received bool `gorm:"-" json:"received,omitempty"`
 }
 
-func (Coupon) TableName() string { return "qixi_m_admin_store_coupon" }
+func (Coupon) TableName() string { return "qixi_crm_b_store_coupon" }
 
 type CouponUser struct {
 	CouponUserID uint       `gorm:"column:coupon_user_id;primaryKey" json:"coupon_user_id"`
@@ -88,7 +89,66 @@ type CouponSend struct {
 	Status       int8      `gorm:"column:status" json:"status"`
 }
 
-func (CouponSend) TableName() string { return "qixi_m_admin_store_coupon_send" }
+func (CouponSend) TableName() string { return "qixi_crm_b_store_coupon_send" }
+
+// CouponSendListFilter 平台发送记录筛选。
+type CouponSendListFilter struct {
+	DateFrom    string
+	DateTo      string
+	CouponType  *int // 模板 type：10 平台通用券等
+	CouponName  string
+	SendStatus  *int8
+}
+
+// CouponSendListItem 发送记录列表行（对齐 CRMEB systemCouponSendLst）。
+type CouponSendListItem struct {
+	CouponSendID   uint       `json:"coupon_send_id"`
+	CouponID       uint       `json:"coupon_id"`
+	Title          string     `json:"title"`
+	Type           int        `json:"type"`
+	CouponTypeName string     `json:"coupon_type_name"`
+	CreateTime     time.Time  `json:"create_time"`
+	CouponType     int8       `json:"coupon_type"`
+	CouponTime     uint       `json:"coupon_time"`
+	UseStartTime   *time.Time `json:"use_start_time,omitempty"`
+	UseEndTime     *time.Time `json:"use_end_time,omitempty"`
+	ValidityText   string     `json:"validity_text"`
+	Mark           string     `json:"mark"`
+	FilterText     string     `json:"filter_text"`
+	CouponNum      uint       `json:"coupon_num"`
+	UseCount       int64      `json:"use_count"`
+	SendStatus     int8       `json:"send_status"`
+}
+
+// CouponSendDetail 发送记录详情。
+type CouponSendDetail struct {
+	CouponSendListItem
+	CouponPrice   float64    `json:"coupon_price"`
+	UseMinPrice   int        `json:"use_min_price"`
+	IsTimeout     int8       `json:"is_timeout"`
+	StartTime     *time.Time `json:"start_time,omitempty"`
+	EndTime       *time.Time `json:"end_time,omitempty"`
+	SendType      int8       `json:"send_type"`
+	SendTypeName  string     `json:"send_type_name"`
+	IsLimited     int8       `json:"is_limited"`
+	TotalCount    uint       `json:"total_count"`
+	RemainCount   uint       `json:"remain_count"`
+	Status        int8       `json:"status"`
+	Sort          uint       `json:"sort"`
+	SentTotal     uint       `json:"sent_total"`
+	UsedTotal     int64      `json:"used_total"`
+}
+
+// CouponSendUserRow 某次发送的使用记录行。
+type CouponSendUserRow struct {
+	UserID     uint64 `json:"user_id"`
+	Nickname   string `json:"nickname"`
+	AvatarURL  string `json:"avatar_url"`
+	Source     string `json:"source"`
+	SourceName string `json:"source_name"`
+	Status     string `json:"status"`
+	StatusName string `json:"status_name"`
+}
 
 type IssueUser struct {
 	UID        uint      `gorm:"column:uid;primaryKey" json:"uid"`
@@ -126,19 +186,71 @@ type UserBill struct {
 
 func (UserBill) TableName() string { return "qixi_m_app_user_bill" }
 
+// 对齐 CRMEB StoreCouponRepository 获取方式。
+const (
+	SendTypeReceive int8 = 0 // 领取
+	SendTypeAdmin   int8 = 6 // 后台发放
+	SendTypeGift    int8 = 3 // 赠送券
+)
+
 type CreateCouponInput struct {
-	Title       string  `json:"title"`
-	CouponPrice float64 `json:"coupon_price"`
-	UseMinPrice int     `json:"use_min_price"`
-	CouponTime  uint    `json:"coupon_time"`
-	TotalCount  uint    `json:"total_count"`
-	IsLimited   int8    `json:"is_limited"`
-	Sort        uint    `json:"sort"`
-	Status      *int8   `json:"status"`
+	Title         string  `json:"title"`
+	CouponPrice   float64 `json:"coupon_price"`
+	UseMinPrice   int     `json:"use_min_price"`
+	UseType       *int8   `json:"use_type"` // 0无门槛 1有门槛；nil 时按 use_min_price 推断
+	CouponType    *int8   `json:"coupon_type"`
+	CouponTime    uint    `json:"coupon_time"`
+	UseStartTime  string  `json:"use_start_time"`
+	UseEndTime    string  `json:"use_end_time"`
+	IsTimeout     *int8   `json:"is_timeout"`
+	StartTime     string  `json:"start_time"`
+	EndTime       string  `json:"end_time"`
+	SendType      *int8   `json:"send_type"`
+	FullReduction float64 `json:"full_reduction"`
+	TotalCount    uint    `json:"total_count"`
+	IsLimited     int8    `json:"is_limited"`
+	Sort          uint    `json:"sort"`
+	Status        *int8   `json:"status"`
 }
 
 // CouponSaveInput 管理端创建/更新入参别名。
 type CouponSaveInput = CreateCouponInput
+
+// CouponListFilter 管理端列表筛选。
+type CouponListFilter struct {
+	Keyword   string
+	Status    *int8
+	SendType  *int8
+	StoreOnly bool   // mer_id > 0（商户优惠券）
+	MerIDs    []uint // 店铺类别等二次过滤
+}
+
+// CouponDetail 管理端优惠券详情（含领取/使用统计）。
+type CouponDetail struct {
+	Coupon
+	ReceivedTotal  int64  `json:"received_total"`
+	UsedTotal      int64  `json:"used_total"`
+	UseType        int8   `json:"use_type"`
+	MerName        string `json:"mer_name,omitempty"`
+	IsTrader       int8   `json:"is_trader,omitempty"`
+	TraderName     string `json:"trader_name,omitempty"`
+	CouponTypeName string `json:"coupon_type_name,omitempty"`
+	ClaimText      string `json:"claim_text,omitempty"`
+	ValidityText   string `json:"validity_text,omitempty"`
+}
+
+// StoreCouponListItem 平台「商户优惠券」列表行。
+type StoreCouponListItem struct {
+	Coupon
+	MerName        string `json:"mer_name"`
+	IsTrader       int8   `json:"is_trader"`
+	TraderName     string `json:"trader_name"`
+	CouponTypeName string `json:"coupon_type_name"`
+	ClaimText      string `json:"claim_text"`
+	ValidityText   string `json:"validity_text"`
+	ReceivedTotal  int64  `json:"received_total"`
+	UsedTotal      int64  `json:"used_total"`
+}
 
 type CouponSendInput struct {
 	Mark string `json:"mark"`

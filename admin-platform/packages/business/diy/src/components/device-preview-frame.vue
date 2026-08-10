@@ -28,6 +28,8 @@ const props = withDefaults(
     title?: string;
     /** 是否显示返回箭头 */
     showBack?: boolean;
+    /** 是否显示右侧「点击展开」快捷菜单按钮 */
+    showExpand?: boolean;
     /** 隐藏导航栏（H5 iframe 全页预览时由页面自带导航） */
     hideNav?: boolean;
     /** 导航栏是否高亮（如 DIY「页面设置」选中） */
@@ -46,6 +48,7 @@ const props = withDefaults(
     showDeviceSwitcher: true,
     title: '页面标题',
     showBack: true,
+    showExpand: false,
     hideNav: false,
     navActive: false,
     sideGutter: 52,
@@ -59,10 +62,30 @@ const props = withDefaults(
 const emit = defineEmits<{
   'nav-click': [];
   'back-click': [];
+  'expand-click': [];
   'update:device': [PreviewDevice];
 }>();
 
+const expandOpen = ref(false);
+const expandMenus = [
+  { key: 'home', label: '首页', icon: '⌂' },
+  { key: 'search', label: '搜索', icon: '⌕' },
+  { key: 'cart', label: '购物车', icon: '🛒' },
+  { key: 'favorite', label: '我的收藏', icon: '☆' },
+  { key: 'user', label: '个人中心', icon: '☺' },
+] as const;
+
 const internalDevice = ref<PreviewDevice>(readStoredPreviewDevice());
+
+function toggleExpand(event: Event) {
+  event.stopPropagation();
+  expandOpen.value = !expandOpen.value;
+  emit('expand-click');
+}
+
+function closeExpand() {
+  expandOpen.value = false;
+}
 
 const activeDevice = computed<PreviewDevice>(
   () => props.device ?? internalDevice.value,
@@ -235,27 +258,57 @@ const outerStyle = computed(() => {
           :class="{ 'is-active': navActive }"
           @click="emit('nav-click')"
         >
-          <button
-            v-if="showBack"
-            type="button"
-            class="device-preview__back"
-            aria-label="返回"
-            @click.stop="emit('back-click')"
-          >
-            <svg viewBox="0 0 12 20" width="12" height="20">
-              <path
-                d="M10.5 1.5 2 10l8.5 8.5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-          <div v-else class="device-preview__back-spacer" />
+          <div class="device-preview__nav-left">
+            <button
+              v-if="showBack"
+              type="button"
+              class="device-preview__back"
+              aria-label="返回"
+              @click.stop="emit('back-click')"
+            >
+              <svg viewBox="0 0 12 20" width="12" height="20">
+                <path
+                  d="M10.5 1.5 2 10l8.5 8.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              v-if="showExpand"
+              type="button"
+              class="device-preview__expand"
+              aria-label="点击展开"
+              title="点击展开"
+              @click="toggleExpand"
+            >
+              <span class="device-preview__expand-line" />
+              <span class="device-preview__expand-line" />
+              <span class="device-preview__expand-line" />
+            </button>
+          </div>
           <div class="device-preview__title">{{ title }}</div>
           <div class="device-preview__nav-right" />
+
+          <div
+            v-if="showExpand && expandOpen"
+            class="device-preview__expand-menu"
+            @click.stop
+          >
+            <button
+              v-for="item in expandMenus"
+              :key="item.key"
+              type="button"
+              class="device-preview__expand-item"
+              @click="closeExpand"
+            >
+              <span class="device-preview__expand-icon">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- 3. 内容区：白底对齐屏宽；gutter 仅供工具条伸出；滚动条隐藏 -->
@@ -669,23 +722,90 @@ const outerStyle = computed(() => {
   box-shadow: inset 0 0 0 2px hsl(var(--primary));
 }
 
-.device-preview__back,
-.device-preview__back-spacer,
+.device-preview__nav-left {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  align-items: center;
+  min-width: 44px;
+  height: 44px;
+}
+
 .device-preview__nav-right {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
 }
 
-.device-preview__back {
+.device-preview__back,
+.device-preview__expand {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #111;
   cursor: pointer;
+}
+
+.device-preview__expand {
+  flex-direction: column;
+  gap: 3px;
+  border-radius: 16px;
+  background: rgb(0 0 0 / 6%);
+}
+
+.device-preview__expand-line {
+  display: block;
+  width: 14px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: #222;
+}
+
+.device-preview__expand-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 8px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 148px;
+  padding: 8px 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
+}
+
+.device-preview__expand-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: #303133;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.device-preview__expand-item:hover {
+  background: #f5f7fa;
+}
+
+.device-preview__expand-icon {
+  width: 18px;
+  color: #606266;
+  font-size: 14px;
+  text-align: center;
 }
 
 .device-preview__title {

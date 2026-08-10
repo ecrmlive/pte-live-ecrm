@@ -698,7 +698,7 @@ const [ShopDrawer, shopDrawerApi] = useVbenDrawer({
       shopDrawerApi.close();
       await loadCounts();
       gridApi.reload();
-    } finally {
+  } finally {
       shopDrawerApi.unlock();
     }
   },
@@ -1027,7 +1027,7 @@ onMounted(async () => {
             >
               已关闭店铺({{ closedCount }})
             </button>
-          </div>
+        </div>
           <div class="merchant-toolbar__actions">
             <ElButton
               v-if="canManage"
@@ -1037,7 +1037,7 @@ onMounted(async () => {
             >
               新增店铺
             </ElButton>
-          </div>
+      </div>
         </div>
       </template>
 
@@ -1305,7 +1305,7 @@ onMounted(async () => {
                         label: 'label',
                         children: 'children',
                       }"
-                      clearable
+            clearable
                       filterable
                       class="w-full"
                       placeholder="请选择所属商户"
@@ -1439,7 +1439,7 @@ onMounted(async () => {
                   <div class="shop-desc">
                     <span class="label">手续费单独设置</span>
                     <span class="value">{{ form.commission_switch ? '开启' : '关闭' }}</span>
-                  </div>
+        </div>
                   <div class="shop-desc">
                     <span class="label">手续费</span>
                     <span class="value">
@@ -1448,7 +1448,7 @@ onMounted(async () => {
                         （注：此处如未设置手续费，系统会自动读取店铺分类下对应手续费；此处已设置，则优先以此处设置为准）
                       </span>
                     </span>
-                  </div>
+      </div>
                   <div class="shop-desc">
                     <span class="label">店铺保证金</span>
                     <span class="value">{{ marginAmountText }}</span>
@@ -1517,7 +1517,7 @@ onMounted(async () => {
                   </div>
                 </div>
               </div>
-            </template>
+          </template>
             <template v-else>
             <div class="shop-section">
               <div class="shop-section__title">费用信息</div>
@@ -1633,7 +1633,7 @@ onMounted(async () => {
                 </ElFormItem>
               </ElForm>
             </div>
-            </template>
+          </template>
           </ElTabPane>
 
           <ElTabPane label="账号信息" name="account">
@@ -1659,7 +1659,7 @@ onMounted(async () => {
                   </div>
                 </div>
               </div>
-            </template>
+          </template>
             <template v-else>
             <div class="shop-section">
               <div class="shop-section__title">登录账号</div>
@@ -1695,7 +1695,7 @@ onMounted(async () => {
                   <ElInput v-model="form.mer_phone" maxlength="32" />
                 </ElFormItem>
               </ElForm>
-            </div>
+      </div>
 
             <div class="shop-section">
               <div class="shop-section__title">财务账号</div>
@@ -1709,7 +1709,7 @@ onMounted(async () => {
                   <div class="field-help">服务商特约商户申请单号或标识。</div>
                 </ElFormItem>
               </ElForm>
-            </div>
+      </div>
             </template>
           </ElTabPane>
 

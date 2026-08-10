@@ -49,6 +49,7 @@ type productRow struct {
 	SVIPPriceType   int8      `gorm:"column:svip_price_type"`
 	SVIPPrice       float64   `gorm:"column:svip_price"`
 	Status          string    `gorm:"column:status"`
+	IsGiftBag       int8      `gorm:"column:is_gift_bag"`
 	Version         uint64    `gorm:"column:version"`
 	CreatedAt       time.Time `gorm:"column:created_at"`
 }
@@ -223,7 +224,7 @@ func (h *Handler) audit(c *gin.Context) {
 	var row productRow
 	var command productAuditOutbox
 	err := h.merchantDB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.is_gift_bag,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id").Where("p.id = ?", id).Scan(&row).Error; err != nil {
 			return err
 		}
 		if row.ID == 0 {
@@ -276,7 +277,7 @@ func (h *Handler) audit(c *gin.Context) {
 }
 
 func (h *Handler) base(c *gin.Context, merchantIDs []uint64) *gorm.DB {
-	q := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
+	q := h.merchantDB.WithContext(c.Request.Context()).Table("qixi_crm_m_product AS p").Select("p.id,p.store_id,s.merchant_id,m.name AS merchant_name,s.name AS store_name,p.title,p.category_id,p.store_category_id,p.brand_name,p.svip_price_type,p.svip_price,p.status,p.is_gift_bag,p.version,p.created_at").Joins("JOIN qixi_crm_m_store AS s ON s.id = p.store_id").Joins("JOIN qixi_crm_m_merchant AS m ON m.id = s.merchant_id")
 	if merchantIDs != nil {
 		q = q.Where("s.merchant_id IN ?", merchantIDs)
 	}

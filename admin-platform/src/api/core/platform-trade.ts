@@ -101,6 +101,7 @@ export function listPlatformOrdersApi(params: {
   date_from?: string;
   date_to?: string;
   delivery_type?: string;
+  is_spread?: 0 | 1;
   keyword?: string;
   limit: number;
   mer_category_id?: number;
@@ -116,9 +117,11 @@ export function listPlatformOrdersApi(params: {
   product_name?: string;
   product_type?: number;
   real_name?: string;
+  spread_keyword?: string;
   status?: number;
   store_id?: number;
   tab_status?: string;
+  top_spread_keyword?: string;
   user_search_keyword?: string;
   user_search_type?: string;
 }) {
@@ -130,6 +133,8 @@ export function getPlatformOrderTabCountsApi(params?: {
   date_from?: string;
   date_to?: string;
   delivery_type?: string;
+  is_spread?: 0 | 1;
+  keyword?: string;
   mer_category_id?: number;
   mer_id?: number;
   mer_type_id?: number;
@@ -138,7 +143,9 @@ export function getPlatformOrderTabCountsApi(params?: {
   pay_type?: number;
   product_name?: string;
   product_type?: number;
+  spread_keyword?: string;
   store_id?: number;
+  top_spread_keyword?: string;
   user_search_keyword?: string;
   user_search_type?: string;
 }) {

@@ -75,10 +75,22 @@ SET `parent_id`=522,
     `status`=1
 WHERE `id`=20927 OR `code`='marketing.spread.read';
 
--- 平台角色补授权
+-- 分销配置保存按钮（RequireAdminMenu 仅认 kind=button）
+INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
+  (21051,5122,'promoter.config.manage','保存分销配置','','systemForm/Basics/distribution_tabs','button',1,1)
+ON DUPLICATE KEY UPDATE
+  `parent_id`=VALUES(`parent_id`),
+  `code`=VALUES(`code`),
+  `title`=VALUES(`title`),
+  `route_path`=VALUES(`route_path`),
+  `kind`=VALUES(`kind`),
+  `sort`=VALUES(`sort`),
+  `status`=1;
+
+-- 平台 / 运营角色补授权
 INSERT IGNORE INTO `qixi_crm_a_role_menu` (`role_id`,`menu_id`)
 SELECT r.id, m.id
 FROM `qixi_crm_a_role` AS r
 CROSS JOIN `qixi_crm_a_menu` AS m
-WHERE r.code = 'platform'
-  AND m.id IN (220,522,1373,1374,1375,677,685,686,731,1296,9169,9368,5122,20927);
+WHERE r.code IN ('platform','operations')
+  AND m.id IN (220,522,1373,1374,1375,677,685,686,731,1296,9169,9368,5122,20927,21051);

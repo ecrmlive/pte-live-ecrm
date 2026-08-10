@@ -33,8 +33,6 @@ const images = computed(() => {
   return list;
 });
 
-const thumbImages = computed(() => images.value.slice(0, 6));
-
 watch(
   () => props.product,
   () => {
@@ -55,19 +53,6 @@ const showOtPrice = computed(() => Number(props.product?.ot_price || 0) > 0);
 const stockText = computed(() => Number(props.product?.stock || 0));
 
 const salesText = computed(() => Number(props.product?.sales || 0));
-
-const storeBadge = computed(() => {
-  const name = String(props.product?.mer_type_name || '').trim();
-  return name || '';
-});
-
-const titleText = computed(
-  () => String(props.product?.title || '').trim() || '商品标题',
-);
-
-function selectImage(index: number) {
-  activeIndex.value = index;
-}
 
 function onCarouselClick() {
   if (images.value.length <= 1) return;
@@ -96,23 +81,6 @@ function onCarouselClick() {
     </div>
 
     <div class="goods-diy__price-row">
-      <div class="goods-diy__thumbs">
-        <button
-          v-for="(img, idx) in thumbImages"
-          :key="`${img}-${idx}`"
-          type="button"
-          class="goods-diy__thumb"
-          :class="{ 'is-active': idx === activeIndex }"
-          @click.stop="selectImage(idx)"
-        >
-          <img :src="img" alt="" />
-        </button>
-        <IconifyIcon
-          v-if="images.length > 2"
-          class="goods-diy__thumb-more"
-          icon="ant-design:right-outlined"
-        />
-      </div>
       <div class="goods-diy__price">
         <span class="goods-diy__yen">¥</span>
         <span class="goods-diy__amount">{{ priceText }}</span>
@@ -138,13 +106,6 @@ function onCarouselClick() {
     </div>
 
     <div class="goods-diy__info">
-      <div class="goods-diy__title-line">
-        <span v-if="storeBadge" class="goods-diy__badge">{{ storeBadge }}</span>
-        <span class="goods-diy__title">{{ titleText }}</span>
-      </div>
-      <div class="goods-diy__tags">
-        <span class="goods-diy__coupon">领券</span>
-      </div>
       <div class="goods-diy__stats">
         <span v-if="showOtPrice" class="goods-diy__ot">¥{{ otPriceText }}</span>
         <span v-else class="goods-diy__ot goods-diy__ot--placeholder" />
@@ -221,42 +182,9 @@ function onCarouselClick() {
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content: space-between;
   padding: 10px 12px 8px;
   background: #fff;
-}
-
-.goods-diy__thumbs {
-  display: flex;
-  flex-shrink: 0;
-  gap: 6px;
-  align-items: center;
-}
-
-.goods-diy__thumb {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  background: #fafafa;
-  cursor: pointer;
-}
-
-.goods-diy__thumb.is-active {
-  border-color: #e93323;
-}
-
-.goods-diy__thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.goods-diy__thumb-more {
-  color: #bbb;
-  font-size: 12px;
 }
 
 .goods-diy__price {
@@ -264,7 +192,6 @@ function onCarouselClick() {
   flex: 1;
   gap: 2px;
   align-items: baseline;
-  justify-content: center;
   min-width: 0;
   color: #e93323;
   font-weight: 700;
@@ -337,51 +264,6 @@ function onCarouselClick() {
   gap: 8px;
   padding: 12px;
   background: #fff;
-}
-
-.goods-diy__title-line {
-  display: -webkit-box;
-  overflow: hidden;
-  color: #222;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.goods-diy__badge {
-  display: inline-block;
-  margin-right: 6px;
-  padding: 1px 4px;
-  border-radius: 2px;
-  background: #e93323;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 16px;
-  vertical-align: 1px;
-}
-
-.goods-diy__title {
-  word-break: break-word;
-}
-
-.goods-diy__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.goods-diy__coupon {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 6px;
-  border: 1px solid #e93323;
-  border-radius: 2px;
-  color: #e93323;
-  font-size: 11px;
-  line-height: 18px;
 }
 
 .goods-diy__stats {

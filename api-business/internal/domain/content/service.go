@@ -107,6 +107,8 @@ func AgreeCatalog() []AgreeMeta {
 		{Key: "sys_product_presell_agree", Label: "预售协议"},
 		{Key: "business_entry_agree", Label: "商户入驻协议"},
 		{Key: "promoter_explain", Label: "分销说明"},
+		{Key: "sys_extension_agree", Label: "佣金说明"},
+		{Key: "sys_brokerage", Label: "分销等级规则"},
 		{Key: "sys_about_us", Label: "关于我们"},
 		{Key: "sys_refund_agree", Label: "退款协议"},
 		{Key: "sys_cancel_agree", Label: "取消订单说明"},
