@@ -128,16 +128,19 @@ func TestUserAdminCommandValidation(t *testing.T) {
 	if !validUserCommand("虚构中文工单", "user-command-9101") || validUserCommand("x", "user-command-9101") || validUserCommand("虚构中文工单", "short") {
 		t.Fatal("user admin command validation mismatch")
 	}
-	for _, value := range []string{"", "/demo/avatar.png", "https://example.invalid/avatar.png"} {
+	for _, value := range []string{"", "/demo/avatar.png", "https://example.invalid/avatar.png", "/media/avatar/中文头像.png"} {
 		if !validAvatarURL(value) {
 			t.Fatalf("valid avatar URL rejected: %q", value)
 		}
 	}
-	if validAvatarURL("http://example.invalid/avatar.png") || validAvatarURL("javascript:alert(1)") {
+	if validAvatarURL("http://example.invalid/avatar.png") || validAvatarURL("javascript:alert(1)") || validAvatarURL("../etc/passwd") {
 		t.Fatal("unsafe avatar URL accepted")
 	}
 	if fingerprint("create", "DEMO-PC-USER", "七禧演示") != fingerprint("create", "DEMO-PC-USER", "七禧演示") {
 		t.Fatal("request fingerprint must be stable")
+	}
+	if !looksLikeMobileAccount("13800138000") || looksLikeMobileAccount("1380013800") || looksLikeMobileAccount("23800138000") || looksLikeMobileAccount("1380013800a") {
+		t.Fatal("mobile account shape validation mismatch")
 	}
 }
 

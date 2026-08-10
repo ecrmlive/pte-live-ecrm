@@ -87,12 +87,26 @@ INSERT INTO `qixi_crm_b_broadcast_room_goods` (`broadcast_room_id`,`product_id`,
   (7103,1001,1,1),(7103,1003,1,2),(7104,1101,1,1),(7105,1201,1,1),(7106,1002,1,1),(7106,1001,1,2)
 ON DUPLICATE KEY UPDATE `on_sale`=VALUES(`on_sale`),`sort`=VALUES(`sort`);
 
+-- 积分商品分类（对齐 CRMEB store_category.type=1）
+INSERT INTO `qixi_crm_b_points_category`
+  (`store_category_id`,`pid`,`cate_name`,`path`,`sort`,`pic`,`is_show`,`level`,`mer_id`,`is_hot`,`type`,`is_del`) VALUES
+  (71,0,'数码家电','/',100,'',1,0,0,0,1,0),
+  (72,0,'美妆护肤','/',90,'',1,0,0,0,1,0),
+  (73,0,'居家日用','/',80,'',1,0,0,0,1,0),
+  (74,0,'服饰箱包','/',70,'',1,0,0,0,1,0),
+  (75,0,'食品饮料','/',60,'',0,0,0,0,1,0)
+ON DUPLICATE KEY UPDATE `cate_name`=VALUES(`cate_name`),`sort`=VALUES(`sort`),`is_show`=VALUES(`is_show`),`is_del`=0;
+
 -- 积分商城消费投影：库存与所需积分均由业务事件同步，以下为本地中文验收夹具。
-INSERT INTO `qixi_crm_b_points_product_view` (`product_id`,`merchant_id`,`store_id`,`merchant_name`,`store_name`,`title`,`cover_url`,`original_price`,`points_required`,`stock`,`sale_status`,`version`) VALUES
-  (1005,1,1,'CRM Live服饰商户','CRM Live服饰旗舰店','真丝印花方巾礼盒','/demo/product-scarf-v1.png',169.00,120,20,1,1),
-  (1105,2,2,'CRM Live居家商户','CRM Live居家优选店','真丝睡眠眼罩方巾组','/demo/product-scarf-v1.png',139.00,180,16,1,1),
-  (1204,3,3,'CRM Live数码商户','CRM Live数码生活店','便携保温杯清洁套装','/demo/product-tumbler-v1.png',179.00,220,12,1,1)
-ON DUPLICATE KEY UPDATE `merchant_id`=VALUES(`merchant_id`),`store_id`=VALUES(`store_id`),`merchant_name`=VALUES(`merchant_name`),`store_name`=VALUES(`store_name`),`title`=VALUES(`title`),`cover_url`=VALUES(`cover_url`),`original_price`=VALUES(`original_price`),`points_required`=VALUES(`points_required`),`stock`=VALUES(`stock`),`sale_status`=VALUES(`sale_status`),`version`=VALUES(`version`),`updated_at`=NOW();
+INSERT INTO `qixi_crm_b_points_product_view`
+  (`product_id`,`merchant_id`,`store_id`,`merchant_name`,`store_name`,`title`,`cate_id`,`cover_url`,`original_price`,`points_required`,`stock`,`sales`,`sort`,`sale_status`,`source_product_id`,`is_del`,`version`,`create_time`) VALUES
+  (1005,1,1,'CRM Live服饰商户','CRM Live服饰旗舰店','真丝印花方巾礼盒',71,'/demo/product-scarf-v1.png',16.90,120,20,8,100,1,0,0,1,DATE_SUB(NOW(), INTERVAL 9 DAY)),
+  (1105,2,2,'CRM Live居家商户','CRM Live居家优选店','真丝睡眠眼罩方巾组',72,'/demo/product-scarf-v1.png',13.90,180,16,5,90,1,0,0,1,DATE_SUB(NOW(), INTERVAL 7 DAY)),
+  (1204,3,3,'CRM Live数码商户','CRM Live数码生活店','便携保温杯清洁套装',73,'/demo/product-tumbler-v1.png',17.90,220,12,3,80,1,0,0,1,DATE_SUB(NOW(), INTERVAL 5 DAY)),
+  (1401,1,1,'CRM Live服饰商户','CRM Live服饰旗舰店','轻奢羊绒围巾兑换券',71,'/demo/product-knit-v1.png',39.90,500,30,12,70,1,1001,0,1,DATE_SUB(NOW(), INTERVAL 3 DAY)),
+  (1402,2,2,'CRM Live居家商户','CRM Live居家优选店','居家香氛体验兑换',72,'/demo/product-fragrance-v1.png',29.90,360,18,0,60,0,1302,0,1,DATE_SUB(NOW(), INTERVAL 2 DAY)),
+  (1403,3,3,'CRM Live数码商户','CRM Live数码生活店','跑步鞋护理礼包',73,'/demo/product-shoes-v1.png',49.90,680,10,2,50,1,0,0,1,DATE_SUB(NOW(), INTERVAL 1 DAY))
+ON DUPLICATE KEY UPDATE `merchant_id`=VALUES(`merchant_id`),`store_id`=VALUES(`store_id`),`merchant_name`=VALUES(`merchant_name`),`store_name`=VALUES(`store_name`),`title`=VALUES(`title`),`cate_id`=VALUES(`cate_id`),`cover_url`=VALUES(`cover_url`),`original_price`=VALUES(`original_price`),`points_required`=VALUES(`points_required`),`stock`=VALUES(`stock`),`sales`=VALUES(`sales`),`sort`=VALUES(`sort`),`sale_status`=VALUES(`sale_status`),`source_product_id`=VALUES(`source_product_id`),`is_del`=0,`version`=VALUES(`version`),`updated_at`=NOW();
 
 -- 预约服务公开活动夹具。排期余量来自 qixi_crm_b_reservation_booking，测试数据不使用真实用户身份。
 INSERT INTO `qixi_crm_b_product_view` (`product_id`,`merchant_id`,`store_id`,`merchant_name`,`store_name`,`category_id`,`title`,`cover_url`,`price`,`original_price`,`product_type`,`sales`,`stock`,`sale_status`,`version`,`updated_at`) VALUES
@@ -184,12 +198,20 @@ INSERT INTO `qixi_crm_b_product_comment` (`id`,`order_item_id`,`user_id`,`produc
 ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`store_id`=VALUES(`store_id`),`score`=VALUES(`score`),`content`=VALUES(`content`),`media`=VALUES(`media`),`source`=VALUES(`source`),`virtual_author_name`=VALUES(`virtual_author_name`),`virtual_author_avatar`=VALUES(`virtual_author_avatar`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`deleted_at`=NULL;
 
 -- 用户运营夹具均为虚构中文名称，仅用于后台标签、分组与打标闭环验收。
-INSERT INTO `qixi_crm_b_user_label` (`label_id`,`label_name`,`sort`,`is_del`) VALUES
-  (9401,'高频复购用户',30,0),(9402,'香氛兴趣用户',20,0),(9403,'售后关怀用户',10,0)
-ON DUPLICATE KEY UPDATE `label_name`=VALUES(`label_name`),`sort`=VALUES(`sort`),`is_del`=VALUES(`is_del`);
-INSERT INTO `qixi_crm_b_user_group` (`group_id`,`group_name`,`sort`,`is_del`) VALUES
-  (9501,'CRM Live精选会员',20,0),(9502,'新品体验用户',10,0)
-ON DUPLICATE KEY UPDATE `group_name`=VALUES(`group_name`),`sort`=VALUES(`sort`),`is_del`=VALUES(`is_del`);
+INSERT INTO `qixi_crm_b_user_label` (`label_id`,`label_name`,`sort`,`is_del`,`create_time`) VALUES
+  (9401,'高频复购用户',30,0,'2026-03-01 10:00:00'),
+  (9402,'香氛兴趣用户',20,0,'2026-03-02 11:00:00'),
+  (9403,'售后关怀用户',10,0,'2026-03-03 12:00:00'),
+  (9404,'提示',5,0,'2026-03-04 13:00:00'),
+  (9405,'测试',1,0,'2026-03-05 14:00:00')
+ON DUPLICATE KEY UPDATE `label_name`=VALUES(`label_name`),`sort`=VALUES(`sort`),`is_del`=VALUES(`is_del`),`create_time`=VALUES(`create_time`);
+INSERT INTO `qixi_crm_b_user_group` (`group_id`,`group_name`,`sort`,`is_del`,`create_time`) VALUES
+  (9501,'精选会员',40,0,'2026-03-01 10:00:00'),
+  (9502,'新品体验用户',30,0,'2026-03-02 11:00:00'),
+  (9503,'高价值复购用户',20,0,'2026-03-03 12:00:00'),
+  (9504,'沉睡召回用户',10,0,'2026-03-04 13:00:00'),
+  (9505,'活动邀约用户',5,0,'2026-03-05 14:00:00')
+ON DUPLICATE KEY UPDATE `group_name`=VALUES(`group_name`),`sort`=VALUES(`sort`),`is_del`=VALUES(`is_del`),`create_time`=VALUES(`create_time`);
 INSERT INTO `qixi_crm_b_user_label_relation` (`uid`,`label_id`) VALUES
   (9101,9401),(9101,9402)
 ON DUPLICATE KEY UPDATE `label_id`=VALUES(`label_id`);
@@ -287,9 +309,10 @@ INSERT INTO `qixi_crm_b_user_invoice_profile` (`id`,`user_id`,`type`,`title`,`ta
 ON DUPLICATE KEY UPDATE `type`=VALUES(`type`),`title`=VALUES(`title`),`tax_no`=VALUES(`tax_no`),`email`=VALUES(`email`),`is_default`=VALUES(`is_default`);
 
 -- 意见反馈夹具仅用于本地验收，内容为虚构中文建议，不包含联系方式。
-INSERT INTO `qixi_crm_b_user_feedback_category` (`id`,`name`,`sort`,`status`) VALUES
-  (9711,'功能建议',10,1),(9712,'订单问题',20,1),(9713,'使用体验',30,1),(9714,'历史分类',90,0)
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`deleted_at`=NULL;
+INSERT INTO `qixi_crm_b_user_feedback_category` (`id`,`pid`,`name`,`sort`,`status`) VALUES
+  (9711,0,'功能建议',10,1),(9712,0,'订单问题',20,1),(9713,0,'使用体验',30,1),(9714,0,'历史分类',90,0),
+  (9720,0,'测试',1,1),(9721,9720,'测试下',1,1)
+ON DUPLICATE KEY UPDATE `pid`=VALUES(`pid`),`name`=VALUES(`name`),`sort`=VALUES(`sort`),`status`=VALUES(`status`),`deleted_at`=NULL;
 INSERT INTO `qixi_crm_b_user_feedback` (`id`,`user_id`,`category_id`,`type`,`content`,`status`,`reply`,`created_at`,`updated_at`) VALUES
   (9701,9101,9711,'功能建议','希望商品列表支持销量和价格排序。','replied','已在商品列表提供销量、价格升降序筛选。',DATE_SUB(NOW(),INTERVAL 2 DAY),NOW()),
   (9702,9101,9712,'订单问题','希望待付款订单可以直接取消。','pending','',DATE_SUB(NOW(),INTERVAL 1 DAY),NOW()),
@@ -351,7 +374,41 @@ INSERT INTO `qixi_crm_b_marketing_activity_view` (`activity_id`,`store_id`,`acti
   (5002,1,'seckill','头层牛皮托特包限时抢购',JSON_OBJECT('product_id',1002,'seckill_price',329.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
   (5003,2,'seckill','无火藤条香氛礼盒限时抢购',JSON_OBJECT('product_id',1101,'seckill_price',169.00,'time_slots',JSON_ARRAY('00:00','14:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
   (5004,3,'seckill','智能数显保温杯限时抢购',JSON_OBJECT('product_id',1201,'seckill_price',149.00,'time_slots',JSON_ARRAY('07:00','19:00')),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY)),
-  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT('package_price',199.00,'product_ids',JSON_ARRAY(1004,1006),'free_shipping',true,'remark','中文演示套餐'),1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
+  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT(
+      'package_price',199.00,'package_type',1,'type',1,'is_limit',0,'limit_num',0,'is_time',1,
+      'free_shipping',true,'remark','中文演示搭配套餐','create_time','2026-07-01 09:30:00',
+      'product_ids',JSON_ARRAY(1004,1006),
+      'products',JSON_ARRAY(
+        JSON_OBJECT('product_id',1004,'store_name','无火藤条香氛礼盒','image','https://picsum.photos/seed/qixi-discount-5101a/120/120','type',0,'spec','| 129.00'),
+        JSON_OBJECT('product_id',1006,'store_name','香氛扩香石套装','image','https://picsum.photos/seed/qixi-discount-5101b/120/120','type',1,'spec','| 39.00')
+      )
+    ),1,1,'2026-07-01 00:00:00','2026-08-31 23:59:59'),
+  (5102,1,'discount','通勤数码固定套餐',JSON_OBJECT(
+      'package_price',299.00,'package_type',0,'type',0,'is_limit',1,'limit_num',80,'is_time',0,
+      'free_shipping',false,'remark','中文演示固定套餐·不限时','create_time','2026-06-18 14:20:00',
+      'product_ids',JSON_ARRAY(1201,1202),
+      'products',JSON_ARRAY(
+        JSON_OBJECT('product_id',1201,'store_name','智能数显保温杯','image','https://picsum.photos/seed/qixi-discount-5102a/120/120','type',0,'spec','| 149.00'),
+        JSON_OBJECT('product_id',1202,'store_name','便携数据线三件套','image','https://picsum.photos/seed/qixi-discount-5102b/120/120','type',0,'spec','| 59.00')
+      )
+    ),1,1,NULL,NULL),
+  (5103,2,'discount','居家香氛搭配套餐',JSON_OBJECT(
+      'package_price',168.00,'package_type',1,'type',1,'is_limit',1,'limit_num',25,'is_time',1,
+      'free_shipping',true,'remark','中文演示搭配套餐·限时限量','create_time','2026-07-10 11:05:00',
+      'product_ids',JSON_ARRAY(1101,1102),
+      'products',JSON_ARRAY(
+        JSON_OBJECT('product_id',1101,'store_name','无火藤条香氛礼盒','image','https://picsum.photos/seed/qixi-discount-5103a/120/120','type',0,'spec','| 99.00'),
+        JSON_OBJECT('product_id',1102,'store_name','棉柔香氛巾','image','https://picsum.photos/seed/qixi-discount-5103b/120/120','type',1,'spec','| 29.00')
+      )
+    ),1,1,'2026-07-15 00:00:00','2026-09-15 23:59:59'),
+  (5104,2,'discount','秋日居家固定套餐',JSON_OBJECT(
+      'package_price',88.00,'package_type',0,'type',0,'is_limit',0,'limit_num',0,'is_time',0,
+      'free_shipping',true,'remark','中文演示固定套餐·不限时不限量','create_time','2026-08-01 16:40:00',
+      'product_ids',JSON_ARRAY(1103),
+      'products',JSON_ARRAY(
+        JSON_OBJECT('product_id',1103,'store_name','棉柔毛巾三件套','image','https://picsum.photos/seed/qixi-discount-5104a/120/120','type',0,'spec','| 88.00')
+      )
+    ),0,1,NULL,NULL)
 ON DUPLICATE KEY UPDATE `store_id`=VALUES(`store_id`),`name`=VALUES(`name`),`rules`=VALUES(`rules`),`status`=VALUES(`status`),`version`=VALUES(`version`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`);
 
 -- 直播公开读模型夹具。直播流地址仅为本地演示标识，客户端不会把它当作生产推流密钥。
@@ -480,10 +537,13 @@ ON DUPLICATE KEY UPDATE reason=VALUES(reason),target_admin_id=VALUES(target_admi
 
 
 -- 资金域中文模拟数据：仅提供可展示方案，不创建“已支付”订单，不伪造渠道到账。
-INSERT INTO `qixi_crm_b_recharge_plan` (`id`,`name`,`amount`,`bonus_amount`,`status`,`sort`) VALUES
-  (980001,'100 元充值',100.00,8.00,1,10),
-  (980002,'300 元充值',300.00,35.00,1,20),
-  (980003,'500 元充值',500.00,80.00,1,30)
+INSERT INTO `qixi_crm_b_recharge_plan` (`id`,`name`,`amount`,`bonus_amount`,`status`,`sort`,`created_at`) VALUES
+  (980001,'1元充值',1.00,0.00,1,1,'2026-08-01 10:00:00'),
+  (980002,'5元充值',5.00,0.50,1,2,'2026-08-01 10:05:00'),
+  (980003,'10元充值',10.00,1.00,1,3,'2026-08-01 10:10:00'),
+  (980004,'50元充值',50.00,5.00,1,4,'2026-08-02 09:00:00'),
+  (980005,'100元充值',100.00,10.00,1,5,'2026-08-02 09:10:00'),
+  (980006,'400元充值',400.00,40.00,1,6,'2026-08-03 11:00:00')
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`amount`=VALUES(`amount`),`bonus_amount`=VALUES(`bonus_amount`),`status`=VALUES(`status`),`sort`=VALUES(`sort`),`updated_at`=NOW();
 INSERT INTO `qixi_crm_b_svip_interest` (`id`,`name`,`description`,`icon_url`,`status`,`sort`,`version`,`deleted_at`) VALUES
   (981001,'会员专享价','符合条件的商品可按会员专享价结算。','/demo/svip-price.png',1,10,1,NULL),

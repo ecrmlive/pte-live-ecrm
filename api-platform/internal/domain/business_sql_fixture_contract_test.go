@@ -683,10 +683,13 @@ func TestUserTagDomainUsesBusinessTablesChineseFixtureAndRBAC(t *testing.T) {
 		t.Fatalf("read usertag handler: %v", err)
 	}
 	for _, required := range []string{
-		"labelManage := middleware.RequirePlatformMenu",
-		"groupManage := middleware.RequirePlatformMenu",
-		"r.GET(\"/user/labels\", labelManage, h.ListLabels)",
-		"r.GET(\"/user/groups\", groupManage, h.ListGroups)",
+		"menuUserLabelRead",
+		"menuUserLabelManage",
+		"menuUserGroupRead",
+		"menuUserGroupManage",
+		"r.GET(\"/user/labels\", access, labelRead, h.ListLabels)",
+		"r.GET(\"/user/groups\", access, groupRead, h.ListGroups)",
+		"r.POST(\"/user/groups\", access, groupManage, h.CreateGroup)",
 	} {
 		if !strings.Contains(string(handler), required) {
 			t.Fatalf("usertag handler missing RBAC guard %q", required)
@@ -706,7 +709,7 @@ func TestUserTagDomainUsesBusinessTablesChineseFixtureAndRBAC(t *testing.T) {
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_label_relation`",
 		"INSERT INTO `qixi_crm_b_user_label`",
 		"高频复购用户",
-		"CRM Live精选会员",
+		"精选会员",
 	} {
 		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) {
 			t.Fatalf("usertag business schema or Chinese fixture missing %q", required)

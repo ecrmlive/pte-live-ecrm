@@ -12,13 +12,23 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { listPlatformProductsApi } from '#/api/core/platform-catalog';
 import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 
+const props = withDefaults(
+  defineProps<{
+    /** 多选模式（氛围图「指定商品」等） */
+    multiple?: boolean;
+  }>(),
+  { multiple: false },
+);
+
 const open = defineModel<boolean>('open', { default: false });
 
 const emit = defineEmits<{
+  confirm: [PlatformProduct[]];
   select: [PlatformProduct];
 }>();
 
 const selectedRow = ref<PlatformProduct | null>(null);
+const selectedRows = ref<PlatformProduct[]>([]);
 
 const formOptions: VbenFormProps = {
   actionLayout: 'inline',
@@ -44,8 +54,14 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions = reactive<VxeGridProps<PlatformProduct>>({
+  checkboxConfig: {
+    highlight: true,
+    reserve: true,
+    trigger: 'row',
+  },
   columns: [
-    { type: 'radio', width: 48 },
+    { type: 'radio', width: 48, visible: !props.multiple },
+    { type: 'checkbox', width: 48, visible: !!props.multiple },
     { field: 'product_id', title: 'ID', width: 80 },
     {
       field: 'image',
@@ -103,12 +119,22 @@ const gridOptions = reactive<VxeGridProps<PlatformProduct>>({
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions,
   gridEvents: {
+    checkboxAll({ records }: { records: PlatformProduct[] }) {
+      if (props.multiple) selectedRows.value = records;
+    },
+    checkboxChange({ records }: { records: PlatformProduct[] }) {
+      if (props.multiple) selectedRows.value = records;
+    },
     radioChange: onRadioChange,
   },
   gridOptions,
 });
 
-const canConfirm = computed(() => Boolean(selectedRow.value));
+const canConfirm = computed(() =>
+  props.multiple
+    ? selectedRows.value.length > 0
+    : Boolean(selectedRow.value),
+);
 
 function coverOf(row: PlatformProduct) {
   return resolveCosMediaUrl(String(row.image || '').trim());
@@ -119,6 +145,15 @@ function onRadioChange({ row }: { row: PlatformProduct }) {
 }
 
 function confirm() {
+  if (props.multiple) {
+    if (!selectedRows.value.length) {
+      ElMessage.warning('请选择商品');
+      return;
+    }
+    emit('confirm', [...selectedRows.value]);
+    open.value = false;
+    return;
+  }
   if (!selectedRow.value) {
     ElMessage.warning('请选择商品');
     return;
@@ -136,6 +171,7 @@ const [Modal, modalApi] = useVbenModal({
 watch(open, (visible) => {
   if (visible) {
     selectedRow.value = null;
+    selectedRows.value = [];
     void gridApi.reload();
     modalApi.open();
     return;

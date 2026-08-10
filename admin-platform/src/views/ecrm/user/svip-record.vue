@@ -2,11 +2,13 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
-import { ElAlert, ElCard, ElTag } from 'element-plus';
+import { Icon as IconifyIcon } from '@iconify/vue';
+import { ElAlert, ElTag } from 'element-plus';
 
+import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
@@ -15,6 +17,7 @@ import {
   type SvipOrder,
   type SvipOrderSummary,
 } from '#/api/core/platform-svip-plan';
+import { platformListPagerConfig } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   LIST_DATE_RANGE_FIELD,
@@ -22,106 +25,233 @@ import {
 } from '#/utils/list-form-defaults';
 
 const canRead = ref(false);
-const summary = ref<SvipOrderSummary>();
+const emptySummary = (): SvipOrderSummary => ({
+  paid_member_count: 0,
+  paid_amount: 0,
+  expired_member_count: 0,
+});
+const summary = ref<SvipOrderSummary>(emptySummary());
+const lastFormValues = ref<Record<string, unknown>>({});
 
-function orderStatusText(status: SvipOrder['status']) {
-  return (
-    { pending: '待支付', paid: '已支付', closed: '已关闭' }[status] || status
-  );
-}
-
-function orderStatusType(status: SvipOrder['status']) {
-  return (
-    { pending: 'warning', paid: 'success', closed: 'info' }[status] || 'info'
-  ) as 'info' | 'success' | 'warning';
-}
-
-const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
+const summaryCards = computed(() => [
   {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '订单号 / 用户 ID',
-    },
-    fieldName: 'keyword',
-    label: '关键词',
+    key: 'paid_member_count',
+    label: '累计付费会员人数',
+    value: String(summary.value.paid_member_count || 0),
+    icon: 'lucide:users',
+    tone: 'blue',
   },
   {
-    component: 'Select',
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: '待支付', value: 'pending' },
-        { label: '已支付', value: 'paid' },
-        { label: '已关闭', value: 'closed' },
-      ],
-      placeholder: '全部状态',
-    },
-    fieldName: 'status',
-    label: '状态',
+    key: 'paid_amount',
+    label: '累计支付会员费',
+    value: Number(summary.value.paid_amount || 0).toFixed(2),
+    icon: 'lucide:circle-dollar-sign',
+    tone: 'orange',
+  },
+  {
+    key: 'expired_member_count',
+    label: '累计已过期人数',
+    value: String(summary.value.expired_member_count || 0),
+    icon: 'lucide:history',
+    tone: 'pink',
   },
 ]);
 
+const PAY_TYPE_OPTIONS = [
+  { label: '微信', value: 'weixin' },
+  { label: '支付宝', value: 'alipay' },
+  { label: '小程序', value: 'routine' },
+  { label: '平台赠送', value: 'sys' },
+  { label: '免费', value: 'free' },
+];
+
+function payTypeText(payType?: string) {
+  const key = String(payType || '').trim();
+  if (!key) return '—';
+  if (key === 'wechat' || key === 'weixin') return '微信';
+  return (
+    {
+      alipay: '支付宝',
+      routine: '小程序',
+      sys: '平台赠送',
+      free: '免费',
+    }[key] || key
+  );
+}
+
+function payStatusText(row: SvipOrder) {
+  const payType = String(row.pay_type || '').trim();
+  if (payType === 'sys' || payType === 'free') return '无需支付';
+  return (
+    { pending: '未支付', paid: '已支付', closed: '已关闭' }[row.status] ||
+    row.status
+  );
+}
+
+function payStatusType(row: SvipOrder) {
+  const payType = String(row.pay_type || '').trim();
+  if (payType === 'sys' || payType === 'free') return 'info' as const;
+  return (
+    { pending: 'warning', paid: 'success', closed: 'info' }[row.status] || 'info'
+  ) as 'info' | 'success' | 'warning';
+}
+
+function endTimeText(row: SvipOrder) {
+  if (row.plan_type === 'lifetime') return '永久';
+  return row.end_time ? formatShanghaiDateTime(row.end_time) : '—';
+}
+
+function buildFilterParams(formValues?: Record<string, unknown>) {
+  const range = Array.isArray(formValues?.date_range)
+    ? formValues.date_range
+    : [];
+  return {
+    date_from: range[0] as string | undefined,
+    date_to: range[1] as string | undefined,
+    pay_type: String(formValues?.pay_type ?? '').trim() || undefined,
+    title: String(formValues?.title ?? '').trim() || undefined,
+    nickname: String(formValues?.nickname ?? '').trim() || undefined,
+  };
+}
+
+const formOptions: VbenFormProps = listFormOptionsDefaults(
+  [
+    {
+      ...LIST_DATE_RANGE_FIELD,
+      label: '时间选择',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: PAY_TYPE_OPTIONS,
+        placeholder: '请选择',
+      },
+      fieldName: 'pay_type',
+      label: '支付方式',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+        placeholder: '请输入会员卡名称',
+      },
+      fieldName: 'title',
+      label: '会员卡名称',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+        placeholder: '请输入用户名称搜索',
+      },
+      fieldName: 'nickname',
+      label: '用户名',
+    },
+  ],
+  {
+    commonConfig: { componentProps: { class: 'w-full' } },
+    wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    submitButtonOptions: { content: '搜索' },
+    handleSubmit: async (values) => {
+      lastFormValues.value = { ...values };
+      await gridApi.reload(values);
+    },
+    handleReset: async () => {
+      await formApi.resetForm();
+      const values = (await formApi.getValues()) ?? {};
+      lastFormValues.value = { ...values };
+      await gridApi.reload(values);
+    },
+  },
+);
+
+const [Form, formApi] = useVbenForm(formOptions);
+
 const gridOptions: VxeGridProps<SvipOrder> = {
   columns: [
-    { field: 'order_no', minWidth: 180, showOverflow: false, title: '会员订单号' },
-    { field: 'user_id', title: '用户 ID', width: 100 },
-    { field: 'plan_name', minWidth: 130, showOverflow: false, title: '会员类型' },
     {
-      field: 'duration_days',
-      formatter: ({ row }) =>
-        row.plan_type === 'lifetime' ? '永久' : `${row.duration_days} 天`,
-      title: '有效期',
-      width: 100,
+      field: 'order_no',
+      minWidth: 180,
+      showOverflow: 'tooltip',
+      title: '订单号',
+    },
+    {
+      field: 'nickname',
+      minWidth: 120,
+      showOverflow: 'tooltip',
+      title: '用户名',
+      formatter: ({ row }) => row.nickname || `用户 #${row.user_id}`,
+    },
+    {
+      field: 'phone',
+      minWidth: 120,
+      showOverflow: 'tooltip',
+      title: '手机号码',
+      formatter: ({ cellValue }) =>
+        cellValue === undefined || cellValue === null || cellValue === ''
+          ? '—'
+          : String(cellValue),
+    },
+    {
+      field: 'plan_name',
+      minWidth: 120,
+      showOverflow: 'tooltip',
+      title: '会员卡名称',
     },
     {
       field: 'amount',
-      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
-      title: '金额',
+      title: '支付金额(元)',
+      width: 110,
+      formatter: ({ cellValue }) => Number(cellValue || 0).toFixed(2),
+    },
+    {
+      field: 'pay_type',
+      title: '支付方式',
       width: 100,
+      formatter: ({ cellValue }) => payTypeText(String(cellValue || '')),
     },
     {
       field: 'status',
       slots: { default: 'status' },
-      title: '状态',
-      width: 90,
+      title: '支付状态',
+      width: 100,
     },
     {
       field: 'created_at',
-      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
       minWidth: 170,
-      title: '创建时间',
+      showOverflow: 'tooltip',
+      title: '购买时间',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
     },
     {
-      field: 'paid_at',
-      formatter: ({ cellValue }) =>
-        cellValue ? formatShanghaiDateTime(cellValue) : '—',
+      field: 'end_time',
       minWidth: 170,
-      title: '支付时间',
+      showOverflow: 'tooltip',
+      title: '到期时间',
+      formatter: ({ row }) => endTimeText(row),
     },
   ],
-  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
+  emptyText: '暂无数据',
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
         if (!canRead.value) return { items: [], total: 0 };
-        const range = Array.isArray(formValues?.date_range)
-          ? formValues.date_range
-          : [];
-        const status = String(formValues?.status ?? '').trim() || undefined;
+        const values =
+          formValues && Object.keys(formValues).length > 0
+            ? formValues
+            : lastFormValues.value;
+        const filters = buildFilterParams(values);
         const [listResult, stats] = await Promise.all([
           listSvipOrders({
             page: page.currentPage,
             limit: page.pageSize,
-            status,
-            keyword: String(formValues?.keyword ?? '').trim() || undefined,
-            date_from: range[0] as string | undefined,
-            date_to: range[1] as string | undefined,
+            ...filters,
           }),
-          getSvipOrderSummary(),
+          getSvipOrderSummary(filters).catch(() => emptySummary()),
         ]);
-        summary.value = stats;
+        summary.value = stats || emptySummary();
         return {
           items: listResult.list || [],
           total: listResult.total || 0,
@@ -130,6 +260,7 @@ const gridOptions: VxeGridProps<SvipOrder> = {
     },
   },
   rowConfig: { isHover: true, keyField: 'order_no' },
+  scrollX: { enabled: true },
   toolbarConfig: {
     custom: false,
     export: false,
@@ -139,7 +270,7 @@ const gridOptions: VxeGridProps<SvipOrder> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 onMounted(async () => {
   const [profile, codes] = await Promise.all([
@@ -163,22 +294,121 @@ onMounted(async () => {
       :closable="false"
     />
     <template v-else>
-      <div class="mb-4 grid grid-cols-2 gap-4 md:grid-cols-5">
-        <ElCard shadow="never">总订单：{{ summary?.total || 0 }}</ElCard>
-        <ElCard shadow="never">待支付：{{ summary?.pending || 0 }}</ElCard>
-        <ElCard shadow="never">已支付：{{ summary?.paid || 0 }}</ElCard>
-        <ElCard shadow="never">已关闭：{{ summary?.closed || 0 }}</ElCard>
-        <ElCard shadow="never">
-          已支付金额：¥{{ Number(summary?.paid_amount || 0).toFixed(2) }}
-        </ElCard>
+      <div class="svip-record-filter">
+        <Form />
       </div>
+
+      <div class="svip-record-summary">
+        <div class="svip-summary">
+          <div
+            v-for="card in summaryCards"
+            :key="card.key"
+            class="svip-summary__card"
+            :class="`svip-summary__card--${card.tone}`"
+          >
+            <div class="svip-summary__icon">
+              <IconifyIcon :icon="card.icon" />
+            </div>
+            <div class="svip-summary__body">
+              <div class="svip-summary__value">{{ card.value }}</div>
+              <div class="svip-summary__label">{{ card.label }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Grid>
         <template #status="{ row }">
-          <ElTag :type="orderStatusType(row.status)">
-            {{ orderStatusText(row.status) }}
+          <ElTag :type="payStatusType(row)">
+            {{ payStatusText(row) }}
           </ElTag>
         </template>
       </Grid>
     </template>
   </Page>
 </template>
+
+<style scoped>
+.svip-record-filter {
+  padding: 12px 8px 4px;
+  margin-bottom: 12px;
+  background: hsl(var(--card));
+  border-radius: 0.375rem;
+}
+
+.svip-record-summary {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: hsl(var(--card));
+  border-radius: 0.375rem;
+}
+
+.svip-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.svip-summary__card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  min-height: 88px;
+  padding: 20px 22px;
+  background: hsl(var(--background));
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 3%);
+}
+
+.svip-summary__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  color: #fff;
+  font-size: 24px;
+  border-radius: 50%;
+}
+
+.svip-summary__card--blue .svip-summary__icon {
+  background: #409eff;
+}
+
+.svip-summary__card--orange .svip-summary__icon {
+  background: #e6a23c;
+}
+
+.svip-summary__card--pink .svip-summary__icon {
+  background: #f56c6c;
+}
+
+.svip-summary__value {
+  color: var(--el-text-color-primary);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.svip-summary__label {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+@media (max-width: 1100px) {
+  .svip-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .svip-summary {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,22 +1,18 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
   ElForm,
   ElFormItem,
+  ElImage,
   ElInput,
   ElInputNumber,
   ElMessage,
-  ElMessageBox,
-  ElRadio,
-  ElRadioGroup,
-  ElTag,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -30,35 +26,30 @@ import {
   type MemberLevel,
   type MemberLevelInput,
 } from '#/api/core/platform-member-level';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
-import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+import ImageField from '#/components/shop/image-field.vue';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 
+const canRead = ref(false);
 const canManage = ref(false);
+const showTips = ref(true);
 const saving = ref(false);
 const editing = ref<MemberLevel>();
 const form = reactive<MemberLevelInput>({
   name: '',
   rank: 1,
-  rules: '{\n  "description": "满足成长规则后自动升级"\n}',
-  benefits: '[\n  "会员专享活动"\n]',
+  icon_url: '',
+  growth_value: 0,
+  bg_image: '',
   status: 1,
 });
 
-function prettyJSON(value: string) {
-  try {
-    return JSON.stringify(JSON.parse(value), null, 2);
-  } catch {
-    return value;
-  }
-}
-
-function benefitText(value: string) {
-  try {
-    const list = JSON.parse(value);
-    return Array.isArray(list) ? list.join('、') : '—';
-  } catch {
-    return '—';
-  }
+function iconSrc(url: string) {
+  return resolveCosMediaUrl(String(url || '').trim());
 }
 
 function resetForm() {
@@ -66,70 +57,59 @@ function resetForm() {
   Object.assign(form, {
     name: '',
     rank: 1,
-    rules: '{\n  "description": "满足成长规则后自动升级"\n}',
-    benefits: '[\n  "会员专享活动"\n]',
+    icon_url: '',
+    growth_value: 0,
+    bg_image: '',
     status: 1,
     version: undefined,
   });
 }
 
-const formOptions: VbenFormProps = listFormOptionsDefaults([
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '等级名称' },
-    fieldName: 'keyword',
-    label: '关键词',
-  },
-  {
-    component: 'Select',
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: '启用', value: 1 },
-        { label: '停用', value: 0 },
-      ],
-      placeholder: '全部状态',
-    },
-    fieldName: 'status',
-    label: '状态',
-  },
-]);
-
 const gridOptions: VxeGridProps<MemberLevel> = {
   columns: [
-    { field: 'name', minWidth: 140, showOverflow: false, title: '等级名称' },
-    { field: 'rank', title: '等级排序', width: 100 },
+    { field: 'id', title: 'ID', width: 88 },
     {
-      field: 'benefits',
-      formatter: ({ cellValue }) => benefitText(String(cellValue ?? '')),
-      minWidth: 240,
+      field: 'name',
+      minWidth: 140,
       showOverflow: false,
-      title: '权益',
+      title: '名称',
     },
-    { field: 'assigned_count', title: '当前用户数', width: 120 },
     {
-      field: 'status',
-      slots: { default: 'status' },
-      title: '状态',
-      width: 90,
+      field: 'icon_url',
+      slots: { default: 'icon' },
+      title: '等级图标',
+      width: 100,
     },
-    platformListActionColumn({ width: 150 }),
+    {
+      field: 'user_count',
+      title: '人数',
+      width: 100,
+    },
+    {
+      field: 'growth_value',
+      title: '所需成长值',
+      width: 120,
+    },
+    {
+      field: 'created_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue) || '—',
+      minWidth: 180,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 130 }),
   ],
-  pagerConfig: { enabled: false },
+  emptyText: '暂无数据',
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async (_ctx, formValues) => {
-        if (!canManage.value) return { items: [], total: 0 };
-        const keyword = String(formValues?.keyword ?? '').trim().toLowerCase();
-        const statusRaw = formValues?.status;
-        let list = (await listMemberLevels()).list || [];
-        if (keyword) {
-          list = list.filter((row) => row.name.toLowerCase().includes(keyword));
-        }
-        if (statusRaw === 0 || statusRaw === 1) {
-          list = list.filter((row) => row.status === Number(statusRaw));
-        }
-        return { items: list, total: list.length };
+      query: async ({ page }) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const list = (await listMemberLevels()).list || [];
+        const start = (page.currentPage - 1) * page.pageSize;
+        return {
+          items: list.slice(start, start + page.pageSize),
+          total: list.length,
+        };
       },
     },
   },
@@ -143,7 +123,7 @@ const gridOptions: VxeGridProps<MemberLevel> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
@@ -155,7 +135,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '新增会员等级' }).open();
+  formDrawerApi.setState({ title: '添加会员等级' }).open();
 }
 
 function openEdit(row: MemberLevel) {
@@ -163,8 +143,9 @@ function openEdit(row: MemberLevel) {
   Object.assign(form, {
     name: row.name,
     rank: row.rank,
-    rules: prettyJSON(row.rules),
-    benefits: prettyJSON(row.benefits),
+    icon_url: row.icon_url || '',
+    growth_value: Number(row.growth_value || 0),
+    bg_image: row.bg_image || '',
     status: row.status,
     version: row.version,
   });
@@ -172,35 +153,43 @@ function openEdit(row: MemberLevel) {
 }
 
 async function save() {
-  if (!form.name.trim() || form.rank < 1) {
-    ElMessage.warning('请填写等级名称与排序等级');
+  const name = form.name.trim();
+  if (!name) {
+    ElMessage.warning('请填写会员名称');
     return;
   }
-  try {
-    JSON.parse(form.rules);
-    const benefits = JSON.parse(form.benefits);
-    if (!Array.isArray(benefits) || !benefits.length) throw new Error('benefits');
-  } catch {
-    ElMessage.warning(
-      '等级规则必须是 JSON 对象，会员权益必须是非空 JSON 字符串数组',
-    );
+  if (!form.rank || form.rank < 1) {
+    ElMessage.warning('请填写会员等级');
+    return;
+  }
+  if (!String(form.icon_url || '').trim()) {
+    ElMessage.warning('请选择会员图标');
+    return;
+  }
+  if (form.growth_value == null || form.growth_value < 0) {
+    ElMessage.warning('请输入所需成长值');
+    return;
+  }
+  if (!String(form.bg_image || '').trim()) {
+    ElMessage.warning('请上传背景图');
     return;
   }
   formDrawerApi.lock();
   saving.value = true;
   try {
-    const data = {
-      ...form,
-      name: form.name.trim(),
-      rules: prettyJSON(form.rules),
-      benefits: prettyJSON(form.benefits),
+    const data: MemberLevelInput = {
+      name,
+      rank: form.rank,
+      icon_url: String(form.icon_url).trim(),
+      growth_value: Number(form.growth_value),
+      bg_image: String(form.bg_image).trim(),
+      status: 1,
+      version: form.version,
     };
     if (editing.value) await updateMemberLevel(editing.value.id, data);
     else await createMemberLevel(data);
     formDrawerApi.close();
-    ElMessage.success(
-      '会员等级已保存；不会修改现有用户等级或历史变更记录',
-    );
+    ElMessage.success(editing.value ? '会员等级已更新' : '会员等级已创建');
     gridApi.reload();
   } finally {
     saving.value = false;
@@ -209,17 +198,21 @@ async function save() {
 }
 
 async function remove(row: MemberLevel) {
+  if (Number(row.user_count || 0) > 0) {
+    ElMessage.warning('该等级下有用户，不能删除');
+    return;
+  }
   try {
-    await ElMessageBox.confirm(
-      `删除“${row.name}”只会逻辑隐藏配置。若有用户正在使用或已有历史变更记录，服务端将拒绝删除。`,
-      '删除会员等级',
-      { type: 'warning' },
-    );
+    await confirm({
+      content: `确定删除等级「${row.name}」吗？`,
+      icon: 'warning',
+      title: '提示',
+    });
     await deleteMemberLevel(row.id);
-    ElMessage.success('会员等级已逻辑删除');
+    ElMessage.success('会员等级已删除');
     gridApi.reload();
   } catch {
-    /* 用户取消 */
+    /* 用户取消或统一请求层处理 */
   }
 }
 
@@ -228,78 +221,138 @@ onMounted(async () => {
     getUserInfoApi(),
     getAccessCodesApi(),
   ]);
-  canManage.value =
-    profile.roles.includes('platform') &&
-    codes.includes('user.member.level.manage');
-  if (canManage.value) gridApi.reload();
+  const roleOK = profile.roles.some(
+    (role) => role === 'platform' || role === 'operations',
+  );
+  canRead.value =
+    roleOK &&
+    (codes.includes('user.member.level.read') ||
+      codes.includes('user.member.level.manage'));
+  canManage.value = roleOK && codes.includes('user.member.level.manage');
+  if (canRead.value) gridApi.reload();
 });
 </script>
 
 <template>
   <Page auto-content-height>
     <ElAlert
-      v-if="!canManage"
+      v-if="!canRead"
       class="mb-4"
-      title="当前账号没有会员等级管理权限"
+      title="当前账号没有会员等级查看权限"
       type="warning"
       :closable="false"
     />
-    <Grid v-else>
-      <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增等级
-        </ElButton>
-      </template>
-      <template #status="{ row }">
-        <ElTag :type="row.status ? 'success' : 'info'">
-          {{ row.status ? '启用' : '停用' }}
-        </ElTag>
-      </template>
-      <template #action="{ row }">
-        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-        <ElButton
-          link
-          type="danger"
-          :disabled="row.assigned_count > 0"
-          @click="remove(row)"
-        >
-          删除
-        </ElButton>
-      </template>
-    </Grid>
+    <template v-else>
+      <ElAlert
+        v-if="showTips"
+        class="mb-4"
+        type="warning"
+        show-icon
+        closable
+        @close="showTips = false"
+      >
+        用户经验值仅可累加、不做扣减，累计数值达到对应等级要求时，将自动完成等级提升
+      </ElAlert>
+
+      <Grid>
+        <template #toolbar-actions>
+          <ElButton
+            v-if="canManage"
+            :icon="Plus"
+            type="primary"
+            @click="openCreate"
+          >
+            添加等级
+          </ElButton>
+        </template>
+        <template #icon="{ row }">
+          <ElImage
+            v-if="row.icon_url"
+            class="level-list-icon"
+            :src="iconSrc(row.icon_url)"
+            fit="contain"
+            alt="等级图标"
+          >
+            <template #error>
+              <span>—</span>
+            </template>
+          </ElImage>
+          <span v-else>—</span>
+        </template>
+        <template #action="{ row }">
+          <ElButton
+            v-if="canManage"
+            link
+            type="primary"
+            @click="openEdit(row)"
+          >
+            编辑
+          </ElButton>
+          <ElButton
+            v-if="canManage"
+            link
+            type="danger"
+            @click="remove(row)"
+          >
+            删除
+          </ElButton>
+        </template>
+      </Grid>
+    </template>
 
     <FormDrawer>
-      <ElForm label-width="98px">
-        <ElFormItem label="等级名称" required>
-          <ElInput v-model="form.name" maxlength="64" />
-        </ElFormItem>
-        <ElFormItem label="等级排序" required>
-          <ElInputNumber v-model="form.rank" :min="1" :max="10000" />
-        </ElFormItem>
-        <ElFormItem label="成长规则 JSON" required>
-          <ElInput
-            v-model="form.rules"
-            type="textarea"
-            :rows="6"
-            class="font-mono"
+      <ElForm label-width="120px" require-asterisk-position="left">
+        <ElFormItem label="会员等级" required>
+          <ElInputNumber
+            v-model="form.rank"
+            :min="1"
+            :max="10000"
+            :controls="false"
+            class="w-full"
+            placeholder="请输入会员等级"
           />
         </ElFormItem>
-        <ElFormItem label="会员权益 JSON" required>
+        <ElFormItem label="会员名称" required>
           <ElInput
-            v-model="form.benefits"
-            type="textarea"
-            :rows="6"
-            class="font-mono"
-            placeholder='["权益一", "权益二"]'
+            v-model="form.name"
+            maxlength="64"
+            show-word-limit
+            placeholder="请输入会员名称"
           />
         </ElFormItem>
-        <ElFormItem label="状态">
-          <ElRadioGroup v-model="form.status">
-            <ElRadio :value="1">启用</ElRadio>
-            <ElRadio :value="0">停用</ElRadio>
-          </ElRadioGroup>
+        <ElFormItem label="会员图标" required>
+          <ImageField
+            v-model="form.icon_url"
+            :preview-size="72"
+            default-library="system"
+          />
+        </ElFormItem>
+        <ElFormItem label="所需成长值" required>
+          <ElInputNumber
+            v-model="form.growth_value"
+            :min="0"
+            :max="100000000"
+            :controls="false"
+            class="w-full"
+            placeholder="请输入所需成长值"
+          />
+        </ElFormItem>
+        <ElFormItem label="背景图" required>
+          <ImageField
+            v-model="form.bg_image"
+            :preview-size="120"
+            default-library="system"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
   </Page>
 </template>
+
+<style scoped>
+.level-list-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+}
+</style>

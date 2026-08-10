@@ -168,6 +168,74 @@ export function savePlatformGroupBuyingConfigApi(
     .then((data) => parseConfig<PlatformGroupBuyingConfig>(data.config));
 }
 
+/** 对齐 CRMEB UserIntegral::getConfig / saveConfig */
+export interface PlatformIntegralConfig {
+  /** 0 关闭 / 1 开启 */
+  integral_status: number;
+  /** 1 积分抵多少元 */
+  integral_money: number;
+  /** 消费 1 元赠送多少积分 */
+  integral_order_rate: number;
+  /** 冻结期（天） */
+  integral_freeze: number;
+  /** 清除周期（月） */
+  integral_clear_time: number;
+  /** 邀请好友赠送积分 */
+  integral_user_give: number;
+  /** 发布种草可获得积分 */
+  integral_community_give: number;
+  /** 每日种草获积分篇数限量 */
+  integral_community_give_limit: number;
+  /** 积分说明（富文本） */
+  rule: string;
+}
+
+export function getPlatformIntegralConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/integral')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformIntegralConfig>(data.config),
+    }));
+}
+
+export function savePlatformIntegralConfigApi(config: PlatformIntegralConfig) {
+  return requestClient
+    .put<{ config: string }>('/setting/integral', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformIntegralConfig>(data.config));
+}
+
+/** 对齐 CRMEB 余额设置 systemForm/Basics/balance */
+export interface PlatformBalanceConfig {
+  /** 0 关闭 / 1 开启（balance_func_status） */
+  balance_func_status: number;
+  /** 0 关闭 / 1 开启（recharge_switch） */
+  recharge_switch: number;
+  /** 用户最低充值金额（store_user_min_recharge） */
+  store_user_min_recharge: number;
+  /** 充值注意事项，多行（recharge_attention） */
+  recharge_attention: string;
+}
+
+export function getPlatformBalanceConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/balance')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformBalanceConfig>(data.config),
+    }));
+}
+
+export function savePlatformBalanceConfigApi(config: PlatformBalanceConfig) {
+  return requestClient
+    .put<{ config: string }>('/setting/balance', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformBalanceConfig>(data.config));
+}
+
 /** 对齐 CRMEB 商户设置：入驻页背景 + 自定义表单字段 */
 export type MerchantApplyFieldType =
   | 'checkbox'

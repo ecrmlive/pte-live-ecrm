@@ -10,6 +10,8 @@ const props = withDefaults(
     disabled?: boolean;
     hint?: string;
     previewSize?: number;
+    /** 预览块形状：用户头像等场景用 circle */
+    shape?: 'square' | 'circle';
     /** @deprecated 已废弃：统一点图开素材库，不再展示旁侧文案按钮 */
     buttonText?: string;
     /** @deprecated 已废弃：默认不展示旁侧按钮 */
@@ -20,6 +22,7 @@ const props = withDefaults(
     disabled: false,
     hint: '',
     previewSize: 72,
+    shape: 'square',
     buttonText: '',
     showButton: false,
     defaultLibrary: 'merchant',
@@ -52,7 +55,10 @@ function clearImage(event: Event) {
     <button
       class="image-field__tile"
       type="button"
-      :class="{ 'is-empty': !previewSrc() }"
+      :class="{
+        'is-empty': !previewSrc(),
+        'is-circle': props.shape === 'circle',
+      }"
       :style="{
         width: `${props.previewSize}px`,
         height: `${props.previewSize}px`,
@@ -103,6 +109,14 @@ function clearImage(event: Event) {
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-blank);
   cursor: pointer;
+}
+
+.image-field__tile.is-circle {
+  border-radius: 50%;
+}
+
+.image-field__tile.is-circle .image-field__remove {
+  border-radius: 0 50% 0 6px;
 }
 
 .image-field__tile.is-empty {

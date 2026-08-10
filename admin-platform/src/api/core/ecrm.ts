@@ -31,6 +31,7 @@ export interface UserLabelRow {
   label_id: number;
   label_name: string;
   sort: number;
+  create_time?: string;
 }
 
 /** 平台店铺（CRMEB 商户）管理。 */
@@ -493,17 +494,162 @@ export function fetchUserFeedback(params:{page:number;limit:number;status?:strin
 export function replyUserFeedback(id:number,input:{reply:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/reply`,input); }
 export function closeUserFeedback(id:number,input:{reply?:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/close`,input); }
 export function deleteUserFeedback(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/${id}`,{data:input}); }
-export interface UserFeedbackCategory { id:number; name:string; sort:number; status:0|1; created_at:string; updated_at:string; }
-export function fetchUserFeedbackCategories() { return requestClient.get<{list:UserFeedbackCategory[]}>('/user-feedback/categories'); }
-export function createUserFeedbackCategory(input:{name:string;sort:number;status:0|1;idempotency_key:string}) { return requestClient.post('/user-feedback/categories',input); }
-export function updateUserFeedbackCategory(id:number,input:{name:string;sort:number;status:0|1;idempotency_key:string}) { return requestClient.put(`/user-feedback/categories/${id}`,input); }
-export function setUserFeedbackCategoryStatus(id:number,input:{status:0|1;idempotency_key:string}) { return requestClient.put(`/user-feedback/categories/${id}/status`,input); }
-export function deleteUserFeedbackCategory(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/categories/${id}`,{data:input}); }
-export interface PlatformUserRow { id:number; nickname:string; avatar_url?:string; mobile:string; source_channel?:string; status:0|1; balance:number; points:number; level_name:string; created_at:string; }
-export function fetchPlatformUsers(params:{page:number;limit:number;id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string}) { return requestClient.get<PageResult<PlatformUserRow>>('/user-list',{params}); }
+export interface UserFeedbackCategory {
+  id: number;
+  pid: number;
+  name: string;
+  sort: number;
+  status: 0 | 1;
+  created_at: string;
+  updated_at: string;
+  children?: UserFeedbackCategory[];
+}
+export function fetchUserFeedbackCategories() {
+  return requestClient.get<{ list: UserFeedbackCategory[] }>('/user-feedback/categories');
+}
+export function createUserFeedbackCategory(input: {
+  name: string;
+  pid: number;
+  sort: number;
+  status: 0 | 1;
+  idempotency_key: string;
+}) {
+  return requestClient.post('/user-feedback/categories', input);
+}
+export function updateUserFeedbackCategory(
+  id: number,
+  input: {
+    name: string;
+    pid: number;
+    sort: number;
+    status: 0 | 1;
+    idempotency_key: string;
+  },
+) {
+  return requestClient.put(`/user-feedback/categories/${id}`, input);
+}
+export function setUserFeedbackCategoryStatus(
+  id: number,
+  input: { status: 0 | 1; idempotency_key: string },
+) {
+  return requestClient.put(`/user-feedback/categories/${id}/status`, input);
+}
+export function deleteUserFeedbackCategory(
+  id: number,
+  input: { idempotency_key: string },
+) {
+  return requestClient.delete(`/user-feedback/categories/${id}`, { data: input });
+}
+export interface PlatformUserRow {
+  id: number;
+  nickname: string;
+  avatar_url?: string;
+  mobile: string;
+  source_channel?: string;
+  status: 0 | 1;
+  balance: number;
+  points: number;
+  level_name: string;
+  group_id?: number;
+  group_name?: string;
+  parent_user_id?: number;
+  parent_nickname?: string;
+  svip_status?: string;
+  svip_expires_at?: string | null;
+  is_svip?: number;
+  svip_label?: string;
+  created_at: string;
+}
+export function fetchPlatformUsers(params: {
+  page: number;
+  limit: number;
+  id?: number;
+  keyword?: string;
+  nickname?: string;
+  phone?: string;
+  status?: 0 | 1;
+  label_id?: number;
+  fields_type?: string;
+  fields_value?: string;
+  source_channel?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return requestClient.get<PageResult<PlatformUserRow>>('/user-list', { params });
+}
+export function setPlatformUserListSvip(
+  id: number,
+  body: { is_svip: number; svip_endtime?: string },
+) {
+  return requestClient.put(`/user-list/${id}/svip`, body);
+}
 export interface PlatformUserExport { file_name:string; content:string; row_count:number; truncated:boolean; }
 export function exportPlatformUsers(input:{id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string;reason:string}) { return requestClient.post<PlatformUserExport>('/user-list/export',input); }
-export interface PlatformUserDetail { profile: PlatformUserRow & { commission:number }; assets: Array<{id:number;asset_type:'balance'|'points'|'commission';amount:number;reference_type:string;reference_id:string;created_at:string}>; membership_logs: Array<{id:number;level_name:string;previous_level_name:string;change_type:string;note:string;created_at:string}>; signs: Array<{id:number;sign_date:string;points:number;continuous_days:number;created_at:string}>; browse_history: Array<{id:number;product_id:number;store_id:number;store_name:string;title:string;viewed_at:string}>; orders: Array<{id:number;order_no:string;store_name:string;pay_amount:number;total_quantity:number;status:string;created_at:string}>; coupons:Array<{id:number;coupon_id:number;store_id:number;name:string;discount_type:'amount'|'rate';discount_value:number;min_amount:number;status:'unused'|'locked'|'used'|'expired';obtained_at:string;ends_at?:string}>; distribution:{parent_user_id:number;parent_nickname:string;direct_user_count:number;promoter_status:-1|0|1}; }
+export interface PlatformUserDetail {
+  profile: PlatformUserRow & {
+    commission: number;
+    gender?: number;
+    bio?: string;
+  };
+  assets: Array<{
+    id: number;
+    asset_type: 'balance' | 'points' | 'commission';
+    amount: number;
+    reference_type: string;
+    reference_id: string;
+    created_at: string;
+  }>;
+  membership_logs: Array<{
+    id: number;
+    level_name: string;
+    previous_level_name: string;
+    change_type: string;
+    note: string;
+    created_at: string;
+  }>;
+  signs: Array<{
+    id: number;
+    sign_date: string;
+    points: number;
+    continuous_days: number;
+    created_at: string;
+  }>;
+  browse_history: Array<{
+    id: number;
+    product_id: number;
+    store_id: number;
+    store_name: string;
+    title: string;
+    viewed_at: string;
+  }>;
+  orders: Array<{
+    id: number;
+    order_no: string;
+    store_name: string;
+    pay_amount: number;
+    total_quantity: number;
+    status: string;
+    created_at: string;
+  }>;
+  coupons: Array<{
+    id: number;
+    coupon_id: number;
+    store_id: number;
+    name: string;
+    discount_type: 'amount' | 'rate';
+    discount_value: number;
+    min_amount: number;
+    status: 'unused' | 'locked' | 'used' | 'expired';
+    obtained_at: string;
+    ends_at?: string;
+  }>;
+  distribution: {
+    parent_user_id: number;
+    parent_nickname: string;
+    direct_user_count: number;
+    promoter_status: -1 | 0 | 1;
+  };
+}
 export interface PlatformUserGroupOption { group_id:number; group_name:string; sort:number; }
 export function fetchPlatformUserGroupOptions() { return requestClient.get<{list:PlatformUserGroupOption[]}>('/user-list/groups'); }
 export function assignPlatformUserGroups(input:{user_ids:number[];group_id:number;reason:string;idempotency_key:string}) { return requestClient.post('/user-list/groups/assign', input); }
@@ -513,7 +659,22 @@ export function fetchPlatformUserLabelOptions() { return requestClient.get<{list
 export function assignPlatformUserLabels(input:{user_ids:number[];label_ids:number[];reason:string;idempotency_key:string}) { return requestClient.post('/user-list/labels/assign', input); }
 export function assignPlatformUserLabel(id:number,input:{label_ids:number[];reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/labels`,input); }
 export function changePlatformUserStatus(id:number,input:{status:0|1;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/status`,input); }
-export function createPlatformUser(input:{account:string;password:string;nickname:string;reason:string;idempotency_key:string}) { return requestClient.post<{user_id:number}>('/user-list',input); }
+export function createPlatformUser(input: {
+  account: string;
+  password: string;
+  nickname?: string;
+  avatar_url?: string;
+  real_name?: string;
+  phone?: string;
+  id_card?: string;
+  gender?: 0 | 1 | 2;
+  status?: 0 | 1;
+  is_promoter?: 0 | 1;
+  reason?: string;
+  idempotency_key: string;
+}) {
+  return requestClient.post<{ user_id: number }>('/user-list', input);
+}
 export function updatePlatformUserProfile(id:number,input:{nickname:string;avatar_url:string;gender:0|1|2;bio:string;reason:string;idempotency_key:string}) { return requestClient.put(`/user-list/${id}/profile`,input); }
 export function resetPlatformUserPassword(id:number,input:{password:string;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/password`,input); }
 export function assignPlatformUserPromoters(input:{user_ids:number[];status:0|1;reason:string;idempotency_key:string}) { return requestClient.post('/user-list/promoters/assign',input); }

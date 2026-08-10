@@ -1,177 +1,199 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
-import {
-  ElButton,
-  ElForm,
-  ElFormItem,
-  ElInput,
-  ElInputNumber,
-  ElMessage,
-  ElMessageBox,
-  ElSelect,
-  ElOption,
-} from 'element-plus';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
+import { ElButton, ElForm, ElFormItem, ElInput, ElMessage } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
   createUserLabel,
   deleteUserLabel,
   fetchUserLabels,
-  markUserLabels,
   updateUserLabel,
   type UserLabelRow,
 } from '#/api/core/ecrm';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
-const form = reactive({ label_name: '', sort: 0 });
-const editingId = ref(0);
-const markForm = reactive<{ uid: number; label_ids: number[] }>({
-  uid: 1,
-  label_ids: [],
-});
-const allLabels = ref<UserLabelRow[]>([]);
+const canRead = ref(false);
+const canManage = ref(false);
+const saving = ref(false);
+const editing = ref<UserLabelRow>();
+const form = reactive({ label_name: '' });
+
+const gridOptions: VxeGridProps<UserLabelRow> = {
+  columns: [
+    { field: 'label_id', title: 'ID', width: 88 },
+    {
+      field: 'label_name',
+      minWidth: 220,
+      showOverflow: false,
+      title: '标签名称',
+    },
+    {
+      field: 'create_time',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue) || '—',
+      minWidth: 180,
+      title: '创建时间',
+    },
+    platformListActionColumn({ width: 130 }),
+  ],
+  emptyText: '暂无数据',
+  pagerConfig: platformListPagerConfig(),
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const result = await fetchUserLabels({
+          page: page.currentPage,
+          limit: page.pageSize,
+        });
+        return { items: result.list || [], total: result.total || 0 };
+      },
+    },
+  },
+  rowConfig: { isHover: true, keyField: 'label_id' },
+  toolbarConfig: {
+    custom: false,
+    export: false,
+    refresh: false,
+    search: false,
+    zoom: false,
+  },
+};
+
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
   confirmText: '完成',
   cancelText: '取消',
   placement: 'right',
-  onConfirm: async () => {
-    if (!form.label_name.trim()) {
-      ElMessage.warning('请填写标签名');
-      return;
-    }
-    const payload = { label_name: form.label_name.trim(), sort: form.sort };
-    if (editingId.value) await updateUserLabel(editingId.value, payload);
-    else await createUserLabel(payload);
-    ElMessage.success('已保存');
-    formDrawerApi.close();
-    gridApi.reload();
-  },
+  onConfirm: async () => save(),
 });
 
-const [MarkDrawer, markDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
-  cancelText: '取消',
-  placement: 'right',
-  onConfirm: async () => {
-    if (!markForm.uid) {
-      ElMessage.warning('请填写用户 UID');
-      return;
-    }
-    await markUserLabels(markForm.uid, markForm.label_ids);
-    ElMessage.success('已打标');
-    markDrawerApi.close();
-  },
-});
-
-const gridOptions: VxeGridProps<UserLabelRow> = {
-  border: true,
-  columns: [
-    { field: 'label_id', title: 'ID', width: 80 },
-    { field: 'label_name', minWidth: 160, title: '标签名' },
-    { field: 'sort', title: '排序', width: 80 },
-    { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 220 },
-  ],
-  height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 10 },
-  proxyConfig: {
-    ajax: {
-      query: async ({ page }) => {
-        const data = await fetchUserLabels({
-          page: page.currentPage,
-          limit: page.pageSize,
-        });
-        allLabels.value = data.list || [];
-        return { items: data.list || [], total: data.total || 0 };
-      },
-    },
-  },
-  rowConfig: { isHover: true, keyField: 'label_id' },
-};
-
-const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+function resetForm() {
+  editing.value = undefined;
+  form.label_name = '';
+}
 
 function openCreate() {
-  editingId.value = 0;
-  form.label_name = '';
-  form.sort = 0;
-  formDrawerApi.setState({ title: '新建标签' });
-  formDrawerApi.open();
+  resetForm();
+  formDrawerApi.setState({ title: '添加用户标签' }).open();
 }
 
 function openEdit(row: UserLabelRow) {
-  editingId.value = row.label_id;
+  editing.value = row;
   form.label_name = row.label_name;
-  form.sort = row.sort;
-  formDrawerApi.setState({ title: '编辑标签' });
-  formDrawerApi.open();
+  formDrawerApi.setState({ title: '编辑用户标签' }).open();
 }
 
-function openMark(row: UserLabelRow) {
-  markForm.uid = 1;
-  markForm.label_ids = [row.label_id];
-  markDrawerApi.setState({ title: '给用户打标' });
-  markDrawerApi.open();
-}
-
-async function onDelete(row: UserLabelRow) {
-  try {
-    await ElMessageBox.confirm(`删除标签「${row.label_name}」？`, '提示', {
-      type: 'warning',
-    });
-  } catch {
+async function save() {
+  const name = form.label_name.trim();
+  if (!name) {
+    ElMessage.warning('请填写标签名称');
     return;
   }
-  await deleteUserLabel(row.label_id);
-  ElMessage.success('已删除');
-  gridApi.reload();
+  formDrawerApi.lock();
+  saving.value = true;
+  try {
+    const body = { label_name: name, sort: editing.value?.sort ?? 0 };
+    if (editing.value) {
+      await updateUserLabel(editing.value.label_id, body);
+    } else {
+      await createUserLabel(body);
+    }
+    formDrawerApi.close();
+    ElMessage.success(editing.value ? '用户标签已更新' : '用户标签已创建');
+    gridApi.reload();
+  } finally {
+    saving.value = false;
+    formDrawerApi.unlock();
+  }
 }
+
+async function remove(row: UserLabelRow) {
+  try {
+    await confirm({
+      content: `删除用户标签“${row.label_name}”后不可恢复，是否继续？`,
+      icon: 'warning',
+      title: '提示',
+    });
+    await deleteUserLabel(row.label_id);
+    ElMessage.success('用户标签已删除');
+    gridApi.reload();
+  } catch {
+    /* 用户取消或统一请求层处理 */
+  }
+}
+
+onMounted(async () => {
+  const [profile, codes] = await Promise.all([
+    getUserInfoApi(),
+    getAccessCodesApi(),
+  ]);
+  const roleOK = profile.roles.some(
+    (role) => role === 'platform' || role === 'operations',
+  );
+  canRead.value =
+    roleOK &&
+    (codes.includes('user.label.read') || codes.includes('user.label.manage'));
+  canManage.value = roleOK && codes.includes('user.label.manage');
+  if (canRead.value) gridApi.reload();
+});
 </script>
 
 <template>
-  <Page auto-content-height title="用户标签">
+  <Page auto-content-height>
     <Grid>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">新建标签</ElButton>
+        <ElButton
+          v-if="canManage"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          添加用户标签
+        </ElButton>
       </template>
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-        <ElButton link type="primary" @click="openMark(row)">打标</ElButton>
-        <ElButton link type="danger" @click="onDelete(row)">删除</ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          type="primary"
+          @click="openEdit(row)"
+        >
+          编辑
+        </ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          type="danger"
+          @click="remove(row)"
+        >
+          删除
+        </ElButton>
       </template>
     </Grid>
+
     <FormDrawer>
-      <ElForm label-position="top">
-        <ElFormItem label="标签名" required>
-          <ElInput v-model="form.label_name" />
-        </ElFormItem>
-        <ElFormItem label="排序">
-          <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
+      <ElForm label-width="100px">
+        <ElFormItem label="标签名称" required>
+          <ElInput
+            v-model="form.label_name"
+            maxlength="32"
+            placeholder="请输入用户标签名称"
+            show-word-limit
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
-    <MarkDrawer>
-      <ElForm label-position="top">
-        <ElFormItem label="用户 UID" required>
-          <ElInputNumber v-model="markForm.uid" :min="1" class="w-full" />
-        </ElFormItem>
-        <ElFormItem label="标签">
-          <ElSelect v-model="markForm.label_ids" class="w-full" multiple>
-            <ElOption
-              v-for="item in allLabels"
-              :key="item.label_id"
-              :label="item.label_name"
-              :value="item.label_id"
-            />
-          </ElSelect>
-        </ElFormItem>
-      </ElForm>
-    </MarkDrawer>
   </Page>
 </template>

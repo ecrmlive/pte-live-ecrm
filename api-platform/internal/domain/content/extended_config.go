@@ -11,7 +11,6 @@ import (
 
 const (
 	StorageConfigKey          = "storage_config"
-	UserSetupConfigKey        = "user_setup_config"
 	TransferSettingsConfigKey = "transfer_settings_config"
 	RoutineAppConfigKey       = "routine_app_config"
 	WechatReplyConfigKey      = "wechat_reply_config"
@@ -42,13 +41,6 @@ type storageConfig struct {
 	Remark     string `json:"remark"`
 }
 
-type userSetupConfig struct {
-	RegisterEnabled bool   `json:"register_enabled"`
-	MobileRequired  bool   `json:"mobile_required"`
-	InviteRequired  bool   `json:"invite_required"`
-	Remark          string `json:"remark"`
-}
-
 type transferSettingsConfig struct {
 	Enabled   bool    `json:"enabled"`
 	MinAmount float64 `json:"min_amount"`
@@ -66,15 +58,6 @@ func defaultStorageConfig() storageConfig {
 		BucketName: "",
 		Enabled:    false,
 		Remark:     "不含 SecretId/SecretKey；真实对象存储凭据请通过云服务配置维护",
-	}
-}
-
-func defaultUserSetupConfig() userSetupConfig {
-	return userSetupConfig{
-		RegisterEnabled: true,
-		MobileRequired:  true,
-		InviteRequired:  false,
-		Remark:          "仅保存注册开关与校验规则；不含短信或第三方登录密钥",
 	}
 }
 
@@ -214,41 +197,6 @@ func (s *Service) GetStorageConfig(ctx context.Context) (string, error) {
 
 func (s *Service) SaveStorageConfig(ctx context.Context, raw string) (string, error) {
 	return saveJSONConfig(s, ctx, StorageConfigKey, raw, parseStorageConfig)
-}
-
-func parseUserSetupConfig(raw string) (userSetupConfig, error) {
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
-		return userSetupConfig{}, ErrBadParam
-	}
-	for key := range fields {
-		if isSensitiveConfigKey(key) {
-			return userSetupConfig{}, ErrBadParam
-		}
-		switch key {
-		case "register_enabled", "mobile_required", "invite_required", "remark":
-		default:
-			return userSetupConfig{}, ErrBadParam
-		}
-	}
-	var config userSetupConfig
-	if err := json.Unmarshal([]byte(raw), &config); err != nil ||
-		len([]rune(strings.TrimSpace(config.Remark))) > 500 {
-		return userSetupConfig{}, ErrBadParam
-	}
-	config.Remark = strings.TrimSpace(config.Remark)
-	if config.Remark == "" {
-		config.Remark = defaultUserSetupConfig().Remark
-	}
-	return config, nil
-}
-
-func (s *Service) GetUserSetupConfig(ctx context.Context) (string, error) {
-	return getJSONConfig(s, ctx, UserSetupConfigKey, defaultUserSetupConfig(), parseUserSetupConfig)
-}
-
-func (s *Service) SaveUserSetupConfig(ctx context.Context, raw string) (string, error) {
-	return saveJSONConfig(s, ctx, UserSetupConfigKey, raw, parseUserSetupConfig)
 }
 
 func parseTransferSettingsConfig(raw string) (transferSettingsConfig, error) {

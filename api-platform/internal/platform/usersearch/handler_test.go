@@ -6,8 +6,8 @@ func TestSearchRecordFilters(t *testing.T) {
 	if !validDateRange("2026-08-01", "2026-08-04") || validDateRange("2026-08-04", "2026-08-01") || validDateRange("2026/08/01", "") {
 		t.Fatal("date range validation mismatch")
 	}
-	if !validSource("pc") || !validSource("h5") || validSource("unknown") {
-		t.Fatal("source validation mismatch")
+	if !validUserType("wechat") || !validUserType("app") || !validUserType("mini_program") || validUserType("unknown") {
+		t.Fatal("user type validation mismatch")
 	}
 }
 
@@ -20,8 +20,17 @@ func TestCSVCellPreventsFormulaInjection(t *testing.T) {
 	}
 }
 
+func TestUserTypeLabel(t *testing.T) {
+	if got := userTypeLabel("mini_program"); got != "小程序用户" {
+		t.Fatalf("got %q", got)
+	}
+	if got := userTypeLabel("ios"); got != "APP用户" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestExportFingerprintAndDateEnd(t *testing.T) {
-	in := query{UserID: 9101, Keyword: "夏季亚麻衬衫", Source: "pc", StartDate: "2026-08-03", EndDate: "2026-08-04"}
+	in := query{Keyword: "夏季亚麻衬衫", Nickname: "体验", UserType: "pc", StartDate: "2026-08-03", EndDate: "2026-08-04"}
 	if got := fingerprint(in); len(got) != 64 || got != fingerprint(in) {
 		t.Fatalf("fingerprint=%q", got)
 	}

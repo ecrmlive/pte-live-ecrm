@@ -1,25 +1,20 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
   ElAlert,
   ElButton,
-  ElCheckbox,
-  ElCheckboxGroup,
   ElForm,
   ElFormItem,
   ElInput,
   ElInputNumber,
   ElMessage,
   ElOption,
-  ElRadio,
-  ElRadioGroup,
   ElSelect,
-  ElTag,
+  ElSwitch,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -27,24 +22,25 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
   createSvipPlan,
+  deleteSvipPlan,
   listSvipPlans,
   updateSvipPlan,
+  updateSvipPlanStatus,
   type SvipPlan,
   type SvipPlanInput,
 } from '#/api/core/platform-svip-plan';
 import {
-  listSvipInterests,
-  type SvipInterest,
-} from '#/api/core/platform-svip-interest';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
-import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
 
+const canRead = ref(false);
 const canManage = ref(false);
 const saving = ref(false);
 const editingId = ref<number>();
-const interests = ref<SvipInterest[]>([]);
 const form = reactive<SvipPlanInput>({
   name: '',
+  cost_price: 0,
   price: 0,
   plan_type: 'period',
   duration_days: 30,
@@ -52,13 +48,6 @@ const form = reactive<SvipPlanInput>({
   status: 1,
   sort: 0,
 });
-
-function planTypeName(type: SvipPlan['plan_type']) {
-  return (
-    { trial: '体验会员', period: '期限会员', lifetime: '永久会员' }[type] ||
-    type
-  );
-}
 
 function parseBenefits(raw: string) {
   try {
@@ -71,83 +60,58 @@ function parseBenefits(raw: string) {
   }
 }
 
-const formOptions: VbenFormProps = listFormOptionsDefaults([
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '会员类型名称' },
-    fieldName: 'keyword',
-    label: '关键词',
-  },
-  {
-    component: 'Select',
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: '启用', value: 1 },
-        { label: '停用', value: 0 },
-      ],
-      placeholder: '全部状态',
-    },
-    fieldName: 'status',
-    label: '状态',
-  },
-]);
+function money(value: unknown) {
+  return Number(value || 0).toFixed(2);
+}
 
 const gridOptions: VxeGridProps<SvipPlan> = {
   columns: [
-    { field: 'name', minWidth: 140, showOverflow: false, title: '名称' },
+    { field: 'id', title: 'ID', width: 88 },
     {
-      field: 'plan_type',
-      formatter: ({ cellValue }) =>
-        planTypeName(cellValue as SvipPlan['plan_type']),
-      title: '类型',
-      width: 110,
-    },
-    {
-      field: 'price',
-      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
-      title: '售价',
-      width: 110,
+      field: 'name',
+      minWidth: 140,
+      showOverflow: false,
+      title: '会员名',
     },
     {
       field: 'duration_days',
       formatter: ({ row }) =>
-        row.plan_type === 'lifetime' ? '永久' : `${row.duration_days} 天`,
-      title: '有效期',
-      width: 110,
+        row.plan_type === 'lifetime' ? '永久' : String(row.duration_days ?? 0),
+      minWidth: 110,
+      title: '有效期(天)',
     },
     {
-      field: 'benefits',
-      formatter: ({ cellValue }) =>
-        parseBenefits(String(cellValue ?? '')).join('、'),
-      minWidth: 220,
-      showOverflow: false,
-      title: '权益',
+      field: 'cost_price',
+      formatter: ({ cellValue }) => money(cellValue),
+      minWidth: 110,
+      title: '原价',
     },
+    {
+      field: 'price',
+      formatter: ({ cellValue }) => money(cellValue),
+      minWidth: 110,
+      title: '优惠价',
+    },
+    { field: 'sort', title: '排序', width: 90 },
     {
       field: 'status',
       slots: { default: 'status' },
-      title: '状态',
-      width: 90,
+      title: '是否开启',
+      width: 120,
     },
-    { field: 'sort', title: '排序', width: 80 },
-    platformListActionColumn({ width: 80 }),
+    platformListActionColumn({ width: 130 }),
   ],
-  pagerConfig: { enabled: false },
+  emptyText: '暂无数据',
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async (_ctx, formValues) => {
-        if (!canManage.value) return { items: [], total: 0 };
-        const keyword = String(formValues?.keyword ?? '').trim().toLowerCase();
-        const statusRaw = formValues?.status;
-        let list = (await listSvipPlans()).list || [];
-        if (keyword) {
-          list = list.filter((row) => row.name.toLowerCase().includes(keyword));
-        }
-        if (statusRaw === 0 || statusRaw === 1) {
-          list = list.filter((row) => row.status === Number(statusRaw));
-        }
-        return { items: list, total: list.length };
+      query: async ({ page }) => {
+        if (!canRead.value) return { items: [], total: 0 };
+        const result = await listSvipPlans({
+          page: page.currentPage,
+          limit: page.pageSize,
+        });
+        return { items: result.list || [], total: result.total || 0 };
       },
     },
   },
@@ -161,7 +125,7 @@ const gridOptions: VxeGridProps<SvipPlan> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
@@ -175,6 +139,7 @@ function resetForm() {
   editingId.value = undefined;
   Object.assign(form, {
     name: '',
+    cost_price: 0,
     price: 0,
     plan_type: 'period',
     duration_days: 30,
@@ -186,27 +151,40 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '新增会员类型' }).open();
+  formDrawerApi.setState({ title: '添加会员类型' }).open();
 }
 
 function openEdit(row: SvipPlan) {
   editingId.value = row.id;
   Object.assign(form, {
     name: row.name,
-    price: Number(row.price),
+    cost_price: Number(row.cost_price || 0),
+    price: Number(row.price || 0),
     plan_type: row.plan_type,
-    duration_days: row.duration_days || 0,
+    duration_days:
+      row.plan_type === 'lifetime' ? 0 : Number(row.duration_days || 0),
     benefits: parseBenefits(row.benefits),
-    status: row.status,
-    sort: row.sort,
+    status: row.status === 1 ? 1 : 0,
+    sort: Number(row.sort || 0),
   });
   formDrawerApi.setState({ title: '编辑会员类型' }).open();
 }
 
 async function save() {
+  if (!canManage.value) {
+    ElMessage.warning('当前账号没有管理权限');
+    return;
+  }
+  const name = form.name.trim();
+  if (!name) {
+    ElMessage.warning('请填写会员名');
+    return;
+  }
+  if (form.cost_price < 0 || form.price < 0) {
+    ElMessage.warning('请填写有效的原价与优惠价');
+    return;
+  }
   if (
-    !form.name.trim() ||
-    !form.benefits.length ||
     (form.plan_type === 'trial' &&
       (form.price !== 0 || form.duration_days < 1)) ||
     (form.plan_type === 'period' &&
@@ -217,11 +195,22 @@ async function save() {
     return;
   }
   if (form.plan_type === 'lifetime') form.duration_days = 0;
+  if (form.plan_type === 'trial') form.price = 0;
   formDrawerApi.lock();
   saving.value = true;
   try {
-    if (editingId.value) await updateSvipPlan(editingId.value, form);
-    else await createSvipPlan(form);
+    const payload: SvipPlanInput = {
+      name,
+      cost_price: Number(form.cost_price),
+      price: Number(form.price),
+      plan_type: form.plan_type,
+      duration_days: form.duration_days,
+      benefits: form.benefits,
+      status: form.status === 1 ? 1 : 0,
+      sort: Math.max(0, Math.min(999999, Number(form.sort) || 0)),
+    };
+    if (editingId.value) await updateSvipPlan(editingId.value, payload);
+    else await createSvipPlan(payload);
     formDrawerApi.close();
     ElMessage.success('会员类型已保存');
     gridApi.reload();
@@ -231,97 +220,172 @@ async function save() {
   }
 }
 
+async function changeStatus(row: SvipPlan, enabled: boolean) {
+  if (!canManage.value) {
+    ElMessage.warning('当前账号没有管理权限');
+    return;
+  }
+  const before = row.status;
+  row.status = enabled ? 1 : 0;
+  try {
+    await updateSvipPlanStatus(row.id, enabled ? 1 : 0);
+  } catch {
+    row.status = before;
+  }
+}
+
+async function remove(row: SvipPlan) {
+  if (!canManage.value) {
+    ElMessage.warning('当前账号没有管理权限');
+    return;
+  }
+  try {
+    await confirm({
+      content: `确定删除会员类型“${row.name}”吗？`,
+      icon: 'warning',
+      title: '提示',
+    });
+    await deleteSvipPlan(row.id);
+    ElMessage.success('会员类型已删除');
+    gridApi.reload();
+  } catch {
+    /* 取消或请求层已提示 */
+  }
+}
+
 onMounted(async () => {
   const [profile, codes] = await Promise.all([
     getUserInfoApi(),
     getAccessCodesApi(),
   ]);
-  canManage.value =
-    profile.roles.some((role) => role === 'platform' || role === 'operations') &&
-    codes.includes('user.svip.plan.manage');
-  if (canManage.value) {
-    interests.value = (
-      (await listSvipInterests()).list || []
-    ).filter((item) => item.status === 1);
-    gridApi.reload();
-  }
+  const roleOK = profile.roles.some(
+    (role) => role === 'platform' || role === 'operations',
+  );
+  canRead.value =
+    roleOK &&
+    (codes.includes('user.svip.plan.read') ||
+      codes.includes('user.svip.plan.manage'));
+  canManage.value = roleOK && codes.includes('user.svip.plan.manage');
+  if (canRead.value) gridApi.reload();
 });
 </script>
 
 <template>
   <Page auto-content-height>
     <ElAlert
-      v-if="!canManage"
+      v-if="!canRead"
       class="mb-4"
-      title="当前账号没有会员类型维护权限"
+      title="当前账号没有会员类型查看权限，请确认已绑定权限并重新登录"
       type="warning"
       :closable="false"
     />
     <Grid v-else>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增类型
+        <ElButton
+          v-if="canManage"
+          :icon="Plus"
+          type="primary"
+          @click="openCreate"
+        >
+          添加会员类型
         </ElButton>
       </template>
       <template #status="{ row }">
-        <ElTag :type="row.status ? 'success' : 'info'">
-          {{ row.status ? '启用' : '停用' }}
-        </ElTag>
+        <ElSwitch
+          :model-value="row.status === 1"
+          :disabled="!canManage"
+          inline-prompt
+          active-text="开启"
+          inactive-text="关闭"
+          @change="
+            (enabled: string | number | boolean) =>
+              changeStatus(row, Boolean(enabled))
+          "
+        />
       </template>
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          type="primary"
+          @click="openEdit(row)"
+        >
+          编辑
+        </ElButton>
+        <ElButton
+          v-if="canManage"
+          link
+          type="danger"
+          @click="remove(row)"
+        >
+          删除
+        </ElButton>
       </template>
     </Grid>
 
     <FormDrawer>
-      <ElForm label-width="98px">
-        <ElFormItem label="名称">
-          <ElInput v-model="form.name" maxlength="64" />
+      <ElForm label-width="110px">
+        <ElFormItem label="会员名" required>
+          <ElInput
+            v-model="form.name"
+            maxlength="64"
+            placeholder="请输入会员名"
+            show-word-limit
+          />
         </ElFormItem>
-        <ElFormItem label="会员类型">
+        <ElFormItem label="会员类别" required>
           <ElSelect v-model="form.plan_type" class="w-full">
-            <ElOption label="体验会员（免费）" value="trial" />
-            <ElOption label="期限会员" value="period" />
-            <ElOption label="永久会员" value="lifetime" />
+            <ElOption label="试用期" value="trial" />
+            <ElOption label="有限期" value="period" />
+            <ElOption label="永久期" value="lifetime" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="售价">
+        <ElFormItem
+          v-if="form.plan_type !== 'lifetime'"
+          label="有效期(天)"
+          required
+        >
+          <ElInputNumber
+            v-model="form.duration_days"
+            :min="1"
+            :max="form.plan_type === 'trial' ? 31 : 3660"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="原价" required>
+          <ElInputNumber
+            v-model="form.cost_price"
+            :min="0"
+            :precision="2"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="优惠价" required>
           <ElInputNumber
             v-model="form.price"
             :disabled="form.plan_type === 'trial'"
             :min="0"
             :precision="2"
+            class="w-full"
           />
-        </ElFormItem>
-        <ElFormItem v-if="form.plan_type !== 'lifetime'" label="有效天数">
-          <ElInputNumber
-            v-model="form.duration_days"
-            :min="1"
-            :max="form.plan_type === 'trial' ? 31 : 3660"
-          />
-        </ElFormItem>
-        <ElFormItem label="会员权益" required>
-          <ElCheckboxGroup v-model="form.benefits">
-            <ElCheckbox
-              v-for="item in interests"
-              :key="item.id"
-              :label="item.name"
-            >
-              {{ item.name }}
-            </ElCheckbox>
-          </ElCheckboxGroup>
-          <div v-if="!interests.length" class="text-sm text-red-500">
-            暂无启用权益，请先在“会员权益”页面维护。
-          </div>
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElRadioGroup v-model="form.status">
-            <ElRadio :value="1">启用</ElRadio>
-            <ElRadio :value="0">停用</ElRadio>
-          </ElRadioGroup>
         </ElFormItem>
         <ElFormItem label="排序">
-          <ElInputNumber v-model="form.sort" :min="0" />
+          <ElInputNumber
+            v-model="form.sort"
+            :min="0"
+            :max="999999"
+            class="w-full"
+          />
+        </ElFormItem>
+        <ElFormItem label="是否开启">
+          <ElSwitch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+            inline-prompt
+            active-text="开启"
+            inactive-text="关闭"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>

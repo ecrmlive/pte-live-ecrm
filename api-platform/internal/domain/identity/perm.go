@@ -76,7 +76,7 @@ const (
 	PlatPermBrandManage      uint = 20905
 	PlatPermNoticeManage     uint = 20906
 	PlatPermUserLabelManage  uint = 20907
-	PlatPermUserGroupManage  uint = 20908
+	PlatPermUserGroupManage  uint = 21061 // user.group.manage
 	// 区域代理（CRMEB business-zones）权限节点。
 	PlatPermCircleManage      uint = 9924
 	PlatPermCircleAgentManage uint = 9926

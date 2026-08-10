@@ -22,15 +22,3 @@ func TestAppStubConfigRejectsSensitiveKeys(t *testing.T) {
 	}
 }
 
-func TestUserSetupConfigCanonicalizesChineseValues(t *testing.T) {
-	store := &mallSettingStore{}
-	svc := NewService(store)
-	got, err := svc.SaveUserSetupConfig(context.Background(), `{"register_enabled":true,"mobile_required":true,"invite_required":false,"remark":"中文注册设置"}`)
-	if err != nil {
-		t.Fatalf("save user setup config: %v", err)
-	}
-	want := `{"register_enabled":true,"mobile_required":true,"invite_required":false,"remark":"中文注册设置"}`
-	if got != want || store.cache == nil || store.cache.Result != want {
-		t.Fatalf("canonical user setup config = %q, stored = %#v", got, store.cache)
-	}
-}

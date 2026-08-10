@@ -31,7 +31,11 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.DELETE("/notices/:id", operationWrite, noticeWrite, h.Delete)
 	r.GET("/agreements", h.ListAgreements)
 	r.GET("/agreements/:key", h.GetAgreement)
-	r.PUT("/agreements/:key", operationWrite, middleware.RequireAdminMenu(h.adminDB, "setting.agreement.manage"), h.SaveAgreement)
+	r.PUT("/agreements/:key", operationWrite, middleware.RequireAdminMenuAny(h.adminDB,
+		"setting.agreement.manage",
+		"user.svip.agreement.manage",
+		"user.level.description.manage",
+	), h.SaveAgreement)
 	r.GET("/setting/sms", h.GetSMS)
 	r.PUT("/setting/sms", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "setting.sms.manage"), h.SaveSMS)
 	shopSetting := middleware.RequireAdminRoles("platform")
@@ -84,6 +88,15 @@ func (h *Handler) Register(r gin.IRoutes) {
 	groupBuyingManage := middleware.RequireAdminMenu(h.adminDB, "marketing.combination.manage")
 	r.GET("/setting/group-buying", groupBuyingSetting, groupBuyingManage, h.GetGroupBuying)
 	r.PUT("/setting/group-buying", groupBuyingSetting, groupBuyingManage, h.SaveGroupBuying)
+	integralSetting := middleware.RequireAdminRoles("platform", "operations")
+	integralManage := middleware.RequireAdminMenu(h.adminDB, "marketing.integral.config")
+	r.GET("/setting/integral", integralSetting, integralManage, h.GetIntegral)
+	r.PUT("/setting/integral", integralSetting, integralManage, h.SaveIntegral)
+	balanceSetting := middleware.RequireAdminRoles("platform", "operations")
+	balanceRead := middleware.RequireAdminMenu(h.adminDB, "marketing.balance.settings.read")
+	balanceManage := middleware.RequireAdminMenu(h.adminDB, "marketing.balance.settings.manage")
+	r.GET("/setting/balance", balanceSetting, balanceRead, h.GetBalance)
+	r.PUT("/setting/balance", balanceSetting, balanceManage, h.SaveBalance)
 
 	appSetting := middleware.RequireAdminRoles("platform")
 	routineManage := middleware.RequireAdminMenu(h.adminDB, "app.routine.manage")
@@ -426,7 +439,7 @@ func (h *Handler) SaveStorage(c *gin.Context) {
 }
 
 func (h *Handler) GetUserSetup(c *gin.Context) {
-	h.getJSONSetting(c, h.svc.GetUserSetupConfig, "仅保存用户注册开关与校验规则；不含短信或第三方登录密钥")
+	h.getJSONSetting(c, h.svc.GetUserSetupConfig, "对齐 CRMEB 用户设置：默认头像、扩展信息字段、登录注册与注册有礼；不含短信或第三方登录密钥")
 }
 
 func (h *Handler) SaveUserSetup(c *gin.Context) {
@@ -455,6 +468,22 @@ func (h *Handler) GetGroupBuying(c *gin.Context) {
 
 func (h *Handler) SaveGroupBuying(c *gin.Context) {
 	h.saveJSONSetting(c, h.svc.SaveGroupBuyingConfig)
+}
+
+func (h *Handler) GetIntegral(c *gin.Context) {
+	h.getJSONSetting(c, h.svc.GetIntegralConfig, "积分配置：开关、抵用比例、赠送与清除规则")
+}
+
+func (h *Handler) SaveIntegral(c *gin.Context) {
+	h.saveJSONSetting(c, h.svc.SaveIntegralConfig)
+}
+
+func (h *Handler) GetBalance(c *gin.Context) {
+	h.getJSONSetting(c, h.svc.GetBalanceConfig, "余额设置：余额功能、充值开关、最低金额与注意事项")
+}
+
+func (h *Handler) SaveBalance(c *gin.Context) {
+	h.saveJSONSetting(c, h.svc.SaveBalanceConfig)
 }
 
 func (h *Handler) GetRoutineApp(c *gin.Context) {

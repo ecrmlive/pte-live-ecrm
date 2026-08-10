@@ -89,7 +89,15 @@ ON DUPLICATE KEY UPDATE `amount`=VALUES(`amount`),`occurred_at`=VALUES(`occurred
 INSERT INTO `qixi_crm_m_marketing_activity`
   (`id`,`store_id`,`activity_type`,`name`,`rules`,`status`,`starts_at`,`ends_at`)
 VALUES
-  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT('package_price',199.00,'product_ids',JSON_ARRAY(1004,1006),'free_shipping',true,'remark','中文演示套餐'),'active',DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY))
+  (5101,1,'discount','夏日香氛随行套餐',JSON_OBJECT(
+      'package_price',199.00,'package_type',1,'type',1,'is_limit',0,'limit_num',0,'is_time',1,
+      'free_shipping',true,'remark','中文演示搭配套餐','create_time','2026-07-01 09:30:00',
+      'product_ids',JSON_ARRAY(1004,1006),
+      'products',JSON_ARRAY(
+        JSON_OBJECT('product_id',1004,'store_name','无火藤条香氛礼盒','image','https://picsum.photos/seed/qixi-discount-5101a/120/120','type',0,'spec','| 129.00'),
+        JSON_OBJECT('product_id',1006,'store_name','香氛扩香石套装','image','https://picsum.photos/seed/qixi-discount-5101b/120/120','type',1,'spec','| 39.00')
+      )
+    ),'active','2026-07-01 00:00:00','2026-08-31 23:59:59')
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`rules`=VALUES(`rules`),`status`=VALUES(`status`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`);
 
 -- 售后备注夹具：关联业务库的虚构退款 9900201，仅验证店铺操作审计；不含买家资料、支付凭据或真实客服账号。

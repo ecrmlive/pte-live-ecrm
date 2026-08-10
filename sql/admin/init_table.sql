@@ -669,7 +669,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_rule` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_status_time` (`rule_type`,`status`,`starts_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 平台营销装饰（氛围图/边框图/专题/报名），取代 setting_cache list stub；不含密钥。
+-- 平台营销装饰（氛围图/边框图/专题；报名已迁至 qixi_crm_a_signup_activity），取代 setting_cache list stub；不含密钥。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_decor` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `decor_type` enum('atmosphere','border','topic','application') NOT NULL,
@@ -680,6 +680,45 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_marketing_decor` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_visible` (`decor_type`,`is_del`,`status`,`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台报名活动（对齐 CRMEB store_activity form）
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_activity` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(128) NOT NULL,
+  `info` varchar(500) NOT NULL DEFAULT '',
+  `cover_url` varchar(1024) NOT NULL DEFAULT '',
+  `poster_url` varchar(1024) NOT NULL DEFAULT '',
+  `color` varchar(32) NOT NULL DEFAULT '',
+  `form_id` bigint unsigned NOT NULL DEFAULT 0,
+  `quota` int unsigned NOT NULL DEFAULT 0,
+  `total` int unsigned NOT NULL DEFAULT 0,
+  `status` tinyint NOT NULL DEFAULT 1,
+  `sort` int NOT NULL DEFAULT 0,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_form` (`form_id`),
+  KEY `idx_visible` (`is_del`,`status`,`sort`),
+  KEY `idx_time` (`starts_at`,`ends_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台报名活动用户记录
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_record` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL DEFAULT 0,
+  `nickname` varchar(128) NOT NULL DEFAULT '',
+  `mobile` varchar(32) NOT NULL DEFAULT '',
+  `avatar` varchar(1024) NOT NULL DEFAULT '',
+  `form_value` json NOT NULL,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_activity` (`activity_id`,`is_del`,`created_at`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_mobile` (`mobile`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- 平台配置条目（热门搜索/组合数据/系统表单/备份登记），取代 setting_cache list stub。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item` (
@@ -692,6 +731,44 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_visible` (`item_type`,`is_del`,`status`,`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台报名活动（对齐 CRMEB store_activity form）+ 用户报名记录
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_activity` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(128) NOT NULL COMMENT '活动名称',
+  `info` varchar(500) NOT NULL DEFAULT '' COMMENT '活动简介',
+  `cover_url` varchar(1024) NOT NULL DEFAULT '' COMMENT '封面图 750*350',
+  `poster_url` varchar(1024) NOT NULL DEFAULT '' COMMENT '分享海报 750*1250',
+  `color` varchar(32) NOT NULL DEFAULT '' COMMENT '活动背景色',
+  `form_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT '关联系统表单',
+  `quota` int unsigned NOT NULL DEFAULT 0 COMMENT '人数上限，0=不限制',
+  `total` int unsigned NOT NULL DEFAULT 0 COMMENT '已报名人数',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '是否显示/开启',
+  `sort` int NOT NULL DEFAULT 0,
+  `starts_at` datetime DEFAULT NULL,
+  `ends_at` datetime DEFAULT NULL,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_form` (`form_id`),
+  KEY `idx_visible` (`is_del`,`status`,`sort`),
+  KEY `idx_time` (`starts_at`,`ends_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台报名活动';
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_record` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL DEFAULT 0,
+  `nickname` varchar(128) NOT NULL DEFAULT '',
+  `mobile` varchar(32) NOT NULL DEFAULT '',
+  `avatar` varchar(1024) NOT NULL DEFAULT '',
+  `form_value` json NOT NULL,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_activity` (`activity_id`,`is_del`,`created_at`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_mobile` (`mobile`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台报名活动用户记录';
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_approval_task` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `task_type` varchar(64) NOT NULL, `subject_type` varchar(64) NOT NULL,
   `subject_id` varchar(64) NOT NULL, `status` enum('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',

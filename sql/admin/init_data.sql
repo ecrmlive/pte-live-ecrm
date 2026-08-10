@@ -115,16 +115,24 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (1289,60,'marketing.integral.dir','积分','lucide:coins','/marketing/integral','directory',8),
   (1290,1289,'marketing.integral.config','积分配置','lucide:settings-2','/marketing/integral/config','page',1),
   (1291,1289,'marketing.integral.log','积分日志','lucide:scroll-text','/marketing/integral/log','page',2),
+  (21052,1291,'marketing.integral.log.read','查看积分日志','','marketing/integral/log','button',1),
   (9118,1289,'marketing.integral.classify','商品分类','lucide:folder-tree','/marketing/integral/classify','page',3),
+  (21053,9118,'marketing.integral.classify.manage','管理积分商品分类','','marketing/integral/classify','button',1),
   (9119,1289,'marketing.integral.products','商品列表','lucide:list','/marketing/integral/proList','page',4),
   (9120,1289,'marketing.integral.orders','积分订单','lucide:receipt','/marketing/integral/orderList','page',5),
+  (21054,9120,'marketing.integral.orders.read','查看积分订单','','marketing/integral/orderList','button',1),
+  (21055,9120,'marketing.integral.orders.manage','管理积分订单','','marketing/integral/orderList','button',2),
   (9007,60,'marketing.atmosphere.nav','活动氛围图','lucide:sparkles','/marketing/atmosphere/list','page',9),
   (9008,60,'marketing.border.nav','活动边框图','lucide:frame','/marketing/border/list','page',10),
   (1470,60,'marketing.topic.nav','专场列表','lucide:layout-template','/group/topic/94','page',11),
   (1629,60,'marketing.discounts.nav','优惠套餐','lucide:package','/marketing/discounts/list','page',12),
   (5126,60,'marketing.balance.dir','余额充值','lucide:wallet','/banlace','directory',13),
   (667,5126,'marketing.balance.settings','余额设置','lucide:sliders-horizontal','/systemForm/Basics/balance','page',1),
-  (687,5126,'marketing.balance.config','余额充值配置','lucide:badge-dollar-sign','/group/config/69','page',2),
+  (21056,667,'marketing.balance.settings.read','查看余额设置','','systemForm/Basics/balance','button',1),
+  (21057,667,'marketing.balance.settings.manage','保存余额设置','','systemForm/Basics/balance','button',2),
+  (687,5126,'marketing.balance.config','余额充值设置','lucide:badge-dollar-sign','/group/config/69','page',2),
+  (21058,687,'marketing.balance.config.read','查看余额充值设置','','group/config/69','button',1),
+  (21059,687,'marketing.balance.config.manage','管理余额充值设置','','group/config/69','button',2),
   (9217,60,'marketing.application.nav','报名活动','lucide:clipboard-list','/marketing/application/list','page',14),
   -- 旧扁平营销页兼容占位（status 由 patch_marketing_menus 软隐藏）
   (61,60,'marketing.coupon','平台优惠券(旧)','lucide:award','/marketing/coupon','page',990),
@@ -327,14 +335,14 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (20916,1138,'marketing.combination.manage','维护拼团活动','','marketing/combination/combination_list','button',1),
   (20917,1023,'marketing.presell.manage','维护预售活动','','marketing/presell/list','button',1),
   (20918,1658,'marketing.coupon.manage','维护平台优惠券','','marketing/platform_coupon/list','button',1),
-  (21010,1629,'marketing.discounts.read','查看优惠套餐监管投影','','marketing/discounts/list','button',1),
-  (21011,1629,'marketing.discounts.manage','上下架优惠套餐投影','','marketing/discounts/list','button',2),
+  (21010,1629,'marketing.discounts.read','查看优惠套餐','','marketing/discounts/list','button',1),
+  (21011,1629,'marketing.discounts.manage','上下架优惠套餐','','marketing/discounts/list','button',2),
   (21012,9007,'marketing.atmosphere.read','查看活动氛围','','marketing/atmosphere/list','button',1),
   (21013,9007,'marketing.atmosphere.manage','维护活动氛围','','marketing/atmosphere/list','button',2),
   (21014,9008,'marketing.border.read','查看活动边框','','marketing/border/list','button',1),
   (21015,9008,'marketing.border.manage','维护活动边框','','marketing/border/list','button',2),
-  (21016,1470,'marketing.topic.read','查看活动专题','','group/topic/94','button',1),
-  (21017,1470,'marketing.topic.manage','维护活动专题','','group/topic/94','button',2),
+  (21016,1470,'marketing.topic.read','查看专场','','group/topic/94','button',1),
+  (21017,1470,'marketing.topic.manage','维护专场','','group/topic/94','button',2),
   (21018,9217,'marketing.application.read','查看活动报名','','marketing/application/list','button',1),
   (21019,9217,'marketing.application.manage','维护活动报名','','marketing/application/list','button',2),
   (21020,212,'operations.system_form.manage','维护系统表单','','systemForm/form_list','button',1),
@@ -376,7 +384,8 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20948,47,'product.comment.delete','删除虚拟商品评论','','product/comment','button',4)
   ,(20949,75,'user.feedback.read','查看用户反馈','','user/feedback/list','button',1)
   ,(20950,75,'user.feedback.manage','回复、关闭或删除用户反馈','','user/feedback/list','button',2)
-  ,(20951,76,'user.feedback.category.manage','维护反馈分类','','user/feedback/categories','button',1)
+  ,(21064,76,'user.feedback.category.read','查看反馈分类','','user/feedback/categories','button',1)
+  ,(20951,76,'user.feedback.category.manage','维护反馈分类','','user/feedback/categories','button',2)
   ,(20952,77,'user.list.read','查看脱敏用户列表','','user/list','button',1)
   ,(20953,77,'user.list.manage','人工调整用户余额、积分与会员等级','','user/list','button',2)
   ,(20954,78,'user.asset.adjust','提交用户余额或积分人工调整','','user/assets-adjustment','button',1)
@@ -384,6 +393,10 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20956,170,'user.coupon.manage','提交用户优惠券发放或撤销','','user/coupon-operation','button',1)
   ,(20957,171,'user.referrer.manage','提交用户推荐关系调整','','user/referrer-adjustment','button',1)
   ,(20958,172,'user.group.assign','提交用户单个或批量分组调整','','user/group-assignment','button',1)
+  ,(21060,72,'user.group.read','查看用户分组','','user/group','button',1)
+  ,(21061,72,'user.group.manage','维护用户分组','','user/group','button',2)
+  ,(21062,71,'user.label.read','查看用户标签','','user/label','button',1)
+  ,(21063,71,'user.label.manage','维护用户标签','','user/label','button',2)
   ,(20959,173,'user.label.assign','提交用户单个或批量标签调整','','user/label-assignment','button',1)
   ,(20960,174,'user.status.manage','提交用户启用或停用','','user/status-adjustment','button',1)
   ,(20961,175,'user.create.execute','创建本地 PC 用户','','user/create','button',1)
@@ -396,10 +409,12 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20968,52,'order.refund.log','查看退款状态流转日志','','order/refund','button',3)
   ,(20969,52,'order.refund.export','导出受数据范围约束的退款监管清单','','order/refund','button',4)
   ,(20970,9119,'marketing.points.manage','维护积分商品并查看积分订单','','marketing/integral/proList','button',1)
-  ,(20971,667,'marketing.recharge.manage','维护充值计划并查看充值订单','','systemForm/Basics/balance','button',1)
+  ,(20971,687,'marketing.recharge.manage','维护充值计划并查看充值订单','','group/config/69','button',1)
   ,(20972,73,'user.svip.manage','查看并维护用户 SVIP 状态','','user/svip','button',1)
   ,(20973,180,'user.svip.plan.manage','维护可售会员类型','','user/member/type','button',1)
   ,(20974,181,'user.svip.record.read','查看会员购买记录与统计','','user/member/record','button',1)
+  ,(21070,533,'user.svip.agreement.read','查看会员协议','','user/member/vipAgreement','button',1)
+  ,(21071,533,'user.svip.agreement.manage','维护会员协议','','user/member/vipAgreement','button',2)
   ,(20975,182,'user.search_record.read','查看用户搜索记录','','user/search-record','button',1)
   ,(20976,182,'user.search_record.clear','按用户清理搜索记录','','user/search-record','button',2)
   ,(20977,182,'user.search_record.export','导出用户搜索记录','','user/search-record','button',3)
@@ -423,7 +438,8 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20995,204,'app.wechat_menus.manage','维护微信菜单开关','','app/wechat/menus','button',1)
   ,(20996,205,'app.wechat_template.manage','维护模板消息开关','','app/wechat/template','button',1)
   ,(20997,206,'app.wechat_news.manage','维护图文消息开关','','app/wechat/newsCategory','button',1)
-  ,(20998,77,'user.setup.manage','维护用户注册设置','','user/setup_user','button',4)
+  ,(21072,532,'user.setup.read','查看用户设置','','user/setup_user','button',1)
+  ,(20998,532,'user.setup.manage','保存用户设置','','user/setup_user','button',2)
   ,(20999,101,'accounts.transfer_settings.manage','维护转账监管设置','','accounts/settings','button',2)
   ,(21000,12,'merchant.intention.delete','删除店铺入驻申请','','merchant/audit','button',3)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
@@ -521,15 +537,15 @@ WHERE r.code = 'platform'
       'marketing.presell.dir','marketing.presell.goods','marketing.presell.agreement',
       'marketing.assist.dir','marketing.assist.goods','marketing.assist.activity',
       'marketing.combination.dir','marketing.combination.set','marketing.combination.goods','marketing.combination.list',
-      'marketing.integral.dir','marketing.integral.config','marketing.integral.log','marketing.integral.classify',
-      'marketing.integral.products','marketing.integral.orders',
+      'marketing.integral.dir','marketing.integral.config','marketing.integral.log','marketing.integral.log.read','marketing.integral.classify','marketing.integral.classify.manage',
+      'marketing.integral.products','marketing.integral.orders','marketing.integral.orders.read','marketing.integral.orders.manage',
       'marketing.atmosphere.nav','marketing.atmosphere.read','marketing.atmosphere.manage',
       'marketing.border.nav','marketing.border.read','marketing.border.manage',
       'marketing.topic.nav','marketing.topic.read','marketing.topic.manage',
       'marketing.discounts.nav','marketing.discounts.read','marketing.discounts.manage',
-      'marketing.balance.dir','marketing.balance.settings','marketing.balance.config',
+      'marketing.balance.dir','marketing.balance.settings','marketing.balance.settings.read','marketing.balance.settings.manage','marketing.balance.config','marketing.balance.config.read','marketing.balance.config.manage',
       'marketing.application.nav','marketing.application.read','marketing.application.manage',
-      'user','user.svip.plan','user.svip.record','user.svip.interest','user.svip.plan.manage','user.svip.record.read','user.svip.interest.manage',
+      'user','user.feedback','user.feedback.category','user.feedback.category.read','user.feedback.category.manage','user.group','user.group.read','user.group.manage','user.label','user.label.read','user.label.manage','user.svip','user.svip.plan','user.svip.record','user.svip.interest','user.svip.agreement','user.svip.plan.manage','user.svip.record.read','user.svip.interest.manage','user.svip.agreement.read','user.svip.agreement.manage',
       'content','content.notice','content.community','content.community.category','content.community.topic','content.community.list','content.community.reply','content.attachment','content.article',
       'operations','operations.diy','operations.system_form','operations.system_form.manage','setting','setting.agreements',
       'content.article.manage','content.article_category.manage','content.notice.manage','setting.agreement.manage',

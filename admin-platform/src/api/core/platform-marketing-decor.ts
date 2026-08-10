@@ -2,16 +2,27 @@ import { requestClient } from '#/api/request';
 
 export type MarketingDecorType = 'application' | 'atmosphere' | 'border' | 'topic';
 
+/** 对齐 CRMEB：0 全部 / 1 商品 / 2 分类 / 3 店铺 / 4 商品标签 */
+export type MarketingDecorScopeType = 0 | 1 | 2 | 3 | 4;
+
 export interface MarketingDecor {
+  activity_status?: number;
+  activity_status_text?: string;
+  cate_ids?: number[];
   code: string;
   cover_url: string;
+  created_at?: string;
   decor_type: MarketingDecorType;
   ends_at: string;
   id: number;
+  label_ids?: number[];
+  mer_ids?: number[];
   name: string;
   payload: Record<string, unknown>;
   remark: string;
+  scope_type?: MarketingDecorScopeType | number;
   sort: number;
+  spu_ids?: number[];
   starts_at: string;
   status: number;
   updated_at: string;
@@ -25,14 +36,29 @@ export interface MarketingDecorPage {
 }
 
 export interface MarketingDecorInput {
+  cate_ids?: number[];
   code?: string;
   cover_url?: string;
   ends_at?: string;
+  label_ids?: number[];
+  mer_ids?: number[];
   name: string;
   payload?: Record<string, unknown>;
   remark?: string;
+  scope_type?: MarketingDecorScopeType | number;
   sort?: number;
+  spu_ids?: number[];
   starts_at?: string;
+  status?: number;
+}
+
+export interface MarketingDecorListParams {
+  activity_status?: number;
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  limit: number;
+  page: number;
   status?: number;
 }
 
@@ -45,7 +71,7 @@ const pathByType: Record<MarketingDecorType, string> = {
 
 export function listMarketingDecorApi(
   type: MarketingDecorType,
-  params: { keyword?: string; limit: number; page: number; status?: number },
+  params: MarketingDecorListParams,
 ) {
   return requestClient.get<MarketingDecorPage>(pathByType[type], { params });
 }

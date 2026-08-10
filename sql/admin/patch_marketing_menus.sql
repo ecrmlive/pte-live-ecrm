@@ -167,9 +167,13 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
   (1290,1289,'marketing.integral.config','积分配置','lucide:settings-2','/marketing/integral/config','page',1,1),
   (1291,1289,'marketing.integral.log','积分日志','lucide:scroll-text','/marketing/integral/log','page',2,1),
+  (21052,1291,'marketing.integral.log.read','查看积分日志','','marketing/integral/log','button',1,1),
   (9118,1289,'marketing.integral.classify','商品分类','lucide:folder-tree','/marketing/integral/classify','page',3,1),
+  (21053,9118,'marketing.integral.classify.manage','管理积分商品分类','','marketing/integral/classify','button',1,1),
   (9119,1289,'marketing.integral.products','商品列表','lucide:list','/marketing/integral/proList','page',4,1),
-  (9120,1289,'marketing.integral.orders','积分订单','lucide:receipt','/marketing/integral/orderList','page',5,1)
+  (9120,1289,'marketing.integral.orders','积分订单','lucide:receipt','/marketing/integral/orderList','page',5,1),
+  (21054,9120,'marketing.integral.orders.read','查看积分订单','','marketing/integral/orderList','button',1,1),
+  (21055,9120,'marketing.integral.orders.manage','管理积分订单','','marketing/integral/orderList','button',2,1)
 ON DUPLICATE KEY UPDATE
   `parent_id`=VALUES(`parent_id`),
   `code`=VALUES(`code`),
@@ -183,7 +187,7 @@ ON DUPLICATE KEY UPDATE
 -- 三级：余额充值（两子页必须同为 page、同 parent，避免侧栏同级缩进错位）
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
   (667,5126,'marketing.balance.settings','余额设置','lucide:sliders-horizontal','/systemForm/Basics/balance','page',1,1),
-  (687,5126,'marketing.balance.config','余额充值配置','lucide:badge-dollar-sign','/group/config/69','page',2,1)
+  (687,5126,'marketing.balance.config','余额充值设置','lucide:badge-dollar-sign','/group/config/69','page',2,1)
 ON DUPLICATE KEY UPDATE
   `parent_id`=5126,
   `code`=VALUES(`code`),
@@ -204,7 +208,7 @@ UPDATE `qixi_crm_a_menu` SET `parent_id`=1023, `route_path`='marketing/presell/l
 UPDATE `qixi_crm_a_menu` SET `parent_id`=781, `route_path`='marketing/studio/list' WHERE `id`=20922 OR `code`='marketing.broadcast.audit';
 UPDATE `qixi_crm_a_menu` SET `parent_id`=1096, `route_path`='marketing/assist/list' WHERE `id`=20928 OR `code`='marketing.assist.manage';
 UPDATE `qixi_crm_a_menu` SET `parent_id`=9119, `route_path`='marketing/integral/proList' WHERE `id`=20970 OR `code`='marketing.points.manage';
-UPDATE `qixi_crm_a_menu` SET `parent_id`=667, `route_path`='systemForm/Basics/balance' WHERE `id`=20971 OR `code`='marketing.recharge.manage';
+UPDATE `qixi_crm_a_menu` SET `parent_id`=687, `route_path`='group/config/69' WHERE `id`=20971 OR `code`='marketing.recharge.manage';
 UPDATE `qixi_crm_a_menu` SET `parent_id`=1629, `route_path`='marketing/discounts/list' WHERE `id` IN (21010,21011) OR `code` IN ('marketing.discounts.read','marketing.discounts.manage');
 UPDATE `qixi_crm_a_menu` SET `parent_id`=9007, `route_path`='marketing/atmosphere/list' WHERE `id` IN (21012,21013) OR `code` IN ('marketing.atmosphere.read','marketing.atmosphere.manage');
 UPDATE `qixi_crm_a_menu` SET `parent_id`=9008, `route_path`='marketing/border/list' WHERE `id` IN (21014,21015) OR `code` IN ('marketing.border.read','marketing.border.manage');
@@ -225,7 +229,7 @@ WHERE r.code = 'platform'
     1022,1023,1024,
     1051,1095,1096,
     1135,1136,1137,1138,
-    1289,1290,1291,9118,9119,9120,
+    1289,1290,1291,21052,9118,21053,9119,9120,
     9007,9008,1470,1629,
     5126,667,687,
     9217

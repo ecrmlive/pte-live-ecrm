@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
@@ -15,47 +16,86 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	menuMemberLevelRead   = "user.member.level.read"
+	menuMemberLevelManage = "user.member.level.manage"
+)
+
 type Handler struct{ business, admin *gorm.DB }
 
-func New(business, admin *gorm.DB) *Handler { return &Handler{business: business, admin: admin} }
-func (h *Handler) Register(r gin.IRoutes) {
-	manage := []gin.HandlerFunc{middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.admin, "user.member.level.manage")}
-	r.GET("/member-levels", manage[0], manage[1], h.List)
-	r.POST("/member-levels", manage[0], manage[1], h.Create)
-	r.PUT("/member-levels/:id", manage[0], manage[1], h.Update)
-	r.DELETE("/member-levels/:id", manage[0], manage[1], h.Delete)
+func New(business, admin *gorm.DB) *Handler {
+	return &Handler{business: business, admin: admin}
 }
 
-type level struct {
-	ID       uint64 `gorm:"column:id" json:"id"`
-	Name     string `gorm:"column:name" json:"name"`
-	Rank     int    `gorm:"column:rank" json:"rank"`
-	Rules    string `gorm:"column:rules" json:"rules"`
-	Benefits string `gorm:"column:benefits" json:"benefits"`
-	Status   int    `gorm:"column:status" json:"status"`
-	Version  uint64 `gorm:"column:version" json:"version"`
-	Assigned int64  `gorm:"column:assigned_count" json:"assigned_count"`
+func (h *Handler) Register(r gin.IRoutes) {
+	access := middleware.RequireAdminRoles("platform", "operations")
+	read := middleware.RequireAdminMenu(h.admin, menuMemberLevelRead)
+	manage := middleware.RequireAdminMenu(h.admin, menuMemberLevelManage)
+	r.GET("/member-levels", access, read, h.List)
+	r.POST("/member-levels", access, manage, h.Create)
+	r.PUT("/member-levels/:id", access, manage, h.Update)
+	r.DELETE("/member-levels/:id", access, manage, h.Delete)
 }
+
+type levelRow struct {
+	ID            uint64     `gorm:"column:id" json:"id"`
+	Name          string     `gorm:"column:name" json:"name"`
+	Rank          int        `gorm:"column:rank" json:"rank"`
+	IconURL       string     `gorm:"column:icon_url" json:"icon_url"`
+	Rules         string     `gorm:"column:rules" json:"-"`
+	Benefits      string     `gorm:"column:benefits" json:"-"`
+	Status        int        `gorm:"column:status" json:"status"`
+	Version       uint64     `gorm:"column:version" json:"version"`
+	AssignedCount int64      `gorm:"column:assigned_count" json:"user_count"`
+	CreatedAt     *time.Time `gorm:"column:created_at" json:"-"`
+}
+
+type levelView struct {
+	ID          uint64 `json:"id"`
+	Name        string `json:"name"`
+	Rank        int    `json:"rank"`
+	IconURL     string `json:"icon_url"`
+	GrowthValue int64  `json:"growth_value"`
+	BgImage     string `json:"bg_image"`
+	Status      int    `json:"status"`
+	Version     uint64 `json:"version"`
+	UserCount   int64  `json:"user_count"`
+	CreatedAt   string `json:"created_at"`
+}
+
 type input struct {
-	Name     string `json:"name"`
-	Rank     int    `json:"rank"`
-	Rules    string `json:"rules"`
-	Benefits string `json:"benefits"`
-	Status   int    `json:"status"`
-	Version  uint64 `json:"version"`
+	Name        string `json:"name"`
+	Rank        int    `json:"rank"`
+	IconURL     string `json:"icon_url"`
+	GrowthValue int64  `json:"growth_value"`
+	BgImage     string `json:"bg_image"`
+	Status      int    `json:"status"`
+	Version     uint64 `json:"version"`
+}
+
+type rulesPayload struct {
+	Value       int64  `json:"value"`
+	Image       string `json:"image"`
+	Description string `json:"description"`
 }
 
 func (h *Handler) List(c *gin.Context) {
-	rows := make([]level, 0)
+	rows := make([]levelRow, 0)
 	err := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level AS l").
-		Select("l.id,l.name,l.rank,l.rules,l.benefits,l.status,l.version,COUNT(a.user_id) AS assigned_count").
+		Select("l.id,l.name,l.rank,l.icon_url,l.rules,l.benefits,l.status,l.version,l.created_at,COUNT(a.user_id) AS assigned_count").
 		Joins("LEFT JOIN qixi_crm_b_member_account AS a ON a.level_id=l.id").
-		Where("l.deleted_at IS NULL").Group("l.id,l.name,l.rank,l.rules,l.benefits,l.status,l.version").Order("l.rank ASC,l.id ASC").Scan(&rows).Error
+		Where("l.deleted_at IS NULL").
+		Group("l.id,l.name,l.rank,l.icon_url,l.rules,l.benefits,l.status,l.version,l.created_at").
+		Order("l.rank ASC,l.id ASC").Scan(&rows).Error
 	if err != nil {
 		fail(c, "会员等级查询失败")
 		return
 	}
-	response.OK(c, gin.H{"list": rows})
+	list := make([]levelView, 0, len(rows))
+	for _, row := range rows {
+		list = append(list, toView(row))
+	}
+	response.OK(c, gin.H{"list": list})
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -64,12 +104,22 @@ func (h *Handler) Create(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "会员等级参数错误")
 		return
 	}
-	row := values(&in)
-	if err := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").Create(map[string]any{"name": row.Name, "rank": row.Rank, "rules": row.Rules, "benefits": row.Benefits, "status": row.Status, "version": row.Version}).Error; err != nil {
-		conflictOrFail(c, err, "会员等级排序等级已存在", "会员等级创建失败")
+	payload := persistValues(&in)
+	err := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").Create(map[string]any{
+		"name":       payload.Name,
+		"rank":       payload.Rank,
+		"icon_url":   payload.IconURL,
+		"rules":      payload.Rules,
+		"benefits":   payload.Benefits,
+		"status":     payload.Status,
+		"version":    uint64(1),
+		"created_at": time.Now(),
+	}).Error
+	if err != nil {
+		conflictOrFail(c, err, "会员等级序号已存在", "会员等级创建失败")
 		return
 	}
-	response.OK(c, gin.H{"name": row.Name, "rank": row.Rank, "version": row.Version})
+	response.OK(c, gin.H{"name": payload.Name, "rank": payload.Rank})
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -79,11 +129,20 @@ func (h *Handler) Update(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "会员等级参数错误")
 		return
 	}
-	row := values(&in)
-	changes := map[string]any{"name": row.Name, "rank": row.Rank, "rules": row.Rules, "benefits": row.Benefits, "status": row.Status, "version": gorm.Expr("version + 1")}
-	res := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").Where("id=? AND deleted_at IS NULL AND version=?", id, in.Version).Updates(changes)
+	payload := persistValues(&in)
+	changes := map[string]any{
+		"name":     payload.Name,
+		"rank":     payload.Rank,
+		"icon_url": payload.IconURL,
+		"rules":    payload.Rules,
+		"benefits": payload.Benefits,
+		"status":   payload.Status,
+		"version":  gorm.Expr("version + 1"),
+	}
+	res := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").
+		Where("id=? AND deleted_at IS NULL AND version=?", id, in.Version).Updates(changes)
 	if res.Error != nil {
-		conflictOrFail(c, res.Error, "会员等级排序等级已存在", "会员等级更新失败")
+		conflictOrFail(c, res.Error, "会员等级序号已存在", "会员等级更新失败")
 		return
 	}
 	if res.RowsAffected == 0 {
@@ -118,7 +177,8 @@ func (h *Handler) Delete(c *gin.Context) {
 		response.Fail(c, http.StatusConflict, "该等级已有历史变更记录，不能删除")
 		return
 	}
-	res := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").Where("id=? AND deleted_at IS NULL", id).Update("deleted_at", gorm.Expr("NOW()"))
+	res := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_member_level").
+		Where("id=? AND deleted_at IS NULL", id).Update("deleted_at", gorm.Expr("NOW()"))
 	if res.Error != nil {
 		fail(c, "会员等级删除失败")
 		return
@@ -130,43 +190,79 @@ func (h *Handler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"id": id})
 }
 
-func values(in *input) level {
-	return level{Name: strings.TrimSpace(in.Name), Rank: in.Rank, Rules: canonicalJSON(in.Rules), Benefits: canonicalJSON(in.Benefits), Status: in.Status, Version: 1}
+func toView(row levelRow) levelView {
+	rules := parseRules(row.Rules)
+	created := ""
+	if row.CreatedAt != nil && !row.CreatedAt.IsZero() {
+		created = row.CreatedAt.In(time.Local).Format("2006-01-02 15:04:05")
+	}
+	return levelView{
+		ID:          row.ID,
+		Name:        row.Name,
+		Rank:        row.Rank,
+		IconURL:     strings.TrimSpace(row.IconURL),
+		GrowthValue: rules.Value,
+		BgImage:     strings.TrimSpace(rules.Image),
+		Status:      row.Status,
+		Version:     row.Version,
+		UserCount:   row.AssignedCount,
+		CreatedAt:   created,
+	}
 }
+
+func persistValues(in *input) levelRow {
+	rules := rulesPayload{
+		Value:       in.GrowthValue,
+		Image:       strings.TrimSpace(in.BgImage),
+		Description: "累计成长值达到要求后自动升级",
+	}
+	raw, _ := json.Marshal(rules)
+	benefits, _ := json.Marshal([]string{"会员专享活动"})
+	return levelRow{
+		Name:     strings.TrimSpace(in.Name),
+		Rank:     in.Rank,
+		IconURL:  strings.TrimSpace(in.IconURL),
+		Rules:    string(raw),
+		Benefits: string(benefits),
+		Status:   in.Status,
+	}
+}
+
 func valid(in *input, update bool) bool {
-	if in == nil || strings.TrimSpace(in.Name) == "" || len([]rune(strings.TrimSpace(in.Name))) > 64 || in.Rank < 1 || in.Rank > 10000 || (in.Status != 0 && in.Status != 1) || (update && in.Version == 0) {
+	if in == nil {
 		return false
 	}
-	return validRules(in.Rules) && validBenefits(in.Benefits)
-}
-func validRules(raw string) bool {
-	var value map[string]any
-	return json.Unmarshal([]byte(raw), &value) == nil && len(value) > 0
-}
-func validBenefits(raw string) bool {
-	var values []string
-	if json.Unmarshal([]byte(raw), &values) != nil || len(values) == 0 || len(values) > 20 {
+	name := strings.TrimSpace(in.Name)
+	if name == "" || len([]rune(name)) > 64 {
 		return false
 	}
-	seen := map[string]struct{}{}
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" || len([]rune(value)) > 64 {
-			return false
-		}
-		if _, exists := seen[value]; exists {
-			return false
-		}
-		seen[value] = struct{}{}
+	if in.Rank < 1 || in.Rank > 10000 {
+		return false
+	}
+	if in.GrowthValue < 0 || in.GrowthValue > 100000000 {
+		return false
+	}
+	if len([]rune(strings.TrimSpace(in.IconURL))) > 1024 {
+		return false
+	}
+	if len([]rune(strings.TrimSpace(in.BgImage))) > 1024 {
+		return false
+	}
+	if in.Status != 0 && in.Status != 1 {
+		return false
+	}
+	if update && in.Version == 0 {
+		return false
 	}
 	return true
 }
-func canonicalJSON(raw string) string {
-	var value any
-	_ = json.Unmarshal([]byte(raw), &value)
-	result, _ := json.Marshal(value)
-	return string(result)
+
+func parseRules(raw string) rulesPayload {
+	var rules rulesPayload
+	_ = json.Unmarshal([]byte(raw), &rules)
+	return rules
 }
+
 func conflictOrFail(c *gin.Context, err error, conflict, internal string) {
 	if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
 		response.Fail(c, http.StatusConflict, conflict)
@@ -174,4 +270,7 @@ func conflictOrFail(c *gin.Context, err error, conflict, internal string) {
 	}
 	fail(c, internal)
 }
-func fail(c *gin.Context, message string) { response.Fail(c, http.StatusInternalServerError, message) }
+
+func fail(c *gin.Context, message string) {
+	response.Fail(c, http.StatusInternalServerError, message)
+}

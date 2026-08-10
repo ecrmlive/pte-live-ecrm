@@ -70,6 +70,8 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/user-list/promoters/assign", append(promoterManage, h.ChangePromoters)...)
 	notificationManage := []gin.HandlerFunc{middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.admin, "user.notification.send")}
 	r.POST("/user-list/:id/notifications", append(notificationManage, h.SendInAppNotification)...)
+	svipManage := []gin.HandlerFunc{middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.admin, "user.svip.manage")}
+	r.PUT("/user-list/:id/svip", append(svipManage, h.SetSvip)...)
 }
 
 type memberLevel struct {
@@ -394,6 +396,13 @@ type createUserInput struct {
 	Account        string `json:"account"`
 	Password       string `json:"password"`
 	Nickname       string `json:"nickname"`
+	AvatarURL      string `json:"avatar_url"`
+	RealName       string `json:"real_name"`
+	Phone          string `json:"phone"`
+	IDCard         string `json:"id_card"`
+	Gender         int    `json:"gender"`
+	Status         *int   `json:"status"`
+	IsPromoter     *int   `json:"is_promoter"`
 	Reason         string `json:"reason"`
 	IdempotencyKey string `json:"idempotency_key"`
 }
@@ -424,12 +433,46 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "新增用户参数错误")
 		return
 	}
-	in.Account, in.Nickname, in.Reason, in.IdempotencyKey = strings.TrimSpace(in.Account), strings.TrimSpace(in.Nickname), strings.TrimSpace(in.Reason), strings.TrimSpace(in.IdempotencyKey)
-	if !validUserCommand(in.Reason, in.IdempotencyKey) || len([]rune(in.Account)) < 3 || len([]rune(in.Account)) > 191 || len([]rune(in.Nickname)) < 1 || len([]rune(in.Nickname)) > 64 || len(in.Password) < 12 || len(in.Password) > 72 {
-		response.Fail(c, http.StatusBadRequest, "账号、昵称、密码、原因或幂等键错误")
+	in.Account = strings.TrimSpace(in.Account)
+	in.Nickname = strings.TrimSpace(in.Nickname)
+	in.AvatarURL = strings.TrimSpace(in.AvatarURL)
+	in.RealName = strings.TrimSpace(in.RealName)
+	in.Phone = strings.TrimSpace(in.Phone)
+	in.IDCard = strings.TrimSpace(in.IDCard)
+	in.Reason = strings.TrimSpace(in.Reason)
+	in.IdempotencyKey = strings.TrimSpace(in.IdempotencyKey)
+	if in.Nickname == "" {
+		in.Nickname = in.Account
+	}
+	if in.Reason == "" {
+		in.Reason = "平台后台创建用户"
+	}
+	status := 1
+	if in.Status != nil {
+		status = *in.Status
+	}
+	isPromoter := 1
+	if in.IsPromoter != nil {
+		isPromoter = *in.IsPromoter
+	}
+	if !validUserCommand(in.Reason, in.IdempotencyKey) ||
+		len([]rune(in.Account)) < 3 || len([]rune(in.Account)) > 191 ||
+		len([]rune(in.Nickname)) < 1 || len([]rune(in.Nickname)) > 64 ||
+		len(in.Password) < 12 || len(in.Password) > 72 ||
+		len([]rune(in.RealName)) > 64 || len([]rune(in.Phone)) > 32 || len([]rune(in.IDCard)) > 32 ||
+		in.Gender < 0 || in.Gender > 2 || (status != 0 && status != 1) || (isPromoter != 0 && isPromoter != 1) ||
+		!validAvatarURL(in.AvatarURL) {
+		response.Fail(c, http.StatusBadRequest, "账号、昵称、密码、资料、状态、推广员、原因或幂等键错误")
 		return
 	}
-	fingerprint := fingerprint("create", in.Account, in.Nickname, in.Reason)
+	mobile := in.Phone
+	if mobile == "" && looksLikeMobileAccount(in.Account) {
+		mobile = in.Account
+	}
+	fp := fingerprint(
+		"create", in.Account, in.Nickname, in.AvatarURL, in.RealName, in.Phone, in.IDCard,
+		strconv.Itoa(in.Gender), strconv.Itoa(status), strconv.Itoa(isPromoter), in.Reason,
+	)
 	out := gin.H{}
 	err := h.business.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		var audit struct {
@@ -442,7 +485,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 			// Password input is intentionally excluded from the immutable audit.
 			// A duplicate key is therefore never replayed: accepting it could hide
 			// a changed initial password behind a successful retry response.
-			if audit.RequestFingerprint != fingerprint || audit.Reason != in.Reason || audit.OperatorID != uint64(middleware.AdminID(c)) {
+			if audit.RequestFingerprint != fp || audit.Reason != in.Reason || audit.OperatorID != uint64(middleware.AdminID(c)) {
 				return errUserAdminConflict
 			}
 			return errUserAdminConflict
@@ -456,17 +499,32 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		if count != 0 {
 			return errUserAdminConflict
 		}
+		if mobile != "" {
+			if e := tx.Table("qixi_crm_b_user").Where("mobile=?", mobile).Count(&count).Error; e != nil {
+				return e
+			}
+			if count != 0 {
+				return errUserAdminConflict
+			}
+		}
 		hash, e := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 		if e != nil {
 			return e
 		}
 		user := struct {
-			ID          uint64 `gorm:"column:id"`
-			Nickname    string `gorm:"column:nickname"`
-			Status      int    `gorm:"column:status"`
-			AuthVersion uint64 `gorm:"column:auth_version"`
-		}{Nickname: in.Nickname, Status: 1, AuthVersion: 1}
+			ID          uint64  `gorm:"column:id"`
+			Nickname    string  `gorm:"column:nickname"`
+			Mobile      *string `gorm:"column:mobile"`
+			Status      int     `gorm:"column:status"`
+			AuthVersion uint64  `gorm:"column:auth_version"`
+		}{Nickname: in.Nickname, Status: status, AuthVersion: 1}
+		if mobile != "" {
+			user.Mobile = &mobile
+		}
 		if e := tx.Table("qixi_crm_b_user").Create(&user).Error; e != nil {
+			if isDuplicateKey(e) {
+				return errUserAdminConflict
+			}
 			return e
 		}
 		userID := user.ID
@@ -479,10 +537,25 @@ func (h *Handler) CreateUser(c *gin.Context) {
 			}
 			return e
 		}
-		if e := tx.Table("qixi_crm_b_user_profile").Create(map[string]any{"user_id": userID, "source_channel": "pc"}).Error; e != nil {
+		if e := tx.Table("qixi_crm_b_user_profile").Create(map[string]any{
+			"user_id":        userID,
+			"avatar_url":     in.AvatarURL,
+			"real_name":      in.RealName,
+			"id_card":        in.IDCard,
+			"gender":         in.Gender,
+			"source_channel": "pc",
+		}).Error; e != nil {
 			return e
 		}
-		if e := tx.Table("qixi_crm_b_user_admin_command_audit").Create(map[string]any{"action": "create", "user_id": userID, "request_fingerprint": fingerprint, "reason": in.Reason, "operator_admin_id": middleware.AdminID(c), "idempotency_key": in.IdempotencyKey}).Error; e != nil {
+		if isPromoter == 1 {
+			if e := tx.Table("qixi_crm_b_distribution_promoter").Create(map[string]any{"user_id": userID, "status": 1}).Error; e != nil {
+				if isDuplicateKey(e) {
+					return errUserAdminConflict
+				}
+				return e
+			}
+		}
+		if e := tx.Table("qixi_crm_b_user_admin_command_audit").Create(map[string]any{"action": "create", "user_id": userID, "request_fingerprint": fp, "reason": in.Reason, "operator_admin_id": middleware.AdminID(c), "idempotency_key": in.IdempotencyKey}).Error; e != nil {
 			return e
 		}
 		out = gin.H{"user_id": userID, "replayed": false}
@@ -606,8 +679,29 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 func validUserCommand(reason, key string) bool {
 	return len([]rune(reason)) >= 2 && len([]rune(reason)) <= 500 && len([]rune(key)) >= 8 && len([]rune(key)) <= 128
 }
+
+func looksLikeMobileAccount(value string) bool {
+	if len(value) != 11 {
+		return false
+	}
+	if value[0] != '1' {
+		return false
+	}
+	for i := 1; i < len(value); i++ {
+		if value[i] < '0' || value[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func validAvatarURL(value string) bool {
-	return value == "" || strings.HasPrefix(value, "https://") || strings.HasPrefix(value, "/demo/")
+	value = strings.TrimSpace(value)
+	if value == "" || strings.HasPrefix(value, "https://") || strings.HasPrefix(value, "/demo/") {
+		return true
+	}
+	// 素材库相对路径（COS object key），禁止协议/脚本注入。
+	return strings.HasPrefix(value, "/") && !strings.Contains(value, "..") && !strings.Contains(value, ":")
 }
 func fingerprint(parts ...string) string {
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
@@ -632,15 +726,19 @@ func writeUserAdminResult(c *gin.Context, err error, out gin.H, failure string) 
 }
 
 type detailProfile struct {
-	ID         uint64    `gorm:"column:id" json:"id"`
-	Nickname   string    `gorm:"column:nickname" json:"nickname"`
-	Mobile     string    `gorm:"column:mobile" json:"mobile"`
-	Status     int       `gorm:"column:status" json:"status"`
-	Balance    float64   `gorm:"column:balance" json:"balance"`
-	Points     int64     `gorm:"column:points" json:"points"`
-	Commission float64   `gorm:"column:commission" json:"commission"`
-	LevelName  string    `gorm:"column:level_name" json:"level_name"`
-	CreatedAt  time.Time `gorm:"column:created_at" json:"created_at"`
+	ID            uint64    `gorm:"column:id" json:"id"`
+	Nickname      string    `gorm:"column:nickname" json:"nickname"`
+	AvatarURL     string    `gorm:"column:avatar_url" json:"avatar_url"`
+	Mobile        string    `gorm:"column:mobile" json:"mobile"`
+	Gender        int       `gorm:"column:gender" json:"gender"`
+	Bio           string    `gorm:"column:bio" json:"bio"`
+	SourceChannel string    `gorm:"column:source_channel" json:"source_channel"`
+	Status        int       `gorm:"column:status" json:"status"`
+	Balance       float64   `gorm:"column:balance" json:"balance"`
+	Points        int64     `gorm:"column:points" json:"points"`
+	Commission    float64   `gorm:"column:commission" json:"commission"`
+	LevelName     string    `gorm:"column:level_name" json:"level_name"`
+	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 type assetRow struct {
@@ -709,16 +807,24 @@ type distributionView struct {
 }
 
 type row struct {
-	ID            uint64    `gorm:"column:id" json:"id"`
-	Nickname      string    `gorm:"column:nickname" json:"nickname"`
-	AvatarURL     string    `gorm:"column:avatar_url" json:"avatar_url"`
-	Mobile        string    `gorm:"column:mobile" json:"mobile"`
-	SourceChannel string    `gorm:"column:source_channel" json:"source_channel"`
-	Status        int       `gorm:"column:status" json:"status"`
-	Balance       float64   `gorm:"column:balance" json:"balance"`
-	Points        int64     `gorm:"column:points" json:"points"`
-	LevelName     string    `gorm:"column:level_name" json:"level_name"`
-	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
+	ID             uint64     `gorm:"column:id" json:"id"`
+	Nickname       string     `gorm:"column:nickname" json:"nickname"`
+	AvatarURL      string     `gorm:"column:avatar_url" json:"avatar_url"`
+	Mobile         string     `gorm:"column:mobile" json:"mobile"`
+	SourceChannel  string     `gorm:"column:source_channel" json:"source_channel"`
+	Status         int        `gorm:"column:status" json:"status"`
+	Balance        float64    `gorm:"column:balance" json:"balance"`
+	Points         int64      `gorm:"column:points" json:"points"`
+	LevelName      string     `gorm:"column:level_name" json:"level_name"`
+	GroupID        uint64     `gorm:"column:group_id" json:"group_id"`
+	GroupName      string     `gorm:"column:group_name" json:"group_name"`
+	ParentUserID   uint64     `gorm:"column:parent_user_id" json:"parent_user_id"`
+	ParentNickname string     `gorm:"column:parent_nickname" json:"parent_nickname"`
+	SvipStatus     string     `gorm:"column:svip_status" json:"svip_status"`
+	SvipExpiresAt  *time.Time `gorm:"column:svip_expires_at" json:"svip_expires_at"`
+	IsSvip         int        `gorm:"-" json:"is_svip"`
+	SvipLabel      string     `gorm:"-" json:"svip_label"`
+	CreatedAt      time.Time  `gorm:"column:created_at" json:"created_at"`
 }
 
 type userExportInput struct {
@@ -736,10 +842,24 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	q := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_user AS u").
-		Select("u.id,u.nickname,u.mobile,u.status,u.created_at,COALESCE(p.avatar_url,'') AS avatar_url,COALESCE(p.source_channel,'') AS source_channel,COALESCE(a.balance,0) AS balance,COALESCE(a.points,0) AS points,COALESCE(l.name,'') AS level_name").
+		Select(`u.id,u.nickname,u.mobile,u.status,u.group_id,u.created_at,
+COALESCE(p.avatar_url,'') AS avatar_url,
+COALESCE(p.source_channel,'') AS source_channel,
+COALESCE(a.balance,0) AS balance,
+COALESCE(a.points,0) AS points,
+COALESCE(l.name,'') AS level_name,
+COALESCE(g.group_name,'') AS group_name,
+COALESCE(dr.parent_user_id,0) AS parent_user_id,
+COALESCE(pu.nickname,'') AS parent_nickname,
+COALESCE(sv.status,'') AS svip_status,
+sv.expires_at AS svip_expires_at`).
 		Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id=u.id").
 		Joins("LEFT JOIN qixi_crm_b_member_account AS a ON a.user_id=u.id").
-		Joins("LEFT JOIN qixi_crm_b_member_level AS l ON l.id=a.level_id")
+		Joins("LEFT JOIN qixi_crm_b_member_level AS l ON l.id=a.level_id").
+		Joins("LEFT JOIN qixi_crm_b_user_group AS g ON g.group_id=u.group_id AND g.is_del=0").
+		Joins("LEFT JOIN qixi_crm_b_distribution_relation AS dr ON dr.user_id=u.id").
+		Joins("LEFT JOIN qixi_crm_b_user AS pu ON pu.id=dr.parent_user_id").
+		Joins("LEFT JOIN qixi_crm_b_user_svip AS sv ON sv.user_id=u.id")
 	if status != "" {
 		// status=1：启用且未注销（注销会把 status 置 0，见 auth.CancelAccount）
 		q = q.Where("u.status=?", status)
@@ -766,6 +886,56 @@ func (h *Handler) List(c *gin.Context) {
 	if phone := strings.TrimSpace(c.Query("phone")); phone != "" {
 		q = q.Where("u.mobile LIKE ?", "%"+phone+"%")
 	}
+	if labelRaw := strings.TrimSpace(c.Query("label_id")); labelRaw != "" {
+		labelID, err := strconv.ParseUint(labelRaw, 10, 64)
+		if err != nil || labelID == 0 {
+			response.Fail(c, http.StatusBadRequest, "用户标签错误")
+			return
+		}
+		q = q.Where("EXISTS (SELECT 1 FROM qixi_crm_b_user_label_relation lr WHERE lr.uid=u.id AND lr.label_id=?)", labelID)
+	}
+	fieldsType := strings.TrimSpace(c.Query("fields_type"))
+	fieldsValue := strings.TrimSpace(c.Query("fields_value"))
+	if fieldsValue != "" {
+		if len([]rune(fieldsValue)) > 64 {
+			response.Fail(c, http.StatusBadRequest, "信息补充搜索词过长")
+			return
+		}
+		like := "%" + fieldsValue + "%"
+		switch fieldsType {
+		case "real_name":
+			q = q.Where("p.real_name LIKE ?", like)
+		case "address", "addres":
+			q = q.Where(`EXISTS (
+SELECT 1 FROM qixi_crm_b_user_address ua
+WHERE ua.user_id=u.id
+  AND CONCAT(COALESCE(ua.province,''),COALESCE(ua.city,''),COALESCE(ua.district,''),COALESCE(ua.detail,'')) LIKE ?
+)`, like)
+		case "mark", "bio":
+			q = q.Where("p.bio LIKE ?", like)
+		case "id_card", "card_id":
+			q = q.Where("p.id_card LIKE ?", like)
+		case "nickname":
+			q = q.Where("u.nickname LIKE ?", like)
+		case "phone":
+			q = q.Where("u.mobile LIKE ?", like)
+		case "uid", "id":
+			q = q.Where("CAST(u.id AS CHAR) = ?", fieldsValue)
+		default:
+			response.Fail(c, http.StatusBadRequest, "信息补充类型错误")
+			return
+		}
+	}
+	switch channel := strings.TrimSpace(c.Query("source_channel")); channel {
+	case "":
+	case "wechat", "mini_program", "h5", "pc":
+		q = q.Where("p.source_channel=?", channel)
+	case "app":
+		q = q.Where("p.source_channel IN ?", []string{"ios", "android", "harmony"})
+	default:
+		response.Fail(c, http.StatusBadRequest, "用户类型错误")
+		return
+	}
 	q = queryfilter.ApplyCreatedAtRange(q, c, "u.created_at")
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -777,10 +947,108 @@ func (h *Handler) List(c *gin.Context) {
 		response.Fail(c, 500, "用户查询失败")
 		return
 	}
+	now := time.Now()
 	for i := range rows {
 		rows[i].Mobile = mask(rows[i].Mobile)
+		rows[i].IsSvip, rows[i].SvipLabel = projectSvip(rows[i].SvipStatus, rows[i].SvipExpiresAt, now)
 	}
 	response.OK(c, gin.H{"list": rows, "total": total, "page": page, "limit": limit})
+}
+
+func projectSvip(status string, expiresAt *time.Time, now time.Time) (int, string) {
+	switch status {
+	case "trial":
+		return 1, "体验会员"
+	case "lifetime":
+		return 3, "永久会员"
+	case "period":
+		if expiresAt != nil && !expiresAt.Before(now) {
+			return 2, "有效期会员"
+		}
+		return 0, "已过期"
+	default:
+		return 0, "非会员"
+	}
+}
+
+type setSvipInput struct {
+	IsSvip      int    `json:"is_svip"`
+	SvipEndtime string `json:"svip_endtime"`
+}
+
+// SetSvip writes paid-membership projection onto qixi_crm_b_user_svip.
+// is_svip: 0 清除；1 体验；2 有效期（需到期时间）；3 永久；-1 关闭（清除）。
+func (h *Handler) SetSvip(c *gin.Context) {
+	userID, ok := positiveID(c.Param("id"))
+	var in setSvipInput
+	if !ok || c.ShouldBindJSON(&in) != nil {
+		response.Fail(c, http.StatusBadRequest, "付费会员参数错误")
+		return
+	}
+	if in.IsSvip != 0 && in.IsSvip != 1 && in.IsSvip != 2 && in.IsSvip != 3 && in.IsSvip != -1 {
+		response.Fail(c, http.StatusBadRequest, "付费会员类型错误")
+		return
+	}
+	var expiresAt *time.Time
+	if in.IsSvip == 2 {
+		raw := strings.TrimSpace(in.SvipEndtime)
+		if raw == "" {
+			response.Fail(c, http.StatusBadRequest, "有效期会员必须填写到期时间")
+			return
+		}
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", raw, time.Local)
+		if err != nil {
+			if t2, err2 := time.ParseInLocation("2006-01-02", raw, time.Local); err2 == nil {
+				t = t2
+			} else {
+				response.Fail(c, http.StatusBadRequest, "到期时间格式错误")
+				return
+			}
+		}
+		expiresAt = &t
+	}
+	err := h.business.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		var user struct{ ID uint64 }
+		if e := tx.Table("qixi_crm_b_user").Select("id").Where("id=?", userID).Take(&user).Error; e != nil {
+			return e
+		}
+		if in.IsSvip == 0 || in.IsSvip == -1 {
+			if e := tx.Exec("DELETE FROM qixi_crm_b_user_svip WHERE user_id=?", userID).Error; e != nil {
+				return e
+			}
+			return nil
+		}
+		status := "trial"
+		switch in.IsSvip {
+		case 2:
+			status = "period"
+		case 3:
+			status = "lifetime"
+		}
+		return tx.Exec(`
+INSERT INTO qixi_crm_b_user_svip (user_id, status, expires_at, updated_at)
+VALUES (?, ?, ?, NOW())
+ON DUPLICATE KEY UPDATE status=VALUES(status), expires_at=VALUES(expires_at), updated_at=VALUES(updated_at)`,
+			userID, status, expiresAt).Error
+	})
+	switch {
+	case err == nil:
+		label := "非会员"
+		if in.IsSvip == 1 {
+			label = "体验会员"
+		} else if in.IsSvip == 2 {
+			label = "有效期会员"
+		} else if in.IsSvip == 3 {
+			label = "永久会员"
+		} else if in.IsSvip == -1 {
+			label = "已关闭"
+		}
+		response.OK(c, gin.H{"user_id": userID, "is_svip": in.IsSvip, "svip_label": label, "svip_endtime": expiresAt})
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		response.Fail(c, http.StatusNotFound, "用户不存在")
+	default:
+		response.Fail(c, http.StatusInternalServerError, "付费会员设置失败")
+	}
 }
 
 // Export produces a bounded, privacy-minimised CSV payload for a manual browser
@@ -882,7 +1150,16 @@ func (h *Handler) Detail(c *gin.Context) {
 	}
 	profile := detailProfile{}
 	err := h.business.WithContext(c.Request.Context()).Table("qixi_crm_b_user AS u").
-		Select("u.id,u.nickname,u.mobile,u.status,u.created_at,COALESCE(a.balance,0) AS balance,COALESCE(a.points,0) AS points,COALESCE(a.commission,0) AS commission,COALESCE(l.name,'') AS level_name").
+		Select(`u.id,u.nickname,u.mobile,u.status,u.created_at,
+COALESCE(p.avatar_url,'') AS avatar_url,
+COALESCE(p.gender,0) AS gender,
+COALESCE(p.bio,'') AS bio,
+COALESCE(p.source_channel,'') AS source_channel,
+COALESCE(a.balance,0) AS balance,
+COALESCE(a.points,0) AS points,
+COALESCE(a.commission,0) AS commission,
+COALESCE(l.name,'') AS level_name`).
+		Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id=u.id").
 		Joins("LEFT JOIN qixi_crm_b_member_account AS a ON a.user_id=u.id").
 		Joins("LEFT JOIN qixi_crm_b_member_level AS l ON l.id=a.level_id").
 		Where("u.id=?", id).Take(&profile).Error

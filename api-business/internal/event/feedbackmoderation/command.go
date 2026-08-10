@@ -19,6 +19,7 @@ type command struct {
 	Action         string `json:"action"`
 	Reply          string `json:"reply"`
 	Name           string `json:"name,omitempty"`
+	PID            uint64 `json:"pid,omitempty"`
 	Sort           int    `json:"sort,omitempty"`
 	Status         int    `json:"status,omitempty"`
 	OperatorID     uint64 `json:"operator_id"`

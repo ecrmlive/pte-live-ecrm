@@ -27,7 +27,8 @@ INSERT INTO `qixi_crm_a_setting_cache` (`key`,`expire_time`,`result`) VALUES
   ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}'),
   ('merchant_apply_setting',0,'{"background_image":"","form_fields":[{"id":"demo_area","type":"text","title":"营业面积","content_type":"number","default_value":"","placeholder":"请输入营业面积","required":false}]}'),
   ('distribution_config',0,'{"extension_status":true,"extension_self":true,"extension_limit":false,"extension_limit_day":15,"promoter_type":0,"promoter_low_money":0,"extension_pop":0,"extension_one_rate":0.15,"extension_two_rate":0.05,"user_extract_min":10,"lock_brokerage_timer":7,"sys_extension_type":0,"withdraw_type":["0","1","2"],"extract_switch":1,"transfer_scene_id":0,"max_bag_number":10}'),
-  ('group_buying_config',0,'{"ficti_status":1,"group_buying_rate":30}')
+  ('group_buying_config',0,'{"ficti_status":1,"group_buying_rate":30}'),
+  ('integral_config',0,'{"integral_status":1,"integral_money":0.1,"integral_order_rate":1,"integral_freeze":0,"integral_clear_time":24,"integral_user_give":50,"integral_community_give":10,"integral_community_give_limit":10,"rule":""}')
 ON DUPLICATE KEY UPDATE `expire_time`=VALUES(`expire_time`),`result`=VALUES(`result`);
 
 -- 客服策略夹具只包含虚构中文业务文本，不包含 IM Token、UserSig、云密钥或真实值班信息。
@@ -216,11 +217,11 @@ ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`document`=VALUES(`document`),`sta
 INSERT INTO `qixi_crm_a_marketing_decor`
   (`id`,`decor_type`,`name`,`code`,`cover_url`,`remark`,`payload`,`status`,`sort`,`starts_at`,`ends_at`,`is_del`)
 VALUES
-  (8001,'atmosphere','夏日焕新氛围图','summer-atmosphere','/demo/home-hero-v1.png','中文演示氛围',JSON_OBJECT('theme','summer'),1,10,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY),0),
-  (8002,'border','精选商品边框','featured-border','/demo/home-service-wide-v1.png','中文演示边框',JSON_OBJECT('style','gold'),1,20,NULL,NULL,0),
-  (8003,'topic','居家香氛专题','home-fragrance-topic','/demo/home-hero-fragrance-v1.png','中文演示专题',JSON_OBJECT('category_id',102),1,30,NULL,NULL,0),
+  (8001,'atmosphere','夏日焕新氛围图','summer-atmosphere','https://picsum.photos/seed/qixi-atmosphere-summer/750/152','中文演示氛围',JSON_OBJECT('theme','summer','scope_type',0,'spu_ids',JSON_ARRAY(),'cate_ids',JSON_ARRAY(),'mer_ids',JSON_ARRAY(),'label_ids',JSON_ARRAY()),1,10,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY),0),
+  (8002,'border','精选商品边框','featured-border','https://picsum.photos/seed/qixi-border-featured/750/750','中文演示边框',JSON_OBJECT('style','gold','scope_type',0,'spu_ids',JSON_ARRAY(),'cate_ids',JSON_ARRAY(),'mer_ids',JSON_ARRAY(),'label_ids',JSON_ARRAY()),1,20,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 180 DAY),0),
+  (8003,'topic','居家香氛专场','home-fragrance-topic','https://picsum.photos/seed/qixi-topic-fragrance-list/710/340','中文演示专场',JSON_OBJECT('label_id',7502,'banner',JSON_ARRAY('https://picsum.photos/seed/qixi-topic-fragrance-b1/750/750','https://picsum.photos/seed/qixi-topic-fragrance-b2/750/750'),'image','https://picsum.photos/seed/qixi-topic-fragrance-theme/710/340','color','#F5E6D3','type',2),1,30,NULL,NULL,0),
   (8004,'application','新品内测报名','early-access','','中文演示报名',JSON_OBJECT('quota',100),1,40,NULL,NULL,0)
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`code`=VALUES(`code`),`cover_url`=VALUES(`cover_url`),`remark`=VALUES(`remark`),`payload`=VALUES(`payload`),`status`=VALUES(`status`),`sort`=VALUES(`sort`),`is_del`=VALUES(`is_del`);
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`code`=VALUES(`code`),`cover_url`=VALUES(`cover_url`),`remark`=VALUES(`remark`),`payload`=VALUES(`payload`),`status`=VALUES(`status`),`sort`=VALUES(`sort`),`starts_at`=VALUES(`starts_at`),`ends_at`=VALUES(`ends_at`),`is_del`=VALUES(`is_del`);
 
 -- 维护/运营配置条目夹具：热搜、组合数据、系统表单、备份登记（中文演示，不含密钥）。
 INSERT INTO `qixi_crm_a_config_item`

@@ -4,8 +4,8 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
-import { ElAlert, ElButton, ElMessage, ElMessageBox } from 'element-plus';
+import { Page, confirm } from '@vben/common-ui';
+import { ElButton, ElImage, ElMessage } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
@@ -13,84 +13,113 @@ import {
   clearUserSearchRecords,
   exportUserSearchRecords,
   listUserSearchRecords,
+  type UserSearchChannel,
   type UserSearchRecord,
 } from '#/api/core/platform-user-search';
+import { platformListPagerConfig } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   LIST_DATE_RANGE_FIELD,
   listFormOptionsDefaults,
 } from '#/utils/list-form-defaults';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
+
+type ChannelTab = UserSearchChannel;
+
+const CHANNEL_TABS: Array<{ key: ChannelTab; label: string }> = [
+  { key: '', label: '全部用户' },
+  { key: 'wechat', label: '微信用户' },
+  { key: 'mini_program', label: '小程序用户' },
+  { key: 'h5', label: 'H5用户' },
+  { key: 'app', label: 'APP用户' },
+  { key: 'pc', label: 'PC用户' },
+];
+
+const CHANNEL_LABELS: Record<string, string> = {
+  wechat: '微信用户',
+  mini_program: '小程序用户',
+  h5: 'H5用户',
+  pc: 'PC用户',
+  ios: 'APP用户',
+  android: 'APP用户',
+  harmony: 'APP用户',
+};
 
 const canRead = ref(false);
 const canClear = ref(false);
 const canExport = ref(false);
+const channelTab = ref<ChannelTab>('');
 const lastFilters = ref<Record<string, unknown>>({});
-
-const sourceLabel: Record<string, string> = {
-  pc: 'PC',
-  h5: 'H5',
-  mini: '小程序',
-};
 
 function buildFilters(formValues?: Record<string, unknown>) {
   const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
-  const userIdRaw = String(formValues?.user_id ?? '').trim();
   return {
-    user_id: userIdRaw ? Number(userIdRaw) : undefined,
     keyword: String(formValues?.keyword ?? '').trim() || undefined,
-    source: (String(formValues?.source ?? '').trim() ||
-      undefined) as UserSearchRecord['source'] | undefined,
-    start_date: range[0],
-    end_date: range[1],
+    nickname: String(formValues?.nickname ?? '').trim() || undefined,
+    user_type: (channelTab.value || undefined) as
+      | Exclude<ChannelTab, ''>
+      | undefined,
+    start_date: range[0] as string | undefined,
+    end_date: range[1] as string | undefined,
   };
 }
 
+function setChannelTab(key: ChannelTab) {
+  if (channelTab.value === key) return;
+  channelTab.value = key;
+  gridApi.reload();
+}
+
+function channelLabel(value: string) {
+  return CHANNEL_LABELS[String(value)] || String(value || '—');
+}
+
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
   {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '用户 ID' },
-    fieldName: 'user_id',
-    label: '用户 ID',
+    ...LIST_DATE_RANGE_FIELD,
+    label: '搜索时间',
   },
   {
     component: 'Input',
-    componentProps: { clearable: true, placeholder: '搜索关键词' },
+    componentProps: { clearable: true, placeholder: '请输入搜索词' },
     fieldName: 'keyword',
-    label: '关键词',
+    label: '搜索词',
   },
   {
-    component: 'Select',
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: 'PC', value: 'pc' },
-        { label: 'H5', value: 'h5' },
-        { label: '小程序', value: 'mini' },
-      ],
-      placeholder: '全部来源',
-    },
-    fieldName: 'source',
-    label: '来源',
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '请输入昵称' },
+    fieldName: 'nickname',
+    label: '用户昵称',
   },
 ]);
 
 const gridOptions: VxeGridProps<UserSearchRecord> = {
   columns: [
-    { field: 'id', title: '记录 ID', width: 100 },
-    { field: 'user_id', title: '用户 ID', width: 100 },
+    { field: 'user_id', title: '用户ID', width: 100 },
     {
-      field: 'keyword',
-      minWidth: 220,
-      showOverflow: false,
-      title: '搜索关键词',
+      field: 'avatar_url',
+      slots: { default: 'avatar' },
+      title: '头像',
+      width: 80,
     },
     {
-      field: 'source',
-      formatter: ({ cellValue }) =>
-        sourceLabel[String(cellValue)] || String(cellValue),
-      title: '来源',
-      width: 100,
+      field: 'nickname',
+      formatter: ({ cellValue }) => cellValue || '—',
+      minWidth: 120,
+      showOverflow: false,
+      title: '昵称',
+    },
+    {
+      field: 'user_type',
+      formatter: ({ cellValue }) => channelLabel(String(cellValue || '')),
+      minWidth: 110,
+      title: '用户类型',
+    },
+    {
+      field: 'keyword',
+      minWidth: 180,
+      showOverflow: false,
+      title: '搜索词',
     },
     {
       field: 'created_at',
@@ -99,7 +128,7 @@ const gridOptions: VxeGridProps<UserSearchRecord> = {
       title: '搜索时间',
     },
   ],
-  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -129,46 +158,32 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 async function clearRecords() {
   try {
-    const user = await ElMessageBox.prompt(
-      '请输入需清理的用户 ID。本操作仅逻辑删除该用户当前可见搜索记录，不影响订单、收藏或浏览记录。',
-      '按用户清理搜索记录',
-      {
-        inputPattern: /^[1-9]\d*$/,
-        inputErrorMessage: '请输入正整数用户 ID',
-      },
-    );
-    const reason = await ElMessageBox.prompt(
-      '请填写清理原因（2 至 500 个字符）。',
-      '清理原因',
-      { inputPattern: /.{2,}/, inputErrorMessage: '清理原因至少 2 个字符' },
-    );
-    const result = await clearUserSearchRecords({
-      user_id: Number(user.value),
-      reason: reason.value.trim(),
-      idempotency_key: `search-clear-${user.value}-${crypto.randomUUID()}`,
+    await confirm({
+      title: '提示',
+      content: '确认一键清空全部搜索记录吗？清空后列表将不再展示这些记录。',
+      icon: 'warning',
     });
-    ElMessage.success(`已逻辑清理 ${result.cleared_count} 条搜索记录`);
+  } catch {
+    return;
+  }
+  try {
+    const result = await clearUserSearchRecords();
+    ElMessage.success(`已清空 ${result.cleared_count} 条搜索记录`);
     gridApi.reload();
   } catch {
-    /* 用户取消 */
+    /* 错误由 request 层提示 */
   }
 }
 
 async function exportRows() {
   try {
-    const prompt = await ElMessageBox.prompt(
-      '请填写导出原因。导出含用户 ID 与搜索词，最多 5000 条，请按最小必要原则使用。',
-      '导出搜索记录',
-      { inputPattern: /.{2,}/, inputErrorMessage: '导出原因至少 2 个字符' },
-    );
     const filters = lastFilters.value;
     const result = await exportUserSearchRecords({
-      user_id: filters.user_id as number | undefined,
       keyword: filters.keyword as string | undefined,
-      source: filters.source as UserSearchRecord['source'] | undefined,
+      nickname: filters.nickname as string | undefined,
+      user_type: filters.user_type as Exclude<ChannelTab, ''> | undefined,
       start_date: filters.start_date as string | undefined,
       end_date: filters.end_date as string | undefined,
-      reason: prompt.value.trim(),
     });
     const blob = new Blob([result.content], {
       type: 'text/csv;charset=utf-8',
@@ -183,7 +198,7 @@ async function exportRows() {
       `已导出 ${result.row_count} 条搜索记录${result.truncated ? '（已按 5000 条上限截断）' : ''}`,
     );
   } catch {
-    /* 用户取消 */
+    /* 错误由 request 层提示 */
   }
 }
 
@@ -202,30 +217,104 @@ onMounted(async () => {
 
 <template>
   <Page auto-content-height>
-    <ElAlert
-      v-if="!canRead"
-      class="mb-4"
-      title="当前账号没有搜索记录查看权限"
-      type="warning"
-      :closable="false"
-    />
-    <template v-else>
-      <Grid>
-        <template #toolbar-actions>
-          <ElButton v-if="canClear" plain type="warning" @click="clearRecords">
-            按用户清理
-          </ElButton>
-          <ElButton v-if="canExport" plain type="success" @click="exportRows">
-            导出 CSV
-          </ElButton>
-        </template>
-      </Grid>
-      <ElAlert
-        class="mt-4"
-        title="导出会写入审计。CSV 使用 UTF-8 BOM 并对以 =、+、-、@ 开头的关键词转义，避免表格公式注入。"
-        type="info"
-        :closable="false"
-      />
-    </template>
+    <Grid>
+      <template #toolbar-actions>
+        <div class="search-record-toolbar">
+          <div class="search-record-tabs" role="tablist">
+            <button
+              v-for="tab in CHANNEL_TABS"
+              :key="tab.key || 'all'"
+              type="button"
+              role="tab"
+              class="search-record-tabs__item"
+              :aria-selected="channelTab === tab.key"
+              :class="{ 'is-active': channelTab === tab.key }"
+              @click="setChannelTab(tab.key)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+          <div class="search-record-toolbar__actions">
+            <ElButton v-if="canExport" type="primary" @click="exportRows">
+              导出搜索记录
+            </ElButton>
+            <ElButton v-if="canClear" type="danger" plain @click="clearRecords">
+              一键清空
+            </ElButton>
+          </div>
+        </div>
+      </template>
+
+      <template #avatar="{ row }">
+        <ElImage
+          v-if="row.avatar_url"
+          :src="resolveCosMediaUrl(row.avatar_url)"
+          fit="cover"
+          class="user-avatar"
+        >
+          <template #error>
+            <div class="user-avatar user-avatar--empty">无</div>
+          </template>
+        </ElImage>
+        <div v-else class="user-avatar user-avatar--empty">—</div>
+      </template>
+    </Grid>
   </Page>
 </template>
+
+<style scoped>
+.search-record-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.search-record-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  min-width: 0;
+}
+
+.search-record-tabs__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 8px 2px;
+  cursor: pointer;
+  color: hsl(var(--foreground) / 0.75);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.search-record-tabs__item.is-active {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 hsl(var(--primary));
+}
+
+.search-record-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.user-avatar--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--muted) / 0.4);
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+</style>

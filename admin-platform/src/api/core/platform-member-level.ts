@@ -4,23 +4,30 @@ export interface MemberLevel {
   id: number;
   name: string;
   rank: number;
-  rules: string;
-  benefits: string;
+  icon_url: string;
+  growth_value: number;
+  bg_image: string;
   status: number;
   version: number;
-  assigned_count: number;
+  user_count: number;
+  created_at: string;
 }
 
 export interface MemberLevelInput {
   name: string;
   rank: number;
-  rules: string;
-  benefits: string;
+  icon_url: string;
+  growth_value: number;
+  bg_image: string;
   status: number;
   version?: number;
 }
 
-export const listMemberLevels = () => requestClient.get<{ list: MemberLevel[] }>('/member-levels');
-export const createMemberLevel = (data: MemberLevelInput) => requestClient.post<void>('/member-levels', data);
-export const updateMemberLevel = (id: number, data: MemberLevelInput) => requestClient.put(`/member-levels/${id}`, data);
-export const deleteMemberLevel = (id: number) => requestClient.delete(`/member-levels/${id}`);
+export const listMemberLevels = () =>
+  requestClient.get<{ list: MemberLevel[] }>('/member-levels');
+export const createMemberLevel = (data: MemberLevelInput) =>
+  requestClient.post<void>('/member-levels', data);
+export const updateMemberLevel = (id: number, data: MemberLevelInput) =>
+  requestClient.put(`/member-levels/${id}`, data);
+export const deleteMemberLevel = (id: number) =>
+  requestClient.delete(`/member-levels/${id}`);

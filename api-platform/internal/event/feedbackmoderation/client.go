@@ -17,6 +17,7 @@ type Command struct {
 	Action         string `json:"action"`
 	Reply          string `json:"reply"`
 	Name           string `json:"name,omitempty"`
+	PID            uint64 `json:"pid,omitempty"`
 	Sort           int    `json:"sort,omitempty"`
 	Status         int    `json:"status,omitempty"`
 	OperatorID     uint64 `json:"operator_id"`
@@ -82,7 +83,13 @@ func (c *Client) Dispatch(ctx context.Context, x Command) (Result, error) {
 		return Result{}, errors.New("反馈命令未确认")
 	}
 	var out Result
-	if e = json.Unmarshal(m.Data, &out); e != nil || (x.FeedbackID > 0 && out.FeedbackID != x.FeedbackID) || (x.CategoryID > 0 && out.CategoryID != x.CategoryID) || (x.Action == "category_create" && out.CategoryID == 0) {
+	if e = json.Unmarshal(m.Data, &out); e != nil {
+		return Result{}, errors.New("反馈命令结果无效")
+	}
+	if out.Code != "" {
+		return out, nil
+	}
+	if (x.FeedbackID > 0 && out.FeedbackID != x.FeedbackID) || (x.CategoryID > 0 && out.CategoryID != x.CategoryID) || (x.Action == "category_create" && out.CategoryID == 0) {
 		return Result{}, errors.New("反馈命令结果无效")
 	}
 	return out, nil

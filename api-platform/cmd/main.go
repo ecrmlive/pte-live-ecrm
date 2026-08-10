@@ -92,12 +92,16 @@ import (
 	platformnativediscount "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativediscount"
 	platformnativedistribution "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativedistribution"
 	platformnativeledger "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeledger"
+	platformactivityform "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/activityform"
 	platformnativemarketingdecor "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativemarketingdecor"
 	platformnativeorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeorder"
 	platformnativerefund "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativerefund"
 	platformnativesettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativesettlement"
 	platformnativewithdraw "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativewithdraw"
 	platformoperationlog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/operationlog"
+	platformintegralcate "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralcate"
+	platformintegrallog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integrallog"
+	platformintegralorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralorder"
 	platformpoints "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/points"
 	platformpresell "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/presell"
 	platformproductmeta "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/productmeta"
@@ -258,6 +262,7 @@ func main() {
 	platformSettlementH := platformnativesettlement.NewHandler(gdb, merchantSettlementCommands)
 	platformDiscountH := platformnativediscount.NewHandler(businessDB, gdb)
 	platformMarketingDecorH := platformnativemarketingdecor.NewHandler(gdb)
+	platformActivityFormH := platformactivityform.NewHandler(gdb)
 	platformConfigItemH := platformnativeconfigitem.NewHandler(gdb)
 	platformCouponH := platformcoupon.NewHandler(promoSvc, gdb)
 	platformContentH := platformcontent.NewHandler(contentSvc, gdb)
@@ -278,11 +283,14 @@ func main() {
 	platformFeedbackH := platformfeedback.New(businessDB, gdb, feedbackCommands)
 	platformInvoiceH := platforminvoice.New(businessDB, gdb)
 	platformArticleH := platformarticle.NewHandler(articleSvc, gdb)
-	platformUserTagH := platformusertag.NewHandler(userTagSvc, idSvc)
+	platformUserTagH := platformusertag.NewHandler(userTagSvc, gdb)
 	platformUserListH := platformuserlist.New(businessDB, gdb)
 	platformUserSearchH := platformusersearch.New(businessDB, gdb)
 	platformOperationLogH := platformoperationlog.New(gdb)
 	platformPointsH := platformpoints.NewHandler(businessDB, gdb)
+	platformIntegralCateH := platformintegralcate.NewHandler(businessDB, gdb)
+	platformIntegralLogH := platformintegrallog.NewHandler(businessDB, gdb)
+	platformIntegralOrderH := platformintegralorder.NewHandler(businessDB, gdb)
 	platformRechargeH := platformrecharge.NewHandler(businessDB, gdb)
 	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 
@@ -326,6 +334,7 @@ func main() {
 	platformSettlementH.Register(platformAuthed)
 	platformDiscountH.Register(platformAuthed)
 	platformMarketingDecorH.Register(platformAuthed)
+	platformActivityFormH.Register(platformAuthed)
 	platformConfigItemH.Register(platformAuthed)
 	platformCouponH.Register(platformAuthed)
 	platformContentH.Register(platformAuthed)
@@ -351,6 +360,9 @@ func main() {
 	platformUserSearchH.Register(platformAuthed)
 	platformOperationLogH.Register(platformAuthed)
 	platformPointsH.Register(platformAuthed)
+	platformIntegralCateH.Register(platformAuthed)
+	platformIntegralLogH.Register(platformAuthed)
+	platformIntegralOrderH.Register(platformAuthed)
 	platformRechargeH.Register(platformAuthed)
 	platformCustomerServiceH.Register(platformAuthed)
 

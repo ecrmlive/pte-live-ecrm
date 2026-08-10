@@ -84,6 +84,18 @@ func RequireAdminRoles(expected ...string) gin.HandlerFunc {
 // tables. It must be used by new unified-console handlers instead of legacy
 // qixi_m_admin_system_menu checks.
 func RequireAdminMenu(adminDB *gorm.DB, code string) gin.HandlerFunc {
+	return RequireAdminMenuAny(adminDB, code)
+}
+
+// RequireAdminMenuAny allows the request when the admin holds any listed button code.
+func RequireAdminMenuAny(adminDB *gorm.DB, codes ...string) gin.HandlerFunc {
+	normalized := make([]string, 0, len(codes))
+	for _, code := range codes {
+		code = strings.TrimSpace(code)
+		if code != "" {
+			normalized = append(normalized, code)
+		}
+	}
 	return func(c *gin.Context) {
 		claims := ClaimsFrom(c)
 		if claims == nil || claims.AdminID == 0 {
@@ -91,7 +103,7 @@ func RequireAdminMenu(adminDB *gorm.DB, code string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if adminDB == nil || strings.TrimSpace(code) == "" {
+		if adminDB == nil || len(normalized) == 0 {
 			response.Fail(c, http.StatusInternalServerError, "统一后台按钮权限配置错误")
 			c.Abort()
 			return
@@ -100,7 +112,7 @@ func RequireAdminMenu(adminDB *gorm.DB, code string) gin.HandlerFunc {
 		err := adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_menu AS m").
 			Joins("INNER JOIN qixi_crm_a_role_menu AS rm ON rm.menu_id = m.id").
 			Joins("INNER JOIN qixi_crm_a_admin_user_role AS ur ON ur.role_id = rm.role_id").
-			Where("ur.admin_user_id = ? AND m.code = ? AND m.kind = 'button' AND m.status = 1", claims.AdminID, strings.TrimSpace(code)).
+			Where("ur.admin_user_id = ? AND m.code IN ? AND m.kind = 'button' AND m.status = 1", claims.AdminID, normalized).
 			Count(&total).Error
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "统一后台按钮权限校验失败")
@@ -219,6 +231,9 @@ func operationRoute(path string) bool {
 		strings.HasPrefix(path, "/api/platform/v1/presell/") ||
 		strings.HasPrefix(path, "/api/platform/v1/assist/") ||
 		strings.HasPrefix(path, "/api/platform/v1/points/") ||
+		strings.HasPrefix(path, "/api/platform/v1/integral/") ||
+		strings.HasPrefix(path, "/api/platform/v1/setting/balance") ||
+		strings.HasPrefix(path, "/api/platform/v1/setting/user-setup") ||
 		strings.HasPrefix(path, "/api/platform/v1/recharge/") ||
 		strings.HasPrefix(path, "/api/platform/v1/svip/") ||
 		strings.HasPrefix(path, "/api/platform/v1/coupons") ||

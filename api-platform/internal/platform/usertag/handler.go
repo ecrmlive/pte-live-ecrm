@@ -5,37 +5,48 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/usertag"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+const (
+	// RequireAdminMenu 仅认 kind=button；page 码 user.label / user.group 不能用于接口鉴权。
+	menuUserLabelRead   = "user.label.read"
+	menuUserLabelManage = "user.label.manage"
+	menuUserGroupRead   = "user.group.read"
+	menuUserGroupManage = "user.group.manage"
 )
 
 type Handler struct {
-	svc *usertag.Service
-	id  *identity.Service
+	svc     *usertag.Service
+	adminDB *gorm.DB
 }
 
-func NewHandler(svc *usertag.Service, id *identity.Service) *Handler {
-	return &Handler{svc: svc, id: id}
+func NewHandler(svc *usertag.Service, adminDB *gorm.DB) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
-	labelManage := middleware.RequirePlatformMenu(h.id, identity.PlatPermUserLabelManage)
-	groupManage := middleware.RequirePlatformMenu(h.id, identity.PlatPermUserGroupManage)
-	r.GET("/user/labels", labelManage, h.ListLabels)
-	r.POST("/user/labels", labelManage, h.CreateLabel)
-	r.PUT("/user/labels/:id", labelManage, h.UpdateLabel)
-	r.DELETE("/user/labels/:id", labelManage, h.DeleteLabel)
+	access := middleware.RequireAdminRoles("platform", "operations")
+	labelRead := middleware.RequireAdminMenu(h.adminDB, menuUserLabelRead)
+	labelManage := middleware.RequireAdminMenu(h.adminDB, menuUserLabelManage)
+	groupRead := middleware.RequireAdminMenu(h.adminDB, menuUserGroupRead)
+	groupManage := middleware.RequireAdminMenu(h.adminDB, menuUserGroupManage)
+	r.GET("/user/labels", access, labelRead, h.ListLabels)
+	r.POST("/user/labels", access, labelManage, h.CreateLabel)
+	r.PUT("/user/labels/:id", access, labelManage, h.UpdateLabel)
+	r.DELETE("/user/labels/:id", access, labelManage, h.DeleteLabel)
 
-	r.GET("/user/groups", groupManage, h.ListGroups)
-	r.POST("/user/groups", groupManage, h.CreateGroup)
-	r.PUT("/user/groups/:id", groupManage, h.UpdateGroup)
-	r.DELETE("/user/groups/:id", groupManage, h.DeleteGroup)
+	r.GET("/user/groups", access, groupRead, h.ListGroups)
+	r.POST("/user/groups", access, groupManage, h.CreateGroup)
+	r.PUT("/user/groups/:id", access, groupManage, h.UpdateGroup)
+	r.DELETE("/user/groups/:id", access, groupManage, h.DeleteGroup)
 
-	r.GET("/user/:uid/labels", labelManage, h.ListUserLabels)
-	r.PUT("/user/:uid/labels", labelManage, h.MarkUser)
+	r.GET("/user/:uid/labels", access, labelRead, h.ListUserLabels)
+	r.PUT("/user/:uid/labels", access, labelManage, h.MarkUser)
 }
 
 func (h *Handler) ListLabels(c *gin.Context) {
