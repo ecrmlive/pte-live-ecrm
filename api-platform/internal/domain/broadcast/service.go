@@ -10,7 +10,7 @@ import (
 )
 
 type Store interface {
-	List(ctx context.Context, merID *uint, onlyPublic bool, page, limit int) ([]Room, int64, error)
+	List(ctx context.Context, filter ListFilter, page, limit int) ([]Room, int64, error)
 	Get(ctx context.Context, id uint) (*Room, error)
 	Create(ctx context.Context, r *Room) error
 	Update(ctx context.Context, r *Room) error
@@ -27,7 +27,7 @@ func NewService(store Store) *Service { return &Service{store: store} }
 
 func (s *Service) ListApp(ctx context.Context, page, limit int) (*PageResult[Room], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.List(ctx, nil, true, page, limit)
+	list, total, err := s.store.List(ctx, ListFilter{OnlyPublic: true}, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *Service) ListMerchant(ctx context.Context, merID uint, page, limit int)
 		return nil, ErrBadParam
 	}
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.List(ctx, &merID, false, page, limit)
+	list, total, err := s.store.List(ctx, ListFilter{MerID: &merID}, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +48,13 @@ func (s *Service) ListMerchant(ctx context.Context, merID uint, page, limit int)
 	return &PageResult[Room]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) ListPlatform(ctx context.Context, page, limit int) (*PageResult[Room], error) {
+func (s *Service) ListPlatform(ctx context.Context, filter ListFilter, page, limit int) (*PageResult[Room], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.List(ctx, nil, false, page, limit)
+	// 店铺类别无匹配商户时直接空页，避免 IN () SQL 错误。
+	if filter.MerIDs != nil && len(filter.MerIDs) == 0 {
+		return &PageResult[Room]{List: []Room{}, Total: 0, Page: page, Limit: limit}, nil
+	}
+	list, total, err := s.store.List(ctx, filter, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +103,8 @@ func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Room, 
 		MerID: merID, Name: strings.TrimSpace(in.Name),
 		CoverImg: strings.TrimSpace(in.CoverImg), FeedsImg: strings.TrimSpace(in.FeedsImg),
 		PlayURL: strings.TrimSpace(in.PlayURL), PushURL: strings.TrimSpace(in.PushURL),
-		AnchorName: strings.TrimSpace(in.AnchorName), Phone: strings.TrimSpace(in.Phone),
+		AnchorName: strings.TrimSpace(in.AnchorName), AnchorWechat: strings.TrimSpace(in.AnchorWechat),
+		Phone: strings.TrimSpace(in.Phone),
 		StartTime: start, EndTime: end, LiveStatus: live, Status: AuditPending,
 		IsShow: 1, Star: 1, Mark: strings.TrimSpace(in.Mark), CreateTime: time.Now(),
 	}
@@ -146,6 +151,9 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Ro
 	}
 	if in.AnchorName != "" {
 		r.AnchorName = strings.TrimSpace(in.AnchorName)
+	}
+	if in.AnchorWechat != "" {
+		r.AnchorWechat = strings.TrimSpace(in.AnchorWechat)
 	}
 	if in.Phone != "" {
 		r.Phone = strings.TrimSpace(in.Phone)
@@ -256,6 +264,44 @@ func (s *Service) Audit(ctx context.Context, id uint, in AuditInput) (*Room, err
 		r.IsShow = int8(*in.IsShow)
 	}
 	if in.Status == 0 && in.IsShow == nil {
+		return nil, ErrBadParam
+	}
+	if err := s.store.Update(ctx, r); err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, id, true)
+}
+
+func (s *Service) SetShow(ctx context.Context, id uint, isShow int8) (*Room, error) {
+	if isShow != 0 && isShow != 1 {
+		return nil, ErrBadParam
+	}
+	r, err := s.Get(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+	r.IsShow = isShow
+	if err := s.store.Update(ctx, r); err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, id, true)
+}
+
+func (s *Service) SetRecommend(ctx context.Context, id uint, in RecommendInput) (*Room, error) {
+	r, err := s.Get(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+	if in.Star != nil {
+		if *in.Star < 0 || *in.Star > 5 {
+			return nil, ErrBadParam
+		}
+		r.Star = *in.Star
+	}
+	if in.Sort != nil {
+		r.Sort = *in.Sort
+	}
+	if in.Star == nil && in.Sort == nil {
 		return nil, ErrBadParam
 	}
 	if err := s.store.Update(ctx, r); err != nil {

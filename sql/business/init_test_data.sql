@@ -74,12 +74,17 @@ INSERT INTO `qixi_crm_b_product_sku_view` (`merchant_sku_id`,`product_id`,`sku_k
 ON DUPLICATE KEY UPDATE `sku_key`=VALUES(`sku_key`),`spec_snapshot`=VALUES(`spec_snapshot`),`price`=VALUES(`price`),`stock`=VALUES(`stock`),`sale_status`=VALUES(`sale_status`),`version`=VALUES(`version`),`updated_at`=NOW();
 
 -- 直播监管夹具仅包含虚构房间、商品和审核状态；推流地址、主播手机号始终为空，不写入任何凭据。
-INSERT INTO `qixi_crm_b_broadcast_room` (`broadcast_room_id`,`mer_id`,`name`,`cover_img`,`feeds_img`,`play_url`,`push_url`,`start_time`,`end_time`,`anchor_name`,`phone`,`status`,`live_status`,`is_show`,`is_del`,`sort`,`star`,`mark`,`refusal`) VALUES
-  (7101,1,'CRM Live服饰秋日穿搭直播间','/demo/live-fashion-cover.png','/demo/live-fashion-feed.png','','',DATE_ADD(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 26 HOUR),'虚构主播小七','',0,102,0,0,10,5,'中文模拟直播审核夹具',''),
-  (7102,2,'CRM Live居家香氛新品直播间','/demo/live-home-cover.png','/demo/live-home-feed.png','','',DATE_SUB(NOW(),INTERVAL 1 HOUR),DATE_ADD(NOW(),INTERVAL 1 HOUR),'虚构主播小居','',2,101,1,0,8,4,'中文模拟已审核直播夹具','')
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`cover_img`=VALUES(`cover_img`),`feeds_img`=VALUES(`feeds_img`),`start_time`=VALUES(`start_time`),`end_time`=VALUES(`end_time`),`anchor_name`=VALUES(`anchor_name`),`status`=VALUES(`status`),`live_status`=VALUES(`live_status`),`is_show`=VALUES(`is_show`),`mark`=VALUES(`mark`),`refusal`=VALUES(`refusal`);
+INSERT INTO `qixi_crm_b_broadcast_room` (`broadcast_room_id`,`mer_id`,`name`,`cover_img`,`feeds_img`,`play_url`,`push_url`,`start_time`,`end_time`,`anchor_name`,`anchor_wechat`,`phone`,`status`,`live_status`,`is_show`,`is_del`,`sort`,`star`,`mark`,`refusal`) VALUES
+  (7101,1,'CRM Live服饰秋日穿搭直播间','/demo/live-fashion-cover.png','/demo/live-fashion-feed.png','','',DATE_ADD(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 26 HOUR),'虚构主播小七','demo_anchor_xq','',0,102,0,0,10,5,'中文模拟直播审核夹具',''),
+  (7102,2,'CRM Live居家香氛新品直播间','/demo/live-home-cover.png','/demo/live-home-feed.png','','',DATE_SUB(NOW(),INTERVAL 1 HOUR),DATE_ADD(NOW(),INTERVAL 1 HOUR),'虚构主播小居','demo_anchor_xj','',2,101,1,0,8,4,'中文模拟已审核直播夹具',''),
+  (7103,1,'CRM Live服饰周末上新直播间','/demo/live-fashion-cover.png','/demo/live-fashion-feed.png','','',DATE_ADD(NOW(),INTERVAL 2 DAY),DATE_ADD(DATE_ADD(NOW(),INTERVAL 2 DAY),INTERVAL 3 HOUR),'虚构主播小茉','demo_anchor_xm','',2,102,1,0,12,3,'中文模拟待开播直播间',''),
+  (7104,2,'CRM Live居家收纳技巧直播间','/demo/live-home-cover.png','/demo/live-home-feed.png','','',DATE_SUB(NOW(),INTERVAL 2 DAY),DATE_ADD(DATE_SUB(NOW(),INTERVAL 2 DAY),INTERVAL 2 HOUR),'虚构主播小宁','demo_anchor_xn','',2,103,0,0,6,2,'中文模拟已结束直播间',''),
+  (7105,3,'CRM Live数码开学季直播间','/demo/live-digital-cover.png','/demo/live-digital-feed.png','','',DATE_ADD(NOW(),INTERVAL 12 HOUR),DATE_ADD(NOW(),INTERVAL 15 HOUR),'虚构主播小数','demo_anchor_xs','',-1,102,0,0,4,0,'中文模拟驳回直播间','封面不符合规范，请更换后重新提交'),
+  (7106,1,'CRM Live服饰晚间连麦直播间','/demo/live-fashion-cover.png','/demo/live-fashion-feed.png','','',DATE_SUB(NOW(),INTERVAL 30 MINUTE),DATE_ADD(NOW(),INTERVAL 90 MINUTE),'虚构主播小晚','demo_anchor_xw','',2,101,1,0,15,5,'中文模拟直播中直播间','')
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`cover_img`=VALUES(`cover_img`),`feeds_img`=VALUES(`feeds_img`),`start_time`=VALUES(`start_time`),`end_time`=VALUES(`end_time`),`anchor_name`=VALUES(`anchor_name`),`anchor_wechat`=VALUES(`anchor_wechat`),`status`=VALUES(`status`),`live_status`=VALUES(`live_status`),`is_show`=VALUES(`is_show`),`sort`=VALUES(`sort`),`star`=VALUES(`star`),`mark`=VALUES(`mark`),`refusal`=VALUES(`refusal`);
 INSERT INTO `qixi_crm_b_broadcast_room_goods` (`broadcast_room_id`,`product_id`,`on_sale`,`sort`) VALUES
-  (7101,1001,1,1),(7101,1002,1,2),(7102,1101,1,1),(7102,1104,1,2)
+  (7101,1001,1,1),(7101,1002,1,2),(7102,1101,1,1),(7102,1104,1,2),
+  (7103,1001,1,1),(7103,1003,1,2),(7104,1101,1,1),(7105,1201,1,1),(7106,1002,1,1),(7106,1001,1,2)
 ON DUPLICATE KEY UPDATE `on_sale`=VALUES(`on_sale`),`sort`=VALUES(`sort`);
 
 -- 积分商城消费投影：库存与所需积分均由业务事件同步，以下为本地中文验收夹具。
@@ -117,12 +122,31 @@ INSERT INTO `qixi_crm_b_seckill_active` (`seckill_active_id`,`name`,`seckill_tim
   (6004,'头层牛皮托特包限时秒杀·早上场','2',DATE_SUB(CURDATE(),INTERVAL 1 DAY),DATE_ADD(CURDATE(),INTERVAL 90 DAY),1,1002,149.00,1,0,1,1,UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),NULL)
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`seckill_time_ids`=VALUES(`seckill_time_ids`),`start_day`=VALUES(`start_day`),`end_day`=VALUES(`end_day`),`mer_id`=VALUES(`mer_id`),`product_id`=VALUES(`product_id`),`seckill_price`=VALUES(`seckill_price`),`once_pay_count`=VALUES(`once_pay_count`),`active_status`=VALUES(`active_status`),`status`=VALUES(`status`),`update_time`=VALUES(`update_time`),`delete_time`=VALUES(`delete_time`);
 
-INSERT INTO `qixi_crm_b_combination_group` (`product_group_id`,`product_id`,`start_time`,`end_time`,`time`,`buying_count_num`,`buying_num`,`pay_count`,`once_pay_count`,`status`,`mer_id`,`is_show`,`is_del`,`success_num`,`product_status`,`price`,`action_status`) VALUES
-  (6101,1001,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,2,1,0,1,1,1,1,0,18,1,239.00,1),
-  (6102,1002,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,3,1,0,1,1,1,1,0,12,1,369.00,1),
-  (6103,1101,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,2,1,0,1,1,2,1,0,26,1,189.00,1),
-  (6104,1201,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,4,1,0,1,1,3,1,0,9,1,159.00,1)
-ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`start_time`=VALUES(`start_time`),`end_time`=VALUES(`end_time`),`time`=VALUES(`time`),`buying_count_num`=VALUES(`buying_count_num`),`mer_id`=VALUES(`mer_id`),`is_show`=VALUES(`is_show`),`is_del`=VALUES(`is_del`),`success_num`=VALUES(`success_num`),`price`=VALUES(`price`),`action_status`=VALUES(`action_status`);
+INSERT INTO `qixi_crm_b_combination_group` (`product_group_id`,`product_id`,`start_time`,`end_time`,`time`,`buying_count_num`,`buying_num`,`pay_count`,`once_pay_count`,`status`,`mer_id`,`is_show`,`is_del`,`success_num`,`product_status`,`refusal`,`price`,`action_status`) VALUES
+  (6101,1001,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,2,1,0,1,1,1,1,0,18,1,'',239.00,1),
+  (6102,1002,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,3,1,0,1,1,1,1,0,12,1,'',369.00,1),
+  (6103,1101,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,2,1,0,1,1,2,1,0,26,1,'',189.00,1),
+  (6104,1201,DATE_SUB(NOW(),INTERVAL 1 DAY),DATE_ADD(NOW(),INTERVAL 90 DAY),24,4,1,0,1,1,3,0,0,9,0,'',159.00,1)
+ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`start_time`=VALUES(`start_time`),`end_time`=VALUES(`end_time`),`time`=VALUES(`time`),`buying_count_num`=VALUES(`buying_count_num`),`mer_id`=VALUES(`mer_id`),`is_show`=VALUES(`is_show`),`is_del`=VALUES(`is_del`),`success_num`=VALUES(`success_num`),`product_status`=VALUES(`product_status`),`refusal`=VALUES(`refusal`),`price`=VALUES(`price`),`action_status`=VALUES(`action_status`);
+
+-- 拼团开团记录（活动列表）演示数据；详细幂等补丁见 patch_combination_buying_seed.sql
+INSERT INTO `qixi_crm_b_combination_buying` (`group_buying_id`,`product_group_id`,`status`,`buying_count_num`,`buying_num`,`yet_buying_num`,`is_del`,`mer_id`,`end_time`,`create_time`) VALUES
+  (61101,6101,10,2,1,2,0,1,UNIX_TIMESTAMP(DATE_SUB(NOW(),INTERVAL 12 HOUR)),DATE_SUB(NOW(),INTERVAL 2 DAY)),
+  (61102,6101,0,2,1,1,0,1,UNIX_TIMESTAMP(DATE_ADD(NOW(),INTERVAL 20 HOUR)),DATE_SUB(NOW(),INTERVAL 6 HOUR)),
+  (61103,6102,0,3,1,2,0,1,UNIX_TIMESTAMP(DATE_ADD(NOW(),INTERVAL 18 HOUR)),DATE_SUB(NOW(),INTERVAL 1 DAY)),
+  (61104,6103,10,2,1,2,0,2,UNIX_TIMESTAMP(DATE_SUB(NOW(),INTERVAL 3 HOUR)),DATE_SUB(NOW(),INTERVAL 30 HOUR)),
+  (61105,6103,0,2,1,1,0,2,UNIX_TIMESTAMP(DATE_ADD(NOW(),INTERVAL 10 HOUR)),DATE_SUB(NOW(),INTERVAL 3 HOUR))
+ON DUPLICATE KEY UPDATE `status`=VALUES(`status`),`yet_buying_num`=VALUES(`yet_buying_num`),`is_del`=VALUES(`is_del`),`mer_id`=VALUES(`mer_id`),`end_time`=VALUES(`end_time`),`create_time`=VALUES(`create_time`);
+INSERT INTO `qixi_crm_b_combination_member` (`id`,`group_buying_id`,`product_group_id`,`status`,`is_initiator`,`order_id`,`uid`,`nickname`,`avatar`,`is_del`,`create_time`,`is_leader`) VALUES
+  (6110101,61101,6101,1,1,0,9101,'CRM Live体验用户','',0,DATE_SUB(NOW(),INTERVAL 2 DAY),1),
+  (6110102,61101,6101,1,0,0,9201,'小林','',0,DATE_SUB(NOW(),INTERVAL 47 HOUR),0),
+  (6110201,61102,6101,1,1,0,9203,'晚风','',0,DATE_SUB(NOW(),INTERVAL 6 HOUR),1),
+  (6110301,61103,6102,1,1,0,9201,'小林','',0,DATE_SUB(NOW(),INTERVAL 1 DAY),1),
+  (6110302,61103,6102,1,0,0,9202,'阿澈','',0,DATE_SUB(NOW(),INTERVAL 20 HOUR),0),
+  (6110401,61104,6103,1,1,0,9202,'阿澈','',0,DATE_SUB(NOW(),INTERVAL 30 HOUR),1),
+  (6110402,61104,6103,1,0,0,9101,'CRM Live体验用户','',0,DATE_SUB(NOW(),INTERVAL 28 HOUR),0),
+  (6110501,61105,6103,1,1,0,9203,'晚风','',0,DATE_SUB(NOW(),INTERVAL 3 HOUR),1)
+ON DUPLICATE KEY UPDATE `nickname`=VALUES(`nickname`),`is_initiator`=VALUES(`is_initiator`),`is_leader`=VALUES(`is_leader`),`is_del`=VALUES(`is_del`);
 
 -- 预售与好友助力公开展示夹具。没有登录时只允许浏览；创建订单仍需要地址、JWT 和后端状态机校验。
 INSERT INTO `qixi_crm_b_presell` (`product_presell_id`,`start_time`,`end_time`,`final_start_time`,`final_end_time`,`status`,`presell_type`,`pay_count`,`delivery_type`,`delivery_day`,`product_id`,`price`,`down_price`,`final_price`,`stock`,`is_show`,`store_name`,`mer_id`,`store_info`,`is_del`,`product_status`,`action_status`,`seles`) VALUES
@@ -348,6 +372,7 @@ INSERT INTO `qixi_crm_b_content_view` (`content_id`,`content_type`,`title`,`cove
   (2103,'agreement','sys_integral_agree','','积分可用于积分商城兑换。兑换订单独立结算，积分余额与订单状态以服务端实时校验结果为准。',1,1,NOW(),NOW()),
   (2104,'agreement','sys_about_us','','CRM Live 致力于为消费者提供清晰、可靠的多商户购物服务。平台持续完善商品、订单、售后和权益保障能力。',1,1,NOW(),NOW()),
   (2105,'agreement','sys_brokerage','','<ol><li><p>第一级</p></li><li><p>第二级</p></li></ol>',1,1,NOW(),NOW()),
+  (2109,'agreement','sys_product_presell_agree','','<p>1. 预售商品以页面公示的发货时间为准；</p><p>2. 定金支付后请在尾款支付期限内完成支付，逾期超时订单将按活动规则处理；</p><p>3. 最终解释权归平台所有。</p>',1,1,NOW(),NOW()),
   (2201,'article','夏日焕新购物指南','/demo/home-hero-v1.png','精选商品已按类目、销量与价格开放筛选。下单前请确认商品规格、配送方式与售后说明。',1,1,NOW(),NOW()),
   (2202,'article','积分商城兑换说明','/demo/home-service-wide-v1.png','积分兑换订单独立结算，积分余额与库存以提交订单时服务端实时校验结果为准。',1,1,DATE_SUB(NOW(),INTERVAL 1 DAY),NOW())
 ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`cover_url`=VALUES(`cover_url`),`body`=VALUES(`body`),`status`=VALUES(`status`),`version`=VALUES(`version`),`published_at`=VALUES(`published_at`),`updated_at`=NOW();

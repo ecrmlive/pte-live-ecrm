@@ -95,6 +95,9 @@ func (m *memStore) UpdateBuying(context.Context, *Buying) error { return errors.
 func (m *memStore) ListOpenBuyings(context.Context, uint, int) ([]Buying, error) {
 	return nil, errors.New("n/a")
 }
+func (m *memStore) ListBuyingsAdmin(context.Context, AdminBuyingQuery) ([]Buying, int64, error) {
+	return nil, 0, errors.New("n/a")
+}
 func (m *memStore) CreateMember(_ context.Context, row *Member) error {
 	if row.ID == 0 {
 		row.ID = m.nextMID

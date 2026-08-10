@@ -106,10 +106,10 @@ func TestPresellHTTPRBACAndStatusOnlyUpdate(t *testing.T) {
 			t.Fatalf("%s list=%d", f.Role, got)
 		}
 	}
-	if got := call(fixtures[0], http.MethodPut, "/api/platform/v1/presell/actives/987677001", gin.H{"price": 1}).Code; got != http.StatusBadRequest {
-		t.Fatalf("price-only=%d", got)
+	if got := call(fixtures[3], http.MethodPut, "/api/platform/v1/presell/actives/987677001", gin.H{"status": 2}).Code; got != http.StatusBadRequest {
+		t.Fatalf("invalid status=%d", got)
 	}
-	if got := call(fixtures[3], http.MethodPut, "/api/platform/v1/presell/actives/987677001", gin.H{"status": 0, "price": 1, "stock": 1}).Code; got != http.StatusOK {
+	if got := call(fixtures[3], http.MethodPut, "/api/platform/v1/presell/actives/987677001", gin.H{"status": 0}).Code; got != http.StatusOK {
 		t.Fatalf("operations stop=%d", got)
 	}
 	var row struct {

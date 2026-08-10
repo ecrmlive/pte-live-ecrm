@@ -4,12 +4,14 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { Page } from '@vben/common-ui';
+import { ArrowDown } from '@element-plus/icons-vue';
 import {
-  ElAlert,
   ElButton,
-  ElDescriptions,
-  ElDescriptionsItem,
+  ElDropdown,
+  ElDropdownItem,
+  ElDropdownMenu,
+  ElIcon,
   ElMessage,
   ElMessageBox,
   ElTag,
@@ -18,12 +20,18 @@ import {
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
 import {
-  getPlatformAssistApi,
   listPlatformAssistApi,
   updatePlatformAssistApi,
   type PlatformAssistActive,
 } from '#/api/core/platform-assist';
+import {
+  getPlatformProductEditApi,
+  updatePlatformProductAdminApi,
+} from '#/api/core/platform-catalog';
+import AssistDetailDrawer from '#/components/marketing/assist-detail-drawer.vue';
+import AssistEditDrawer from '#/components/marketing/assist-edit-drawer.vue';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
+import ProductLabelSelectModal from '#/views/ecrm/product/components/ProductLabelSelectModal.vue';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   buildStandardListParams,
@@ -34,7 +42,10 @@ import {
 } from '#/utils/list-form-defaults';
 
 const canManage = ref(false);
-const detail = ref<PlatformAssistActive>();
+const detailDrawerRef = ref<InstanceType<typeof AssistDetailDrawer>>();
+const editDrawerRef = ref<InstanceType<typeof AssistEditDrawer>>();
+const labelModalRef = ref<InstanceType<typeof ProductLabelSelectModal>>();
+const labelProductId = ref(0);
 
 function time(value: string) {
   return formatShanghaiDateTime(value);
@@ -116,7 +127,7 @@ const gridOptions: VxeGridProps<PlatformAssistActive> = {
       title: '展示状态',
       width: 100,
     },
-    platformListActionColumn({ width: 146 }),
+    platformListActionColumn({ width: 128 }),
   ],
   pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
   proxyConfig: {
@@ -139,31 +150,92 @@ const gridOptions: VxeGridProps<PlatformAssistActive> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
-  class: 'w-[640px] max-w-[96vw]',
-  showConfirmButton: false,
-  cancelText: '关闭',
-  placement: 'right',
-});
-
-async function showDetail(row: PlatformAssistActive) {
-  detail.value = await getPlatformAssistApi(row.product_assist_id);
-  detailDrawerApi.setState({ title: '好友助力活动详情' }).open();
+function showDetail(row: PlatformAssistActive) {
+  const assistId = Number(row.product_assist_id || 0);
+  if (!assistId) {
+    ElMessage.warning('缺少活动 ID，无法查看详情');
+    return;
+  }
+  void detailDrawerRef.value?.open(assistId);
 }
 
-async function setVisible(row: PlatformAssistActive, isShow: number) {
-  const action = isShow === 1 ? '上架' : '下架';
+function openEdit(row: PlatformAssistActive) {
+  const assistId = Number(row.product_assist_id || 0);
+  if (!assistId) {
+    ElMessage.warning('缺少活动 ID，无法编辑');
+    return;
+  }
+  void editDrawerRef.value?.open(assistId);
+}
+
+function onEditSaved() {
+  void gridApi.reload();
+}
+
+async function openLabels(row: PlatformAssistActive) {
+  const productId = Number(row.product_id || 0);
+  if (!productId) {
+    ElMessage.warning('缺少关联商品，无法编辑标签');
+    return;
+  }
+  labelProductId.value = productId;
+  try {
+    const edit = await getPlatformProductEditApi(productId);
+    labelModalRef.value?.open({
+      productId,
+      selectedIds: [...(edit.sys_labels || [])].map(String),
+    });
+  } catch {
+    labelModalRef.value?.open({ productId, selectedIds: [] });
+  }
+}
+
+async function onLabelSubmit(ids: string[]) {
+  if (!labelProductId.value) return;
+  try {
+    await updatePlatformProductAdminApi(labelProductId.value, {
+      sys_labels: ids,
+    } as Parameters<typeof updatePlatformProductAdminApi>[1]);
+    ElMessage.success('标签已更新');
+    void gridApi.reload();
+  } catch {
+    ElMessage.error('标签更新失败');
+  }
+}
+
+function canForceOff(row: PlatformAssistActive) {
+  return Number(row.product_status) === 1 && Number(row.is_show) === 1;
+}
+
+async function openForceOff(row: PlatformAssistActive) {
   try {
     await ElMessageBox.confirm(
-      `确认${action}好友助力活动“${row.store_name || `#${row.product_assist_id}`}”吗？`,
-      `${action}确认`,
-      { cancelButtonText: '取消', confirmButtonText: `确认${action}`, type: 'warning' },
+      `确认强制下架好友助力活动“${row.store_name || `#${row.product_assist_id}`}”吗？`,
+      '强制下架',
+      { type: 'warning', confirmButtonText: '确认下架', cancelButtonText: '取消' },
     );
-    await updatePlatformAssistApi(row.product_assist_id, { is_show: isShow });
-    ElMessage.success(`活动已${action}`);
+    // 平台助力监管目前仅开放 is_show；强制下架落为隐藏前台展示。
+    await updatePlatformAssistApi(row.product_assist_id, { is_show: 0 });
+    ElMessage.success('已强制下架');
     gridApi.reload();
   } catch {
     /* 用户取消 */
+  }
+}
+
+function onMoreCommand(command: string, row: PlatformAssistActive) {
+  switch (command) {
+    case 'edit':
+      openEdit(row);
+      break;
+    case 'labels':
+      void openLabels(row);
+      break;
+    case 'forceOff':
+      if (canForceOff(row)) void openForceOff(row);
+      break;
+    default:
+      break;
   }
 }
 
@@ -176,11 +248,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Page
-    auto-content-height
-    description="查看各商户好友助力活动及完整规则；具备运营权限可上架或下架。删除、改价、库存与时间调整须完成订单影响审计后另行开放。"
-    title="好友助力监管"
-  >
+  <Page auto-content-height>
     <Grid>
       <template #is_show="{ row }">
         <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
@@ -189,51 +257,34 @@ onMounted(async () => {
       </template>
       <template #action="{ row }">
         <ElButton link type="primary" @click="showDetail(row)">详情</ElButton>
-        <ElButton
+        <ElDropdown
           v-if="canManage"
-          link
-          :type="row.is_show === 1 ? 'danger' : 'success'"
-          @click="setVisible(row, row.is_show === 1 ? 0 : 1)"
+          trigger="click"
+          @command="(cmd: string) => onMoreCommand(cmd, row)"
         >
-          {{ row.is_show === 1 ? '下架' : '上架' }}
-        </ElButton>
+          <ElButton link type="primary">
+            更多
+            <ElIcon class="el-icon--right"><ArrowDown /></ElIcon>
+          </ElButton>
+          <template #dropdown>
+            <ElDropdownMenu>
+              <ElDropdownItem command="edit">编辑</ElDropdownItem>
+              <ElDropdownItem command="labels">编辑标签</ElDropdownItem>
+              <ElDropdownItem
+                v-if="canForceOff(row)"
+                command="forceOff"
+                divided
+              >
+                强制下架
+              </ElDropdownItem>
+            </ElDropdownMenu>
+          </template>
+        </ElDropdown>
       </template>
     </Grid>
 
-    <DetailDrawer>
-      <template v-if="detail">
-        <ElDescriptions :column="2" border>
-          <ElDescriptionsItem label="活动名称" :span="2">
-            {{ detail.store_name }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="商品 / 商户">
-            #{{ detail.product_id }} / {{ detail.mer_name || `商户 #${detail.mer_id}` }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="助力价">
-            ¥{{ Number(detail.assist_price).toFixed(2) }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="所需助力">{{ detail.assist_count }} 人</ElDescriptionsItem>
-          <ElDescriptionsItem label="单人助力次数">
-            最多 {{ detail.assist_user_count }} 次
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="活动库存">{{ detail.stock }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="活动时间" :span="2">
-            {{ time(detail.start_time) }} 至 {{ time(detail.end_time) }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="前台展示">
-            {{ detail.is_show === 1 ? '上架' : '下架' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="活动状态">
-            {{ detail.status === 1 ? '启用' : '停用' }}
-          </ElDescriptionsItem>
-        </ElDescriptions>
-        <ElAlert
-          class="mt-4"
-          type="warning"
-          :closable="false"
-          title="详情不展示参与用户资料。已发起助力单的价格、库存与完成条件须保持订单快照，本页不提供这些字段编辑。"
-        />
-      </template>
-    </DetailDrawer>
+    <AssistDetailDrawer ref="detailDrawerRef" />
+    <AssistEditDrawer ref="editDrawerRef" @saved="onEditSaved" />
+    <ProductLabelSelectModal ref="labelModalRef" @submit="onLabelSubmit" />
   </Page>
 </template>

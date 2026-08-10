@@ -29,11 +29,22 @@ type ProductPresell struct {
 	Refusal          string    `gorm:"column:refusal" json:"refusal"`
 	ActionStatus     int       `gorm:"column:action_status" json:"action_status"`
 	Seles            int       `gorm:"column:seles" json:"seles"`
+	Star             int8      `gorm:"column:star" json:"star"`
+	SysLabels        string    `gorm:"column:sys_labels" json:"sys_labels"`
+	StockCount       int       `gorm:"column:stock_count" json:"stock_count"`
+	AttendNum        int       `gorm:"column:attend_num" json:"attend_num"`
+	SuccessNum       int       `gorm:"column:success_num" json:"success_num"`
 
-	Image    string  `gorm:"-" json:"image,omitempty"`
-	OtPrice  float64 `gorm:"-" json:"ot_price,omitempty"`
-	MerName  string  `gorm:"-" json:"mer_name,omitempty"`
-	InWindow bool    `gorm:"-" json:"in_window"`
+	Image               string  `gorm:"-" json:"image,omitempty"`
+	OtPrice             float64 `gorm:"-" json:"ot_price,omitempty"`
+	MerName             string  `gorm:"-" json:"mer_name,omitempty"`
+	IsTrader            int8    `gorm:"-" json:"is_trader"`
+	TraderName          string  `gorm:"-" json:"trader_name,omitempty"`
+	InWindow            bool    `gorm:"-" json:"in_window"`
+	PresellStatus       int8    `gorm:"-" json:"presell_status"` // 0未开始 1进行中 2已结束
+	PresellStatusText   string  `gorm:"-" json:"presell_status_text,omitempty"`
+	UsStatus            int8    `gorm:"-" json:"us_status"`
+	ProductStatusName   string  `gorm:"-" json:"product_status_name,omitempty"`
 }
 
 func (ProductPresell) TableName() string { return "qixi_crm_b_presell" }
@@ -50,6 +61,7 @@ type SaveInput struct {
 	FinalPrice     float64 `json:"final_price"`
 	PresellType    int     `json:"presell_type"` // 1全款 2定金
 	Stock          int     `json:"stock"`
+	StockCount     *int    `json:"stock_count"`
 	PayCount       int     `json:"pay_count"`
 	DeliveryType   int     `json:"delivery_type"`
 	DeliveryDay    int     `json:"delivery_day"`
@@ -59,6 +71,32 @@ type SaveInput struct {
 	FinalEndTime   string  `json:"final_end_time"`
 	IsShow         *int    `json:"is_show"`
 	Status         *int    `json:"status"`
+	ProductStatus  *int    `json:"product_status"`
+	Refusal        string  `json:"refusal"`
+	Star           *int8   `json:"star"`
+	SysLabels      *string `json:"sys_labels"`
+}
+
+// AdminQuery 平台预售列表筛选（对齐 CRMEB StoreProductPresell）。
+type AdminQuery struct {
+	PresellType   int // Tab：1全款 2定金；0 不过滤
+	MerID         *uint
+	MerIDs        []uint
+	Keyword       string
+	IsTrader      *int8
+	Star          *int8
+	ProductStatus *int  // 审核状态
+	ActivityType  *int8 // 活动状态：0未开始 1进行中 2已结束
+	UsStatus      *int8 // 商品状态投影
+	SysLabels     string
+	Page          int
+	Limit         int
+}
+
+type TypeFilterItem struct {
+	Type  int    `json:"type"`
+	Name  string `json:"name"`
+	Count int64  `json:"count"`
 }
 
 // PresellOrder 定金预售尾款单。

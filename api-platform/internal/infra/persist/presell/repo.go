@@ -2,6 +2,7 @@ package presellpersist
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/presell"
@@ -29,6 +30,89 @@ func (r *Repo) List(ctx context.Context, merID *uint, onlyOn bool, page, limit i
 	var rows []presell.Presell
 	err := q.Order("product_presell_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+func (r *Repo) applyAdminFilters(q *gorm.DB, query presell.AdminQuery, presellType int) *gorm.DB {
+	q = q.Where("is_del = 0")
+	if query.MerID != nil {
+		q = q.Where("mer_id = ?", *query.MerID)
+	}
+	if len(query.MerIDs) > 0 {
+		q = q.Where("mer_id IN ?", query.MerIDs)
+	}
+	if star := query.Star; star != nil {
+		q = q.Where("star = ?", *star)
+	}
+	if ps := query.ProductStatus; ps != nil {
+		if *ps == -1 {
+			q = q.Where("product_status IN ?", []int{-1, -2})
+		} else {
+			q = q.Where("product_status = ?", *ps)
+		}
+	}
+	if us := query.UsStatus; us != nil {
+		switch *us {
+		case 1:
+			q = q.Where("product_status = 1 AND status = 1 AND is_show = 1")
+		case 0:
+			q = q.Where("product_status = 1 AND status = 1 AND is_show = 0")
+		case -1:
+			q = q.Where("(status = 0 OR product_status <> 1)")
+		}
+	}
+	if act := query.ActivityType; act != nil {
+		switch *act {
+		case 0: // 未开始
+			q = q.Where("action_status = 1").Where(`(
+				start_time > NOW()
+				OR (
+					start_time <= NOW() AND end_time > NOW()
+					AND (product_status <> 1 OR is_show <> 1 OR status <> 1)
+				)
+			)`)
+		case 1: // 进行中
+			q = q.Where("action_status = 1 AND start_time <= NOW() AND end_time > NOW()").
+				Where("product_status = 1 AND status = 1 AND is_show = 1")
+		case 2: // 已结束
+			q = q.Where("(action_status = -1 OR end_time <= NOW())")
+		}
+	}
+	if labels := strings.TrimSpace(query.SysLabels); labels != "" {
+		q = q.Where("FIND_IN_SET(?, REPLACE(sys_labels,' ',''))", labels)
+	}
+	pt := presellType
+	if pt == 0 {
+		pt = query.PresellType
+	}
+	if pt == 1 || pt == 2 {
+		q = q.Where("presell_type = ?", pt)
+	}
+	if kw := strings.TrimSpace(query.Keyword); kw != "" {
+		like := "%" + kw + "%"
+		q = q.Where("(store_name LIKE ? OR CAST(product_id AS CHAR) LIKE ? OR CAST(product_presell_id AS CHAR) LIKE ?)", like, like, like)
+	}
+	return q
+}
+
+func (r *Repo) ListAdmin(ctx context.Context, query presell.AdminQuery) ([]presell.Presell, int64, error) {
+	q := r.db.WithContext(ctx).Model(&presell.Presell{})
+	q = r.applyAdminFilters(q, query, query.PresellType)
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var rows []presell.Presell
+	err := q.Order("star DESC, product_presell_id DESC").
+		Offset((query.Page - 1) * query.Limit).Limit(query.Limit).Find(&rows).Error
+	return rows, total, err
+}
+
+func (r *Repo) CountAdmin(ctx context.Context, query presell.AdminQuery, presellType int) (int64, error) {
+	q := r.db.WithContext(ctx).Model(&presell.Presell{})
+	q = r.applyAdminFilters(q, query, presellType)
+	var total int64
+	err := q.Count(&total).Error
+	return total, err
 }
 
 func (r *Repo) Get(ctx context.Context, id uint) (*presell.Presell, error) {
@@ -66,6 +150,8 @@ func (r *Repo) Update(ctx context.Context, p *presell.Presell) error {
 		"is_show": p.IsShow, "store_name": p.StoreName,
 		"store_info": p.StoreInfo, "product_status": p.ProductStatus,
 		"action_status": p.ActionStatus, "refusal": p.Refusal,
+		"star": p.Star, "sys_labels": p.SysLabels, "stock_count": p.StockCount,
+		"attend_num": p.AttendNum, "success_num": p.SuccessNum,
 	}).Error
 }
 

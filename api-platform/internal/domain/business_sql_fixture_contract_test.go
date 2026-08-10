@@ -594,8 +594,10 @@ func TestBroadcastDomainUsesBusinessPrefixAndDoesNotSerializeSensitiveFields(t *
 	for _, required := range []string{
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_broadcast_room`",
 		"CREATE TABLE IF NOT EXISTS `qixi_crm_b_broadcast_room_goods`",
+		"`anchor_wechat`",
 		"INSERT INTO `qixi_crm_b_broadcast_room`",
 		"CRM Live服饰秋日穿搭直播间",
+		"CRM Live服饰晚间连麦直播间",
 		"推流地址、主播手机号始终为空",
 	} {
 		if !strings.Contains(string(schema), required) && !strings.Contains(string(fixture), required) {

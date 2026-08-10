@@ -80,6 +80,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	distributionManage := middleware.RequireAdminMenu(h.adminDB, "promoter.config.manage")
 	r.GET("/setting/distribution", distributionSetting, distributionManage, h.GetDistribution)
 	r.PUT("/setting/distribution", distributionSetting, distributionManage, h.SaveDistribution)
+	groupBuyingSetting := middleware.RequireAdminRoles("platform", "operations")
+	groupBuyingManage := middleware.RequireAdminMenu(h.adminDB, "marketing.combination.manage")
+	r.GET("/setting/group-buying", groupBuyingSetting, groupBuyingManage, h.GetGroupBuying)
+	r.PUT("/setting/group-buying", groupBuyingSetting, groupBuyingManage, h.SaveGroupBuying)
 
 	appSetting := middleware.RequireAdminRoles("platform")
 	routineManage := middleware.RequireAdminMenu(h.adminDB, "app.routine.manage")
@@ -443,6 +447,14 @@ func (h *Handler) GetDistribution(c *gin.Context) {
 
 func (h *Handler) SaveDistribution(c *gin.Context) {
 	h.saveJSONSetting(c, h.svc.SaveDistributionConfig)
+}
+
+func (h *Handler) GetGroupBuying(c *gin.Context) {
+	h.getJSONSetting(c, h.svc.GetGroupBuyingConfig, "拼团设置：虚拟成团启用与真实成团最小比例")
+}
+
+func (h *Handler) SaveGroupBuying(c *gin.Context) {
+	h.saveJSONSetting(c, h.svc.SaveGroupBuyingConfig)
 }
 
 func (h *Handler) GetRoutineApp(c *gin.Context) {

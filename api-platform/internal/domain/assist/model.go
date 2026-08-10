@@ -31,9 +31,18 @@ type ProductAssist struct {
 	Refusal         string    `gorm:"column:refusal" json:"refusal"`
 	ActionStatus    int       `gorm:"column:action_status" json:"action_status"`
 
-	Image   string  `gorm:"-" json:"image,omitempty"`
-	OtPrice float64 `gorm:"-" json:"ot_price,omitempty"`
-	MerName string  `gorm:"-" json:"mer_name,omitempty"`
+	Image             string  `gorm:"-" json:"image,omitempty"`
+	OtPrice           float64 `gorm:"-" json:"ot_price,omitempty"`
+	MerName           string  `gorm:"-" json:"mer_name,omitempty"`
+	IsTrader          int8    `gorm:"-" json:"is_trader"`
+	TraderName        string  `gorm:"-" json:"trader_name,omitempty"`
+	StockCount        int     `gorm:"-" json:"stock_count"`         // 限量（原始）≈ stock + pay
+	Success           int     `gorm:"-" json:"success"`             // 助力成功人次（set status 10/20）
+	All               int     `gorm:"-" json:"all"`                 // 参与助力人次（helpers）
+	Pay               int     `gorm:"-" json:"pay"`                 // 已售/已支付人次（set status 20）
+	AssistStatus      int8    `gorm:"-" json:"assist_status"`       // 0未开始 1进行中 2已结束
+	AssistStatusText  string  `gorm:"-" json:"assist_status_text,omitempty"`
+	ProductStatusName string  `gorm:"-" json:"product_status_name,omitempty"`
 }
 
 // 助力活动是 C 端业务事实，统一存放在 business 库；不得回退到 CRMEB
@@ -56,7 +65,26 @@ type AssistSet struct {
 	StoreName   string       `gorm:"-" json:"store_name,omitempty"`
 	AssistPrice float64      `gorm:"-" json:"assist_price,omitempty"`
 	Nickname    string       `gorm:"-" json:"nickname,omitempty"`
+	Image       string       `gorm:"-" json:"image,omitempty"`
+	MerName     string       `gorm:"-" json:"mer_name,omitempty"`
+	IsTrader    int8         `gorm:"-" json:"is_trader"`
+	TraderName  string       `gorm:"-" json:"trader_name,omitempty"`
+	StartTime   time.Time    `gorm:"-" json:"start_time,omitempty"`
+	EndTime     time.Time    `gorm:"-" json:"end_time,omitempty"`
 	Helpers     []AssistUser `gorm:"-" json:"helpers,omitempty"`
+}
+
+// AdminSetQuery 平台「助力活动」实例列表筛选（对齐 CRMEB StoreProductAssistSet）。
+type AdminSetQuery struct {
+	Page     int
+	Limit    int
+	MerID    *uint
+	MerIDs   []uint // is_trader 反查得到的店铺 ID 集合
+	Keyword  string // 商品名称 / 商品 ID / 实例 ID
+	UserName string // 发起人昵称
+	DateFrom string
+	DateTo   string
+	Status   *int
 }
 
 func (AssistSet) TableName() string { return "qixi_crm_b_assist_set" }

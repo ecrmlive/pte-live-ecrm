@@ -2,6 +2,8 @@ package assistpersist
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/assist"
 	"gorm.io/gorm"
@@ -143,6 +145,58 @@ func (r *Repo) ListSetsByAssist(ctx context.Context, assistID uint, onlyOpen boo
 	return rows, err
 }
 
+func (r *Repo) ListSetsAdmin(ctx context.Context, q assist.AdminSetQuery) ([]assist.AssistSet, int64, error) {
+	db := r.db.WithContext(ctx).Model(&assist.AssistSet{}).Where("is_del = 0")
+	if q.MerID != nil {
+		db = db.Where("mer_id = ?", *q.MerID)
+	}
+	if len(q.MerIDs) > 0 {
+		db = db.Where("mer_id IN ?", q.MerIDs)
+	}
+	if q.Status != nil {
+		db = db.Where("status = ?", *q.Status)
+	}
+	if from := strings.TrimSpace(q.DateFrom); from != "" {
+		db = db.Where("create_time >= ?", from+" 00:00:00")
+	}
+	if to := strings.TrimSpace(q.DateTo); to != "" {
+		db = db.Where("create_time <= ?", to+" 23:59:59")
+	}
+	if user := strings.TrimSpace(q.UserName); user != "" {
+		like := "%" + user + "%"
+		db = db.Where("uid IN (?)",
+			r.db.WithContext(ctx).Table("qixi_crm_b_user").Select("id").Where("nickname LIKE ?", like),
+		)
+	}
+	if kw := strings.TrimSpace(q.Keyword); kw != "" {
+		like := "%" + kw + "%"
+		assistIDs := r.db.WithContext(ctx).Model(&assist.ProductAssist{}).
+			Select("product_assist_id").Where("is_del = 0 AND store_name LIKE ?", like)
+		productIDs := r.db.WithContext(ctx).Table("qixi_crm_b_product_view").
+			Select("product_id").Where("store_name LIKE ? OR title LIKE ?", like, like)
+		conds := []string{
+			"product_assist_id IN (?)",
+			"product_id IN (?)",
+			"CAST(product_assist_set_id AS CHAR) = ?",
+			"CAST(product_id AS CHAR) = ?",
+		}
+		args := []any{assistIDs, productIDs, kw, kw}
+		if id, err := strconv.ParseUint(kw, 10, 64); err == nil && id > 0 {
+			conds = append(conds, "product_assist_set_id = ?", "product_id = ?")
+			args = append(args, id, id)
+		}
+		db = db.Where("("+strings.Join(conds, " OR ")+")", args...)
+	}
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var rows []assist.AssistSet
+	err := db.Order("product_assist_set_id DESC").
+		Offset((q.Page - 1) * q.Limit).Limit(q.Limit).Find(&rows).Error
+	return rows, total, err
+}
+
 func (r *Repo) FindOpenSetByUID(ctx context.Context, assistID, uid uint) (*assist.AssistSet, error) {
 	var row assist.AssistSet
 	err := r.db.WithContext(ctx).
@@ -178,6 +232,30 @@ func (r *Repo) ListHelpers(ctx context.Context, setID uint) ([]assist.AssistUser
 	err := r.db.WithContext(ctx).Where("product_assist_set_id = ?", setID).
 		Order("product_assist_user_id ASC").Find(&rows).Error
 	return rows, err
+}
+
+func (r *Repo) CountAssistStats(ctx context.Context, assistID uint) (success, pay, all int, err error) {
+	if assistID == 0 {
+		return 0, 0, 0, nil
+	}
+	var successN, payN, allN int64
+	if err = r.db.WithContext(ctx).Model(&assist.AssistSet{}).
+		Where("product_assist_id = ? AND is_del = 0 AND status IN ?", assistID,
+			[]int{assist.SetStatusDone, assist.SetStatusPaid}).
+		Count(&successN).Error; err != nil {
+		return 0, 0, 0, err
+	}
+	if err = r.db.WithContext(ctx).Model(&assist.AssistSet{}).
+		Where("product_assist_id = ? AND is_del = 0 AND status = ?", assistID, assist.SetStatusPaid).
+		Count(&payN).Error; err != nil {
+		return 0, 0, 0, err
+	}
+	if err = r.db.WithContext(ctx).Model(&assist.AssistUser{}).
+		Where("product_assist_id = ?", assistID).
+		Count(&allN).Error; err != nil {
+		return 0, 0, 0, err
+	}
+	return int(successN), int(payN), int(allN), nil
 }
 
 var _ assist.Store = (*Repo)(nil)

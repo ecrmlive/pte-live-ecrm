@@ -24,12 +24,14 @@ type Store interface {
 	GetSet(ctx context.Context, id uint) (*AssistSet, error)
 	UpdateSet(ctx context.Context, s *AssistSet) error
 	ListSetsByAssist(ctx context.Context, assistID uint, onlyOpen bool, limit int) ([]AssistSet, error)
+	ListSetsAdmin(ctx context.Context, q AdminSetQuery) ([]AssistSet, int64, error)
 	FindOpenSetByUID(ctx context.Context, assistID, uid uint) (*AssistSet, error)
 
 	CreateHelper(ctx context.Context, u *AssistUser) error
 	HasHelped(ctx context.Context, setID, uid uint) (bool, error)
 	CountHelpsByUID(ctx context.Context, assistID, uid uint) (int64, error)
 	ListHelpers(ctx context.Context, setID uint) ([]AssistUser, error)
+	CountAssistStats(ctx context.Context, assistID uint) (success, pay, all int, err error)
 }
 
 type Service struct{ store Store }
@@ -274,16 +276,53 @@ func (s *Service) GetSet(ctx context.Context, id uint) (*AssistSet, error) {
 		}
 		return nil, err
 	}
-	if a, err := s.Get(ctx, set.ProductAssistID); err == nil {
-		set.StoreName = a.StoreName
-		set.AssistPrice = a.AssistPrice
-	}
-	if nick, err := s.store.LoadNickname(ctx, set.UID); err == nil {
-		set.Nickname = nick
-	}
+	tmp := []AssistSet{*set}
+	_ = s.enrichSets(ctx, tmp)
+	*set = tmp[0]
 	helpers, _ := s.store.ListHelpers(ctx, id)
 	set.Helpers = helpers
 	return set, nil
+}
+
+// ListAdminSets 平台监管：用户发起的助力实例列表。
+func (s *Service) ListAdminSets(ctx context.Context, q AdminSetQuery) (*PageResult[AssistSet], error) {
+	q.Page, q.Limit = normalize(q.Page, q.Limit)
+	list, total, err := s.store.ListSetsAdmin(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.enrichSets(ctx, list)
+	return &PageResult[AssistSet]{List: list, Total: total, Page: q.Page, Limit: q.Limit}, nil
+}
+
+func (s *Service) enrichSets(ctx context.Context, list []AssistSet) error {
+	for i := range list {
+		if a, err := s.store.Get(ctx, list[i].ProductAssistID); err == nil && a != nil {
+			if strings.TrimSpace(a.StoreName) != "" {
+				list[i].StoreName = a.StoreName
+			}
+			list[i].AssistPrice = a.AssistPrice
+			list[i].StartTime = a.StartTime
+			list[i].EndTime = a.EndTime
+			if list[i].MerID == 0 {
+				list[i].MerID = a.MerID
+			}
+		}
+		prodName, img, merName, _, _, _, err := s.store.LoadProductMeta(ctx, list[i].ProductID)
+		if err == nil {
+			list[i].Image = img
+			if list[i].MerName == "" {
+				list[i].MerName = merName
+			}
+			if list[i].StoreName == "" {
+				list[i].StoreName = prodName
+			}
+		}
+		if nick, err := s.store.LoadNickname(ctx, list[i].UID); err == nil {
+			list[i].Nickname = nick
+		}
+	}
+	return nil
 }
 
 func (s *Service) ListSets(ctx context.Context, assistID uint, limit int) ([]AssistSet, error) {
@@ -391,16 +430,75 @@ func (s *Service) quote(ctx context.Context, id uint) (*ProductAssist, error) {
 }
 
 func (s *Service) enrich(ctx context.Context, list []ProductAssist) error {
+	now := time.Now()
 	for i := range list {
 		_, img, merName, ot, _, _, err := s.store.LoadProductMeta(ctx, list[i].ProductID)
-		if err != nil {
-			continue
+		if err == nil {
+			list[i].Image = img
+			if list[i].MerName == "" {
+				list[i].MerName = merName
+			}
+			list[i].OtPrice = ot
 		}
-		list[i].Image = img
-		list[i].MerName = merName
-		list[i].OtPrice = ot
+		success, pay, all, _ := s.store.CountAssistStats(ctx, list[i].ProductAssistID)
+		list[i].Success = success
+		list[i].Pay = pay
+		list[i].All = all
+		list[i].StockCount = list[i].Stock + pay
+		list[i].AssistStatus = computeAssistStatus(&list[i], now)
+		list[i].AssistStatusText = assistStatusText(list[i].AssistStatus)
+		list[i].ProductStatusName = productStatusName(&list[i])
 	}
 	return nil
+}
+
+// computeAssistStatus 对齐 CRMEB ProductAssist.getAssistStatusAttr：0未开始 1进行中 2已结束。
+func computeAssistStatus(a *ProductAssist, now time.Time) int8 {
+	if a == nil {
+		return 2
+	}
+	if a.ActionStatus == -1 || !now.Before(a.EndTime) {
+		return 2
+	}
+	if now.Before(a.StartTime) {
+		return 0
+	}
+	if a.ProductStatus != 1 || a.Status != 1 || a.IsShow != 1 {
+		return 0
+	}
+	return 1
+}
+
+func assistStatusText(status int8) string {
+	switch status {
+	case 0:
+		return "未开始"
+	case 1:
+		return "进行中"
+	default:
+		return "已结束"
+	}
+}
+
+func productStatusName(a *ProductAssist) string {
+	if a == nil {
+		return "未知"
+	}
+	switch a.ProductStatus {
+	case 0:
+		return "待审核"
+	case -1:
+		return "审核未通过"
+	case -2:
+		return "强制下架"
+	case 1:
+		if a.IsShow == 1 {
+			return "出售中"
+		}
+		return "仓库中"
+	default:
+		return "未知"
+	}
 }
 
 func parseRange(startS, endS string) (time.Time, time.Time) {

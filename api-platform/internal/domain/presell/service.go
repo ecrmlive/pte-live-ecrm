@@ -11,6 +11,8 @@ import (
 
 type Store interface {
 	List(ctx context.Context, merID *uint, onlyOn bool, page, limit int) ([]ProductPresell, int64, error)
+	ListAdmin(ctx context.Context, q AdminQuery) ([]ProductPresell, int64, error)
+	CountAdmin(ctx context.Context, q AdminQuery, presellType int) (int64, error)
 	Get(ctx context.Context, id uint) (*ProductPresell, error)
 	GetByProduct(ctx context.Context, productID uint) (*ProductPresell, error)
 	Create(ctx context.Context, p *ProductPresell) error
@@ -34,13 +36,32 @@ type Service struct{ store Store }
 func NewService(store Store) *Service { return &Service{store: store} }
 
 func (s *Service) ListAdmin(ctx context.Context, merID *uint, page, limit int) (*PageResult[ProductPresell], error) {
-	page, limit = normalize(page, limit)
-	list, total, err := s.store.List(ctx, merID, false, page, limit)
+	return s.ListAdminFiltered(ctx, AdminQuery{MerID: merID, Page: page, Limit: limit})
+}
+
+func (s *Service) ListAdminFiltered(ctx context.Context, q AdminQuery) (*PageResult[ProductPresell], error) {
+	q.Page, q.Limit = normalize(q.Page, q.Limit)
+	list, total, err := s.store.ListAdmin(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	_ = s.enrich(ctx, list)
-	return &PageResult[ProductPresell]{List: list, Total: total, Page: page, Limit: limit}, nil
+	return &PageResult[ProductPresell]{List: list, Total: total, Page: q.Page, Limit: q.Limit}, nil
+}
+
+func (s *Service) TypeFilter(ctx context.Context, q AdminQuery) ([]TypeFilterItem, error) {
+	tabs := []TypeFilterItem{
+		{Type: 1, Name: "全款预售"},
+		{Type: 2, Name: "定金预售"},
+	}
+	for i := range tabs {
+		n, err := s.store.CountAdmin(ctx, q, tabs[i].Type)
+		if err != nil {
+			return nil, err
+		}
+		tabs[i].Count = n
+	}
+	return tabs, nil
 }
 
 func (s *Service) ListApp(ctx context.Context, page, limit int) (*PageResult[ProductPresell], error) {
@@ -207,6 +228,31 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 	if in.Status != nil {
 		p.Status = *in.Status
 	}
+	if in.ProductStatus != nil {
+		ps := *in.ProductStatus
+		if ps != 0 && ps != 1 && ps != -1 && ps != -2 {
+			return nil, ErrBadParam
+		}
+		p.ProductStatus = ps
+	}
+	if refusal := strings.TrimSpace(in.Refusal); refusal != "" {
+		p.Refusal = refusal
+	}
+	if in.Star != nil {
+		if *in.Star < 0 || *in.Star > 5 {
+			return nil, ErrBadParam
+		}
+		p.Star = *in.Star
+	}
+	if in.SysLabels != nil {
+		p.SysLabels = strings.TrimSpace(*in.SysLabels)
+	}
+	if in.StockCount != nil && *in.StockCount >= 0 {
+		p.StockCount = *in.StockCount
+	}
+	if p.StockCount <= 0 && p.Stock > 0 {
+		p.StockCount = p.Stock + p.Seles
+	}
 	if p.PresellType == 2 {
 		if !validFinalRange(p.FinalStartTime, p.FinalEndTime) {
 			return nil, ErrBadParam
@@ -234,6 +280,50 @@ func (s *Service) SetShow(ctx context.Context, merID, id uint, show int) (*Produ
 	}
 	v := show
 	return s.Update(ctx, merID, id, SaveInput{IsShow: &v})
+}
+
+func (s *Service) SetStar(ctx context.Context, id uint, star int8) (*ProductPresell, error) {
+	if star < 0 || star > 5 {
+		return nil, ErrBadParam
+	}
+	return s.Update(ctx, 0, id, SaveInput{Star: &star})
+}
+
+func (s *Service) SetLabels(ctx context.Context, id uint, labels string) (*ProductPresell, error) {
+	v := strings.TrimSpace(labels)
+	return s.Update(ctx, 0, id, SaveInput{SysLabels: &v})
+}
+
+// Audit 审核：status=1 通过，status=-1 拒绝（需 refusal）。
+func (s *Service) Audit(ctx context.Context, id uint, status int, refusal string) (*ProductPresell, error) {
+	if status != 1 && status != -1 {
+		return nil, ErrBadParam
+	}
+	refusal = strings.TrimSpace(refusal)
+	if status == -1 && refusal == "" {
+		return nil, ErrBadParam
+	}
+	show := 0
+	if status == 1 {
+		show = 1
+	}
+	return s.Update(ctx, 0, id, SaveInput{ProductStatus: &status, IsShow: &show, Refusal: refusal})
+}
+
+func (s *Service) ForceOff(ctx context.Context, ids []uint, reason string) error {
+	reason = strings.TrimSpace(reason)
+	if len(ids) == 0 || reason == "" {
+		return ErrBadParam
+	}
+	off := -2
+	show := 0
+	st := 0
+	for _, id := range ids {
+		if _, err := s.Update(ctx, 0, id, SaveInput{ProductStatus: &off, IsShow: &show, Status: &st, Refusal: reason}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) Delete(ctx context.Context, merID, id uint) error {
@@ -410,17 +500,88 @@ func (s *Service) MarkFinalPaid(ctx context.Context, id uint, payType int8) erro
 }
 
 func (s *Service) enrich(ctx context.Context, list []ProductPresell) error {
+	now := time.Now()
 	for i := range list {
 		_, img, merName, ot, _, _, err := s.store.LoadProductMeta(ctx, list[i].ProductID)
-		if err != nil {
-			continue
+		if err == nil {
+			list[i].Image = img
+			if list[i].MerName == "" {
+				list[i].MerName = merName
+			}
+			list[i].OtPrice = ot
 		}
-		list[i].Image = img
-		list[i].MerName = merName
-		list[i].OtPrice = ot
 		fillFinal(&list[i])
+		list[i].PresellStatus = computePresellStatus(&list[i], now)
+		list[i].PresellStatusText = presellStatusText(list[i].PresellStatus)
+		list[i].UsStatus = computeUsStatus(&list[i])
+		list[i].ProductStatusName = productStatusName(&list[i])
+		if list[i].StockCount <= 0 {
+			list[i].StockCount = list[i].Stock + list[i].Seles
+		}
+		list[i].InWindow = inWindow(&list[i], now)
 	}
 	return nil
+}
+
+func computePresellStatus(p *ProductPresell, now time.Time) int8 {
+	if p == nil {
+		return 2
+	}
+	if p.ActionStatus == -1 || !now.Before(p.EndTime) {
+		return 2
+	}
+	if now.Before(p.StartTime) {
+		return 0
+	}
+	if p.ProductStatus != 1 || p.Status != 1 || p.IsShow != 1 {
+		return 0
+	}
+	return 1
+}
+
+func presellStatusText(status int8) string {
+	switch status {
+	case 0:
+		return "未开始"
+	case 1:
+		return "进行中"
+	default:
+		return "已结束"
+	}
+}
+
+func computeUsStatus(p *ProductPresell) int8 {
+	if p == nil || p.ProductStatus != 1 {
+		return -1
+	}
+	if p.Status != 1 {
+		return -1
+	}
+	if p.IsShow == 1 {
+		return 1
+	}
+	return 0
+}
+
+func productStatusName(p *ProductPresell) string {
+	if p == nil {
+		return "未知"
+	}
+	switch p.ProductStatus {
+	case 0:
+		return "待审核"
+	case -1:
+		return "审核未通过"
+	case -2:
+		return "强制下架"
+	case 1:
+		if p.IsShow == 1 {
+			return "出售中"
+		}
+		return "仓库中"
+	default:
+		return "未知"
+	}
 }
 
 func fillFinal(p *ProductPresell) {

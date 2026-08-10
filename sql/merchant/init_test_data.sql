@@ -3,12 +3,21 @@ SET NAMES utf8mb4;
 -- 不初始化店铺账号、密码或任何真实手机号。仅提供无个人信息的店铺读写模型夹具。
 
 INSERT INTO `qixi_crm_m_product` (`id`,`store_id`,`title`,`category_id`,`brand_name`,`status`,`version`) VALUES
-  (1001,1,'七禧臻选羊绒针织衫',101,'云锦织造','on_sale',1),
-  (1002,1,'七禧头层牛皮通勤包',101,'栖木皮具','on_sale',1),
+  (1001,1,'轻奢羊绒针织衫',101,'云锦织造','on_sale',1),
+  (1002,1,'头层牛皮通勤托特包',101,'栖木皮具','on_sale',1),
   (1003,1,'七禧轻量跑步鞋',106,'逐风运动','on_sale',1),
-  (1004,1,'七禧智能保温杯',103,'澄日生活','on_sale',1),
-  (1005,1,'七禧真丝方巾',104,'云锦织造','on_sale',1),
-  (1006,1,'七禧香氛礼盒',102,'澄日生活','on_sale',1)
+  (1004,1,'精纺圆领羊毛开衫',101,'云锦织造','on_sale',1),
+  (1005,1,'真丝印花方巾礼盒',104,'云锦织造','on_sale',1),
+  (1006,1,'七禧香氛礼盒',102,'澄日生活','on_sale',1),
+  (1007,1,'柔软亲肤针织披肩',101,'云锦织造','on_sale',1),
+  (1008,1,'城市通勤训练跑鞋',106,'逐风运动','on_sale',1),
+  (1101,2,'无火藤条香氛礼盒',102,'澄日生活','on_sale',1),
+  (1102,2,'晚安助眠香薰蜡烛',102,'澄日生活','on_sale',1),
+  (1103,2,'恒温随行保温杯',103,'CRM Live精选','on_sale',1),
+  (1104,2,'晨间居家香氛套装',102,'澄日生活','on_sale',1),
+  (1107,2,'客厅氛围香薰礼盒',102,'澄日生活','on_sale',1),
+  (1108,2,'织物护理香氛喷雾',102,'澄日生活','on_sale',1),
+  (1207,3,'桌面恒温杯垫礼盒',103,'CRM Live精选','on_sale',1)
 ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`category_id`=VALUES(`category_id`),`brand_name`=VALUES(`brand_name`),`status`=VALUES(`status`),`version`=VALUES(`version`);
 
 -- SVIP 价格夹具：商品审核后同步到业务消费视图；九折和固定专享价均不含真实会员资料。
@@ -21,10 +30,39 @@ INSERT INTO `qixi_crm_m_product_sku` (`id`,`product_id`,`spec_json`,`price`,`sto
   (61002,1002,JSON_OBJECT('默认','标准'),469.00,50,1),
   (61003,1003,JSON_OBJECT('颜色','晨雾灰','尺码','40'),369.00,24,1),
   (61007,1003,JSON_OBJECT('颜色','星曜蓝','尺码','41'),389.00,26,1),
-  (61004,1004,JSON_OBJECT('默认','标准'),159.00,50,1),
+  (61004,1004,JSON_OBJECT('默认','标准'),329.00,36,1),
   (61005,1005,JSON_OBJECT('默认','标准'),129.00,50,1),
-  (61006,1006,JSON_OBJECT('默认','标准'),239.00,50,1)
+  (61006,1006,JSON_OBJECT('默认','标准'),239.00,50,1),
+  (61008,1007,JSON_OBJECT('默认','标准'),189.00,54,1),
+  (61009,1008,JSON_OBJECT('默认','标准'),429.00,31,1),
+  (61101,1101,JSON_OBJECT('默认','标准'),239.00,72,1),
+  (61102,1102,JSON_OBJECT('默认','标准'),139.00,66,1),
+  (61103,1103,JSON_OBJECT('默认','标准'),159.00,80,1),
+  (61104,1104,JSON_OBJECT('默认','标准'),268.00,39,1),
+  (61107,1107,JSON_OBJECT('默认','标准'),299.00,26,1),
+  (61108,1108,JSON_OBJECT('默认','标准'),89.00,103,1),
+  (61207,1207,JSON_OBJECT('默认','标准'),219.00,38,1)
 ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`spec_json`=VALUES(`spec_json`),`price`=VALUES(`price`),`stock`=VALUES(`stock`),`status`=VALUES(`status`);
+
+INSERT INTO `qixi_crm_m_product_detail`
+  (`product_id`,`brief`,`keyword`,`unit_name`,`cover_url`,`delivery_way`,`original_price`)
+VALUES
+  (1001,'轻薄保暖，通勤百搭羊绒针织。','羊绒,针织,通勤','件','/demo/product-knit-v1.png','2',399.00),
+  (1002,'头层牛皮托特，容量适中适合通勤。','牛皮,托特包,通勤','件','/demo/product-bag-v1.png','2',599.00),
+  (1004,'精纺圆领羊毛开衫，秋冬预售演示商品。','羊毛,开衫,预售','件','/demo/product-knit-v1.png','1,2',429.00),
+  (1005,'真丝印花方巾礼盒，好友助力演示商品。','真丝,方巾,礼盒','盒','/demo/product-scarf-v1.png','2',169.00),
+  (1007,'柔软亲肤针织披肩，居家与出行两用。','披肩,针织','件','/demo/product-knit-v1.png','2',249.00),
+  (1008,'城市通勤训练跑鞋，缓震透气。','跑鞋,通勤,运动','双','/demo/product-shoes-v1.png','2',529.00),
+  (1101,'无火藤条香氛礼盒，客厅氛围演示商品。','香氛,藤条,礼盒','盒','/demo/product-fragrance-v1.png','2',299.00),
+  (1102,'晚安助眠香薰蜡烛，助眠香调演示。','香薰,蜡烛,助眠','件','/demo/product-fragrance-v1.png','2',189.00),
+  (1103,'恒温随行保温杯，出行随手一杯。','保温杯,随行','个','/demo/product-tumbler-v1.png','2',219.00),
+  (1104,'晨间居家香氛套装，全款预售演示。','香氛,套装,居家','套','/demo/product-fragrance-v1.png','2',338.00),
+  (1107,'客厅氛围香薰礼盒，定金预售演示。','香薰,礼盒,客厅','盒','/demo/product-fragrance-v1.png','2',369.00),
+  (1108,'织物护理香氛喷雾，定金待审演示商品。','织物,护理,香氛喷雾','瓶','/demo/product-fragrance-v1.png','1,2',119.00),
+  (1207,'桌面恒温杯垫礼盒，好友助力演示商品。','恒温,杯垫,礼盒','盒','/demo/product-tumbler-v1.png','2',279.00)
+ON DUPLICATE KEY UPDATE
+  `brief`=VALUES(`brief`),`keyword`=VALUES(`keyword`),`unit_name`=VALUES(`unit_name`),
+  `cover_url`=VALUES(`cover_url`),`delivery_way`=VALUES(`delivery_way`),`original_price`=VALUES(`original_price`);
 
 INSERT INTO `qixi_crm_m_finance_ledger` (`store_id`,`entry_type`,`amount`,`reference_type`,`reference_id`,`idempotency_key`) VALUES
   (1,'test_seed',1000.00,'fixture','opening-balance','fixture-store-1-opening-balance')

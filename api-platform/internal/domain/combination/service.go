@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -21,6 +22,7 @@ type Store interface {
 	GetBuying(ctx context.Context, id uint) (*Buying, error)
 	UpdateBuying(ctx context.Context, b *Buying) error
 	ListOpenBuyings(ctx context.Context, productGroupID uint, limit int) ([]Buying, error)
+	ListBuyingsAdmin(ctx context.Context, q AdminBuyingQuery) ([]Buying, int64, error)
 
 	CreateMember(ctx context.Context, m *Member) error
 	GetMemberByOrder(ctx context.Context, orderID uint) (*Member, error)
@@ -148,6 +150,16 @@ func (s *Service) Update(ctx context.Context, merID, id uint, in SaveInput) (*Pr
 	if in.Status != nil {
 		g.Status = *in.Status
 	}
+	if in.ProductStatus != nil {
+		ps := *in.ProductStatus
+		if ps != 0 && ps != 1 && ps != -1 && ps != -2 {
+			return nil, ErrBadParam
+		}
+		g.ProductStatus = ps
+	}
+	if refusal := strings.TrimSpace(in.Refusal); refusal != "" {
+		g.Refusal = refusal
+	}
 	if err := s.store.UpdateGroup(ctx, g); err != nil {
 		return nil, err
 	}
@@ -161,6 +173,44 @@ func (s *Service) SetShow(ctx context.Context, merID, id uint, show int) (*Produ
 	}
 	v := show
 	return s.Update(ctx, merID, id, SaveInput{IsShow: &v})
+}
+
+// Audit 平台审核拼团商品：1 通过 / -1 拒绝。
+func (s *Service) Audit(ctx context.Context, id uint, status int, refusal string) (*ProductGroup, error) {
+	if status != 1 && status != -1 {
+		return nil, ErrBadParam
+	}
+	refusal = strings.TrimSpace(refusal)
+	if status == -1 && refusal == "" {
+		return nil, ErrBadParam
+	}
+	show := 0
+	if status == 1 {
+		show = 1
+	}
+	return s.Update(ctx, 0, id, SaveInput{ProductStatus: &status, IsShow: &show, Refusal: refusal})
+}
+
+// ForceOff 强制下架：product_status=-2，隐藏前台展示。
+func (s *Service) ForceOff(ctx context.Context, ids []uint, reason string) error {
+	reason = strings.TrimSpace(reason)
+	if len(ids) == 0 || reason == "" {
+		return ErrBadParam
+	}
+	off := -2
+	show := 0
+	st := 0
+	for _, id := range ids {
+		if _, err := s.Update(ctx, 0, id, SaveInput{
+			ProductStatus: &off,
+			IsShow:        &show,
+			Status:        &st,
+			Refusal:       reason,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) Delete(ctx context.Context, merID, id uint) error {
@@ -225,7 +275,81 @@ func (s *Service) GetBuying(ctx context.Context, id uint) (*Buying, error) {
 	}
 	ms, _ := s.store.ListMembers(ctx, id)
 	b.Members = ms
+	tmp := []Buying{*b}
+	_ = s.enrichBuyings(ctx, tmp)
+	*b = tmp[0]
+	b.Members = ms
 	return b, nil
+}
+
+// ListAdminBuyings 平台监管：用户开团记录列表（拼团活动列表）。
+func (s *Service) ListAdminBuyings(ctx context.Context, q AdminBuyingQuery) (*PageResult[Buying], error) {
+	q.Page, q.Limit = normalize(q.Page, q.Limit)
+	list, total, err := s.store.ListBuyingsAdmin(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.enrichBuyings(ctx, list)
+	return &PageResult[Buying]{List: list, Total: total, Page: q.Page, Limit: q.Limit}, nil
+}
+
+func (s *Service) enrichBuyings(ctx context.Context, list []Buying) error {
+	for i := range list {
+		list[i].Remain = list[i].BuyingCountNum - list[i].YetBuyingNum
+		if list[i].Remain < 0 {
+			list[i].Remain = 0
+		}
+		list[i].StatusText = buyingStatusText(list[i].Status)
+		if list[i].EndTime > 0 {
+			loc := time.Local
+			if shanghai, err := time.LoadLocation("Asia/Shanghai"); err == nil {
+				loc = shanghai
+			}
+			list[i].StopTime = time.Unix(list[i].EndTime, 0).In(loc).Format("2006-01-02 15:04:05")
+		}
+		g, err := s.store.GetGroup(ctx, list[i].ProductGroupID)
+		if err == nil && g != nil {
+			list[i].ProductID = g.ProductID
+			list[i].Price = g.Price
+			if list[i].MerID == 0 {
+				list[i].MerID = g.MerID
+			}
+			name, img, merName, _, _, _, metaErr := s.store.LoadProductMeta(ctx, g.ProductID)
+			if metaErr == nil {
+				list[i].StoreName = name
+				list[i].Image = img
+				if list[i].MerName == "" {
+					list[i].MerName = merName
+				}
+			}
+		}
+		if list[i].Nickname == "" {
+			ms, _ := s.store.ListMembers(ctx, list[i].GroupBuyingID)
+			for _, m := range ms {
+				if m.IsInitiator == 1 || m.IsLeader == 1 {
+					list[i].Nickname = m.Nickname
+					list[i].UID = m.UID
+					break
+				}
+			}
+			if list[i].Nickname == "" && len(ms) > 0 {
+				list[i].Nickname = ms[0].Nickname
+				list[i].UID = ms[0].UID
+			}
+		}
+	}
+	return nil
+}
+
+func buyingStatusText(status int) string {
+	switch status {
+	case BuyingStatusDone:
+		return "已完成"
+	case BuyingStatusFailed:
+		return "已失败"
+	default:
+		return "未完成"
+	}
 }
 
 // BeginJoin 开团或参团占位（待支付）；返回 buyingID。

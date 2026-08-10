@@ -1,22 +1,56 @@
 openapi: 3.0.3
 info:
   title: pte-live-ecrm platform assist
-  version: 0.6.3
+  version: 0.6.4
   description: >-
-    平台好友助力监管。读取仅限统一后台；更新和删除要求 platform/operations
-    角色及 marketing.assist.manage 按钮码。当前 Vben 仅开放上架/下架，删除、改价、库存与时间调整仍待订单影响审计。
+    平台好友助力监管。/assist/actives 为活动商品配置；/assist/sets 为用户发起的助力实例
+   （菜单「助力 → 助力活动」）。读写要求 platform/operations 与 marketing.assist.manage。
 servers:
   - url: /api/platform/v1
 paths:
   /assist/actives:
     get:
-      summary: 全平台助力活动列表
+      summary: 全平台助力活动商品列表
       security: [{ authorization: [] }]
       parameters:
         - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
         - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
         - { in: query, name: mer_id, schema: { type: integer, minimum: 1 } }
   /assist/actives/{id}:
+    get:
+      summary: 助力活动商品详情（含店铺类别、限量/统计与活动状态文案）
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_assist_id: { type: integer }
+                  mer_name: { type: string }
+                  trader_name: { type: string }
+                  product_id: { type: integer }
+                  store_name: { type: string }
+                  image: { type: string }
+                  store_info: { type: string }
+                  assist_price: { type: number }
+                  stock_count: { type: integer, description: 限量（原始） }
+                  stock: { type: integer, description: 限量剩余 }
+                  assist_count: { type: integer }
+                  assist_user_count: { type: integer }
+                  pay_count: { type: integer, description: 限购件数，0 表示不限 }
+                  pay: { type: integer, description: 已售/已支付人次 }
+                  success: { type: integer, description: 助力成功人次 }
+                  all: { type: integer, description: 参与人次 }
+                  product_status_name: { type: string }
+                  assist_status_text: { type: string }
+                  is_show: { type: integer, enum: [0, 1] }
+                  create_time: { type: string }
+        '404': { description: 不存在 }
     put:
       summary: 更新（当前统一后台仅用于上下架）
       security: [{ authorization: [] }]
@@ -35,6 +69,26 @@ paths:
       responses:
         '200': { description: 更新成功 }
         '403': { description: 缺少角色或 marketing.assist.manage 按钮权限 }
+  /assist/sets:
+    get:
+      summary: 用户发起的助力实例列表
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: mer_id, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: keyword, schema: { type: string }, description: 商品名称/ID }
+        - { in: query, name: user_name, schema: { type: string }, description: 发起人昵称 }
+        - { in: query, name: is_trader, schema: { type: integer, enum: [0, 1] } }
+        - { in: query, name: date_from, schema: { type: string, format: date } }
+        - { in: query, name: date_to, schema: { type: string, format: date } }
+        - { in: query, name: status, schema: { type: integer } }
+  /assist/sets/{id}:
+    get:
+      summary: 助力实例详情（含助力好友）
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
 components:
   securitySchemes:
     authorization:

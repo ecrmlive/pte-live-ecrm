@@ -1,18 +1,53 @@
 openapi: 3.0.3
 info:
   title: pte-live-ecrm platform combination
-  version: 0.6.2
-  description: 平台拼团监管
+  version: 0.6.3
+  description: |
+    平台拼团监管。
+    /combination/groups 为拼团商品（活动配置）；
+    /combination/buyings 为用户开团记录（拼团活动列表）。
 servers:
   - url: /api/platform/v1
 paths:
   /combination/groups:
     get:
-      summary: 拼团活动列表
+      summary: 拼团商品列表
+  /combination/groups/audit:
+    post:
+      summary: 审核（通过/拒绝）
+  /combination/groups/force-off:
+    post:
+      summary: 强制下架
   /combination/groups/{id}:
     get:
-      summary: 详情
+      summary: 拼团商品详情
     put:
       summary: 更新（上下架/价/人数）
     delete:
       summary: 软删除
+  /combination/buyings:
+    get:
+      summary: 拼团活动列表（开团记录）
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: mer_id, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: keyword, schema: { type: string }, description: 商品名称/ID }
+        - { in: query, name: user_name, schema: { type: string }, description: 团长昵称/ID }
+        - { in: query, name: is_trader, schema: { type: integer, enum: [0, 1] }, description: 店铺类别 }
+        - { in: query, name: status, schema: { type: integer }, description: 0未完成 10已完成 -1已失败 }
+        - { in: query, name: date_from, schema: { type: string, format: date } }
+        - { in: query, name: date_to, schema: { type: string, format: date } }
+  /combination/buyings/{id}:
+    get:
+      summary: 开团详情（含参团成员）
+      security: [{ authorization: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64 } }
+components:
+  securitySchemes:
+    authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

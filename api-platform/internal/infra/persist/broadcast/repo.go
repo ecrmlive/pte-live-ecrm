@@ -2,6 +2,7 @@ package broadcastpersist
 
 import (
 	"context"
+	"strings"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/broadcast"
 	"gorm.io/gorm"
@@ -11,20 +12,47 @@ type Repo struct{ db *gorm.DB }
 
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-func (r *Repo) List(ctx context.Context, merID *uint, onlyPublic bool, page, limit int) ([]broadcast.Room, int64, error) {
+func (r *Repo) List(ctx context.Context, filter broadcast.ListFilter, page, limit int) ([]broadcast.Room, int64, error) {
 	q := r.db.WithContext(ctx).Model(&broadcast.Room{}).Where("is_del = 0")
-	if merID != nil {
-		q = q.Where("mer_id = ?", *merID)
+	if filter.MerID != nil {
+		q = q.Where("mer_id = ?", *filter.MerID)
 	}
-	if onlyPublic {
+	if len(filter.MerIDs) > 0 {
+		q = q.Where("mer_id IN ?", filter.MerIDs)
+	}
+	if filter.OnlyPublic {
 		q = q.Where("is_show = 1 AND status = ?", broadcast.AuditApproved)
+	}
+	if kw := strings.TrimSpace(filter.Keyword); kw != "" {
+		like := "%" + kw + "%"
+		q = q.Where(
+			"(name LIKE ? OR anchor_name LIKE ? OR anchor_wechat LIKE ? OR CAST(broadcast_room_id AS CHAR) LIKE ?)",
+			like, like, like, like,
+		)
+	}
+	if filter.StatusTag != nil {
+		switch *filter.StatusTag {
+		case broadcast.AuditApproved, broadcast.AuditRejected:
+			q = q.Where("status = ?", *filter.StatusTag)
+		case broadcast.AuditPending:
+			q = q.Where("status IN ?", []int8{broadcast.AuditPending, 1})
+		}
+	}
+	if filter.ShowType != nil {
+		q = q.Where("is_show = ?", *filter.ShowType)
+	}
+	if filter.LiveStatus != nil {
+		q = q.Where("live_status = ?", *filter.LiveStatus)
+	}
+	if filter.Star != nil {
+		q = q.Where("star = ?", *filter.Star)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	var rows []broadcast.Room
-	err := q.Order("sort DESC, star DESC, broadcast_room_id DESC").
+	err := q.Order("star DESC, sort DESC, broadcast_room_id DESC").
 		Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
 }
@@ -45,20 +73,22 @@ func (r *Repo) Create(ctx context.Context, room *broadcast.Room) error {
 func (r *Repo) Update(ctx context.Context, room *broadcast.Room) error {
 	return r.db.WithContext(ctx).Model(room).Where("broadcast_room_id = ?", room.BroadcastRoomID).
 		Updates(map[string]interface{}{
-			"name":        room.Name,
-			"cover_img":   room.CoverImg,
-			"feeds_img":   room.FeedsImg,
-			"start_time":  room.StartTime,
-			"end_time":    room.EndTime,
-			"anchor_name": room.AnchorName,
-			"phone":       room.Phone,
-			"status":      room.Status,
-			"live_status": room.LiveStatus,
-			"is_show":     room.IsShow,
-			"sort":        room.Sort,
-			"star":        room.Star,
-			"mark":        room.Mark,
-			"refusal":     room.Refusal,
+			"name":          room.Name,
+			"cover_img":     room.CoverImg,
+			"feeds_img":     room.FeedsImg,
+			"play_url":      room.PlayURL,
+			"start_time":    room.StartTime,
+			"end_time":      room.EndTime,
+			"anchor_name":   room.AnchorName,
+			"anchor_wechat": room.AnchorWechat,
+			"phone":         room.Phone,
+			"status":        room.Status,
+			"live_status":   room.LiveStatus,
+			"is_show":       room.IsShow,
+			"sort":          room.Sort,
+			"star":          room.Star,
+			"mark":          room.Mark,
+			"refusal":       room.Refusal,
 		}).Error
 }
 

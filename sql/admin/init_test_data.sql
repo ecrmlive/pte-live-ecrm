@@ -23,9 +23,11 @@ INSERT INTO `qixi_crm_a_setting_cache` (`key`,`expire_time`,`result`) VALUES
   ('sys_extension_agree',0,'<p>我是佣金说明</p>'),
   ('promoter_explain',0,'<p>这个是分销说明</p>'),
   ('sys_coupon_agree',0,'<p>1. 优惠券领取后请在有效期内使用；</p><p>2. 每张优惠券限使用一次，不可叠加；</p><p>3. 最终解释权归平台所有。</p>'),
+  ('sys_product_presell_agree',0,'<p>1. 预售商品以页面公示的发货时间为准；</p><p>2. 定金支付后请在尾款支付期限内完成支付，逾期超时订单将按活动规则处理；</p><p>3. 最终解释权归平台所有。</p>'),
   ('sms_config',0,'{"enabled":false,"provider":"stub","sign":"七禧商城","remark":"本地验收未配置通道"}'),
   ('merchant_apply_setting',0,'{"background_image":"","form_fields":[{"id":"demo_area","type":"text","title":"营业面积","content_type":"number","default_value":"","placeholder":"请输入营业面积","required":false}]}'),
-  ('distribution_config',0,'{"extension_status":true,"extension_self":true,"extension_limit":false,"extension_limit_day":15,"promoter_type":0,"promoter_low_money":0,"extension_pop":0,"extension_one_rate":0.15,"extension_two_rate":0.05,"user_extract_min":10,"lock_brokerage_timer":7,"sys_extension_type":0,"withdraw_type":["0","1","2"],"extract_switch":1,"transfer_scene_id":0,"max_bag_number":10}')
+  ('distribution_config',0,'{"extension_status":true,"extension_self":true,"extension_limit":false,"extension_limit_day":15,"promoter_type":0,"promoter_low_money":0,"extension_pop":0,"extension_one_rate":0.15,"extension_two_rate":0.05,"user_extract_min":10,"lock_brokerage_timer":7,"sys_extension_type":0,"withdraw_type":["0","1","2"],"extract_switch":1,"transfer_scene_id":0,"max_bag_number":10}'),
+  ('group_buying_config',0,'{"ficti_status":1,"group_buying_rate":30}')
 ON DUPLICATE KEY UPDATE `expire_time`=VALUES(`expire_time`),`result`=VALUES(`result`);
 
 -- 客服策略夹具只包含虚构中文业务文本，不包含 IM Token、UserSig、云密钥或真实值班信息。

@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_broadcast_room` (
   `name` varchar(255) NOT NULL, `cover_img` varchar(1024) NOT NULL DEFAULT '', `feeds_img` varchar(1024) NOT NULL DEFAULT '',
   `play_url` varchar(2048) NOT NULL DEFAULT '', `push_url` varchar(2048) NOT NULL DEFAULT '',
   `start_time` datetime DEFAULT NULL, `end_time` datetime DEFAULT NULL, `anchor_name` varchar(128) NOT NULL DEFAULT '',
+  `anchor_wechat` varchar(64) NOT NULL DEFAULT '',
   `phone` varchar(32) NOT NULL DEFAULT '', `status` tinyint NOT NULL DEFAULT 0, `live_status` smallint NOT NULL DEFAULT 102,
   `is_show` tinyint NOT NULL DEFAULT 0, `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `sort` int NOT NULL DEFAULT 0, `star` int NOT NULL DEFAULT 0, `mark` varchar(500) NOT NULL DEFAULT '', `refusal` varchar(500) NOT NULL DEFAULT '',
@@ -272,7 +273,8 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_combination_group` (
   `pay_count` int NOT NULL DEFAULT 0, `once_pay_count` int NOT NULL DEFAULT 1,
   `status` tinyint NOT NULL DEFAULT 1, `mer_id` bigint unsigned NOT NULL,
   `is_show` tinyint NOT NULL DEFAULT 1, `is_del` tinyint NOT NULL DEFAULT 0,
-  `success_num` int NOT NULL DEFAULT 0, `product_status` tinyint NOT NULL DEFAULT 1,
+  `success_num` int NOT NULL DEFAULT 0, `product_status` tinyint NOT NULL DEFAULT 1 COMMENT '1通过 0待审 -1未通过 -2强制下架',
+  `refusal` varchar(500) NOT NULL DEFAULT '' COMMENT '拒绝/下架原因',
   `price` decimal(12,2) NOT NULL, `action_status` tinyint NOT NULL DEFAULT 1,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`product_group_id`), KEY `idx_app_listing` (`is_del`,`is_show`,`status`,`action_status`,`start_time`,`end_time`),
@@ -309,6 +311,8 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_presell` (
   `is_del` tinyint NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `product_status` tinyint NOT NULL DEFAULT 1, `refusal` varchar(500) NOT NULL DEFAULT '',
   `action_status` tinyint NOT NULL DEFAULT 1, `seles` int NOT NULL DEFAULT 0,
+  `star` tinyint NOT NULL DEFAULT 0, `sys_labels` varchar(255) NOT NULL DEFAULT '',
+  `stock_count` int NOT NULL DEFAULT 0, `attend_num` int NOT NULL DEFAULT 0, `success_num` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`product_presell_id`), KEY `idx_app_listing` (`is_del`,`status`,`is_show`,`product_status`,`action_status`,`start_time`,`end_time`),
   KEY `idx_merchant` (`mer_id`,`is_del`,`create_time`), KEY `idx_product` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

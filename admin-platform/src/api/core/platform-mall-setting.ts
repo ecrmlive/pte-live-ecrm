@@ -141,6 +141,33 @@ export function savePlatformDistributionConfigApi(
     .then((data) => parseConfig<PlatformDistributionConfig>(data.config));
 }
 
+/** 对齐 CRMEB ConfigOthers::getGroupBuying / setGroupBuying */
+export interface PlatformGroupBuyingConfig {
+  /** 0 关闭 / 1 启用 */
+  ficti_status: number;
+  /** 真实成团最小比例 0～100 */
+  group_buying_rate: number;
+}
+
+export function getPlatformGroupBuyingConfigApi() {
+  return requestClient
+    .get<{ config: string; note: string }>('/setting/group-buying')
+    .then((data) => ({
+      note: data.note,
+      config: parseConfig<PlatformGroupBuyingConfig>(data.config),
+    }));
+}
+
+export function savePlatformGroupBuyingConfigApi(
+  config: PlatformGroupBuyingConfig,
+) {
+  return requestClient
+    .put<{ config: string }>('/setting/group-buying', {
+      config: stringifyConfig(config),
+    })
+    .then((data) => parseConfig<PlatformGroupBuyingConfig>(data.config));
+}
+
 /** 对齐 CRMEB 商户设置：入驻页背景 + 自定义表单字段 */
 export type MerchantApplyFieldType =
   | 'checkbox'
