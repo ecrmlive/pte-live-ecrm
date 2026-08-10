@@ -20,11 +20,13 @@ export interface ArticleRow {
   cid: number;
   title: string;
   author: string;
+  image?: string;
   synopsis: string;
   content: string;
   sort: number;
   status: number;
   visit?: number;
+  create_time?: string;
 }
 
 export interface UserLabelRow {
@@ -1087,8 +1089,17 @@ export function deleteExpress(id: number) {
   return requestClient.delete(`/express/${id}`);
 }
 
-export function fetchArticles(params: { page: number; limit: number }) {
+export function fetchArticles(params: {
+  page: number;
+  limit: number;
+  title?: string;
+  cid?: number;
+}) {
   return requestClient.get<PageResult<ArticleRow>>('/articles', { params });
+}
+
+export function getArticle(id: number) {
+  return requestClient.get<ArticleRow>(`/articles/${id}`);
 }
 
 export function createArticle(data: Partial<ArticleRow>) {

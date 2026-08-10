@@ -31,15 +31,24 @@ func (r *Repo) UpdateCategory(ctx context.Context, row *article.Category) error 
 	return r.db.WithContext(ctx).Save(row).Error
 }
 
+func (r *Repo) UpdateCategoryStatus(ctx context.Context, id uint, status int8) error {
+	return r.db.WithContext(ctx).Model(&article.Category{}).
+		Where("cid = ? AND is_del = 0", id).
+		Update("status", status).Error
+}
+
 func (r *Repo) SoftDeleteCategory(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Model(&article.Category{}).Where("cid = ?", id).Update("is_del", 1).Error
 }
 
-func (r *Repo) ListArticle(ctx context.Context, page, limit int, cid uint, publishedOnly bool) ([]article.Article, int64, error) {
+func (r *Repo) ListArticle(ctx context.Context, page, limit int, cid uint, title string, publishedOnly bool) ([]article.Article, int64, error) {
 	var total int64
 	q := r.db.WithContext(ctx).Model(&article.Article{}).Where("is_del = 0")
 	if cid > 0 {
 		q = q.Where("cid = ?", cid)
+	}
+	if title != "" {
+		q = q.Where("title LIKE ?", "%"+title+"%")
 	}
 	if publishedOnly {
 		q = q.Where("status = 1")

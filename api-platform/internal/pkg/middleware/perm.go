@@ -243,7 +243,9 @@ func operationRoute(path string) bool {
 		strings.HasPrefix(path, "/api/platform/v1/community/") ||
 		strings.HasPrefix(path, "/api/platform/v1/attachments") ||
 		strings.HasPrefix(path, "/api/platform/v1/agreements") ||
-		strings.HasPrefix(path, "/api/platform/v1/diy/")
+		strings.HasPrefix(path, "/api/platform/v1/diy/") ||
+		strings.HasPrefix(path, "/api/platform/v1/finance/statements") ||
+		strings.HasPrefix(path, "/api/platform/v1/finance/transfers")
 }
 
 func hasRole(roles []string, expected string) bool {

@@ -327,19 +327,32 @@ ON DUPLICATE KEY UPDATE `user_id`=VALUES(`user_id`),`product_id`=VALUES(`product
 
 -- 社区公开内容仅为演示数据，不包含真实个人信息。
 INSERT INTO `qixi_crm_b_user` (`id`,`nickname`,`mobile`,`status`) VALUES
-  (9001,'晴空漫游者',NULL,1),(9002,'居家研究员',NULL,1),(9003,'通勤玩家',NULL,1)
+  (9001,'晴空漫游者',NULL,1),(9002,'居家研究员',NULL,1),(9003,'通勤玩家',NULL,1),(9004,'短视频达人',NULL,1)
 ON DUPLICATE KEY UPDATE `nickname`=VALUES(`nickname`),`status`=VALUES(`status`);
 INSERT INTO `qixi_crm_b_social_category` (`category_id`,`cate_name`,`pid`,`is_show`,`sort`) VALUES
-  (6401,'穿搭分享',0,1,10),(6402,'居家生活',0,1,20),(6403,'数码体验',0,1,30)
+  (6401,'穿搭',0,1,40),(6402,'旅游',0,1,10),(6403,'数码',0,1,20),(6404,'彩妆',0,1,30)
 ON DUPLICATE KEY UPDATE `cate_name`=VALUES(`cate_name`),`is_show`=VALUES(`is_show`),`sort`=VALUES(`sort`);
 INSERT INTO `qixi_crm_b_social_topic` (`topic_id`,`topic_name`,`status`,`is_hot`,`category_id`,`is_del`,`count_use`,`sort`) VALUES
-  (6501,'通勤穿搭',1,1,6401,0,18,10),(6502,'居家氛围',1,1,6402,0,12,20),(6503,'好物测评',1,0,6403,0,9,30)
+  (6501,'通勤穿搭',1,1,6401,0,18,10),(6502,'旅途随拍',1,1,6402,0,12,20),(6503,'好物测评',1,0,6403,0,9,30),(6504,'彩妆分享',1,0,6404,0,6,40)
 ON DUPLICATE KEY UPDATE `topic_name`=VALUES(`topic_name`),`status`=VALUES(`status`),`is_hot`=VALUES(`is_hot`),`category_id`=VALUES(`category_id`),`is_del`=VALUES(`is_del`),`count_use`=VALUES(`count_use`),`sort`=VALUES(`sort`);
-INSERT INTO `qixi_crm_b_social_post` (`community_id`,`title`,`image`,`category_id`,`topic_id`,`uid`,`mer_id`,`product_id`,`count_start`,`count_reply`,`status`,`is_show`,`is_hot`,`is_type`,`content`,`refusal`,`pv`,`is_del`,`status_time`) VALUES
-  (6601,'通勤针织衫的三种叠穿思路','/demo/product-knit-v1.png',6401,6501,9001,1,1001,26,3,1,1,1,0,'柔软的针织衫适合和衬衫、半裙搭配，通勤和周末都能穿。','',128,0,NOW()),
-  (6602,'让客厅更放松的香氛组合','/demo/product-fragrance-v1.png',6402,6502,9002,2,1101,18,2,1,1,0,0,'无火香薰放在玄关，蜡烛安排在晚间阅读角，层次更自然。','',96,0,NOW()),
-  (6603,'桌面恒温杯垫值得入手吗','/demo/product-tumbler-v1.png',6403,6503,9003,3,1207,11,1,1,1,0,0,'适合常坐在电脑前的人，配保温杯使用更方便。','',65,0,NOW())
-ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`image`=VALUES(`image`),`category_id`=VALUES(`category_id`),`topic_id`=VALUES(`topic_id`),`uid`=VALUES(`uid`),`mer_id`=VALUES(`mer_id`),`product_id`=VALUES(`product_id`),`count_start`=VALUES(`count_start`),`count_reply`=VALUES(`count_reply`),`status`=VALUES(`status`),`is_show`=VALUES(`is_show`),`is_hot`=VALUES(`is_hot`),`content`=VALUES(`content`),`pv`=VALUES(`pv`),`is_del`=VALUES(`is_del`),`status_time`=NOW();
+INSERT INTO `qixi_crm_b_social_post` (
+  `community_id`,`title`,`image`,`category_id`,`topic_id`,`uid`,`mer_id`,`product_id`,
+  `count_start`,`count_reply`,`status`,`is_show`,`is_hot`,`start`,`is_type`,`video_link`,
+  `content`,`refusal`,`pv`,`is_del`,`status_time`
+) VALUES
+  (6601,'通勤针织衫的三种叠穿思路','/demo/product-knit-v1.png,/demo/product-knit-v2.png',6401,6501,9001,1,1001,26,3,1,1,1,5,1,'','柔软的针织衫适合和衬衫、半裙搭配，通勤和周末都能穿。','',128,0,NOW()),
+  (6602,'周末短途出行的轻便穿搭','/demo/product-fragrance-v1.png',6402,6502,9002,2,1101,18,2,1,1,0,4,1,'','短途旅行建议选透气鞋与易叠穿外套，行李更轻便。','',96,0,NOW()),
+  (6603,'桌面恒温杯垫值得入手吗','/demo/product-tumbler-v1.png',6403,6503,9003,3,1207,11,1,1,1,0,3,1,'','适合常坐在电脑前的人，配保温杯使用更方便。','',65,0,NOW()),
+  (6604,'周末市集穿搭短视频','/demo/product-knit-v1.png',6401,6501,9004,1,1001,42,0,1,1,1,5,2,'https://demo.local/video/weekend-outfit.mp4','周末市集轻便穿搭，一镜到底展示叠穿层次。','',210,0,NOW())
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`),`image`=VALUES(`image`),`category_id`=VALUES(`category_id`),`topic_id`=VALUES(`topic_id`),`uid`=VALUES(`uid`),`mer_id`=VALUES(`mer_id`),`product_id`=VALUES(`product_id`),`count_start`=VALUES(`count_start`),`count_reply`=VALUES(`count_reply`),`status`=VALUES(`status`),`is_show`=VALUES(`is_show`),`is_hot`=VALUES(`is_hot`),`start`=VALUES(`start`),`is_type`=VALUES(`is_type`),`video_link`=VALUES(`video_link`),`content`=VALUES(`content`),`pv`=VALUES(`pv`),`is_del`=VALUES(`is_del`),`status_time`=NOW();
+INSERT INTO `qixi_crm_b_social_reply` (
+  `reply_id`,`content`,`pid`,`uid`,`count_start`,`count_reply`,`community_id`,`status`,`refusal`,`is_del`,`create_time`
+) VALUES
+  (6701,'叠穿思路很实用，打算周末试试。',0,9002,5,1,6601,1,'',0,DATE_SUB(NOW(),INTERVAL 2 DAY)),
+  (6702,'第二套更适合通勤。',6701,9001,2,0,6601,1,'',0,DATE_SUB(NOW(),INTERVAL 1 DAY)),
+  (6703,'轻便穿搭很实用。',0,9001,3,0,6602,1,'',0,DATE_SUB(NOW(),INTERVAL 3 DAY)),
+  (6704,'杯垫续航怎么样？',0,9002,1,0,6603,1,'',0,DATE_SUB(NOW(),INTERVAL 5 HOUR))
+ON DUPLICATE KEY UPDATE `content`=VALUES(`content`),`pid`=VALUES(`pid`),`uid`=VALUES(`uid`),`count_start`=VALUES(`count_start`),`count_reply`=VALUES(`count_reply`),`community_id`=VALUES(`community_id`),`status`=VALUES(`status`),`refusal`=VALUES(`refusal`),`is_del`=VALUES(`is_del`),`create_time`=VALUES(`create_time`);
 
 -- 领券中心夹具：store_id=0 为平台券，其余为对应店铺券。领取记录只在用户实际点击领取后生成。
 INSERT INTO `qixi_crm_b_coupon_template_view` (`coupon_id`,`store_id`,`name`,`discount_type`,`discount_value`,`min_amount`,`starts_at`,`ends_at`,`status`,`version`) VALUES

@@ -21,6 +21,50 @@ func (r *Repo) ListCategories(ctx context.Context, onlyShow bool) ([]community.C
 	return rows, err
 }
 
+func (r *Repo) GetCategory(ctx context.Context, id uint) (*community.Category, error) {
+	var row community.Category
+	err := r.db.WithContext(ctx).Where("category_id = ?", id).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+func (r *Repo) CreateCategory(ctx context.Context, row *community.Category) error {
+	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repo) UpdateCategory(ctx context.Context, row *community.Category) error {
+	return r.db.WithContext(ctx).Model(row).Where("category_id = ?", row.CategoryID).Updates(map[string]interface{}{
+		"cate_name": row.CateName,
+		"pid":       row.PID,
+		"is_show":   row.IsShow,
+		"sort":      row.Sort,
+	}).Error
+}
+
+func (r *Repo) UpdateCategoryShow(ctx context.Context, id uint, isShow int8) error {
+	return r.db.WithContext(ctx).Model(&community.Category{}).
+		Where("category_id = ?", id).
+		Update("is_show", isShow).Error
+}
+
+func (r *Repo) DeleteCategory(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Where("category_id = ?", id).Delete(&community.Category{}).Error
+}
+
+func (r *Repo) CountCategoryUsage(ctx context.Context, id uint) (posts int64, topics int64, err error) {
+	if err = r.db.WithContext(ctx).Model(&community.Post{}).
+		Where("category_id = ? AND is_del = 0", id).Count(&posts).Error; err != nil {
+		return
+	}
+	if err = r.db.WithContext(ctx).Model(&community.Topic{}).
+		Where("category_id = ? AND is_del = 0", id).Count(&topics).Error; err != nil {
+		return
+	}
+	return
+}
+
 func (r *Repo) ListTopics(ctx context.Context, onlyOn bool) ([]community.Topic, error) {
 	q := r.db.WithContext(ctx).Model(&community.Topic{}).Where("is_del = 0")
 	if onlyOn {
@@ -31,15 +75,63 @@ func (r *Repo) ListTopics(ctx context.Context, onlyOn bool) ([]community.Topic, 
 	return rows, err
 }
 
-func (r *Repo) ListPosts(ctx context.Context, f community.ListFilter) ([]community.Post, int64, error) {
-	page, limit := f.Page, f.Limit
-	if page < 1 {
-		page = 1
+func (r *Repo) GetTopic(ctx context.Context, id uint) (*community.Topic, error) {
+	var row community.Topic
+	err := r.db.WithContext(ctx).Where("topic_id = ? AND is_del = 0", id).First(&row).Error
+	if err != nil {
+		return nil, err
 	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	return &row, nil
+}
+
+func (r *Repo) CreateTopic(ctx context.Context, row *community.Topic) error {
+	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repo) UpdateTopic(ctx context.Context, row *community.Topic) error {
+	return r.db.WithContext(ctx).Model(row).Where("topic_id = ? AND is_del = 0", row.TopicID).Updates(map[string]interface{}{
+		"topic_name":  row.TopicName,
+		"pic":         row.Pic,
+		"category_id": row.CategoryID,
+		"sort":        row.Sort,
+		"status":      row.Status,
+		"is_hot":      row.IsHot,
+	}).Error
+}
+
+func (r *Repo) UpdateTopicStatus(ctx context.Context, id uint, status int8) error {
+	return r.db.WithContext(ctx).Model(&community.Topic{}).
+		Where("topic_id = ? AND is_del = 0", id).
+		Update("status", status).Error
+}
+
+func (r *Repo) UpdateTopicHot(ctx context.Context, id uint, isHot int8) error {
+	return r.db.WithContext(ctx).Model(&community.Topic{}).
+		Where("topic_id = ? AND is_del = 0", id).
+		Update("is_hot", isHot).Error
+}
+
+func (r *Repo) SoftDeleteTopic(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Model(&community.Topic{}).
+		Where("topic_id = ?", id).
+		Update("is_del", 1).Error
+}
+
+func (r *Repo) TopicNameExists(ctx context.Context, name string, excludeID uint) (bool, error) {
+	q := r.db.WithContext(ctx).Model(&community.Topic{}).
+		Where("topic_name = ? AND is_del = 0", name)
+	if excludeID > 0 {
+		q = q.Where("topic_id <> ?", excludeID)
 	}
-	q := r.db.WithContext(ctx).Model(&community.Post{}).Where("is_del = 0")
+	var n int64
+	if err := q.Count(&n).Error; err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+func (r *Repo) applyPostFilter(q *gorm.DB, f community.ListFilter) *gorm.DB {
+	q = q.Where("is_del = 0")
 	if f.MerID != nil {
 		q = q.Where("mer_id = ?", *f.MerID)
 	}
@@ -50,21 +142,68 @@ func (r *Repo) ListPosts(ctx context.Context, f community.ListFilter) ([]communi
 		q = q.Where("status = ?", *f.Status)
 	}
 	if f.Keyword != "" {
-		q = q.Where("title LIKE ? OR content LIKE ?", "%"+f.Keyword+"%", "%"+f.Keyword+"%")
+		if f.TitleOnly {
+			q = q.Where("title LIKE ?", "%"+f.Keyword+"%")
+		} else {
+			q = q.Where("title LIKE ? OR content LIKE ?", "%"+f.Keyword+"%", "%"+f.Keyword+"%")
+		}
 	}
 	if f.TopicID > 0 {
 		q = q.Where("topic_id = ?", f.TopicID)
 	}
+	if f.CategoryID > 0 {
+		q = q.Where("category_id = ?", f.CategoryID)
+	}
+	if f.IsShow != nil {
+		q = q.Where("is_show = ?", *f.IsShow)
+	}
+	if f.IsType != nil {
+		if *f.IsType == community.TypeImage {
+			q = q.Where("is_type IN ?", []int8{0, community.TypeImage})
+		} else {
+			q = q.Where("is_type = ?", *f.IsType)
+		}
+	}
+	if kw := f.AuthorKW; kw != "" {
+		switch f.AuthorType {
+		case "uid":
+			q = q.Where("uid = ?", kw)
+		case "phone":
+			q = q.Where("uid IN (SELECT id FROM qixi_crm_b_user WHERE mobile LIKE ?)", "%"+kw+"%")
+		default: // nickname
+			q = q.Where("uid IN (SELECT id FROM qixi_crm_b_user WHERE nickname LIKE ?)", "%"+kw+"%")
+		}
+	}
 	if f.OnlyPublic {
 		q = q.Where("status = ? AND is_show = 1", community.StatusApproved)
 	}
+	return q
+}
+
+func (r *Repo) ListPosts(ctx context.Context, f community.ListFilter) ([]community.Post, int64, error) {
+	page, limit := f.Page, f.Limit
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	q := r.applyPostFilter(r.db.WithContext(ctx).Model(&community.Post{}), f)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	var rows []community.Post
-	err := q.Order("is_hot DESC, community_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	err := q.Order("`start` DESC, is_hot DESC, community_id DESC").
+		Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+func (r *Repo) CountPosts(ctx context.Context, f community.ListFilter) (int64, error) {
+	q := r.applyPostFilter(r.db.WithContext(ctx).Model(&community.Post{}), f)
+	var total int64
+	err := q.Count(&total).Error
+	return total, err
 }
 
 func (r *Repo) GetPost(ctx context.Context, id uint) (*community.Post, error) {
@@ -84,7 +223,8 @@ func (r *Repo) UpdatePost(ctx context.Context, p *community.Post) error {
 	return r.db.WithContext(ctx).Model(p).Where("community_id = ?", p.CommunityID).Updates(map[string]interface{}{
 		"title": p.Title, "image": p.Image, "category_id": p.CategoryID, "topic_id": p.TopicID,
 		"product_id": p.ProductID, "mer_id": p.MerID, "status": p.Status, "is_show": p.IsShow,
-		"is_hot": p.IsHot, "content": p.Content, "refusal": p.Refusal, "status_time": p.StatusTime,
+		"is_hot": p.IsHot, "start": p.Start, "is_type": p.IsType, "video_link": p.VideoLink,
+		"content": p.Content, "refusal": p.Refusal, "status_time": p.StatusTime,
 	}).Error
 }
 
@@ -110,16 +250,26 @@ func (r *Repo) IncReplyCount(ctx context.Context, id uint, delta int) error {
 		Update("count_reply", expr).Error
 }
 
-func (r *Repo) ListAllReplies(ctx context.Context, keyword string, page, limit int) ([]community.Reply, int64, error) {
+func (r *Repo) ListAllReplies(ctx context.Context, f community.ReplyListFilter) ([]community.Reply, int64, error) {
+	page, limit := f.Page, f.Limit
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	q := r.db.WithContext(ctx).Model(&community.Reply{}).Where("is_del = 0 AND status = 1")
-	if keyword != "" {
-		q = q.Where("content LIKE ?", "%"+keyword+"%")
+	q := r.db.WithContext(ctx).Model(&community.Reply{}).Where("is_del = 0")
+	if f.Keyword != "" {
+		q = q.Where("content LIKE ?", "%"+f.Keyword+"%")
+	}
+	if f.Username != "" {
+		q = q.Where("uid IN (SELECT id FROM qixi_crm_b_user WHERE nickname LIKE ?)", "%"+f.Username+"%")
+	}
+	if f.DateFrom != "" {
+		q = q.Where("create_time >= ?", f.DateFrom+" 00:00:00")
+	}
+	if f.DateTo != "" {
+		q = q.Where("create_time <= ?", f.DateTo+" 23:59:59")
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -132,18 +282,24 @@ func (r *Repo) ListAllReplies(ctx context.Context, keyword string, page, limit i
 
 func (r *Repo) ListReplies(ctx context.Context, communityID uint, page, limit int) ([]community.Reply, int64, error) {
 	q := r.db.WithContext(ctx).Model(&community.Reply{}).
-		Where("community_id = ? AND is_del = 0 AND status = 1", communityID)
+		Where("community_id = ? AND is_del = 0", communityID)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	var rows []community.Reply
-	err := q.Order("reply_id ASC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	err := q.Order("reply_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
 }
 
 func (r *Repo) CreateReply(ctx context.Context, row *community.Reply) error {
 	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repo) UpdateReply(ctx context.Context, row *community.Reply) error {
+	return r.db.WithContext(ctx).Model(row).Where("reply_id = ?", row.ReplyID).Updates(map[string]interface{}{
+		"status": row.Status, "refusal": row.Refusal,
+	}).Error
 }
 
 func (r *Repo) SoftDeleteReply(ctx context.Context, id uint) error {

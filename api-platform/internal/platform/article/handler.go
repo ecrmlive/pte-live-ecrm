@@ -22,19 +22,29 @@ func NewHandler(svc *article.Service, adminDB *gorm.DB) *Handler {
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/article/categories", h.ListCategories)
-	write := middleware.RequireAdminRoles("platform", "operations")
+	platformOrOps := middleware.RequireAdminRoles("platform", "operations")
+	// 分类列表供文章表单下拉复用：分类读 或 文章读/写 任一即可
+	categoryRead := middleware.RequireAdminMenuAny(
+		h.adminDB,
+		"content.article_category.read",
+		"content.article_category.manage",
+		"content.article.read",
+		"content.article.manage",
+	)
 	categoryWrite := middleware.RequireAdminMenu(h.adminDB, "content.article_category.manage")
-	r.POST("/article/categories", write, categoryWrite, h.CreateCategory)
-	r.PUT("/article/categories/:id", write, categoryWrite, h.UpdateCategory)
-	r.DELETE("/article/categories/:id", write, categoryWrite, h.DeleteCategory)
+	r.GET("/article/categories", platformOrOps, categoryRead, h.ListCategories)
+	r.POST("/article/categories", platformOrOps, categoryWrite, h.CreateCategory)
+	r.PUT("/article/categories/:id", platformOrOps, categoryWrite, h.UpdateCategory)
+	r.PUT("/article/categories/:id/status", platformOrOps, categoryWrite, h.SetCategoryStatus)
+	r.DELETE("/article/categories/:id", platformOrOps, categoryWrite, h.DeleteCategory)
 
-	r.GET("/articles", h.List)
-	r.GET("/articles/:id", h.Get)
+	articleRead := middleware.RequireAdminMenuAny(h.adminDB, "content.article.read", "content.article.manage")
 	articleWrite := middleware.RequireAdminMenu(h.adminDB, "content.article.manage")
-	r.POST("/articles", write, articleWrite, h.Create)
-	r.PUT("/articles/:id", write, articleWrite, h.Update)
-	r.DELETE("/articles/:id", write, articleWrite, h.Delete)
+	r.GET("/articles", platformOrOps, articleRead, h.List)
+	r.GET("/articles/:id", platformOrOps, articleRead, h.Get)
+	r.POST("/articles", platformOrOps, articleWrite, h.Create)
+	r.PUT("/articles/:id", platformOrOps, articleWrite, h.Update)
+	r.DELETE("/articles/:id", platformOrOps, articleWrite, h.Delete)
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {
@@ -75,6 +85,22 @@ func (h *Handler) UpdateCategory(c *gin.Context) {
 	response.OK(c, row)
 }
 
+func (h *Handler) SetCategoryStatus(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	var body struct {
+		Status *int8 `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || body.Status == nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	if err := h.svc.SetCategoryStatus(c.Request.Context(), uint(id), *body.Status); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
+}
+
 func (h *Handler) DeleteCategory(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.svc.DeleteCategory(c.Request.Context(), uint(id)); err != nil {
@@ -88,7 +114,11 @@ func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	cid, _ := strconv.ParseUint(c.DefaultQuery("cid", "0"), 10, 64)
-	res, err := h.svc.ListAdmin(c.Request.Context(), page, limit, uint(cid))
+	title := c.Query("title")
+	if title == "" {
+		title = c.Query("keyword")
+	}
+	res, err := h.svc.ListAdmin(c.Request.Context(), page, limit, uint(cid), title)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return

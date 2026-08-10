@@ -2,6 +2,10 @@ import { requestClient } from '#/api/request';
 
 export interface ArticleCategoryOption {
   cid: number;
+  create_time?: string;
+  image?: string;
+  info?: string;
+  sort?: number;
   status: number;
   title: string;
 }
@@ -11,6 +15,8 @@ export async function getArticleCategoryListApi() {
 }
 
 export interface ArticleCategoryInput {
+  image?: string;
+  info?: string;
   sort?: number;
   status?: number;
   title: string;
@@ -22,6 +28,10 @@ export function createArticleCategoryApi(data: ArticleCategoryInput) {
 
 export function updateArticleCategoryApi(id: number, data: ArticleCategoryInput) {
   return requestClient.put<ArticleCategoryOption>(`/article/categories/${id}`, data);
+}
+
+export function updateArticleCategoryStatusApi(id: number, status: number) {
+  return requestClient.put(`/article/categories/${id}/status`, { status });
 }
 
 export function deleteArticleCategoryApi(id: number) {

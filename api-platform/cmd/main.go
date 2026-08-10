@@ -67,6 +67,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/upload"
+	platformactivityform "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/activityform"
 	platformarticle "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/article"
 	platformassist "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/assist"
 	platformattachment "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/attachment"
@@ -80,35 +81,37 @@ import (
 	platformcoupon "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/coupon"
 	platformdiy "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/diy"
 	platformfeedback "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/feedback"
+	platformintegralcate "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralcate"
+	platformintegrallog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integrallog"
+	platformintegralorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralorder"
 	platforminvoice "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/invoice"
 	platformlogistics "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/logistics"
 	platformmemberlevel "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/memberlevel"
 	platformmerchant "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchant"
 	platformmerchantdeposit "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchantdeposit"
 	platformmerchanttype "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/merchanttype"
-	platformstoremenu "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storemenu"
 	nativecatalog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativecatalog"
 	platformnativeconfigitem "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeconfigitem"
 	platformnativediscount "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativediscount"
 	platformnativedistribution "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativedistribution"
 	platformnativeledger "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeledger"
-	platformactivityform "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/activityform"
 	platformnativemarketingdecor "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativemarketingdecor"
 	platformnativeorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativeorder"
 	platformnativerefund "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativerefund"
 	platformnativesettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativesettlement"
 	platformnativewithdraw "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativewithdraw"
 	platformoperationlog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/operationlog"
-	platformintegralcate "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralcate"
-	platformintegrallog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integrallog"
-	platformintegralorder "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralorder"
 	platformpoints "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/points"
 	platformpresell "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/presell"
 	platformproductmeta "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/productmeta"
+	platformorderprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/orderprofitsharing"
 	platformprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/profitsharing"
 	platformrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/recharge"
 	platformseckill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/seckill"
+	platformstatement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/statement"
+	platformtransferrecord "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/transferrecord"
 	platformstoregroup "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storegroup"
+	platformstoremenu "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storemenu"
 	platformsvip "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svip"
 	platformsvipinterest "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svipinterest"
 	platformuserlist "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userlist"
@@ -291,6 +294,9 @@ func main() {
 	platformIntegralCateH := platformintegralcate.NewHandler(businessDB, gdb)
 	platformIntegralLogH := platformintegrallog.NewHandler(businessDB, gdb)
 	platformIntegralOrderH := platformintegralorder.NewHandler(businessDB, gdb)
+	platformStatementH := platformstatement.NewHandler(businessDB, gdb)
+	platformTransferRecordH := platformtransferrecord.NewHandler(gdb)
+	platformOrderProfitsharingH := platformorderprofitsharing.NewHandler(businessDB, gdb)
 	platformRechargeH := platformrecharge.NewHandler(businessDB, gdb)
 	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 
@@ -363,6 +369,9 @@ func main() {
 	platformIntegralCateH.Register(platformAuthed)
 	platformIntegralLogH.Register(platformAuthed)
 	platformIntegralOrderH.Register(platformAuthed)
+	platformStatementH.Register(platformAuthed)
+	platformTransferRecordH.Register(platformAuthed)
+	platformOrderProfitsharingH.Register(platformAuthed)
 	platformRechargeH.Register(platformAuthed)
 	platformCustomerServiceH.Register(platformAuthed)
 

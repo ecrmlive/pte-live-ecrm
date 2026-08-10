@@ -11,8 +11,22 @@ import (
 
 type Store interface {
 	ListCategories(ctx context.Context, onlyShow bool) ([]Category, error)
+	GetCategory(ctx context.Context, id uint) (*Category, error)
+	CreateCategory(ctx context.Context, row *Category) error
+	UpdateCategory(ctx context.Context, row *Category) error
+	UpdateCategoryShow(ctx context.Context, id uint, isShow int8) error
+	DeleteCategory(ctx context.Context, id uint) error
+	CountCategoryUsage(ctx context.Context, id uint) (posts int64, topics int64, err error)
 	ListTopics(ctx context.Context, onlyOn bool) ([]Topic, error)
+	GetTopic(ctx context.Context, id uint) (*Topic, error)
+	CreateTopic(ctx context.Context, row *Topic) error
+	UpdateTopic(ctx context.Context, row *Topic) error
+	UpdateTopicStatus(ctx context.Context, id uint, status int8) error
+	UpdateTopicHot(ctx context.Context, id uint, isHot int8) error
+	SoftDeleteTopic(ctx context.Context, id uint) error
+	TopicNameExists(ctx context.Context, name string, excludeID uint) (bool, error)
 	ListPosts(ctx context.Context, f ListFilter) ([]Post, int64, error)
+	CountPosts(ctx context.Context, f ListFilter) (int64, error)
 	GetPost(ctx context.Context, id uint) (*Post, error)
 	CreatePost(ctx context.Context, p *Post) error
 	UpdatePost(ctx context.Context, p *Post) error
@@ -21,8 +35,9 @@ type Store interface {
 	IncReplyCount(ctx context.Context, id uint, delta int) error
 
 	ListReplies(ctx context.Context, communityID uint, page, limit int) ([]Reply, int64, error)
-	ListAllReplies(ctx context.Context, keyword string, page, limit int) ([]Reply, int64, error)
+	ListAllReplies(ctx context.Context, f ReplyListFilter) ([]Reply, int64, error)
 	CreateReply(ctx context.Context, r *Reply) error
+	UpdateReply(ctx context.Context, r *Reply) error
 	SoftDeleteReply(ctx context.Context, id uint) error
 	GetReply(ctx context.Context, id uint) (*Reply, error)
 
@@ -38,21 +53,279 @@ type ListFilter struct {
 	Status     *int8
 	Keyword    string
 	TopicID    uint
+	CategoryID uint
+	IsShow     *int8
+	IsType     *int8
+	AuthorType string
+	AuthorKW   string
+	TitleOnly  bool
 	OnlyPublic bool
 	Page       int
 	Limit      int
+}
+
+type ReplyListFilter struct {
+	Keyword  string
+	Username string
+	DateFrom string
+	DateTo   string
+	Page     int
+	Limit    int
 }
 
 type Service struct{ store Store }
 
 func NewService(store Store) *Service { return &Service{store: store} }
 
+// ListCategories 平台后台：返回全部社区分类（含隐藏）。
 func (s *Service) ListCategories(ctx context.Context) ([]Category, error) {
-	return s.store.ListCategories(ctx, true)
+	return s.store.ListCategories(ctx, false)
 }
 
+func (s *Service) CreateCategory(ctx context.Context, in CategoryInput) (*Category, error) {
+	name := strings.TrimSpace(in.CateName)
+	if name == "" {
+		return nil, ErrBadParam
+	}
+	row := &Category{
+		CateName: name,
+		PID:      0,
+		IsShow:   1,
+		Sort:     in.Sort,
+	}
+	if in.PID != nil {
+		row.PID = *in.PID
+	}
+	if in.IsShow != nil {
+		if *in.IsShow != 0 && *in.IsShow != 1 {
+			return nil, ErrBadParam
+		}
+		row.IsShow = *in.IsShow
+	}
+	if err := s.store.CreateCategory(ctx, row); err != nil {
+		return nil, err
+	}
+	return row, nil
+}
+
+func (s *Service) UpdateCategory(ctx context.Context, id uint, in CategoryInput) (*Category, error) {
+	if id == 0 {
+		return nil, ErrBadParam
+	}
+	row, err := s.store.GetCategory(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if name := strings.TrimSpace(in.CateName); name != "" {
+		row.CateName = name
+	}
+	row.Sort = in.Sort
+	if in.PID != nil {
+		row.PID = *in.PID
+	}
+	if in.IsShow != nil {
+		if *in.IsShow != 0 && *in.IsShow != 1 {
+			return nil, ErrBadParam
+		}
+		row.IsShow = *in.IsShow
+	}
+	if err := s.store.UpdateCategory(ctx, row); err != nil {
+		return nil, err
+	}
+	return row, nil
+}
+
+func (s *Service) SetCategoryShow(ctx context.Context, id uint, isShow int8) error {
+	if id == 0 || (isShow != 0 && isShow != 1) {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetCategory(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.UpdateCategoryShow(ctx, id, isShow)
+}
+
+func (s *Service) DeleteCategory(ctx context.Context, id uint) error {
+	if id == 0 {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetCategory(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	posts, topics, err := s.store.CountCategoryUsage(ctx, id)
+	if err != nil {
+		return err
+	}
+	if posts > 0 || topics > 0 {
+		return ErrForbidden
+	}
+	return s.store.DeleteCategory(ctx, id)
+}
+
+// ListTopics 平台后台：返回全部未删除话题（含隐藏），并填充上级分类名。
 func (s *Service) ListTopics(ctx context.Context) ([]Topic, error) {
-	return s.store.ListTopics(ctx, true)
+	list, err := s.store.ListTopics(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	for i := range list {
+		if name, err := s.store.LoadCateName(ctx, list[i].CategoryID); err == nil {
+			list[i].CateName = name
+		}
+	}
+	return list, nil
+}
+
+func (s *Service) CreateTopic(ctx context.Context, in TopicInput) (*Topic, error) {
+	name := strings.TrimSpace(in.TopicName)
+	if name == "" || in.CategoryID == 0 {
+		return nil, ErrBadParam
+	}
+	if _, err := s.store.GetCategory(ctx, in.CategoryID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrBadParam
+		}
+		return nil, err
+	}
+	exists, err := s.store.TopicNameExists(ctx, name, 0)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrDuplicate
+	}
+	row := &Topic{
+		TopicName:  name,
+		Pic:        strings.TrimSpace(in.Pic),
+		CategoryID: in.CategoryID,
+		Sort:       in.Sort,
+		Status:     1,
+		IsHot:      0,
+		CreateTime: time.Now(),
+	}
+	if in.Status != nil {
+		if *in.Status != 0 && *in.Status != 1 {
+			return nil, ErrBadParam
+		}
+		row.Status = *in.Status
+	}
+	if in.IsHot != nil {
+		if *in.IsHot != 0 && *in.IsHot != 1 {
+			return nil, ErrBadParam
+		}
+		row.IsHot = *in.IsHot
+	}
+	if err := s.store.CreateTopic(ctx, row); err != nil {
+		return nil, err
+	}
+	if name, err := s.store.LoadCateName(ctx, row.CategoryID); err == nil {
+		row.CateName = name
+	}
+	return row, nil
+}
+
+func (s *Service) UpdateTopic(ctx context.Context, id uint, in TopicInput) (*Topic, error) {
+	if id == 0 {
+		return nil, ErrBadParam
+	}
+	row, err := s.store.GetTopic(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	name := strings.TrimSpace(in.TopicName)
+	if name == "" {
+		return nil, ErrBadParam
+	}
+	if in.CategoryID == 0 {
+		return nil, ErrBadParam
+	}
+	if _, err := s.store.GetCategory(ctx, in.CategoryID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrBadParam
+		}
+		return nil, err
+	}
+	exists, err := s.store.TopicNameExists(ctx, name, id)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrDuplicate
+	}
+	row.TopicName = name
+	row.Pic = strings.TrimSpace(in.Pic)
+	row.CategoryID = in.CategoryID
+	row.Sort = in.Sort
+	if in.Status != nil {
+		if *in.Status != 0 && *in.Status != 1 {
+			return nil, ErrBadParam
+		}
+		row.Status = *in.Status
+	}
+	if in.IsHot != nil {
+		if *in.IsHot != 0 && *in.IsHot != 1 {
+			return nil, ErrBadParam
+		}
+		row.IsHot = *in.IsHot
+	}
+	if err := s.store.UpdateTopic(ctx, row); err != nil {
+		return nil, err
+	}
+	if name, err := s.store.LoadCateName(ctx, row.CategoryID); err == nil {
+		row.CateName = name
+	}
+	return row, nil
+}
+
+func (s *Service) SetTopicStatus(ctx context.Context, id uint, status int8) error {
+	if id == 0 || (status != 0 && status != 1) {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetTopic(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.UpdateTopicStatus(ctx, id, status)
+}
+
+func (s *Service) SetTopicHot(ctx context.Context, id uint, isHot int8) error {
+	if id == 0 || (isHot != 0 && isHot != 1) {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetTopic(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.UpdateTopicHot(ctx, id, isHot)
+}
+
+func (s *Service) DeleteTopic(ctx context.Context, id uint) error {
+	if id == 0 {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetTopic(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.SoftDeleteTopic(ctx, id)
 }
 
 // ListHotTopics 热门话题（is_hot=1 优先；已由仓库按 is_hot DESC 排序）。
@@ -106,19 +379,50 @@ func (s *Service) ListUser(ctx context.Context, uid uint, page, limit int) (*Pag
 	return &PageResult[Post]{List: list, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *Service) ListPlatform(ctx context.Context, status *int8, keyword string, page, limit int) (*PageResult[Post], error) {
-	page, limit = normalize(page, limit)
-	if status != nil && *status != StatusPending && *status != StatusApproved && *status != StatusRejected {
+func (s *Service) ListPlatform(ctx context.Context, f ListFilter) (*PlatformPostPage, error) {
+	f.Page, f.Limit = normalize(f.Page, f.Limit)
+	f.Keyword = strings.TrimSpace(f.Keyword)
+	f.AuthorKW = strings.TrimSpace(f.AuthorKW)
+	f.AuthorType = strings.TrimSpace(f.AuthorType)
+	f.TitleOnly = true
+	if f.Status != nil &&
+		*f.Status != StatusPending && *f.Status != StatusApproved &&
+		*f.Status != StatusRejected && *f.Status != StatusForceOff {
 		return nil, ErrBadParam
 	}
-	list, total, err := s.store.ListPosts(ctx, ListFilter{
-		Status: status, Keyword: strings.TrimSpace(keyword), Page: page, Limit: limit,
-	})
+	if f.IsShow != nil && *f.IsShow != 0 && *f.IsShow != 1 {
+		return nil, ErrBadParam
+	}
+	if f.IsType != nil && *f.IsType != TypeImage && *f.IsType != TypeVideo {
+		return nil, ErrBadParam
+	}
+	list, total, err := s.store.ListPosts(ctx, f)
 	if err != nil {
 		return nil, err
 	}
 	_ = s.enrichPosts(ctx, list)
-	return &PageResult[Post]{List: list, Total: total, Page: page, Limit: limit}, nil
+
+	countBase := f
+	countBase.Page, countBase.Limit = 1, 1
+	countBase.IsType = nil
+	imgType := TypeImage
+	vidType := TypeVideo
+	imgFilter := countBase
+	imgFilter.IsType = &imgType
+	vidFilter := countBase
+	vidFilter.IsType = &vidType
+	imageCount, err := s.store.CountPosts(ctx, imgFilter)
+	if err != nil {
+		return nil, err
+	}
+	videoCount, err := s.store.CountPosts(ctx, vidFilter)
+	if err != nil {
+		return nil, err
+	}
+	return &PlatformPostPage{
+		List: list, Total: total, Page: f.Page, Limit: f.Limit,
+		ImageCount: imageCount, VideoCount: videoCount,
+	}, nil
 }
 
 func (s *Service) ListMerchant(ctx context.Context, merID uint, page, limit int) (*PageResult[Post], error) {
@@ -182,7 +486,7 @@ func (s *Service) CreatePost(ctx context.Context, uid uint, in CreatePostInput) 
 	p := &Post{
 		Title: title, Content: content, Image: strings.TrimSpace(in.Image),
 		CategoryID: cateID, TopicID: topicID, UID: uid, MerID: merID, ProductID: in.ProductID,
-		Status: StatusPending, IsShow: 1, IsType: 1, CreateTime: time.Now(),
+		Status: StatusPending, IsShow: 1, Start: 1, IsType: TypeImage, CreateTime: time.Now(),
 	}
 	if err := s.store.CreatePost(ctx, p); err != nil {
 		return nil, err
@@ -196,13 +500,27 @@ func (s *Service) Audit(ctx context.Context, id uint, in AuditInput) (*Post, err
 		return nil, err
 	}
 	refusal := strings.TrimSpace(in.Refusal)
-	if in.Status != StatusPending && in.Status != StatusApproved && in.Status != StatusRejected {
+	if in.Status != StatusPending && in.Status != StatusApproved &&
+		in.Status != StatusRejected && in.Status != StatusForceOff {
 		return nil, ErrBadParam
 	}
 	if in.Status == StatusPending {
 		if p.Status != StatusApproved || (in.IsShow == nil && in.IsHot == nil) {
 			return nil, ErrBadParam
 		}
+	} else if in.Status == StatusForceOff {
+		if p.Status != StatusApproved {
+			return nil, ErrBadParam
+		}
+		if refusal == "" {
+			return nil, ErrBadParam
+		}
+		p.Status = StatusForceOff
+		p.Refusal = refusal
+		p.IsShow = 0
+		p.IsHot = 0
+		now := time.Now()
+		p.StatusTime = &now
 	} else {
 		if p.Status != StatusPending || (in.Status == StatusRejected && refusal == "") {
 			return nil, ErrBadParam
@@ -216,8 +534,8 @@ func (s *Service) Audit(ctx context.Context, id uint, in AuditInput) (*Post, err
 			p.IsHot = 0
 		}
 	}
-	// 驳回帖无论请求体携带何种展示参数，均不可在 C 端显示或置顶。
-	if in.Status != StatusRejected {
+	// 驳回/强制下架帖不可在 C 端显示或置顶。
+	if in.Status != StatusRejected && in.Status != StatusForceOff {
 		if in.IsShow != nil {
 			p.IsShow = int8(*in.IsShow)
 		}
@@ -225,6 +543,39 @@ func (s *Service) Audit(ctx context.Context, id uint, in AuditInput) (*Post, err
 			p.IsHot = int8(*in.IsHot)
 		}
 	}
+	if err := s.store.UpdatePost(ctx, p); err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, id, false)
+}
+
+func (s *Service) UpdateStar(ctx context.Context, id uint, start int8) (*Post, error) {
+	if start < 1 || start > 5 {
+		return nil, ErrBadParam
+	}
+	p, err := s.Get(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+	p.Start = start
+	if err := s.store.UpdatePost(ctx, p); err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, id, false)
+}
+
+func (s *Service) SwitchShow(ctx context.Context, id uint, isShow int8) (*Post, error) {
+	if isShow != 0 && isShow != 1 {
+		return nil, ErrBadParam
+	}
+	p, err := s.Get(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+	if p.Status != StatusApproved {
+		return nil, ErrBadParam
+	}
+	p.IsShow = isShow
 	if err := s.store.UpdatePost(ctx, p); err != nil {
 		return nil, err
 	}
@@ -321,9 +672,13 @@ func (s *Service) DeleteMerchantPost(ctx context.Context, merID, id uint) error 
 	return s.store.SoftDeletePost(ctx, id)
 }
 
-func (s *Service) ListAllReplies(ctx context.Context, keyword string, page, limit int) (*PageResult[Reply], error) {
-	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListAllReplies(ctx, strings.TrimSpace(keyword), page, limit)
+func (s *Service) ListAllReplies(ctx context.Context, f ReplyListFilter) (*PageResult[Reply], error) {
+	f.Page, f.Limit = normalize(f.Page, f.Limit)
+	f.Keyword = strings.TrimSpace(f.Keyword)
+	f.Username = strings.TrimSpace(f.Username)
+	f.DateFrom = strings.TrimSpace(f.DateFrom)
+	f.DateTo = strings.TrimSpace(f.DateTo)
+	list, total, err := s.store.ListAllReplies(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +690,39 @@ func (s *Service) ListAllReplies(ctx context.Context, keyword string, page, limi
 			list[i].PostTitle = post.Title
 		}
 	}
-	return &PageResult[Reply]{List: list, Total: total, Page: page, Limit: limit}, nil
+	return &PageResult[Reply]{List: list, Total: total, Page: f.Page, Limit: f.Limit}, nil
+}
+
+func (s *Service) AuditReply(ctx context.Context, id uint, in ReplyAuditInput) (*Reply, error) {
+	if in.Status != StatusApproved && in.Status != StatusRejected {
+		return nil, ErrBadParam
+	}
+	refusal := strings.TrimSpace(in.Refusal)
+	if in.Status == StatusRejected && refusal == "" {
+		return nil, ErrBadParam
+	}
+	r, err := s.store.GetReply(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if r.Status != StatusPending {
+		return nil, ErrBadParam
+	}
+	r.Status = in.Status
+	r.Refusal = refusal
+	if err := s.store.UpdateReply(ctx, r); err != nil {
+		return nil, err
+	}
+	if nick, err := s.store.LoadUserNickname(ctx, r.UID); err == nil {
+		r.Nickname = nick
+	}
+	if post, err := s.store.GetPost(ctx, r.CommunityID); err == nil {
+		r.PostTitle = post.Title
+	}
+	return r, nil
 }
 
 func (s *Service) ListReplies(ctx context.Context, communityID uint, page, limit int) (*PageResult[Reply], error) {
@@ -415,6 +802,12 @@ func (s *Service) enrichPosts(ctx context.Context, list []Post) error {
 				list[i].ProductName = name
 				list[i].ProductPrice = price
 			}
+		}
+		if list[i].Start < 1 {
+			list[i].Start = 1
+		}
+		if list[i].IsType == 0 {
+			list[i].IsType = TypeImage
 		}
 	}
 	return nil

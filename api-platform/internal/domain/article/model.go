@@ -3,11 +3,14 @@ package article
 import "time"
 
 type Category struct {
-	CID    uint   `gorm:"column:cid;primaryKey" json:"cid"`
-	Title  string `gorm:"column:title" json:"title"`
-	Status int8   `gorm:"column:status" json:"status"`
-	Sort   int    `gorm:"column:sort" json:"sort"`
-	IsDel  int8   `gorm:"column:is_del" json:"-"`
+	CID        uint      `gorm:"column:cid;primaryKey" json:"cid"`
+	Title      string    `gorm:"column:title" json:"title"`
+	Info       string    `gorm:"column:info" json:"info"`
+	Image      string    `gorm:"column:image" json:"image"`
+	Status     int8      `gorm:"column:status" json:"status"`
+	Sort       int       `gorm:"column:sort" json:"sort"`
+	IsDel      int8      `gorm:"column:is_del" json:"-"`
+	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
 }
 
 func (Category) TableName() string { return "qixi_crm_a_article_category" }
@@ -31,6 +34,8 @@ func (Article) TableName() string { return "qixi_crm_a_article" }
 
 type CategoryInput struct {
 	Title  string `json:"title"`
+	Info   string `json:"info"`
+	Image  string `json:"image"`
 	Status *int8  `json:"status"`
 	Sort   int    `json:"sort"`
 }

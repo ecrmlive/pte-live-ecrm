@@ -14,9 +14,10 @@ type Store interface {
 	GetCategory(ctx context.Context, id uint) (*Category, error)
 	CreateCategory(ctx context.Context, row *Category) error
 	UpdateCategory(ctx context.Context, row *Category) error
+	UpdateCategoryStatus(ctx context.Context, id uint, status int8) error
 	SoftDeleteCategory(ctx context.Context, id uint) error
 
-	ListArticle(ctx context.Context, page, limit int, cid uint, publishedOnly bool) ([]Article, int64, error)
+	ListArticle(ctx context.Context, page, limit int, cid uint, title string, publishedOnly bool) ([]Article, int64, error)
 	GetArticle(ctx context.Context, id uint) (*Article, error)
 	CreateArticle(ctx context.Context, row *Article) error
 	UpdateArticle(ctx context.Context, row *Article) error
@@ -37,7 +38,14 @@ func (s *Service) CreateCategory(ctx context.Context, in CategoryInput) (*Catego
 	if title == "" {
 		return nil, ErrBadParam
 	}
-	row := &Category{Title: title, Status: 1, Sort: in.Sort}
+	row := &Category{
+		Title:      title,
+		Info:       strings.TrimSpace(in.Info),
+		Image:      strings.TrimSpace(in.Image),
+		Status:     1,
+		Sort:       in.Sort,
+		CreateTime: time.Now(),
+	}
 	if in.Status != nil {
 		row.Status = *in.Status
 	}
@@ -58,6 +66,8 @@ func (s *Service) UpdateCategory(ctx context.Context, id uint, in CategoryInput)
 	if title := strings.TrimSpace(in.Title); title != "" {
 		row.Title = title
 	}
+	row.Info = strings.TrimSpace(in.Info)
+	row.Image = strings.TrimSpace(in.Image)
 	row.Sort = in.Sort
 	if in.Status != nil {
 		row.Status = *in.Status
@@ -66,6 +76,19 @@ func (s *Service) UpdateCategory(ctx context.Context, id uint, in CategoryInput)
 		return nil, err
 	}
 	return row, nil
+}
+
+func (s *Service) SetCategoryStatus(ctx context.Context, id uint, status int8) error {
+	if status != 0 && status != 1 {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetCategory(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.UpdateCategoryStatus(ctx, id, status)
 }
 
 func (s *Service) DeleteCategory(ctx context.Context, id uint) error {
@@ -78,9 +101,9 @@ func (s *Service) DeleteCategory(ctx context.Context, id uint) error {
 	return s.store.SoftDeleteCategory(ctx, id)
 }
 
-func (s *Service) ListAdmin(ctx context.Context, page, limit int, cid uint) (*PageResult[Article], error) {
+func (s *Service) ListAdmin(ctx context.Context, page, limit int, cid uint, title string) (*PageResult[Article], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListArticle(ctx, page, limit, cid, false)
+	list, total, err := s.store.ListArticle(ctx, page, limit, cid, strings.TrimSpace(title), false)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +112,7 @@ func (s *Service) ListAdmin(ctx context.Context, page, limit int, cid uint) (*Pa
 
 func (s *Service) ListApp(ctx context.Context, page, limit int, cid uint) (*PageResult[Article], error) {
 	page, limit = normalize(page, limit)
-	list, total, err := s.store.ListArticle(ctx, page, limit, cid, true)
+	list, total, err := s.store.ListArticle(ctx, page, limit, cid, "", true)
 	if err != nil {
 		return nil, err
 	}
@@ -125,12 +148,21 @@ func (s *Service) GetApp(ctx context.Context, id uint) (*Article, error) {
 
 func (s *Service) Create(ctx context.Context, in ArticleInput) (*Article, error) {
 	title := strings.TrimSpace(in.Title)
-	if title == "" || strings.TrimSpace(in.Content) == "" {
+	author := strings.TrimSpace(in.Author)
+	image := strings.TrimSpace(in.Image)
+	content := strings.TrimSpace(in.Content)
+	if title == "" || author == "" || image == "" || content == "" || in.CID == 0 {
 		return nil, ErrBadParam
 	}
+	if _, err := s.store.GetCategory(ctx, in.CID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrBadParam
+		}
+		return nil, err
+	}
 	row := &Article{
-		CID: in.CID, Title: title, Author: strings.TrimSpace(in.Author),
-		Image: strings.TrimSpace(in.Image), Synopsis: strings.TrimSpace(in.Synopsis),
+		CID: in.CID, Title: title, Author: author,
+		Image: image, Synopsis: strings.TrimSpace(in.Synopsis),
 		Content: in.Content, Sort: in.Sort, Status: 1, CreateTime: time.Now(),
 	}
 	if in.Status != nil {
@@ -150,15 +182,34 @@ func (s *Service) Update(ctx context.Context, id uint, in ArticleInput) (*Articl
 		}
 		return nil, err
 	}
-	if title := strings.TrimSpace(in.Title); title != "" {
-		row.Title = title
+	// 列表「是否显示」开关：仅传 status 时走轻量更新。
+	if strings.TrimSpace(in.Title) == "" && strings.TrimSpace(in.Content) == "" &&
+		in.CID == 0 && strings.TrimSpace(in.Author) == "" && strings.TrimSpace(in.Image) == "" &&
+		in.Status != nil {
+		row.Status = *in.Status
+		if err := s.store.UpdateArticle(ctx, row); err != nil {
+			return nil, err
+		}
+		return row, nil
 	}
-	if content := strings.TrimSpace(in.Content); content != "" {
-		row.Content = in.Content
+	title := strings.TrimSpace(in.Title)
+	author := strings.TrimSpace(in.Author)
+	image := strings.TrimSpace(in.Image)
+	content := strings.TrimSpace(in.Content)
+	if title == "" || author == "" || image == "" || content == "" || in.CID == 0 {
+		return nil, ErrBadParam
 	}
+	if _, err := s.store.GetCategory(ctx, in.CID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrBadParam
+		}
+		return nil, err
+	}
+	row.Title = title
+	row.Content = in.Content
 	row.CID = in.CID
-	row.Author = strings.TrimSpace(in.Author)
-	row.Image = strings.TrimSpace(in.Image)
+	row.Author = author
+	row.Image = image
 	row.Synopsis = strings.TrimSpace(in.Synopsis)
 	row.Sort = in.Sort
 	if in.Status != nil {
