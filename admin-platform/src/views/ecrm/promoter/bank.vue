@@ -91,7 +91,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '确定',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -107,7 +107,7 @@ function resetForm() {
 function openCreate() {
   drawerMode.value = 'create';
   resetForm();
-  formDrawerApi.setState({ title: '添加数据', confirmText: '确定' }).open();
+  formDrawerApi.setState({ title: '新增银行卡', confirmText: '保存' }).open();
 }
 
 function openEdit(row: WithdrawBank) {
@@ -116,7 +116,7 @@ function openEdit(row: WithdrawBank) {
   form.name = row.name || '';
   form.sort = row.sort ?? 0;
   form.status = row.status === 1 ? 1 : 0;
-  formDrawerApi.setState({ title: '编辑数据', confirmText: '确定' }).open();
+  formDrawerApi.setState({ title: '编辑银行卡', confirmText: '保存' }).open();
 }
 
 async function save() {
@@ -176,7 +176,7 @@ async function onDelete(row: WithdrawBank) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加数据
+          新增银行卡
         </ElButton>
       </template>
       <template #status="{ row }">

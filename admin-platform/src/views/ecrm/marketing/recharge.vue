@@ -99,7 +99,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '确定保存',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -117,7 +117,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加充值档位' }).open();
+  formDrawerApi.setState({ title: '新增充值档位' }).open();
 }
 
 function openEdit(row: RechargePlan) {
@@ -235,7 +235,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加数据
+          新增充值档位
         </ElButton>
       </template>
       <template #status="{ row }">

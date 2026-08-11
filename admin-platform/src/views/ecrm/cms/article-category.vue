@@ -111,7 +111,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -135,7 +135,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加文章分类' }).open();
+  formDrawerApi.setState({ title: '新增文章分类' }).open();
 }
 
 function openEdit(row: ArticleCategoryOption) {
@@ -229,7 +229,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加文章分类
+          新增文章分类
         </ElButton>
       </template>
       <template #image="{ row }">

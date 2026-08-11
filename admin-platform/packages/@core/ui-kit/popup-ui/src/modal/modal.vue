@@ -246,7 +246,7 @@ function handleClosed() {
       :append-to="getAppendTo"
       :class="
         cn(
-          'inset-x-0 top-[10vh] mx-auto flex w-130 flex-col p-0',
+          'vben-popup__modal inset-x-0 top-[10vh] mx-auto flex w-130 flex-col p-0',
           shouldFullscreen ? 'rounded-none' : 'rounded-(--radius)',
           modalClass,
           {
@@ -284,7 +284,7 @@ function handleClosed() {
         ref="headerRef"
         :class="
           cn(
-            'px-5 py-4',
+            'shrink-0 px-5 py-4',
             {
               'border-b': bordered,
               hidden: !header,
@@ -318,7 +318,7 @@ function handleClosed() {
       <div
         ref="wrapperRef"
         :class="
-          cn('relative min-h-40 flex-1 overflow-y-auto p-3', contentClass, {
+          cn('vben-popup__body relative min-h-0 flex-1 overflow-y-auto p-3', contentClass, {
             'pointer-events-none': showLoading || submitting,
           })
         "
@@ -340,7 +340,7 @@ function handleClosed() {
         v-if="showFooter"
         :class="
           cn(
-            'flex-row items-center justify-end p-2',
+            'shrink-0 flex-row items-center justify-center p-2',
             {
               'border-t': bordered,
             },

@@ -71,7 +71,7 @@ onMounted(load);
         <ElFormItem label="联系电话"><ElInput v-model="form.mer_phone" maxlength="32" /></ElFormItem>
         <ElFormItem label="店铺地址"><ElInput v-model="form.mer_address" maxlength="255" /></ElFormItem>
         <ElFormItem label="店铺简介"><ElInput v-model="form.mer_info" type="textarea" :rows="5" maxlength="1000" show-word-limit /></ElFormItem>
-        <ElButton type="primary" :loading="saving" @click="save">保存设置</ElButton>
+        <ElButton type="primary" :loading="saving" @click="save">保存</ElButton>
       </ElForm>
     </template>
   </Page>

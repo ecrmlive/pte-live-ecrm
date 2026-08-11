@@ -211,7 +211,7 @@ watch(
 
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
-      <ElButton :loading="submitting" type="primary" @click="submit">提交</ElButton>
+      <ElButton :loading="submitting" type="primary" @click="submit">保存</ElButton>
     </template>
   </Modal>
 

@@ -123,7 +123,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [EditDrawer, editDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: save,
@@ -301,7 +301,7 @@ onMounted(async () => {
   <Page auto-content-height>
     <template #extra>
       <ElButton type="primary" :icon="Plus" @click="openCreate">
-        添加参数模板
+        新增参数模板
       </ElButton>
     </template>
 
@@ -439,7 +439,7 @@ onMounted(async () => {
             </ElTableColumn>
           </ElTable>
           <div class="mt-3">
-            <ElButton @click="addParam">添加参数</ElButton>
+            <ElButton @click="addParam">新增参数</ElButton>
           </div>
         </ElFormItem>
       </ElForm>

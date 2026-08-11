@@ -169,7 +169,7 @@ const [ViewDrawer, viewDrawerApi] = useVbenDrawer({
 
 const [CreateDrawer, createDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: saveCreate,
@@ -177,7 +177,7 @@ const [CreateDrawer, createDrawerApi] = useVbenDrawer({
 
 const [CopyDrawer, copyDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: saveCopy,
@@ -251,7 +251,7 @@ function resetCreateForm() {
 
 function openCreate() {
   resetCreateForm();
-  createDrawerApi.setState({ title: '添加参数模板' }).open();
+  createDrawerApi.setState({ title: '新增参数模板' }).open();
 }
 
 function addParam() {
@@ -440,7 +440,7 @@ onMounted(() => {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加参数模板
+          新增参数模板
         </ElButton>
       </template>
       <template #action="{ row }">
@@ -593,7 +593,7 @@ onMounted(() => {
             </ElTableColumn>
           </ElTable>
           <div class="mt-3">
-            <ElButton @click="addParam">添加参数</ElButton>
+            <ElButton @click="addParam">新增参数</ElButton>
           </div>
         </ElFormItem>
       </ElForm>
@@ -721,7 +721,7 @@ onMounted(() => {
                 </ElFormItem>
               </div>
             </div>
-            <ElButton :icon="Plus" @click="addParamRow">添加参数</ElButton>
+            <ElButton :icon="Plus" @click="addParamRow">新增参数</ElButton>
           </div>
         </ElFormItem>
       </ElForm>

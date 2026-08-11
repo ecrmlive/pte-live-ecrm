@@ -104,6 +104,7 @@ func AgreeCatalog() []AgreeMeta {
 		{Key: "sys_user_agree", Label: "用户协议"},
 		{Key: "sys_userr_privacy", Label: "隐私政策"},
 		{Key: "sys_svip", Label: "付费会员协议"},
+		{Key: "sys_receipt_agree", Label: "发票说明"},
 		{Key: "sys_product_presell_agree", Label: "预售协议"},
 		{Key: "business_entry_agree", Label: "商户入驻协议"},
 		{Key: "promoter_explain", Label: "分销说明"},

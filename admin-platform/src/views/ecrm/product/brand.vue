@@ -162,7 +162,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加品牌' }).open();
+  formDrawerApi.setState({ title: '新增品牌' }).open();
 }
 
 function openEdit(row: PlatformBrand) {
@@ -240,7 +240,7 @@ onMounted(() => void syncCategoryFilterOptions());
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加品牌
+          新增品牌
         </ElButton>
       </template>
       <template #is_show="{ row }">

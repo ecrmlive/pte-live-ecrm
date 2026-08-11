@@ -153,7 +153,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -172,7 +172,7 @@ function resetForm(parentID = 0) {
 
 function openCreate(parentID = 0) {
   resetForm(parentID);
-  formDrawerApi.setState({ title: '添加反馈分类' }).open();
+  formDrawerApi.setState({ title: '新增反馈分类' }).open();
 }
 
 function openEdit(row: UserFeedbackCategory) {
@@ -272,7 +272,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate(0)"
         >
-          添加反馈分类
+          新增反馈分类
         </ElButton>
       </template>
 

@@ -64,6 +64,7 @@ export interface CustomerServiceQuickReply {
   store_id: number;
   title: string;
   content: string;
+  message_type: 'image' | 'text';
   status: 'disabled' | 'enabled';
   created_by: number;
   updated_by: number;
@@ -82,14 +83,29 @@ export interface CustomerServiceQuickReplyInput {
   store_id: number;
   title: string;
   content: string;
+  message_type?: 'image' | 'text';
   status?: 'disabled' | 'enabled';
 }
 
 export interface CustomerServiceAgent {
+  account: string;
+  avatar_url?: string;
+  created_at: string;
   id: number;
   display_name: string;
+  linked_user_id?: number;
+  phone: string;
+  roles: string;
   status: 0 | 1;
   service_store_ids: number[];
+  wechat_username?: string;
+}
+
+export interface CustomerServiceAgentPage {
+  list: CustomerServiceAgent[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface CustomerServiceAgentUser {
@@ -113,8 +129,19 @@ export interface CustomerServiceAgentUserPage {
 export interface CustomerServiceSettings {
   auto_reply_enabled: boolean;
   auto_reply_text: string;
+  enterprise_wechat_corp_id: string;
+  enterprise_wechat_url: string;
   queue_mode: 'manual' | 'round_robin';
   max_sessions_per_agent: number;
+  redirect_url: string;
+  service_phone: string;
+  service_type:
+    | 'disabled'
+    | 'enterprise_wechat'
+    | 'link'
+    | 'mini_program'
+    | 'phone'
+    | 'system';
 }
 
 export interface CustomerServiceSettingsResult {
@@ -122,8 +149,13 @@ export interface CustomerServiceSettingsResult {
   updated_at?: string | null;
 }
 
-export function fetchCustomerServiceAgents() {
-  return requestClient.get<{ list: CustomerServiceAgent[] }>('/customer-service/agents');
+export function fetchCustomerServiceAgents(params?: {
+  keyword?: string;
+  status?: number;
+  page?: number;
+  limit?: number;
+}) {
+  return requestClient.get<CustomerServiceAgentPage>('/customer-service/agents', { params });
 }
 
 export function fetchCustomerServiceAgentUsers(agentID: number, params: { page: number; limit: number }) {
@@ -203,7 +235,12 @@ export function updateCustomerServiceUserNote(id: number, content: string) {
   return requestClient.put<{ user_id: number; store_id: number; content: string }>(`/customer-service/threads/${id}/user-note`, { content });
 }
 
-export function fetchCustomerServiceQuickReplies(params: { page: number; limit: number; store_id?: number }) {
+export function fetchCustomerServiceQuickReplies(params: {
+  page: number;
+  limit: number;
+  keyword?: string;
+  store_id?: number;
+}) {
   return requestClient.get<CustomerServiceQuickReplyPage>('/customer-service/quick-replies', { params });
 }
 
@@ -211,7 +248,10 @@ export function createCustomerServiceQuickReply(data: CustomerServiceQuickReplyI
   return requestClient.post<CustomerServiceQuickReply>('/customer-service/quick-replies', data);
 }
 
-export function updateCustomerServiceQuickReply(id: number, data: Omit<CustomerServiceQuickReplyInput, 'store_id'>) {
+export function updateCustomerServiceQuickReply(
+  id: number,
+  data: Omit<CustomerServiceQuickReplyInput, 'store_id'> & { store_id?: number },
+) {
   return requestClient.put<CustomerServiceQuickReply>(`/customer-service/quick-replies/${id}`, data);
 }
 

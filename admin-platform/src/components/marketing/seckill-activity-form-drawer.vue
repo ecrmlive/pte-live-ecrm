@@ -126,7 +126,7 @@ const batchDisabled = computed(() => draftSelection.value.length === 0);
 const drawerTitle = computed(() => {
   if (mode.value === 'view') return '查看秒杀活动';
   if (mode.value === 'edit') return '编辑秒杀活动';
-  return '添加秒杀活动';
+  return '新增秒杀活动';
 });
 
 function formatHourLabel(start: number, end: number) {
@@ -701,7 +701,7 @@ defineExpose({ open });
 
       <ElTabPane v-if="showDraftTab" label="秒杀商品" name="draft">
         <div class="draft-toolbar">
-          <ElButton type="primary" @click="pickerOpen = true">添加商品</ElButton>
+          <ElButton type="primary" @click="pickerOpen = true">新增商品</ElButton>
           <ElDropdown :disabled="batchDisabled" @command="applyBatchSet">
             <ElButton :disabled="batchDisabled">
               批量设置

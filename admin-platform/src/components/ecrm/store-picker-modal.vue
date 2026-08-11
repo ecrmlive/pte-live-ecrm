@@ -63,8 +63,8 @@ const tableRef = ref<{
 }>();
 
 const [Modal, modalApi] = useVbenModal({
-  title: '选择店铺',
-  class: 'w-[920px] max-w-[96vw]',
+  title: '请选择店铺：',
+  class: 'h-[min(76dvh,820px)] w-[min(94vw,1200px)] max-w-[94vw]',
   contentClass: 'store-picker-modal__content !overflow-hidden !p-0',
   confirmText: '确定',
   cancelText: '取消',
@@ -185,8 +185,8 @@ watch(open, (visible) => {
             />
           </ElFormItem>
           <ElFormItem>
-            <ElButton type="primary" @click="onSearch">搜索</ElButton>
             <ElButton @click="onReset">重置</ElButton>
+            <ElButton type="primary" @click="onSearch">搜索</ElButton>
           </ElFormItem>
         </ElForm>
       </div>
@@ -242,8 +242,8 @@ watch(open, (visible) => {
 .store-picker {
   display: flex;
   flex-direction: column;
-  height: min(60vh, 520px);
-  min-height: 360px;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 

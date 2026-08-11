@@ -159,7 +159,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加配置' }).open();
+  formDrawerApi.setState({ title: '新增秒杀配置' }).open();
 }
 
 function openEdit(row: PlatformSeckillTime) {
@@ -236,7 +236,7 @@ async function remove(row: PlatformSeckillTime) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加配置
+          新增秒杀配置
         </ElButton>
       </template>
       <template #pic="{ row }">

@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
 import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import { ArrowDown } from '@element-plus/icons-vue';
@@ -19,7 +19,6 @@ import {
   ElImage,
   ElInput,
   ElMessage,
-  ElOption,
   ElPagination,
   ElRadio,
   ElRadioGroup,
@@ -57,6 +56,10 @@ import {
 } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 
 const canRead = ref(false);
@@ -76,33 +79,6 @@ const auditForm = reactive({ status: 1 as 1 | -1, refusal: '' });
 const starTarget = ref<CommunityPost>();
 const forceTarget = ref<CommunityPost>();
 const auditTarget = ref<CommunityPost>();
-
-const AUTHOR_SEARCH_OPTIONS = [
-  { label: '昵称', value: 'nickname' },
-  { label: '用户ID', value: 'uid' },
-  { label: '手机号', value: 'phone' },
-];
-
-function renderAuthorPrepend(
-  values: Record<string, any>,
-  api: { setFieldValue: Function },
-) {
-  return {
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values.author_type || 'nickname',
-          style: { width: '96px' },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue('author_type', v),
-        },
-        () =>
-          AUTHOR_SEARCH_OPTIONS.map((opt) =>
-            h(ElOption, { label: opt.label, value: opt.value, key: opt.value }),
-          ),
-      ),
-  };
-}
 
 function statusInfo(status: number) {
   if (status === 1) return { label: '审核通过', type: 'success' as const };
@@ -180,24 +156,10 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
     fieldName: 'is_show',
     label: '是否显示',
   },
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '请输入内容',
-    },
-    defaultValue: '',
-    fieldName: 'author',
+  listUserSearchFormField({
+    fieldName: 'author_search',
     label: '作者搜索',
-    renderComponentContent: renderAuthorPrepend,
-  },
-  {
-    component: 'Input',
-    defaultValue: 'nickname',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'author_type',
-    label: '作者搜索类型',
-  },
+  }),
   {
     component: 'Input',
     componentProps: {
@@ -267,6 +229,7 @@ const gridOptions: VxeGridProps<CommunityPost> = {
         if (!canRead.value) return { items: [], total: 0 };
         const statusRaw = formValues?.status;
         const showRaw = formValues?.is_show;
+        const authorSearch = parseUserSearch(formValues, 'author_search');
         const result = await listCommunityPostsApi({
           page: page.currentPage,
           limit: page.pageSize,
@@ -287,8 +250,8 @@ const gridOptions: VxeGridProps<CommunityPost> = {
           is_show:
             showRaw === 0 || showRaw === 1 ? Number(showRaw) : undefined,
           is_type: typeTab.value,
-          author: String(formValues?.author ?? '').trim() || undefined,
-          author_type: String(formValues?.author_type ?? 'nickname'),
+          author: authorSearch.keyword || undefined,
+          author_type: authorSearch.type || 'nickname',
         });
         tabCounts.image = result.image_count || 0;
         tabCounts.video = result.video_count || 0;

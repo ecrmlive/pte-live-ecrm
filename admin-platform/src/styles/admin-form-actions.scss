@@ -1,0 +1,90 @@
+/* 管理后台新增、编辑表单操作区：取消/保存居中。 */
+.el-dialog__footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.el-dialog__footer .el-button + .el-button {
+  margin-left: 0;
+}
+
+/* 关联选择弹窗：搜索区、表头、分页和底部按钮固定，仅数据行滚动。 */
+.vben-popup__body:has(.customer-user-picker),
+.vben-popup__body:has(.relation-picker) {
+  overflow: hidden !important;
+}
+
+/* 选择器和弹窗列表：外壳固定，只有表格数据区纵向滚动。 */
+.vben-popup__modal:has(.vxe-grid) {
+  width: min(94vw, 1200px) !important;
+  height: min(76dvh, 820px) !important;
+  max-height: calc(100dvh - 96px) !important;
+}
+
+.vben-popup__body:has(.vxe-grid),
+.el-dialog:has(.vxe-grid) .el-dialog__body {
+  min-height: 0;
+  overflow: hidden !important;
+}
+
+.vben-popup__body:has(.vxe-grid) > div:has(.vxe-grid),
+.vben-popup__body:has(.vxe-grid) .vxe-grid,
+.el-dialog:has(.vxe-grid) .vxe-grid {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: 100% !important;
+}
+
+.vben-popup__body:has(.vxe-grid) .vxe-grid--form-wrapper,
+.vben-popup__body:has(.vxe-grid) .vxe-grid--toolbar-wrapper,
+.vben-popup__body:has(.vxe-grid) .vxe-grid--pager-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-grid--form-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-grid--toolbar-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-grid--pager-wrapper {
+  flex: 0 0 auto;
+}
+
+.vben-popup__body:has(.vxe-grid) .vxe-grid--layout-body-wrapper,
+.vben-popup__body:has(.vxe-grid) .vxe-grid--table-container,
+.vben-popup__body:has(.vxe-grid) .vxe-grid--layout-body-content-wrapper,
+.vben-popup__body:has(.vxe-grid) .vxe-table--main-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-grid--layout-body-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-grid--table-container,
+.el-dialog:has(.vxe-grid) .vxe-grid--layout-body-content-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-table--main-wrapper {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.vben-popup__body:has(.vxe-grid) .vxe-table--body-wrapper,
+.el-dialog:has(.vxe-grid) .vxe-table--body-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+}
+
+.el-dialog:has(.vxe-grid) {
+  display: flex;
+  flex-direction: column;
+  width: min(94vw, 1200px) !important;
+  height: min(76dvh, 820px) !important;
+  max-height: calc(100dvh - 96px) !important;
+}
+
+.el-dialog:has(.vxe-grid) .el-dialog__header,
+.el-dialog:has(.vxe-grid) .el-dialog__footer {
+  flex: 0 0 auto;
+}
+
+.el-dialog:has(.vxe-grid) .el-dialog__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}

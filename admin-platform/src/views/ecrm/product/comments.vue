@@ -327,7 +327,7 @@ function open(row?: ProductCommentRow) {
     });
   }
   formDrawerApi
-    .setState({ title: row ? '编辑自评' : '添加自评' })
+    .setState({ title: row ? '编辑自评' : '新增自评' })
     .open();
 }
 
@@ -438,7 +438,7 @@ async function remove(row: ProductCommentRow) {
   <Page auto-content-height>
     <Grid>
       <template #toolbar-actions>
-        <ElButton type="primary" @click="open()">添加自评</ElButton>
+        <ElButton type="primary" @click="open()">新增自评</ElButton>
       </template>
       <template #cover="{ row }">
         <ElImage

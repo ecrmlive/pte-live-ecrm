@@ -171,13 +171,13 @@ async function submit() {
     :close-on-press-escape="false"
     :destroy-on-close="true"
     class="w-[600px]"
-    title="新增"
+    title="新增分销商"
   >
     <Form />
 
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
-      <ElButton :loading="submitting" type="primary" @click="submit">确定</ElButton>
+      <ElButton :loading="submitting" type="primary" @click="submit">保存</ElButton>
     </template>
   </Modal>
 

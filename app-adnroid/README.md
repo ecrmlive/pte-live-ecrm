@@ -26,7 +26,23 @@ ECRM_API_BASE_URL=https://your-api.example/
 UMENG_APPKEY=your-app-key
 ```
 
-开发环境未注入 API 地址时使用无效占位地址，避免误连真实环境。当前未配置签名和发布任务。
+开发环境未注入 API 地址时使用无效占位地址，避免误连真实环境。
+
+## Release 打包
+
+发布版本由 Gradle 属性注入，默认值仅用于开发。密钥库和密码只放在本机的 `~/.gradle/gradle.properties` 或 CI Secret，禁止写进项目、后台或 Git：
+
+```text
+ECRM_APPLICATION_ID=com.example.ecrm
+ECRM_VERSION_NAME=1.0.0
+ECRM_VERSION_CODE=1
+ECRM_RELEASE_STORE_FILE=/absolute/path/release.jks
+ECRM_RELEASE_STORE_PASSWORD=***
+ECRM_RELEASE_KEY_ALIAS=release
+ECRM_RELEASE_KEY_PASSWORD=***
+```
+
+执行 `./gradlew assembleRelease` 生成已签名 APK；执行 `./gradlew bundleRelease` 生成 AAB。两个 Release 任务在缺少完整签名参数时会明确失败，避免产出不能上架或安装的未签名包。后台“应用 → App → Android”只维护包名、版本、下载地址和证书 SHA-256 指纹，不能保存 keystore 或密码。
 
 ## 下一步
 

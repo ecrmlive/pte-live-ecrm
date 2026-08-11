@@ -101,7 +101,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '确定',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -118,7 +118,7 @@ function resetForm() {
 function openCreate() {
   drawerMode.value = 'create';
   resetForm();
-  formDrawerApi.setState({ title: '添加数据', confirmText: '确定' }).open();
+  formDrawerApi.setState({ title: '新增分销特权', confirmText: '保存' }).open();
 }
 
 function openEdit(row: DistributionPrivilege) {
@@ -128,7 +128,7 @@ function openEdit(row: DistributionPrivilege) {
   form.img_url = row.img_url || '';
   form.sort = row.sort ?? 0;
   form.status = row.status === 1 ? 1 : 0;
-  formDrawerApi.setState({ title: '编辑数据', confirmText: '确定' }).open();
+  formDrawerApi.setState({ title: '编辑分销特权', confirmText: '保存' }).open();
 }
 
 async function save() {
@@ -193,7 +193,7 @@ async function onDelete(row: DistributionPrivilege) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加数据
+          新增分销特权
         </ElButton>
       </template>
       <template #image="{ row }">

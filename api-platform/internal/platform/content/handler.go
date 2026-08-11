@@ -35,6 +35,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 		"setting.agreement.manage",
 		"user.svip.agreement.manage",
 		"user.level.description.manage",
+		"accounts.invoice.desc.manage",
 	), h.SaveAgreement)
 	r.GET("/setting/sms", h.GetSMS)
 	r.PUT("/setting/sms", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "setting.sms.manage"), h.SaveSMS)
@@ -503,11 +504,35 @@ func (h *Handler) SaveWechatReply(c *gin.Context) {
 }
 
 func (h *Handler) GetWechatMenus(c *gin.Context) {
-	h.getAppStubSetting(c, content.WechatMenusConfigKey)
+	buttons, err := h.svc.GetWechatMenus(c.Request.Context())
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{
+		"wechat_menus": buttons,
+		"note":         "菜单配置保存在平台缓存；未配置公众号服务端凭据时仅本地保存，不向微信推送",
+	})
 }
 
 func (h *Handler) SaveWechatMenus(c *gin.Context) {
-	h.saveAppStubSetting(c, content.WechatMenusConfigKey)
+	var req struct {
+		Button []content.WechatMenuButton `json:"button"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	saved, err := h.svc.SaveWechatMenus(c.Request.Context(), req.Button)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{
+		"wechat_menus": saved,
+		"published":    false,
+		"note":         "已保存本地菜单配置；向微信公众号发布需配置服务端凭据后另行对接",
+	})
 }
 
 func (h *Handler) GetWechatTemplate(c *gin.Context) {

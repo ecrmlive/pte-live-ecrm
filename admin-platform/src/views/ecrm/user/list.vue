@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, h, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { ArrowDown } from '@element-plus/icons-vue';
@@ -74,6 +74,11 @@ import {
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
+import {
+  listPrefixedKeywordFormField,
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 
 type ChannelTab = '' | 'wechat' | 'mini_program' | 'h5' | 'app' | 'pc';
 type MoreCommand =
@@ -215,11 +220,11 @@ const hasMoreActions = computed(
     canSvip.value,
 );
 
-const USER_SEARCH_OPTIONS = [
+const USER_LIST_SEARCH_OPTIONS = [
   { label: '全部', value: 'all' },
-  { label: '用户昵称', value: 'nickname' },
-  { label: '手机号', value: 'phone' },
+  { label: '昵称', value: 'nickname' },
   { label: '用户ID', value: 'uid' },
+  { label: '手机号', value: 'phone' },
 ];
 
 const FIELDS_SEARCH_OPTIONS = [
@@ -229,75 +234,19 @@ const FIELDS_SEARCH_OPTIONS = [
   { label: '身份证（实名认证）', value: 'id_card' },
 ];
 
-function renderSearchPrepend(
-  field: 'keyword_type' | 'fields_type',
-  options: Array<{ label: string; value: string }>,
-  defaultValue: string,
-  width = '110px',
-) {
-  return (values: Record<string, any>, api: { setFieldValue: Function }) => ({
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values[field] || defaultValue,
-          style: { width },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue(field, v),
-        },
-        () =>
-          options.map((opt) =>
-            h(ElOption, { label: opt.label, value: opt.value, key: opt.value }),
-          ),
-      ),
-  });
-}
-
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '请输入内容',
-    },
-    defaultValue: '',
-    fieldName: 'keyword',
-    label: '用户搜索',
-    renderComponentContent: renderSearchPrepend(
-      'keyword_type',
-      USER_SEARCH_OPTIONS,
-      'all',
-    ),
-  },
-  {
-    component: 'Input',
-    defaultValue: 'all',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'keyword_type',
-    label: '用户搜索类型',
-  },
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '请输入内容',
-    },
-    defaultValue: '',
-    fieldName: 'fields_value',
+  listUserSearchFormField({
+    defaultType: 'all',
+    options: USER_LIST_SEARCH_OPTIONS,
+    typeWidth: '96px',
+  }),
+  listPrefixedKeywordFormField({
+    fieldName: 'fields_search',
     label: '信息补充',
-    renderComponentContent: renderSearchPrepend(
-      'fields_type',
-      FIELDS_SEARCH_OPTIONS,
-      'real_name',
-      '150px',
-    ),
-  },
-  {
-    component: 'Input',
-    defaultValue: 'real_name',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'fields_type',
-    label: '信息补充类型',
-  },
+    defaultType: 'real_name',
+    options: FIELDS_SEARCH_OPTIONS,
+    typeWidth: '150px',
+  }),
   {
     component: 'Select',
     componentProps: {
@@ -378,12 +327,12 @@ const gridOptions: VxeGridProps<PlatformUserRow> = {
         if (!isPlatform.value) {
           return { items: [], total: 0 };
         }
-        const keyword = String(formValues?.keyword ?? '').trim();
-        const keywordType =
-          String(formValues?.keyword_type ?? 'all').trim() || 'all';
-        const fieldsType =
-          String(formValues?.fields_type ?? 'real_name').trim() || 'real_name';
-        const fieldsValue = String(formValues?.fields_value ?? '').trim();
+        const userSearch = parseUserSearch(formValues);
+        const keyword = userSearch.keyword;
+        const keywordType = userSearch.type || 'all';
+        const fieldsSearch = parseUserSearch(formValues, 'fields_search');
+        const fieldsType = fieldsSearch.type || 'real_name';
+        const fieldsValue = fieldsSearch.keyword;
         const params: Parameters<typeof fetchPlatformUsers>[0] = {
           page: page.currentPage,
           limit: page.pageSize,

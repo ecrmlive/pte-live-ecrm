@@ -51,7 +51,7 @@ onMounted(async () => {
         <el-form-item label="最低转账金额"><el-input-number v-model="form.min_amount" :min="0" :precision="2" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" :rows="4" maxlength="500" show-word-limit type="textarea" /></el-form-item>
       </el-form>
-      <div class="mt-4 flex justify-end"><el-button @click="load">重置</el-button><el-button v-if="canManage" :loading="saving" type="primary" @click="save">保存设置</el-button></div>
+      <div class="mt-4 flex justify-center gap-3"><el-button @click="load">重置</el-button><el-button v-if="canManage" :loading="saving" type="primary" @click="save">保存</el-button></div>
     </el-card>
   </Page>
 </template>

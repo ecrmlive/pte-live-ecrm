@@ -100,7 +100,7 @@ func TestServiceSettingsChineseValidationAndQueueScope(t *testing.T) {
 	if !validServiceSettings(settings) {
 		t.Fatal("valid Chinese service settings must be accepted")
 	}
-	if settings.AutoReplyText != "您好，虚构演示客服将在工作时间内回复您。" || settings.QueueMode != "round_robin" {
+	if settings.AutoReplyText != "您好，虚构演示客服将在工作时间内回复您。" || settings.QueueMode != "round_robin" || settings.ServiceType != "system" {
 		t.Fatalf("service settings were not normalized: %#v", settings)
 	}
 	if validServiceSettings(&serviceSettings{AutoReplyEnabled: true, QueueMode: "manual", MaxSessionsPerAgent: 20}) {
@@ -108,6 +108,18 @@ func TestServiceSettingsChineseValidationAndQueueScope(t *testing.T) {
 	}
 	if validServiceSettings(&serviceSettings{QueueMode: "manual", MaxSessionsPerAgent: 201}) {
 		t.Fatal("session cap above 200 must be rejected")
+	}
+	if !validServiceSettings(&serviceSettings{ServiceType: "phone", ServicePhone: "400-888-8888"}) {
+		t.Fatal("customer service phone must be accepted")
+	}
+	if validServiceSettings(&serviceSettings{ServiceType: "phone", ServicePhone: "invalid"}) {
+		t.Fatal("invalid customer service phone must be rejected")
+	}
+	if !validServiceSettings(&serviceSettings{ServiceType: "enterprise_wechat", EnterpriseWechatURL: "https://work.weixin.qq.com/kf/example", EnterpriseWechatCorpID: "ww123456"}) {
+		t.Fatal("enterprise WeChat customer service entry must be accepted")
+	}
+	if validServiceSettings(&serviceSettings{ServiceType: "link", RedirectURL: "qq.com"}) {
+		t.Fatal("customer service redirect must use an absolute HTTP(S) URL")
 	}
 	if !sharesStore([]uint64{1001, 1002}, []uint64{2001, 1002}) || sharesStore([]uint64{1001}, []uint64{2001}) {
 		t.Fatal("customer service roster must only share authorized stores")

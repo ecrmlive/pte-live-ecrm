@@ -161,7 +161,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加保障服务' }).open();
+  formDrawerApi.setState({ title: '新增保障服务' }).open();
 }
 
 function openEdit(row: ProductGuaranteeRow) {
@@ -237,7 +237,7 @@ async function remove(row: ProductGuaranteeRow) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加保障服务
+          新增保障服务
         </ElButton>
       </template>
       <template #icon="{ row }">

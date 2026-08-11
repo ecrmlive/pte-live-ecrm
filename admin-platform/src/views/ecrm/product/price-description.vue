@@ -63,7 +63,7 @@ const form = reactive({
 });
 
 const drawerTitle = computed(() =>
-  drawerMode.value === 'create' ? '添加说明' : '编辑说明',
+  drawerMode.value === 'create' ? '新增价格说明' : '编辑价格说明',
 );
 
 const cascaderProps = {
@@ -244,7 +244,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '确定',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -283,7 +283,7 @@ function openCreate() {
     .setState({
       title: drawerTitle.value,
       showConfirmButton: true,
-      confirmText: '确定',
+      confirmText: '保存',
     })
     .open();
 }
@@ -303,7 +303,7 @@ async function openEdit(row: ProductPriceRuleRow) {
     .setState({
       title: drawerTitle.value,
       showConfirmButton: true,
-      confirmText: '确定',
+      confirmText: '保存',
     })
     .open();
 }
@@ -382,7 +382,7 @@ onMounted(async () => {
       <template #toolbar-actions>
         <div class="toolbar-row">
           <ElButton :icon="Plus" type="primary" @click="openCreate">
-            添加价格说明
+            新增价格说明
           </ElButton>
           <span class="toolbar-hint">
             填写价格说明，明确优惠、规格、运费等差异，避免误解与售后纠纷

@@ -2,13 +2,12 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { ElAlert, ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getUserInfoApi } from '#/api/core/auth';
 import { platformListActionColumn } from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import { listFormOptionsDefaults } from '#/utils/list-form-defaults';
@@ -25,12 +24,10 @@ import {
   fetchCustomerServiceProducts,
   fetchCustomerServiceQuickReplies,
   fetchCustomerServiceRefunds,
-  fetchCustomerServiceSettings,
   fetchCustomerServiceThread,
   fetchCustomerServiceThreads,
   fetchCustomerServiceUser,
   transferCustomerServiceThread,
-  updateCustomerServiceSettings,
   updateCustomerServiceQuickReply,
   updateCustomerServiceUserNote,
   type CustomerServiceAgent,
@@ -38,7 +35,6 @@ import {
   type CustomerServiceEvent,
   type CustomerServiceAssignmentLog,
   type CustomerServiceQuickReply,
-  type CustomerServiceSettings,
   type CustomerServiceThread,
 } from '#/api/core/customer-service';
 
@@ -80,13 +76,6 @@ const agentUsers = ref<CustomerServiceAgentUser[]>([]);
 const agentUsersTotal = ref(0);
 const selectedAgent = ref<CustomerServiceAgent>();
 const agentUserQuery = reactive({ page: 1, limit: 20 });
-const settingsOpen = ref(false);
-const settingsLoading = ref(false);
-const settingsSaving = ref(false);
-const settingsUpdatedAt = ref<string | null>();
-const canManageSettings = ref(false);
-const serviceSettings = reactive<CustomerServiceSettings>({ auto_reply_enabled: false, auto_reply_text: '', queue_mode: 'manual', max_sessions_per_agent: 20 });
-
 function time(value?: string | null) {
   if (!value) return '—';
   return formatShanghaiDateTime(value);
@@ -223,14 +212,14 @@ async function openTransfer(row: CustomerServiceThread) {
   transferOpen.value = true;
   agentsLoading.value = true;
   try {
-    serviceAgents.value = (await fetchCustomerServiceAgents()).list.filter((agent) => agent.status === 1 && (agent.service_store_ids || []).includes(row.store_id));
+    serviceAgents.value = (await fetchCustomerServiceAgents({ limit: 100 })).list.filter((agent) => agent.status === 1 && (agent.service_store_ids || []).includes(row.store_id));
   } finally { agentsLoading.value = false; }
 }
 
 async function openAgentRoster() {
   agentRosterOpen.value = true;
   agentsLoading.value = true;
-  try { serviceAgents.value = (await fetchCustomerServiceAgents()).list; } finally { agentsLoading.value = false; }
+  try { serviceAgents.value = (await fetchCustomerServiceAgents({ limit: 100 })).list; } finally { agentsLoading.value = false; }
 }
 
 async function loadAgentUsers() {
@@ -253,30 +242,6 @@ function openAgentUsers(agent: CustomerServiceAgent) {
 async function openAgentUserThread(row: CustomerServiceAgentUser) {
   const thread = await fetchCustomerServiceThread(row.binding_id);
   await openEvents(thread);
-}
-
-async function openSettings() {
-  settingsOpen.value = true;
-  settingsLoading.value = true;
-  try {
-    const result = await fetchCustomerServiceSettings();
-    Object.assign(serviceSettings, result.settings);
-    settingsUpdatedAt.value = result.updated_at || null;
-  } finally { settingsLoading.value = false; }
-}
-
-async function saveSettings() {
-  if (serviceSettings.auto_reply_enabled && !serviceSettings.auto_reply_text.trim()) {
-    ElMessage.warning('启用自动回复时必须填写回复内容');
-    return;
-  }
-  settingsSaving.value = true;
-  try {
-    const result = await updateCustomerServiceSettings({ ...serviceSettings, auto_reply_text: serviceSettings.auto_reply_text.trim() });
-    Object.assign(serviceSettings, result.settings);
-    settingsUpdatedAt.value = result.updated_at || null;
-    ElMessage.success('客服设置已保存');
-  } finally { settingsSaving.value = false; }
 }
 
 async function transfer() {
@@ -407,10 +372,6 @@ async function removeQuickReply(row: CustomerServiceQuickReply) {
   }
 }
 
-onMounted(async () => {
-  const profile = await getUserInfoApi();
-  canManageSettings.value = profile.roles.includes('platform');
-});
 </script>
 
 <template>
@@ -425,7 +386,6 @@ onMounted(async () => {
       <template #toolbar-actions>
         <ElButton type="primary" @click="openQuickReplies">快捷回复管理</ElButton>
         <ElButton @click="openAgentRoster">客服人员与用户</ElButton>
-        <ElButton v-if="canManageSettings" @click="openSettings">客服设置</ElButton>
       </template>
       <template #status="{ row }">
         <ElTag :type="row.status === 'open' ? 'warning' : 'info'">
@@ -492,6 +452,5 @@ onMounted(async () => {
     </el-dialog>
     <el-dialog v-model="quickOpen" title="快捷回复管理" width="820px" destroy-on-close><el-form inline class="mb-3"><el-form-item label="店铺 ID"><el-input-number v-model="quickQuery.store_id" :min="1" controls-position="right" clearable /></el-form-item><el-form-item><el-button type="primary" @click="quickQuery.page = 1; loadQuickReplies()">查询</el-button><el-button @click="quickQuery.store_id = undefined; quickQuery.page = 1; loadQuickReplies()">重置</el-button><el-button type="success" @click="newQuickReply">新增快捷回复</el-button></el-form-item></el-form><el-alert class="mb-3" type="info" :closable="false" title="仅可管理服务端已授权店铺的数据；删除为软删除并保留审计记录。" /><el-table v-loading="quickLoading" :data="quickRows" max-height="400"><el-table-column prop="store_id" label="店铺 ID" width="92" /><el-table-column prop="title" label="标题" min-width="130" /><el-table-column prop="content" label="回复内容" min-width="260" show-overflow-tooltip /><el-table-column label="状态" width="90"><template #default="{ row }"><el-tag :type="row.status === 'enabled' ? 'success' : 'info'">{{ row.status === 'enabled' ? '启用' : '停用' }}</el-tag></template></el-table-column><el-table-column label="更新时间" min-width="160"><template #default="{ row }">{{ time(row.updated_at) }}</template></el-table-column><el-table-column label="操作" fixed="right" width="120"><template #default="{ row }"><el-button link type="primary" @click="editQuickReply(row)">编辑</el-button><el-button link type="danger" @click="removeQuickReply(row)">删除</el-button></template></el-table-column></el-table><div class="mt-3 flex justify-end"><el-pagination :current-page="quickQuery.page" :page-size="quickQuery.limit" :total="quickTotal" background layout="total, prev, pager, next" @current-change="(page) => { quickQuery.page = page; loadQuickReplies(); }" /></div></el-dialog>
     <el-dialog v-model="quickEditOpen" :title="editingQuickID ? '编辑快捷回复' : '新增快捷回复'" width="560px" destroy-on-close><el-form label-width="96px"><el-form-item label="店铺 ID" required><el-input-number v-model="quickForm.store_id" :disabled="!!editingQuickID" :min="1" /></el-form-item><el-form-item label="标题" required><el-input v-model="quickForm.title" maxlength="64" show-word-limit /></el-form-item><el-form-item label="回复内容" required><el-input v-model="quickForm.content" :rows="5" maxlength="2000" show-word-limit type="textarea" /></el-form-item><el-form-item label="状态"><el-radio-group v-model="quickForm.status"><el-radio value="enabled">启用</el-radio><el-radio value="disabled">停用</el-radio></el-radio-group></el-form-item></el-form><template #footer><el-button @click="quickEditOpen = false">取消</el-button><el-button :loading="quickSaving" type="primary" @click="saveQuickReply">保存</el-button></template></el-dialog>
-    <el-dialog v-model="settingsOpen" title="客服设置" width="600px" destroy-on-close><div v-loading="settingsLoading"><el-alert class="mb-4" type="info" :closable="false" title="仅保存客服队列与自动回复策略；IM 凭据、UserSig 和第三方密钥不在此页面管理。" /><el-form label-width="132px"><el-form-item label="分配方式"><el-radio-group v-model="serviceSettings.queue_mode"><el-radio value="manual">人工领取</el-radio><el-radio value="round_robin">轮询分配</el-radio></el-radio-group></el-form-item><el-form-item label="单客服并发上限"><el-input-number v-model="serviceSettings.max_sessions_per_agent" :max="200" :min="1" /></el-form-item><el-form-item label="启用自动回复"><el-switch v-model="serviceSettings.auto_reply_enabled" /></el-form-item><el-form-item v-if="serviceSettings.auto_reply_enabled" label="自动回复内容" required><el-input v-model="serviceSettings.auto_reply_text" :rows="4" maxlength="500" show-word-limit type="textarea" placeholder="例如：您好，虚构演示客服将在工作时间内回复您。" /></el-form-item><el-form-item v-else label="自动回复内容"><el-input v-model="serviceSettings.auto_reply_text" :rows="4" maxlength="500" show-word-limit type="textarea" placeholder="未启用时不会自动发送" /></el-form-item></el-form><div class="text-xs text-gray-400">最近更新：{{ time(settingsUpdatedAt) }}</div></div><template #footer><el-button @click="settingsOpen = false">取消</el-button><el-button :loading="settingsSaving" type="primary" @click="saveSettings">保存设置</el-button></template></el-dialog>
   </Page>
 </template>

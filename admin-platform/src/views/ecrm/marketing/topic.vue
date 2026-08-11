@@ -182,7 +182,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -264,7 +264,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加专场' }).open();
+  formDrawerApi.setState({ title: '新增专场' }).open();
 }
 
 function openEdit(row: MarketingDecor) {
@@ -387,7 +387,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加专场
+          新增专场
         </ElButton>
       </template>
 

@@ -247,7 +247,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -310,7 +310,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加活动边框图' }).open();
+  formDrawerApi.setState({ title: '新增活动边框图' }).open();
 }
 
 function openEdit(row: MarketingDecor) {
@@ -553,7 +553,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加活动边框
+          新增活动边框图
         </ElButton>
       </template>
       <template #cover="{ row }">

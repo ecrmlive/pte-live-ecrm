@@ -212,7 +212,7 @@ const [OrderGrid] = useVbenVxeGrid({
 
 const [EditDrawer, editDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { StoreListItem } from '#/api/core/store';
 
@@ -26,6 +27,25 @@ const emit = defineEmits<{
 }>();
 
 const selectedRows = ref<StoreRow[]>([]);
+
+const formOptions: VbenFormProps = {
+  actionLayout: 'inline',
+  collapsed: false,
+  schema: [
+    {
+      component: 'Input',
+      componentProps: { clearable: true, placeholder: '门店名称' },
+      fieldName: 'store_name',
+      label: '门店搜索',
+    },
+  ],
+  showCollapseButton: false,
+  resetButtonOptions: { content: '重置' },
+  submitButtonOptions: { content: '搜索' },
+  submitOnChange: false,
+  submitOnEnter: true,
+  wrapperClass: 'grid-cols-1 md:grid-cols-2',
+};
 
 const canConfirm = computed(() => selectedRows.value.length > 0);
 
@@ -59,10 +79,11 @@ const gridOptions = reactive<VxeGridProps<StoreRow>>({
   },
   proxyConfig: {
     ajax: {
-      query: async ({ page }) => {
+      query: async ({ page }, formValues) => {
         const res = await getStoreListApi({
           list_rows: page.pageSize,
           page: page.currentPage,
+          store_name: String(formValues?.store_name ?? '').trim() || undefined,
         });
         const rows = (res.list.data ?? []).map((row) => ({
           ...row,
@@ -85,7 +106,7 @@ const gridOptions = reactive<VxeGridProps<StoreRow>>({
   },
 });
 
-const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 function onCheckboxChange() {
   selectedRows.value = (gridApi.grid?.getCheckboxRecords?.() ?? []) as StoreRow[];
@@ -129,8 +150,8 @@ watch(open, (visible) => {
   <Modal
     :close-on-click-modal="false"
     :destroy-on-close="true"
-    class="w-[900px]"
-    title="选择门店"
+    class="h-[min(76dvh,820px)] w-[min(94vw,1200px)] max-w-[94vw]"
+    title="请选择店铺："
   >
     <Grid @checkbox-change="onCheckboxChange">
       <template #logo="{ row }">

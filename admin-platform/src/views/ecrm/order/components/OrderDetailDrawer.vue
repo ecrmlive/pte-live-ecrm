@@ -106,11 +106,11 @@ async function loadLogs() {
   }
 }
 
-async function open(orderId: number) {
+async function open(orderId: number): Promise<boolean> {
   const id = Number(orderId || 0);
   if (!id) {
     ElMessage.warning('缺少订单 ID');
-    return;
+    return false;
   }
   detail.value = undefined;
   detailTab.value = 'info';
@@ -120,9 +120,11 @@ async function open(orderId: number) {
   try {
     detail.value = await getPlatformOrderApi(id);
     await loadLogs();
+    return true;
   } catch {
     ElMessage.error('加载订单详情失败');
     drawerApi.close();
+    return false;
   } finally {
     detailLoading.value = false;
     drawerApi.setState({ loading: false });

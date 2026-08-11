@@ -73,7 +73,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
   placement: 'right',
   title: '编辑秒杀商品',
   cancelText: '取消',
-  confirmText: '完成',
+  confirmText: '保存',
   onConfirm: () => void save(),
 });
 

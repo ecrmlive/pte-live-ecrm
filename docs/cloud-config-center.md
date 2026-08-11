@@ -24,6 +24,7 @@
 - 支付、LVB/VOD、License 与回调配置的接入方必须通过服务端 `cloudconfig.Service.Values` 读取；该方法禁止在 HTTP 响应中使用。
 - 高德地图配置存于 `amap` 分组（`amap_web_js_key` / `amap_web_js_security_code` / `amap_web_service_key` / `amap_mp_weixin_key` / `amap_ios_key` / `amap_android_key` / `amap_harmony_key`）。云配置列表接口对密钥字段掩码。平台后台地图取点仅通过已鉴权接口 `GET /setting/map-client-config` 下发 Web JS Key 与安全密钥；Web 服务 Key 仅供服务端代理使用，不下发前端。
 - 小程序静默登录读取 `wechat_mini_program` 分组：仅启用状态、AppID 与 AppSecret 齐备时开放。客户端只提交 `uni.login` 返回的一次性 code，服务端换取并绑定 openid；不得把 AppSecret、openid 或会话密钥下发给客户端。
+- 原生 App 发布信息分为 `mobile_app_ios`、`mobile_app_android`、`mobile_app_harmony`：后台在「应用 / App」的各端页内维护基础与发布、推送两个分区；数据仍按应用与推送分组独立加密。基础与发布维护应用标识、版本、下载地址、更新说明、强制更新开关和签名证书 SHA-256 指纹。Android 另维护 APK/AAB，HarmonyOS 另维护 APP/HAP 格式。keystore、p12、私钥、profile 和所有密码只能在本机或 CI 的受控签名环境中使用，禁止录入后台或 Git。
 - 小程序微信支付使用 `payment` 分组的微信商户签名材料和回调地址；商户号必须已与该小程序 AppID 绑定。`wechat_api_v3_key` 必须是 32 字节 APIv3 密钥，不可用旧版 APIKEY 替代。
 - 微信退款必须单独配置 `wechat_refund_notify_url`，且只能是 HTTPS 回调地址；退款请求已受理不等于资金到账，业务状态只能由该地址收到并验签的退款成功通知推进。
 

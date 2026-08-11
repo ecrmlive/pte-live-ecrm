@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { PropType } from 'vue';
-
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, defineComponent, h, markRaw, reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
@@ -16,8 +14,6 @@ import {
   ElInput,
   ElMessage,
   ElMessageBox,
-  ElOption,
-  ElSelect,
 } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
@@ -31,6 +27,10 @@ import {
   updateBusinessZoneAgent,
   type BusinessZoneAgentRow,
 } from '#/api/core/ecrm';
+import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import UserPickerModal, {
   type PickedPlatformUser,
 } from '#/components/ecrm/user-picker-modal.vue';
@@ -46,74 +46,14 @@ import {
 } from '#/utils/list-form-defaults';
 
 type DrawerMode = 'create' | 'edit';
-type UserSearchField = 'uid' | 'user_phone' | 'nickname';
-type UserSearchValue = { field: UserSearchField; keyword: string };
 
 const QUALIFICATION_MAX = 5;
 
-const USER_SEARCH_OPTIONS: Array<{ label: string; value: UserSearchField }> = [
-  { label: 'UID', value: 'uid' },
+const AGENT_USER_SEARCH_OPTIONS = [
+  { label: '昵称', value: 'nickname' },
+  { label: '用户ID', value: 'uid' },
   { label: '手机号', value: 'user_phone' },
-  { label: '用户昵称', value: 'nickname' },
 ];
-
-function userSearchPlaceholder(field: UserSearchField) {
-  if (field === 'uid') return '请输入UID';
-  if (field === 'user_phone') return '请输入手机号';
-  if (field === 'nickname') return '请输入用户昵称';
-  return '请输入用户信息';
-}
-
-/** 用户搜索：左侧类型 Select + 右侧关键词 Input，绑定同一表单项。 */
-const UserSearchComposite = defineComponent({
-  name: 'UserSearchComposite',
-  props: {
-    modelValue: {
-      type: Object as PropType<UserSearchValue>,
-      default: () => ({ field: 'uid' as UserSearchField, keyword: '' }),
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    function patch(partial: Partial<UserSearchValue>) {
-      emit('update:modelValue', {
-        field: props.modelValue?.field || 'uid',
-        keyword: props.modelValue?.keyword || '',
-        ...partial,
-      });
-    }
-    return () => {
-      const field = (props.modelValue?.field || 'uid') as UserSearchField;
-      const keyword = props.modelValue?.keyword || '';
-      return h('div', { class: 'agent-user-search' }, [
-        h(
-          ElSelect,
-          {
-            modelValue: field,
-            'onUpdate:modelValue': (value: UserSearchField) =>
-              patch({ field: value }),
-            class: 'agent-user-search__type',
-          },
-          () =>
-            USER_SEARCH_OPTIONS.map((opt) =>
-              h(ElOption, {
-                key: opt.value,
-                label: opt.label,
-                value: opt.value,
-              }),
-            ),
-        ),
-        h(ElInput, {
-          modelValue: keyword,
-          'onUpdate:modelValue': (value: string) => patch({ keyword: value }),
-          clearable: true,
-          class: 'agent-user-search__keyword',
-          placeholder: userSearchPlaceholder(field),
-        }),
-      ]);
-    };
-  },
-});
 
 const drawerMode = ref<DrawerMode>('create');
 const editingID = ref(0);
@@ -221,12 +161,10 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
       endPlaceholder: '结束日期',
     },
   },
-  {
-    component: markRaw(UserSearchComposite),
-    defaultValue: { field: 'uid', keyword: '' } satisfies UserSearchValue,
-    fieldName: 'user_search',
-    label: '用户搜索',
-  },
+  listUserSearchFormField({
+    defaultType: 'uid',
+    options: AGENT_USER_SEARCH_OPTIONS,
+  }),
 ]);
 
 const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
@@ -260,10 +198,9 @@ const gridOptions: VxeGridProps<BusinessZoneAgentRow> = {
         const range = Array.isArray(formValues?.date_range)
           ? formValues.date_range
           : [];
-        const userSearch = (formValues?.user_search ||
-          {}) as Partial<UserSearchValue>;
-        const userField = (userSearch.field || 'uid') as UserSearchField;
-        const userKeyword = String(userSearch.keyword ?? '').trim();
+        const userSearch = parseUserSearch(formValues);
+        const userField = userSearch.type || 'uid';
+        const userKeyword = userSearch.keyword;
         // 仅下发当前用户搜索类型对应参数，不附带其它类型键。
         const params: Parameters<typeof fetchBusinessZoneAgents>[0] = {
           page: page.currentPage,
@@ -678,22 +615,5 @@ function exportList() {
   font-size: 12px;
   line-height: 1.3;
   color: var(--el-text-color-secondary);
-}
-
-:deep(.agent-user-search) {
-  display: flex;
-  width: 100%;
-  gap: 8px;
-  align-items: center;
-}
-
-:deep(.agent-user-search__type) {
-  width: 112px;
-  flex-shrink: 0;
-}
-
-:deep(.agent-user-search__keyword) {
-  flex: 1;
-  min-width: 0;
 }
 </style>

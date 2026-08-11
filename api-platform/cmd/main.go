@@ -110,6 +110,12 @@ import (
 	platformseckill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/seckill"
 	platformstatement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/statement"
 	platformtransferrecord "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/transferrecord"
+	platformuserextract "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userextract"
+	platformuserrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userrecharge"
+	platformuserbill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userbill"
+	platformcapitalflow "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/capitalflow"
+	platformwechatnews "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatnews"
+	platformwechatreply "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatreply"
 	platformstoregroup "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storegroup"
 	platformstoremenu "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storemenu"
 	platformsvip "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svip"
@@ -279,7 +285,7 @@ func main() {
 	platformAttachH := platformattachment.NewHandler(attachSvc, gdb, fileUp)
 	platformSvipH := platformsvip.NewHandler(idSvc, gdb, businessDB)
 	platformSvipInterestH := platformsvipinterest.New(businessDB, gdb)
-	platformCloudConfigH := platformcloudconfig.NewHandler(cloudConfigSvc, idSvc, paymentConfigStore)
+	platformCloudConfigH := platformcloudconfig.NewHandler(cloudConfigSvc, gdb, paymentConfigStore)
 	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc, gdb)
 	platformProductMetaH := platformproductmeta.NewHandler(gdb, merchantDB)
 	platformCommentH := platformcomment.NewHandler(businessDB, gdb, productCommentCommands)
@@ -297,6 +303,12 @@ func main() {
 	platformStatementH := platformstatement.NewHandler(businessDB, gdb)
 	platformTransferRecordH := platformtransferrecord.NewHandler(gdb)
 	platformOrderProfitsharingH := platformorderprofitsharing.NewHandler(businessDB, gdb)
+	platformUserExtractH := platformuserextract.NewHandler(businessDB, gdb)
+	platformUserRechargeH := platformuserrecharge.NewHandler(businessDB, gdb)
+	platformUserBillH := platformuserbill.NewHandler(businessDB, gdb)
+	platformCapitalFlowH := platformcapitalflow.NewHandler(businessDB, gdb)
+	platformWechatNewsH := platformwechatnews.NewHandler(gdb)
+	platformWechatReplyH := platformwechatreply.NewHandler(gdb)
 	platformRechargeH := platformrecharge.NewHandler(businessDB, gdb)
 	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 
@@ -372,6 +384,12 @@ func main() {
 	platformStatementH.Register(platformAuthed)
 	platformTransferRecordH.Register(platformAuthed)
 	platformOrderProfitsharingH.Register(platformAuthed)
+	platformUserExtractH.Register(platformAuthed)
+	platformUserRechargeH.Register(platformAuthed)
+	platformUserBillH.Register(platformAuthed)
+	platformCapitalFlowH.Register(platformAuthed)
+	platformWechatNewsH.Register(platformAuthed)
+	platformWechatReplyH.Register(platformAuthed)
 	platformRechargeH.Register(platformAuthed)
 	platformCustomerServiceH.Register(platformAuthed)
 

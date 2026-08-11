@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, h, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import { Icon as IconifyIcon } from '@iconify/vue';
@@ -47,6 +47,10 @@ import {
   type DistributionSpreadOrder,
   type DistributionSummary,
 } from '#/api/core/platform-spread';
+import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -181,43 +185,15 @@ function avatarSrc(url?: string) {
   return resolved || undefined;
 }
 
-const KEYWORD_OPTIONS = [
-  { label: '昵称', value: 'nickname' },
-  { label: '用户ID', value: 'uid' },
-  { label: '手机号', value: 'phone' },
-];
-
-function renderSearchPrepend(
-  field: 'keyword_type',
-  options: Array<{ label: string; value: string }>,
-  defaultValue: string,
-) {
-  return (values: Record<string, any>, api: { setFieldValue: Function }) => ({
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values[field] || defaultValue,
-          style: { width: '110px' },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue(field, v),
-        },
-        () =>
-          options.map((opt) =>
-            h(ElOption, { label: opt.label, value: opt.value, key: opt.value }),
-          ),
-      ),
-  });
-}
-
 function buildFilterParams(formValues?: Record<string, unknown>) {
   const range = Array.isArray(formValues?.date_range)
     ? formValues.date_range
     : [];
-  const keyword = String(formValues?.keyword ?? '').trim();
-  const keywordTypeRaw = String(formValues?.keyword_type ?? 'nickname').trim();
+  const userSearch = parseUserSearch(formValues);
+  const keyword = userSearch.keyword;
   const keywordType =
-    keywordTypeRaw === 'uid' || keywordTypeRaw === 'phone'
-      ? keywordTypeRaw
+    userSearch.type === 'uid' || userSearch.type === 'phone'
+      ? userSearch.type
       : 'nickname';
   const levelRaw = formValues?.level_id;
   return {
@@ -245,25 +221,7 @@ const formOptions: VbenFormProps = listFormOptionsDefaults(
       fieldName: 'level_id',
       label: '等级名称',
     },
-    {
-      component: 'Input',
-      componentProps: { clearable: true, placeholder: '请输入内容' },
-      defaultValue: '',
-      fieldName: 'keyword',
-      label: '分销员搜索',
-      renderComponentContent: renderSearchPrepend(
-        'keyword_type',
-        KEYWORD_OPTIONS,
-        'nickname',
-      ),
-    },
-    {
-      component: 'Input',
-      defaultValue: 'nickname',
-      dependencies: { show: () => false, triggerFields: [''] },
-      fieldName: 'keyword_type',
-      label: '搜索类型',
-    },
+    listUserSearchFormField({ label: '分销员搜索' }),
   ],
   {
     commonConfig: { componentProps: { class: 'w-full' } },

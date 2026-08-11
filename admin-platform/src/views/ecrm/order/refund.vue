@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
 import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import { Icon as IconifyIcon } from '@iconify/vue';
@@ -14,11 +14,9 @@ import {
   ElImage,
   ElInput,
   ElMessage,
-  ElOption,
   ElPagination,
   ElRadio,
   ElRadioGroup,
-  ElSelect,
   ElSkeleton,
   ElTabPane,
   ElTable,
@@ -46,6 +44,10 @@ import {
   platformListActionColumn,
   platformListPagerConfig,
 } from '#/constants/platform-list-grid';
+import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
@@ -104,12 +106,6 @@ const logPage = ref(1);
 const logLimit = ref(10);
 const logTerminal = ref('');
 const logDates = ref<string[]>([]);
-
-const USER_SEARCH_OPTIONS = [
-  { label: '昵称', value: 'nickname' },
-  { label: '用户ID', value: 'uid' },
-  { label: '手机号', value: 'phone' },
-];
 
 const statusTagType: Record<
   string,
@@ -208,28 +204,6 @@ function refundProductCount(row: PlatformRefundOrder) {
   );
 }
 
-function renderSearchPrepend(
-  field: 'user_search_type',
-  options: Array<{ label: string; value: string }>,
-  defaultValue: string,
-) {
-  return (values: Record<string, any>, api: { setFieldValue: Function }) => ({
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values[field] || defaultValue,
-          style: { width: '110px' },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue(field, v),
-        },
-        () =>
-          options.map((opt) =>
-            h(ElOption, { label: opt.label, value: opt.value, key: opt.value }),
-          ),
-      ),
-  });
-}
-
 function setStatusTab(key: keyof PlatformRefundTabCounts) {
   if (tabStatus.value === key) return;
   tabStatus.value = key;
@@ -256,10 +230,8 @@ function buildListParams(
         : undefined,
     refund_order_sn: String(values.refund_order_sn ?? '').trim() || undefined,
     order_sn: String(values.order_sn ?? '').trim() || undefined,
-    user_search_type:
-      String(values.user_search_type ?? 'nickname').trim() || 'nickname',
-    user_search_keyword:
-      String(values.user_search_keyword ?? '').trim() || undefined,
+    user_search_type: parseUserSearch(values).type || 'nickname',
+    user_search_keyword: parseUserSearch(values).keyword || undefined,
   };
 }
 
@@ -316,25 +288,7 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
     fieldName: 'order_sn',
     label: '订单编号',
   },
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '请输入内容' },
-    defaultValue: '',
-    fieldName: 'user_search_keyword',
-    label: '用户搜索',
-    renderComponentContent: renderSearchPrepend(
-      'user_search_type',
-      USER_SEARCH_OPTIONS,
-      'nickname',
-    ),
-  },
-  {
-    component: 'Input',
-    defaultValue: 'nickname',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'user_search_type',
-    label: '用户搜索类型',
-  },
+  listUserSearchFormField(),
 ]);
 
 const gridOptions: VxeGridProps<PlatformRefundOrder> = {
@@ -438,7 +392,7 @@ const [AuditDrawer, auditDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
   placement: 'right',
   title: '维权审核',
-  confirmText: '提交',
+  confirmText: '保存',
   onConfirm: async () => {
     await submitDisputeReview();
   },

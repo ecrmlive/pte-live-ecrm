@@ -9,30 +9,25 @@ import {
   fetchPlatformUserGroupOptions,
   type PlatformUserGroupOption,
 } from '#/api/core/ecrm';
+import UserRelationSelect from '#/components/ecrm/UserRelationSelect.vue';
 
 const groups = ref<PlatformUserGroupOption[]>([]);
 const loading = ref(false);
 const submitting = ref(false);
-const form = reactive({ user_ids_text: '', group_id: 0, reason: '' });
-
-function parseUserIDs() {
-  const parts = form.user_ids_text.split(/[，,\s]+/).filter(Boolean);
-  const ids = [...new Set(parts.map((item) => Number(item)))];
-  return ids.length > 0 && ids.length <= 100 && ids.every((item) => Number.isSafeInteger(item) && item > 0) ? ids : undefined;
-}
+const form = reactive({ user_ids: [] as number[], group_id: 0, reason: '' });
 
 async function loadGroups() {
   loading.value = true;
   try { groups.value = (await fetchPlatformUserGroupOptions()).list || []; } finally { loading.value = false; }
 }
 
-function reset() { Object.assign(form, { user_ids_text: '', group_id: 0, reason: '' }); }
+function reset() { Object.assign(form, { user_ids: [], group_id: 0, reason: '' }); }
 
 async function submit() {
-  const userIDs = parseUserIDs();
+  const userIDs = [...new Set(form.user_ids)];
   const reason = form.reason.trim();
   if (!userIDs || reason.length < 2 || reason.length > 500) {
-    ElMessage.warning('请填写 1 至 100 个用户 ID，以及 2 至 500 字的调整原因');
+    ElMessage.warning('请选择 1 至 100 个用户，并填写 2 至 500 字的调整原因');
     return;
   }
   submitting.value = true;
@@ -51,8 +46,8 @@ onMounted(() => void loadGroups());
     <el-alert class="mb-4" type="warning" :closable="false" title="按虚构中文工单核验后操作。留在“未分组”代表移出运营分组，已删除分组不可再分配。" />
     <el-card v-loading="loading" shadow="never" class="max-w-3xl">
       <el-form label-width="116px" @submit.prevent="submit">
-        <el-form-item label="用户 ID" required>
-          <el-input v-model="form.user_ids_text" type="textarea" :rows="3" maxlength="1500" placeholder="输入用户 ID，使用逗号、中文逗号或换行分隔；最多 100 个" />
+        <el-form-item label="关联用户" required>
+          <UserRelationSelect v-model="form.user_ids" multiple placeholder="请选择用户，最多 100 位" />
         </el-form-item>
         <el-form-item label="目标分组" required>
           <el-select v-model="form.group_id" class="w-96">

@@ -212,12 +212,23 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (21097,540,'accounts.profitsharing.export','导出分账列表','','merchant/applyList','button',3),
   (537,100,'accounts.user.dir','用户结算','lucide:wallet','/accounts/record','directory',2),
   (101,537,'accounts.withdraw','提现管理','lucide:wallet','/accounts/extract','page',1),
+  (21098,101,'accounts.withdraw.read','查看提现管理','','accounts/extract','button',1),
+  (20923,101,'accounts.withdraw.review','审核用户提现','','accounts/extract','button',2),
+  (21099,101,'accounts.withdraw.export','导出提现列表','','accounts/extract','button',3),
   (541,537,'accounts.recharge_record','充值记录','lucide:circle-dollar-sign','/accounts/bill','page',2),
+  (21100,541,'accounts.recharge_record.read','查看充值记录','','accounts/bill','button',1),
+  (21101,541,'accounts.recharge_record.refund','充值退款','','accounts/bill','button',2),
   (102,537,'accounts.user_assets','资金记录','lucide:wallet-cards','/accounts/capital','page',3),
+  (20924,102,'accounts.user_assets.read','查看资金记录','','accounts/capital','button',1),
+  (21102,102,'accounts.user_assets.export','导出资金记录','','accounts/capital','button',2),
   (542,537,'accounts.capital_flow','资金流水','lucide:list','/accounts/capitalFlow','page',4),
+  (21103,542,'accounts.capital_flow.read','查看资金流水','','accounts/capitalFlow','button',1),
+  (21104,542,'accounts.capital_flow.export','导出资金流水','','accounts/capitalFlow','button',2),
   (188,100,'accounts.invoice','发票管理','lucide:receipt','/accounts/accounts','directory',3),
   (543,188,'accounts.invoice.list','发票列表','lucide:receipt','/accounts/receipt','page',1),
   (544,188,'accounts.invoice.desc','发票说明','lucide:file-text','/accounts/invoiceDesc','page',2),
+  (21105,544,'accounts.invoice.desc.read','查看发票说明','','accounts/invoiceDesc','button',1),
+  (21106,544,'accounts.invoice.desc.manage','维护发票说明','','accounts/invoiceDesc','button',2),
   (103,100,'accounts.merchant_settlement','店铺结算监管(旧)','lucide:landmark','/accounts/merchant-settlement','page',990),
 
   -- 应用（嵌套见 patch_app_menus.sql）
@@ -226,8 +237,10 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (204,131,'app.wechat_menus','微信菜单','lucide:menu','/app/wechat/menus','page',1),
   (203,131,'app.wechat_reply','自动回复','lucide:message-square-reply','/admin/app/wechat/reply','page',2),
   (206,131,'app.wechat_news','图文管理','lucide:newspaper','/app/wechat/newsCategory','page',3),
-  (205,131,'app.wechat_template','微信模板消息','lucide:mail','/app/wechat/template','page',4),
+  -- 205 微信模板消息已下线，保留 id 兼容历史 role_menu，status 由 patch 置 0
+  (205,131,'app.wechat_template','微信模板消息','lucide:mail','/app/wechat/template','page',99),
   (202,130,'app.routine','小程序','lucide:smartphone','/app/routine','page',2),
+  (217,130,'app.mobile','App','lucide:smartphone','/app/mobile','page',3),
 
   -- 装修（嵌套见 patch_operations_menus.sql）
   (110,0,'operations','装修','ant-design:format-painter-outlined','/operations','directory',11),
@@ -368,8 +381,6 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   (20920,87,'content.community.audit','审核社区内容','','community/list','button',3),
   (20921,87,'content.community.delete','删除社区内容','','community/list','button',4),
   (20922,781,'marketing.broadcast.audit','审核直播间','','marketing/studio/list','button',1),
-  (20923,101,'accounts.withdraw.review','审核用户提现','','accounts/withdraw','button',1),
-  (20924,102,'accounts.user_assets.read','查看用户资产流水','','accounts/user-assets','button',1),
   (20925,103,'accounts.merchant_settlement.read','查看店铺结算监管投影','','accounts/merchant-settlement','button',1),
   (20926,103,'accounts.merchant_settlement.review','审核并登记店铺结算凭证','','accounts/merchant-settlement','button',2),
   (20927,522,'marketing.spread.read','查看分销推广与佣金监管','','promoter/user','button',1),
@@ -452,15 +463,28 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
   ,(20991,200,'maintain.group_data.manage','维护组合数据','','group/list','button',1)
   ,(20992,201,'maintain.hot_search.manage','维护热门搜索','','group/config/67','button',1)
   ,(20993,202,'app.routine.manage','维护小程序基础开关','','app/routine','button',1)
-  ,(20994,203,'app.wechat_reply.manage','维护微信回复开关','','admin/app/wechat/reply','button',1)
+  ,(21122,217,'app.mobile.manage','维护 iOS、Android、HarmonyOS 应用配置','','app/mobile','button',1)
+  ,(21123,217,'app.push.manage','维护 App 推送配置','','app/mobile','button',2)
+  ,(20994,203,'app.wechat_reply.manage','维护自动回复','','admin/app/wechat/reply','button',2)
+  ,(21121,203,'app.wechat_reply.read','查看自动回复','','admin/app/wechat/reply','button',1)
   ,(20995,204,'app.wechat_menus.manage','维护微信菜单开关','','app/wechat/menus','button',1)
   ,(20996,205,'app.wechat_template.manage','维护模板消息开关','','app/wechat/template','button',1)
-  ,(20997,206,'app.wechat_news.manage','维护图文消息开关','','app/wechat/newsCategory','button',1)
+  ,(20997,206,'app.wechat_news.manage','维护图文管理','','app/wechat/newsCategory','button',2)
+  ,(21120,206,'app.wechat_news.read','查看图文管理','','app/wechat/newsCategory','button',1)
   ,(21072,532,'user.setup.read','查看用户设置','','user/setup_user','button',1)
   ,(20998,532,'user.setup.manage','保存用户设置','','user/setup_user','button',2)
   ,(20999,101,'accounts.transfer_settings.manage','维护转账监管设置','','accounts/settings','button',2)
   ,(21000,12,'merchant.intention.delete','删除店铺入驻申请','','merchant/audit','button',3)
 ON DUPLICATE KEY UPDATE `parent_id`=VALUES(`parent_id`),`title`=VALUES(`title`),`route_path`=VALUES(`route_path`),`kind`=VALUES(`kind`),`sort`=VALUES(`sort`),`status`=1;
+
+-- 公众号「微信模板消息」下线（软隐藏）
+UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=99 WHERE `id` IN (205,20996) OR `code` IN ('app.wechat_template','app.wechat_template.manage');
+
+-- 历史“快递公司”是物流承运商维护，不得成为一级菜单；正式入口为
+-- 设置 → 系统设置 → 配送配置 → 物流公司（setting.delivery.express）。
+UPDATE `qixi_crm_a_menu`
+SET `status`=0, `sort`=1001
+WHERE `id` IN (90,91) OR `code` IN ('freight','freight.express');
 
 -- 商户管理「商户入驻审核」统一为「店铺入驻申请」（与店铺管理入口同功能，路由保持 /merchant/review）
 UPDATE `qixi_crm_a_menu`

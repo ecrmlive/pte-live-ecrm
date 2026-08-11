@@ -175,7 +175,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -183,7 +183,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加会员权益' }).open();
+  formDrawerApi.setState({ title: '新增会员权益' }).open();
 }
 
 function openEdit(row: SvipInterest) {
@@ -319,7 +319,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加会员权益
+          新增会员权益
         </ElButton>
       </template>
       <template #icon_off="{ row }">

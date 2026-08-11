@@ -116,7 +116,7 @@ async function submit() {
 
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
-      <ElButton :loading="saving" type="primary" @click="submit">提交</ElButton>
+      <ElButton :loading="saving" type="primary" @click="submit">保存</ElButton>
     </template>
   </Modal>
 </template>

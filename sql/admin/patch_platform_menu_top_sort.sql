@@ -59,6 +59,9 @@ WHERE `id`=65;
 UPDATE `qixi_crm_a_menu`
 SET `parent_id`=120, `title`='物流配送', `icon`='lucide:map-plus', `sort`=1001, `kind`='directory', `status`=0
 WHERE `id`=90;
+UPDATE `qixi_crm_a_menu`
+SET `title`='快递公司(旧)', `sort`=1001, `status`=0
+WHERE `id`=91 OR `code`='freight.express';
 
 -- 商品二级命名/嵌套对齐图片1（完整结构见 patch_product_menus.sql）
 UPDATE `qixi_crm_a_menu` SET `title`='商品管理', `sort`=1, `kind`='page', `parent_id`=40 WHERE `id`=43;

@@ -127,7 +127,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -135,7 +135,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加会员等级' }).open();
+  formDrawerApi.setState({ title: '新增会员等级' }).open();
 }
 
 function openEdit(row: MemberLevel) {
@@ -262,7 +262,7 @@ onMounted(async () => {
             type="primary"
             @click="openCreate"
           >
-            添加等级
+            新增会员等级
           </ElButton>
         </template>
         <template #icon="{ row }">

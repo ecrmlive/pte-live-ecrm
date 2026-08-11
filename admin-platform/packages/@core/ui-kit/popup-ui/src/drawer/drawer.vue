@@ -186,7 +186,7 @@ const getForceMount = computed(() => {
       :append-to="getAppendTo"
       :class="
         cn(
-          'flex w-130 flex-col',
+          'vben-popup__drawer flex w-130 flex-col',
           {
             'w-full!':
               isMobile || placement === 'bottom' || placement === 'top',
@@ -215,7 +215,7 @@ const getForceMount = computed(() => {
         v-if="showHeader"
         :class="
           cn(
-            'flex! flex-row items-center justify-between border-b px-6 py-5',
+            'flex! shrink-0 flex-row items-center justify-between border-b px-6 py-5',
             headerClass,
             {
               'px-4 py-3': closable,
@@ -289,7 +289,7 @@ const getForceMount = computed(() => {
       <div
         ref="wrapperRef"
         :class="
-          cn('relative flex-1 overflow-y-auto p-3', contentClass, {
+          cn('vben-popup__body relative min-h-0 flex-1 overflow-y-auto p-3', contentClass, {
             'pointer-events-none': showLoading || submitting,
           })
         "
@@ -301,7 +301,7 @@ const getForceMount = computed(() => {
         v-if="showFooter"
         :class="
           cn(
-            'w-full flex-row items-center justify-end border-t p-2 px-3',
+            'w-full shrink-0 flex-row items-center justify-center border-t p-2 px-3',
             footerClass,
           )
         "

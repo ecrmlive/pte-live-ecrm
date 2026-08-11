@@ -165,7 +165,7 @@ async function submit() {
   <Modal
     :close-on-click-modal="false"
     :destroy-on-close="true"
-    title="修改管理员"
+    title="编辑管理员"
     class="w-[600px]"
   >
     <div v-loading="loading">
@@ -173,7 +173,7 @@ async function submit() {
     </div>
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
-      <ElButton :loading="submitting" type="primary" @click="submit">确定</ElButton>
+      <ElButton :loading="submitting" type="primary" @click="submit">保存</ElButton>
     </template>
   </Modal>
 </template>

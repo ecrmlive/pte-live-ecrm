@@ -2,15 +2,13 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import {
   ElButton,
   ElImage,
   ElMessage,
-  ElOption,
-  ElSelect,
   ElTag,
 } from 'element-plus';
 
@@ -26,6 +24,11 @@ import {
   type PlatformOrder,
   type PlatformOrderTabCounts,
 } from '#/api/core/platform-trade';
+import {
+  listPrefixedKeywordFormField,
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -72,11 +75,6 @@ const ORDER_SEARCH_OPTIONS = [
   { label: '收货人', value: 'real_name' },
   { label: '收货电话', value: 'phone' },
 ];
-const USER_SEARCH_OPTIONS = [
-  { label: '昵称', value: 'nickname' },
-  { label: '用户ID', value: 'uid' },
-  { label: '手机号', value: 'phone' },
-];
 
 function money(v?: number) {
   return `¥${Number(v || 0).toFixed(2)}`;
@@ -101,6 +99,16 @@ function buildListParams(
   const activityType = values.activity_type;
   const payType = values.pay_type;
   const productType = values.product_type;
+  const orderRaw = values.order_search;
+  const orderType =
+    orderRaw && typeof orderRaw === 'object'
+      ? String((orderRaw as { type?: string }).type ?? 'order_sn')
+      : 'order_sn';
+  const orderKeyword =
+    orderRaw && typeof orderRaw === 'object'
+      ? String((orderRaw as { keyword?: string }).keyword ?? '').trim()
+      : '';
+  const userSearch = parseUserSearch(values);
   return {
     page: page.currentPage,
     limit: page.pageSize,
@@ -120,14 +128,10 @@ function buildListParams(
     delivery_type: String(values.delivery_type ?? '').trim() || undefined,
     product_type:
       productType === 0 || productType ? Number(productType) : undefined,
-    order_search_type:
-      String(values.order_search_type ?? 'order_sn').trim() || 'order_sn',
-    order_search_keyword:
-      String(values.order_search_keyword ?? '').trim() || undefined,
-    user_search_type:
-      String(values.user_search_type ?? 'nickname').trim() || 'nickname',
-    user_search_keyword:
-      String(values.user_search_keyword ?? '').trim() || undefined,
+    order_search_type: orderType.trim() || 'order_sn',
+    order_search_keyword: orderKeyword || undefined,
+    user_search_type: userSearch.type || 'nickname',
+    user_search_keyword: userSearch.keyword || undefined,
   };
 }
 
@@ -156,28 +160,6 @@ async function loadTabCounts(formValues?: Record<string, unknown>) {
       deleted: 0,
     };
   }
-}
-
-function renderSearchPrepend(
-  field: 'order_search_type' | 'user_search_type',
-  options: Array<{ label: string; value: string }>,
-  defaultValue: string,
-) {
-  return (values: Record<string, any>, api: { setFieldValue: Function }) => ({
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values[field] || defaultValue,
-          style: { width: '110px' },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue(field, v),
-        },
-        () =>
-          options.map((opt) =>
-            h(ElOption, { label: opt.label, value: opt.value, key: opt.value }),
-          ),
-      ),
-  });
 }
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
@@ -273,44 +255,14 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
     fieldName: 'product_type',
     label: '商品类型',
   },
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '请输入内容' },
-    defaultValue: '',
-    fieldName: 'order_search_keyword',
+  listPrefixedKeywordFormField({
+    fieldName: 'order_search',
     label: '订单搜索',
-    renderComponentContent: renderSearchPrepend(
-      'order_search_type',
-      ORDER_SEARCH_OPTIONS,
-      'order_sn',
-    ),
-  },
-  {
-    component: 'Input',
-    defaultValue: 'order_sn',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'order_search_type',
-    label: '订单搜索类型',
-  },
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '请输入内容' },
-    defaultValue: '',
-    fieldName: 'user_search_keyword',
-    label: '用户搜索',
-    renderComponentContent: renderSearchPrepend(
-      'user_search_type',
-      USER_SEARCH_OPTIONS,
-      'nickname',
-    ),
-  },
-  {
-    component: 'Input',
-    defaultValue: 'nickname',
-    dependencies: { show: () => false, triggerFields: [''] },
-    fieldName: 'user_search_type',
-    label: '用户搜索类型',
-  },
+    defaultType: 'order_sn',
+    options: ORDER_SEARCH_OPTIONS,
+    typeWidth: '110px',
+  }),
+  listUserSearchFormField({ typeWidth: '96px' }),
 ]);
 
 const gridOptions: VxeGridProps<PlatformOrder> = {

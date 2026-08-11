@@ -71,6 +71,9 @@ const (
 	PlatPermDiyPick          uint = 51
 	PlatPermAgreementUpdate  uint = 53
 	PlatPermCloudConfigWrite uint = 20902
+	PlatPermRoutineManage    uint = 20993
+	PlatPermMobileAppManage  uint = 21122
+	PlatPermPushManage       uint = 21123
 	PlatPermProductAudit     uint = 20903
 	PlatPermCategoryManage   uint = 20904
 	PlatPermBrandManage      uint = 20905

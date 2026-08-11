@@ -7,188 +7,285 @@ import { onMounted, reactive, ref } from 'vue';
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
-  ElDescriptions,
-  ElDescriptionsItem,
   ElForm,
   ElFormItem,
+  ElImage,
   ElInput,
   ElMessage,
-  ElMessageBox,
+  ElRadio,
+  ElRadioGroup,
   ElSkeleton,
-  ElTag,
 } from 'element-plus';
 
+import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getAccessCodesApi, getUserInfoApi } from '#/api/core/auth';
+import { getAccessCodesApi } from '#/api/core/auth';
 import {
-  approvePlatformWithdrawApi,
-  getPlatformWithdrawApi,
-  listPlatformWithdrawsApi,
-  markPlatformWithdrawPaidApi,
-  rejectPlatformWithdrawApi,
-  type PlatformWithdraw,
-} from '#/api/core/platform-finance';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
+  exportPlatformUserExtractsApi,
+  getPlatformUserExtractApi,
+  listPlatformUserExtractsApi,
+  switchPlatformUserExtractStatusApi,
+  type PlatformUserExtractQuery,
+  type PlatformUserExtractRow,
+} from '#/api/core/platform-user-extract';
+import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
   LIST_DATE_RANGE_FIELD,
   listFormOptionsDefaults,
 } from '#/utils/list-form-defaults';
+import { resolveCosMediaUrl } from '#/utils/live/cosMediaUrl.js';
 
-const auditStatus: Record<
-  number,
-  { label: string; type: 'danger' | 'info' | 'success' | 'warning' }
-> = {
-  [-1]: { label: '审核拒绝', type: 'danger' },
-  0: { label: '待平台审核', type: 'warning' },
-  1: { label: '审核通过', type: 'success' },
-};
-
-const current = ref<PlatformWithdraw>();
-const detailLoading = ref(false);
-const rejecting = ref(false);
+const lastFormValues = ref<Record<string, unknown>>({});
 const canReview = ref(false);
-const rejectForm = reactive({ refusal: '' });
+const canExport = ref(false);
+const exporting = ref(false);
+const detailLoading = ref(false);
+const auditing = ref(false);
+const current = ref<PlatformUserExtractRow | null>(null);
+const auditForm = reactive({
+  status: 1 as 1 | -1,
+  fail_msg: '',
+  mark: '',
+});
 
-function auditInfo(status: number) {
-  return auditStatus[status] || { label: '未知状态', type: 'info' as const };
+function dash(v?: string | number | null) {
+  if (v === 0) return '0';
+  if (v === undefined || v === null || String(v).trim() === '') return '-';
+  return String(v);
 }
 
-function accountType(type: number) {
+function formatMoney(v?: number) {
+  return Number(v || 0).toFixed(2);
+}
+
+function mediaUrl(url?: string) {
+  return resolveCosMediaUrl(String(url || '').trim());
+}
+
+function typeLabel(t: number) {
   return (
-    ({ 1: '银行卡', 2: '微信', 3: '支付宝' } as Record<number, string>)[type] ||
-    '未知'
+    ({ 0: '银行卡', 1: '微信', 2: '支付宝', 3: '微信零钱', 4: '余额' } as Record<
+      number,
+      string
+    >)[t] || '未知'
   );
 }
 
-function transferInfo(row: PlatformWithdraw) {
-  return row.financial_status === 1
-    ? { label: '已打款', type: 'success' as const }
-    : { label: '未打款', type: 'info' as const };
+function statusLabel(status: number) {
+  if (status === 1) return '已通过';
+  if (status === -1) return '已拒绝';
+  return '审核中';
 }
 
-function canAudit(row: PlatformWithdraw) {
-  return canReview.value && row.status === 0;
+function accountOf(row: PlatformUserExtractRow) {
+  if (row.account) return row.account;
+  switch (row.extract_type) {
+    case 0:
+      return row.bank_code || '';
+    case 1:
+    case 3:
+      return row.wechat || '';
+    case 2:
+      return row.alipay_code || '';
+    default:
+      return '';
+  }
 }
 
-function canMarkPaid(row: PlatformWithdraw) {
-  return canReview.value && row.withdrawal_status === 'approved';
-}
-
-function idempotencyKey(id: number) {
-  return `withdraw-paid-${id}-${crypto.randomUUID()}`;
-}
-
-function buildListParams(
-  page: { currentPage: number; pageSize: number },
+function buildFilterParams(
   formValues?: Record<string, unknown>,
-) {
-  const range = Array.isArray(formValues?.date_range) ? formValues.date_range : [];
+): PlatformUserExtractQuery {
+  const range = Array.isArray(formValues?.date_range)
+    ? formValues.date_range
+    : [];
   const statusRaw = formValues?.status;
+  const typeRaw = formValues?.extract_type;
+  const allowedStatus = [0, 1, -1];
+  const allowedType = [0, 1, 2, 3, 4];
+  const userSearch = parseUserSearch(formValues);
   return {
-    page: page.currentPage,
-    limit: page.pageSize,
-    status:
-      statusRaw === 0 || statusRaw === 1 || statusRaw === -1
-        ? Number(statusRaw)
-        : undefined,
-    keyword: String(formValues?.keyword ?? '').trim() || undefined,
-    financial_sn: String(formValues?.financial_sn ?? '').trim() || undefined,
-    date_from: range[0],
-    date_to: range[1],
+    date_from: range[0] as string | undefined,
+    date_to: range[1] as string | undefined,
+    status: allowedStatus.includes(Number(statusRaw))
+      ? Number(statusRaw)
+      : undefined,
+    extract_type: allowedType.includes(Number(typeRaw))
+      ? Number(typeRaw)
+      : undefined,
+    user_type: userSearch.type || 'nickname',
+    user_keyword: userSearch.keyword || undefined,
+    account_keyword:
+      String(formValues?.account_keyword ?? '').trim() || undefined,
   };
 }
 
-const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '用户 ID / 关键词',
+const formOptions: VbenFormProps = listFormOptionsDefaults(
+  [
+    {
+      ...LIST_DATE_RANGE_FIELD,
+      label: '时间选择',
     },
-    fieldName: 'keyword',
-    label: '用户搜索',
-  },
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '申请单号' },
-    fieldName: 'financial_sn',
-    label: '申请单号',
-  },
-  {
-    component: 'Select',
-    componentProps: {
-      clearable: true,
-      options: [
-        { label: '待平台审核', value: 0 },
-        { label: '审核通过', value: 1 },
-        { label: '审核拒绝', value: -1 },
-      ],
-      placeholder: '全部状态',
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: [
+          { label: '审核中', value: 0 },
+          { label: '已通过', value: 1 },
+          { label: '已拒绝', value: -1 },
+        ],
+        placeholder: '全部',
+      },
+      fieldName: 'status',
+      label: '提现状态',
     },
-    fieldName: 'status',
-    label: '审核状态',
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: [
+          { label: '银行卡', value: 0 },
+          { label: '微信', value: 1 },
+          { label: '支付宝', value: 2 },
+          { label: '微信零钱', value: 3 },
+          { label: '余额', value: 4 },
+        ],
+        placeholder: '全部',
+      },
+      fieldName: 'extract_type',
+      label: '提现方式',
+    },
+    listUserSearchFormField(),
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+        placeholder: '银行卡号/支付宝账号/微信号',
+      },
+      fieldName: 'account_keyword',
+      label: '账号搜索',
+    },
+  ],
+  {
+    commonConfig: { componentProps: { class: 'w-full' } },
+    submitButtonOptions: { content: '搜索' },
+    handleSubmit: async (values) => {
+      lastFormValues.value = { ...values };
+      await gridApi.reload(values);
+    },
+    handleReset: async () => {
+      await formApi.resetForm();
+      const values = (await formApi.getValues()) ?? {};
+      lastFormValues.value = { ...values };
+      await gridApi.reload(lastFormValues.value);
+    },
   },
-]);
+);
 
-const gridOptions: VxeGridProps<PlatformWithdraw> = {
+const [Form, formApi] = useVbenForm(formOptions);
+
+const gridOptions: VxeGridProps<PlatformUserExtractRow> = {
   columns: [
+    { type: 'seq', title: '序号', width: 70 },
     {
-      field: 'financial_sn',
-      minWidth: 180,
-      showOverflow: false,
-      title: '申请单号',
+      field: 'extract_pic',
+      slots: { default: 'qrcode' },
+      title: '二维码',
+      width: 90,
     },
-    { field: 'user_id', title: '用户 ID', width: 100 },
     {
-      field: 'extract_money',
+      field: 'nickname',
+      minWidth: 120,
+      showOverflow: 'tooltip',
+      title: '用户信息',
+    },
+    {
+      field: 'uid',
+      minWidth: 100,
+      title: '用户UID',
+    },
+    {
+      field: 'real_name',
+      formatter: ({ cellValue }) => dash(cellValue),
+      minWidth: 100,
+      title: '户名',
+    },
+    {
+      field: 'extract_price',
+      formatter: ({ cellValue }) => formatMoney(Number(cellValue)),
+      minWidth: 100,
       title: '提现金额',
-      width: 116,
-      formatter: ({ cellValue }) => `¥${Number(cellValue || 0).toFixed(2)}`,
     },
     {
-      field: 'financial_type',
-      title: '收款方式',
-      width: 104,
-      formatter: ({ cellValue }) => accountType(Number(cellValue)),
+      field: 'extract_type',
+      formatter: ({ cellValue }) => typeLabel(Number(cellValue)),
+      minWidth: 100,
+      title: '提现方式',
     },
     {
-      field: 'financial_account',
-      minWidth: 150,
-      showOverflow: false,
-      title: '收款账户',
+      field: 'bank_name',
+      formatter: ({ cellValue }) => dash(cellValue),
+      minWidth: 110,
+      showOverflow: 'tooltip',
+      title: '银行名称',
+    },
+    {
+      field: 'account',
+      formatter: ({ row }) => dash(accountOf(row)),
+      minWidth: 140,
+      showOverflow: 'tooltip',
+      title: '账号',
     },
     {
       field: 'status',
-      slots: { default: 'auditStatus' },
-      title: '审核状态',
-      width: 116,
+      formatter: ({ cellValue }) => statusLabel(Number(cellValue)),
+      minWidth: 90,
+      title: '提现状态',
     },
     {
-      field: 'financial_status',
-      slots: { default: 'transferStatus' },
-      title: '打款状态',
-      width: 100,
+      field: 'fail_msg',
+      formatter: ({ cellValue }) => dash(cellValue),
+      minWidth: 140,
+      showOverflow: 'tooltip',
+      title: '拒绝原因',
     },
     {
       field: 'create_time',
-      minWidth: 170,
-      title: '申请时间',
       formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 170,
+      title: '添加时间',
     },
-    platformListActionColumn({ width: 192 }),
+    platformListActionColumn({ minWidth: 100, width: 120 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        const data = await listPlatformWithdrawsApi(buildListParams(page, formValues));
-        return { items: data.list || [], total: data.total || 0 };
+        const values =
+          formValues && Object.keys(formValues).length > 0
+            ? formValues
+            : lastFormValues.value;
+        const filters = buildFilterParams(values);
+        const data = await listPlatformUserExtractsApi({
+          page: page.currentPage,
+          limit: page.pageSize,
+          ...filters,
+        });
+        return {
+          items: data.list || [],
+          total: data.total || 0,
+        };
       },
     },
   },
-  rowConfig: { isHover: true, keyField: 'financial_id' },
   toolbarConfig: {
     custom: false,
     export: false,
@@ -198,141 +295,152 @@ const gridOptions: VxeGridProps<PlatformWithdraw> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
-
-const [RejectDrawer, rejectDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '确认拒绝',
-  cancelText: '取消',
-  placement: 'right',
-  title: '拒绝提现',
-  onConfirm: async () => reject(),
-});
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
-  class: 'w-[560px] max-w-[96vw]',
-  showConfirmButton: false,
-  cancelText: '关闭',
+  class: 'w-[1000px] max-w-[96vw]',
   placement: 'right',
+  footer: false,
+  title: '提现详情',
 });
 
-async function openDetail(row: PlatformWithdraw) {
-  current.value = undefined;
-  detailLoading.value = true;
-  detailDrawerApi.setState({ title: '提现详情', loading: true }).open();
-  try {
-    current.value = await getPlatformWithdrawApi(row.financial_id);
-  } finally {
-    detailLoading.value = false;
-    detailDrawerApi.setState({ loading: false });
-  }
-}
+const [AuditDrawer, auditDrawerApi] = useVbenDrawer({
+  class: 'w-[1000px] max-w-[96vw]',
+  placement: 'right',
+  confirmText: '提交审核',
+  cancelText: '取消',
+  title: '提现审核',
+  onConfirm: async () => submitAudit(),
+});
 
 async function reloadGrid() {
-  await gridApi.reload();
+  await gridApi.reload(lastFormValues.value);
 }
 
-async function approve(row: PlatformWithdraw) {
-  try {
-    await ElMessageBox.confirm(
-      '确认审核通过该用户提现申请？审核通过不等于已打款，必须另行登记内部打款凭证。',
-      '审核通过确认',
-      {
-        confirmButtonText: '确认通过',
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
-    );
-    await approvePlatformWithdrawApi(row.financial_id);
-    ElMessage.success('提现申请已审核通过');
-    await reloadGrid();
-  } catch {
-    // 用户取消或接口已返回错误时，requestClient 统一处理提示。
-  }
-}
-
-async function markPaid(row: PlatformWithdraw) {
-  try {
-    const { value } = await ElMessageBox.prompt(
-      '请输入内部打款凭证编号，不录入银行卡、账户或密钥。',
-      '登记打款凭证',
-      {
-        inputPattern: /\S{3,}/,
-        inputErrorMessage: '凭证编号至少 3 个字符',
-      },
-    );
-    await markPlatformWithdrawPaidApi(row.financial_id, {
-      idempotency_key: idempotencyKey(row.financial_id),
-      payout_reference: value.trim(),
-    });
-    ElMessage.success('打款凭证已登记，提现状态已更新为已打款');
-    await reloadGrid();
-  } catch {
-    // 用户取消或接口已返回错误时，requestClient 统一处理提示。
-  }
-}
-
-function openReject(row: PlatformWithdraw) {
+async function openDetail(row: PlatformUserExtractRow) {
   current.value = row;
-  rejectForm.refusal = '';
-  rejectDrawerApi.open();
+  detailLoading.value = true;
+  detailDrawerApi.open();
+  try {
+    current.value = await getPlatformUserExtractApi(row.extract_id);
+  } catch {
+    // requestClient 已提示
+  } finally {
+    detailLoading.value = false;
+  }
 }
 
-async function reject() {
-  const refusal = rejectForm.refusal.trim();
-  if (!refusal) {
+async function openAudit(row: PlatformUserExtractRow) {
+  if (!canReview.value || row.status !== 0) return;
+  current.value = row;
+  auditForm.status = 1;
+  auditForm.fail_msg = '';
+  auditForm.mark = row.mark || '';
+  detailLoading.value = true;
+  auditDrawerApi.open();
+  try {
+    current.value = await getPlatformUserExtractApi(row.extract_id);
+    auditForm.mark = current.value.mark || '';
+  } catch {
+    // requestClient 已提示
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+async function submitAudit() {
+  if (!current.value || !canReview.value || auditing.value) return;
+  if (auditForm.status === -1 && !auditForm.fail_msg.trim()) {
     ElMessage.warning('请填写拒绝原因');
     return;
   }
-  if (!current.value) return;
-  rejecting.value = true;
+  auditing.value = true;
   try {
-    await rejectPlatformWithdrawApi(current.value.financial_id, refusal);
-    rejectDrawerApi.close();
-    ElMessage.success('提现申请已拒绝；资金释放由业务资金域处理。');
+    await switchPlatformUserExtractStatusApi(current.value.extract_id, {
+      status: auditForm.status,
+      fail_msg: auditForm.status === -1 ? auditForm.fail_msg.trim() : '',
+      mark: auditForm.mark.trim(),
+    });
+    ElMessage.success('审核成功');
+    auditDrawerApi.close();
     await reloadGrid();
+  } catch {
+    // requestClient 已提示
   } finally {
-    rejecting.value = false;
+    auditing.value = false;
+  }
+}
+
+async function exportRows() {
+  if (!canExport.value || exporting.value) return;
+  exporting.value = true;
+  try {
+    const filters = buildFilterParams(lastFormValues.value);
+    const result = await exportPlatformUserExtractsApi(filters);
+    const blob = new Blob([result.content], {
+      type: 'text/csv;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = result.file_name || '提现管理.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success(
+      `已导出 ${result.row_count} 条${result.truncated ? '（已截断）' : ''}`,
+    );
+  } catch {
+    ElMessage.error('导出失败，请稍后重试');
+  } finally {
+    exporting.value = false;
   }
 }
 
 onMounted(async () => {
-  const [profile, permissions] = await Promise.all([
-    getUserInfoApi(),
-    getAccessCodesApi(),
-  ]);
-  canReview.value =
-    profile.roles.includes('platform') &&
-    permissions.includes('accounts.withdraw.review');
+  const codes = await getAccessCodesApi().catch(() => [] as string[]);
+  canReview.value = codes.includes('accounts.withdraw.review');
+  canExport.value = codes.includes('accounts.withdraw.export');
 });
 </script>
 
 <template>
   <Page auto-content-height>
+    <div class="withdraw-filter">
+      <Form />
+    </div>
+
     <Grid>
-      <template #auditStatus="{ row }">
-        <ElTag :type="auditInfo(row.status).type">
-          {{ auditInfo(row.status).label }}
-        </ElTag>
+      <template #toolbar-actions>
+        <ElButton
+          v-if="canExport"
+          type="primary"
+          :loading="exporting"
+          @click="exportRows"
+        >
+          导出列表
+        </ElButton>
       </template>
-      <template #transferStatus="{ row }">
-        <ElTag :type="transferInfo(row).type">
-          {{ transferInfo(row).label }}
-        </ElTag>
+      <template #qrcode="{ row }">
+        <ElImage
+          v-if="mediaUrl(row.extract_pic)"
+          :src="mediaUrl(row.extract_pic)"
+          :preview-src-list="[mediaUrl(row.extract_pic)]"
+          fit="cover"
+          class="withdraw-qr"
+        />
+        <span v-else>-</span>
       </template>
       <template #action="{ row }">
-        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
-        <template v-if="canAudit(row)">
-          <ElButton link type="success" @click="approve(row)">通过</ElButton>
-          <ElButton link type="danger" @click="openReject(row)">拒绝</ElButton>
-        </template>
         <ElButton
-          v-else-if="canMarkPaid(row)"
+          v-if="row.status === 0 && canReview"
           link
           type="primary"
-          @click="markPaid(row)"
+          @click="openAudit(row)"
         >
-          登记打款
+          审核
+        </ElButton>
+        <ElButton v-else link type="primary" @click="openDetail(row)">
+          详情
         </ElButton>
       </template>
     </Grid>
@@ -340,70 +448,292 @@ onMounted(async () => {
     <DetailDrawer>
       <ElSkeleton :loading="detailLoading" animated :rows="8">
         <template #default>
-          <template v-if="current">
-            <ElDescriptions :column="1" border>
-              <ElDescriptionsItem label="申请单号">
-                {{ current.financial_sn }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="用户 ID">
-                {{ current.user_id }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="提现金额">
-                ¥{{ Number(current.extract_money).toFixed(2) }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="收款方式">
-                {{ accountType(current.financial_type) }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="收款账户">
-                {{ current.financial_account }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="审核状态">
-                <ElTag :type="auditInfo(current.status).type">
-                  {{ auditInfo(current.status).label }}
-                </ElTag>
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="打款状态">
-                <ElTag :type="transferInfo(current).type">
-                  {{ transferInfo(current).label }}
-                </ElTag>
-              </ElDescriptionsItem>
-              <ElDescriptionsItem
-                v-if="current.payout_reference"
-                label="内部打款凭证"
+          <div v-if="current" class="withdraw-detail">
+            <section class="withdraw-section">
+              <div class="withdraw-section__title">用户信息</div>
+              <div class="withdraw-kv-grid">
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">用户昵称：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.nickname)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">用户ID：</span>
+                  <span class="withdraw-kv__value">{{ current.uid }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">提现金额：</span>
+                  <span class="withdraw-kv__value">{{
+                    formatMoney(current.extract_price)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">申请时间：</span>
+                  <span class="withdraw-kv__value">{{
+                    formatShanghaiDateTime(current.create_time) || '-'
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">账号：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(accountOf(current))
+                  }}</span>
+                </div>
+                <div v-if="current.real_name" class="withdraw-kv">
+                  <span class="withdraw-kv__label">户名：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.real_name)
+                  }}</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="withdraw-section withdraw-section--last">
+              <div class="withdraw-section__title">提现方式</div>
+              <div class="withdraw-kv-grid">
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">提现方式：</span>
+                  <span class="withdraw-kv__value">{{
+                    typeLabel(current.extract_type)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">审核状态：</span>
+                  <span class="withdraw-kv__value">{{
+                    statusLabel(current.status)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">审核时间：</span>
+                  <span class="withdraw-kv__value">{{
+                    formatShanghaiDateTime(current.status_time) || '-'
+                  }}</span>
+                </div>
+                <div
+                  v-if="current.extract_type === 0 && current.bank_name"
+                  class="withdraw-kv"
+                >
+                  <span class="withdraw-kv__label">银行名称：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.bank_name)
+                  }}</span>
+                </div>
+                <div v-if="current.status === -1" class="withdraw-kv">
+                  <span class="withdraw-kv__label">拒绝原因：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.fail_msg)
+                  }}</span>
+                </div>
+                <div v-if="current.mark" class="withdraw-kv">
+                  <span class="withdraw-kv__label">管理员备注：</span>
+                  <span class="withdraw-kv__value">{{ dash(current.mark) }}</span>
+                </div>
+              </div>
+              <div
+                v-if="mediaUrl(current.extract_pic)"
+                class="withdraw-kv withdraw-kv--block"
               >
-                {{ current.payout_reference }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem v-if="current.paid_at" label="打款登记时间">
-                {{ formatShanghaiDateTime(current.paid_at) }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem v-if="current.refusal" label="拒绝原因">
-                {{ current.refusal }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="申请备注">
-                {{ current.mark || '—' }}
-              </ElDescriptionsItem>
-              <ElDescriptionsItem label="申请时间">
-                {{ formatShanghaiDateTime(current.create_time) }}
-              </ElDescriptionsItem>
-            </ElDescriptions>
-          </template>
+                <span class="withdraw-kv__label">收款码：</span>
+                <ElImage
+                  :src="mediaUrl(current.extract_pic)"
+                  :preview-src-list="[mediaUrl(current.extract_pic)]"
+                  fit="cover"
+                  class="withdraw-qr withdraw-qr--lg"
+                />
+              </div>
+            </section>
+          </div>
         </template>
       </ElSkeleton>
     </DetailDrawer>
 
-    <RejectDrawer>
-      <ElForm label-width="84px">
-        <ElFormItem label="拒绝原因" required>
-          <ElInput
-            v-model="rejectForm.refusal"
-            :rows="4"
-            maxlength="200"
-            placeholder="请向商户说明拒绝原因"
-            show-word-limit
-            type="textarea"
-          />
-        </ElFormItem>
-      </ElForm>
-    </RejectDrawer>
+    <AuditDrawer>
+      <ElSkeleton :loading="detailLoading" animated :rows="8">
+        <template #default>
+          <div v-if="current" class="withdraw-detail">
+            <section class="withdraw-section">
+              <div class="withdraw-section__title">用户信息</div>
+              <div class="withdraw-kv-grid">
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">用户昵称：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.nickname)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">用户ID：</span>
+                  <span class="withdraw-kv__value">{{ current.uid }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">提现金额：</span>
+                  <span class="withdraw-kv__value">{{
+                    formatMoney(current.extract_price)
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">申请时间：</span>
+                  <span class="withdraw-kv__value">{{
+                    formatShanghaiDateTime(current.create_time) || '-'
+                  }}</span>
+                </div>
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">账号：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(accountOf(current))
+                  }}</span>
+                </div>
+                <div v-if="current.real_name" class="withdraw-kv">
+                  <span class="withdraw-kv__label">户名：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.real_name)
+                  }}</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="withdraw-section">
+              <div class="withdraw-section__title">提现方式</div>
+              <div class="withdraw-kv-grid">
+                <div class="withdraw-kv">
+                  <span class="withdraw-kv__label">提现方式：</span>
+                  <span class="withdraw-kv__value">{{
+                    typeLabel(current.extract_type)
+                  }}</span>
+                </div>
+                <div
+                  v-if="current.extract_type === 0 && current.bank_name"
+                  class="withdraw-kv"
+                >
+                  <span class="withdraw-kv__label">银行名称：</span>
+                  <span class="withdraw-kv__value">{{
+                    dash(current.bank_name)
+                  }}</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="withdraw-section withdraw-section--last">
+              <div class="withdraw-section__title">审核操作</div>
+              <ElForm class="withdraw-audit-form" label-width="96px">
+                <ElFormItem label="审核结果" required>
+                  <ElRadioGroup v-model="auditForm.status">
+                    <ElRadio :value="1">通过</ElRadio>
+                    <ElRadio :value="-1">拒绝</ElRadio>
+                  </ElRadioGroup>
+                </ElFormItem>
+                <ElFormItem
+                  v-if="auditForm.status === -1"
+                  label="拒绝原因"
+                  required
+                >
+                  <ElInput
+                    v-model="auditForm.fail_msg"
+                    type="textarea"
+                    :rows="3"
+                    maxlength="200"
+                    show-word-limit
+                    placeholder="请填写拒绝原因"
+                  />
+                </ElFormItem>
+                <ElFormItem label="管理员备注">
+                  <ElInput
+                    v-model="auditForm.mark"
+                    type="textarea"
+                    :rows="3"
+                    maxlength="500"
+                    show-word-limit
+                    placeholder="选填"
+                  />
+                </ElFormItem>
+              </ElForm>
+            </section>
+          </div>
+        </template>
+      </ElSkeleton>
+    </AuditDrawer>
   </Page>
 </template>
+
+<style scoped>
+.withdraw-filter {
+  margin-bottom: 12px;
+}
+
+.withdraw-qr {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.withdraw-qr--lg {
+  width: 120px;
+  height: 120px;
+}
+
+.withdraw-detail {
+  padding: 4px 0 8px;
+}
+
+.withdraw-section {
+  padding: 2px 0 18px;
+  border-bottom: 1px dashed var(--el-border-color);
+}
+
+.withdraw-section--last {
+  border-bottom: none;
+}
+
+.withdraw-section__title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.withdraw-section__title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--el-color-primary);
+}
+
+.withdraw-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+}
+
+.withdraw-kv {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.withdraw-kv--block {
+  margin-top: 12px;
+  align-items: flex-start;
+}
+
+.withdraw-kv__label {
+  flex-shrink: 0;
+  color: var(--el-text-color-regular);
+}
+
+.withdraw-kv__value {
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  word-break: break-all;
+}
+
+.withdraw-audit-form {
+  max-width: 640px;
+}
+</style>

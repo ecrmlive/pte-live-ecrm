@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -95,23 +96,25 @@ type dataScope struct {
 }
 
 type quickReply struct {
-	ID        uint64     `gorm:"column:id" json:"id"`
-	StoreID   uint64     `gorm:"column:store_id" json:"store_id"`
-	Title     string     `gorm:"column:title" json:"title"`
-	Content   string     `gorm:"column:content" json:"content"`
-	Status    string     `gorm:"column:status" json:"status"`
-	CreatedBy uint64     `gorm:"column:created_by" json:"created_by"`
-	UpdatedBy uint64     `gorm:"column:updated_by" json:"updated_by"`
-	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
-	DeletedAt *time.Time `gorm:"column:deleted_at" json:"-"`
+	ID          uint64     `gorm:"column:id" json:"id"`
+	StoreID     uint64     `gorm:"column:store_id" json:"store_id"`
+	Title       string     `gorm:"column:title" json:"title"`
+	Content     string     `gorm:"column:content" json:"content"`
+	MessageType string     `gorm:"column:message_type" json:"message_type"`
+	Status      string     `gorm:"column:status" json:"status"`
+	CreatedBy   uint64     `gorm:"column:created_by" json:"created_by"`
+	UpdatedBy   uint64     `gorm:"column:updated_by" json:"updated_by"`
+	CreatedAt   time.Time  `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"column:updated_at" json:"updated_at"`
+	DeletedAt   *time.Time `gorm:"column:deleted_at" json:"-"`
 }
 
 type quickReplyInput struct {
-	StoreID uint64 `json:"store_id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Status  string `json:"status"`
+	StoreID     uint64 `json:"store_id"`
+	Title       string `json:"title"`
+	Content     string `json:"content"`
+	MessageType string `json:"message_type"`
+	Status      string `json:"status"`
 }
 
 type userNoteInput struct {
@@ -124,12 +127,21 @@ type transferInput struct {
 }
 
 // serviceAgent is a deliberately small projection for service dispatch. It
-// never exposes an account password, phone number, or any IM credential.
+// never exposes an account password or IM credential. Phone is only returned
+// to the platform supervisor so that it can safely edit an existing account
+// without accidentally clearing the persisted value.
 type serviceAgent struct {
-	ID              uint64   `json:"id"`
-	DisplayName     string   `json:"display_name"`
-	Status          int8     `json:"status"`
-	ServiceStoreIDs []uint64 `json:"service_store_ids"`
+	ID              uint64    `json:"id"`
+	Account         string    `json:"account"`
+	AvatarURL       string    `json:"avatar_url"`
+	CreatedAt       time.Time `json:"created_at"`
+	DisplayName     string    `json:"display_name"`
+	LinkedUserID    uint64    `json:"linked_user_id"`
+	Phone           string    `json:"phone"`
+	Roles           string    `json:"roles"`
+	Status          int8      `json:"status"`
+	ServiceStoreIDs []uint64  `json:"service_store_ids"`
+	WechatUsername  string    `json:"wechat_username"`
 }
 
 // serviceAgentUser is a constrained roster projection. Mobile numbers stay
@@ -146,14 +158,19 @@ type serviceAgentUser struct {
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
-// serviceSettings covers only workflow settings owned by this console. IM
-// transport and third-party credentials remain owned by pte-live-im/cloud
-// configuration and are intentionally not present here.
+// serviceSettings covers customer entry and workflow settings owned by this
+// console. It stores only public entry addresses and identifiers; IM transport,
+// UserSig and third-party credentials remain owned by pte-live-im/cloud config.
 type serviceSettings struct {
-	AutoReplyEnabled    bool   `json:"auto_reply_enabled"`
-	AutoReplyText       string `json:"auto_reply_text"`
-	QueueMode           string `json:"queue_mode"`
-	MaxSessionsPerAgent int    `json:"max_sessions_per_agent"`
+	AutoReplyEnabled       bool   `json:"auto_reply_enabled"`
+	AutoReplyText          string `json:"auto_reply_text"`
+	EnterpriseWechatCorpID string `json:"enterprise_wechat_corp_id"`
+	EnterpriseWechatURL    string `json:"enterprise_wechat_url"`
+	QueueMode              string `json:"queue_mode"`
+	MaxSessionsPerAgent    int    `json:"max_sessions_per_agent"`
+	RedirectURL            string `json:"redirect_url"`
+	ServicePhone           string `json:"service_phone"`
+	ServiceType            string `json:"service_type"`
 }
 
 const serviceSettingsConfigKey = "customer_service.settings"
@@ -183,9 +200,10 @@ func (h *Handler) access(c *gin.Context) (all bool, storeIDs []uint64, ok bool) 
 	return false, storeIDs, true
 }
 
-// ListAgents provides the safe target list used when a service conversation is
-// transferred. A customer-service user sees only enabled peers sharing at
-// least one queue store; platform users can supervise the full roster.
+// ListAgents provides the customer-service roster and the safe target list
+// used when a service conversation is transferred. A customer-service user
+// sees only peers sharing at least one queue store; platform users supervise
+// the full roster. It deliberately projects no password or IM credential.
 func (h *Handler) ListAgents(c *gin.Context) {
 	all, storeIDs, ok := h.access(c)
 	if !ok {
@@ -193,20 +211,62 @@ func (h *Handler) ListAgents(c *gin.Context) {
 		return
 	}
 	var rows []struct {
-		ID          uint64 `gorm:"column:id"`
-		DisplayName string `gorm:"column:display_name"`
-		Status      int8   `gorm:"column:status"`
+		ID           uint64    `gorm:"column:id"`
+		Account      string    `gorm:"column:account"`
+		AvatarURL    string    `gorm:"column:avatar_url"`
+		CreatedAt    time.Time `gorm:"column:created_at"`
+		DisplayName  string    `gorm:"column:display_name"`
+		LinkedUserID uint64    `gorm:"column:linked_user_id"`
+		Phone        string    `gorm:"column:phone"`
+		Status       int8      `gorm:"column:status"`
 	}
 	q := h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user AS u").
-		Select("DISTINCT u.id,u.display_name,u.status").
+		Select("DISTINCT u.id,u.username AS account,u.avatar_url,u.display_name,u.linked_user_id,u.phone,u.status,u.created_at").
 		Joins("JOIN qixi_crm_a_admin_user_role AS ur ON ur.admin_user_id = u.id").
 		Joins("JOIN qixi_crm_a_role AS r ON r.id = ur.role_id").
 		Where("u.deleted_at IS NULL AND r.code = ? AND r.status = ?", "customer_service", 1).
-		Order("u.id ASC")
+		Order("u.created_at DESC,u.id DESC")
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		q = q.Where("(u.username LIKE ? OR u.display_name LIKE ? OR u.phone LIKE ?)", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if rawStatus := strings.TrimSpace(c.Query("status")); rawStatus == "0" || rawStatus == "1" {
+		q = q.Where("u.status = ?", rawStatus)
+	}
 	if err := q.Find(&rows).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询客服人员失败")
 		return
 	}
+	linkedUsers := make(map[uint64]struct {
+		AvatarURL string `gorm:"column:avatar_url"`
+		Nickname  string `gorm:"column:nickname"`
+	})
+	linkedIDs := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		if row.LinkedUserID != 0 {
+			linkedIDs = append(linkedIDs, row.LinkedUserID)
+		}
+	}
+	if len(linkedIDs) > 0 {
+		var profiles []struct {
+			ID        uint64 `gorm:"column:id"`
+			AvatarURL string `gorm:"column:avatar_url"`
+			Nickname  string `gorm:"column:nickname"`
+		}
+		if err := h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_user AS u").
+			Select("u.id,COALESCE(u.nickname, '') AS nickname,COALESCE(p.avatar_url, '') AS avatar_url").
+			Joins("LEFT JOIN qixi_crm_b_user_profile AS p ON p.user_id = u.id").
+			Where("u.id IN ?", linkedIDs).Scan(&profiles).Error; err != nil {
+			response.Fail(c, http.StatusInternalServerError, "查询客服关联用户失败")
+			return
+		}
+		for _, profile := range profiles {
+			linkedUsers[profile.ID] = struct {
+				AvatarURL string `gorm:"column:avatar_url"`
+				Nickname  string `gorm:"column:nickname"`
+			}{AvatarURL: profile.AvatarURL, Nickname: profile.Nickname}
+		}
+	}
+
 	agents := make([]serviceAgent, 0, len(rows))
 	for _, row := range rows {
 		assignedStores, err := h.serviceQueueStores(c.Request.Context(), row.ID)
@@ -221,9 +281,53 @@ func (h *Handler) ListAgents(c *gin.Context) {
 		if !all && !sharesStore(storeIDs, assignedStores) {
 			continue
 		}
-		agents = append(agents, serviceAgent{ID: row.ID, DisplayName: row.DisplayName, Status: row.Status, ServiceStoreIDs: assignedStores})
+		roles, err := h.agentRoleCodes(c.Request.Context(), row.ID)
+		if err != nil {
+			response.Fail(c, http.StatusInternalServerError, "查询客服角色失败")
+			return
+		}
+		phone := ""
+		if all {
+			phone = row.Phone
+		}
+		linkedUser := linkedUsers[row.LinkedUserID]
+		avatarURL := row.AvatarURL
+		if avatarURL == "" {
+			avatarURL = linkedUser.AvatarURL
+		}
+		wechatUsername := linkedUser.Nickname
+		if wechatUsername == "" {
+			wechatUsername = row.Account
+		}
+		agents = append(agents, serviceAgent{ID: row.ID, Account: row.Account, AvatarURL: avatarURL, CreatedAt: row.CreatedAt, DisplayName: row.DisplayName, LinkedUserID: row.LinkedUserID, Phone: phone, Roles: strings.Join(roles, ","), Status: row.Status, ServiceStoreIDs: assignedStores, WechatUsername: wechatUsername})
 	}
-	response.OK(c, gin.H{"list": agents})
+	page := positiveInt(c.DefaultQuery("page", "1"), 1)
+	limit := positiveInt(c.DefaultQuery("limit", "20"), 20)
+	if limit > 100 {
+		limit = 100
+	}
+	total := len(agents)
+	start := (page - 1) * limit
+	if start >= total {
+		agents = []serviceAgent{}
+	} else {
+		end := start + limit
+		if end > total {
+			end = total
+		}
+		agents = agents[start:end]
+	}
+	response.OK(c, gin.H{"list": agents, "total": total, "page": page, "limit": limit})
+}
+
+func (h *Handler) agentRoleCodes(ctx context.Context, adminID uint64) ([]string, error) {
+	var roles []string
+	err := h.adminDB.WithContext(ctx).Table("qixi_crm_a_role AS r").
+		Select("r.code").
+		Joins("JOIN qixi_crm_a_admin_user_role AS ur ON ur.role_id = r.id").
+		Where("ur.admin_user_id = ? AND r.status = ?", adminID, 1).
+		Order("r.code ASC").Scan(&roles).Error
+	return roles, err
 }
 
 // ListAgentUsers covers CRMEB's "客服的全部用户" and "客服的聊天用户列表"
@@ -271,7 +375,7 @@ func (h *Handler) ListAgentUsers(c *gin.Context) {
 }
 
 func defaultServiceSettings() serviceSettings {
-	return serviceSettings{QueueMode: "manual", MaxSessionsPerAgent: 20}
+	return serviceSettings{ServiceType: "system", QueueMode: "manual", MaxSessionsPerAgent: 20}
 }
 
 func (h *Handler) GetSettings(c *gin.Context) {
@@ -709,6 +813,9 @@ func (h *Handler) ListQuickReplies(c *gin.Context) {
 		limit = 100
 	}
 	q := h.quickReplyQuery(c, all, storeIDs)
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		q = q.Where("title LIKE ?", "%"+keyword+"%")
+	}
 	if raw := strings.TrimSpace(c.Query("store_id")); raw != "" {
 		storeID, err := strconv.ParseUint(raw, 10, 64)
 		if err != nil || storeID == 0 || (!all && !includesStore(storeIDs, storeID)) {
@@ -745,7 +852,7 @@ func (h *Handler) CreateQuickReply(c *gin.Context) {
 		response.Fail(c, http.StatusForbidden, "无权维护该店铺的快捷回复")
 		return
 	}
-	row := quickReply{StoreID: in.StoreID, Title: in.Title, Content: in.Content, Status: in.Status, CreatedBy: uint64(middleware.AdminID(c)), UpdatedBy: uint64(middleware.AdminID(c))}
+	row := quickReply{StoreID: in.StoreID, Title: in.Title, Content: in.Content, MessageType: in.MessageType, Status: in.Status, CreatedBy: uint64(middleware.AdminID(c)), UpdatedBy: uint64(middleware.AdminID(c))}
 	if err := h.businessDB.WithContext(c.Request.Context()).Table("qixi_crm_b_customer_service_quick_reply").Create(&row).Error; err != nil {
 		response.Fail(c, http.StatusInternalServerError, "创建快捷回复失败")
 		return
@@ -773,8 +880,16 @@ func (h *Handler) UpdateQuickReply(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "快捷回复标题、内容或状态错误")
 		return
 	}
+	if in.StoreID != 0 && !all && !includesStore(storeIDs, in.StoreID) {
+		response.Fail(c, http.StatusForbidden, "无权关联该店铺的快捷回复")
+		return
+	}
 	q := h.quickReplyQuery(c, all, storeIDs).Where("id = ?", id)
-	result := q.Updates(map[string]any{"title": in.Title, "content": in.Content, "status": in.Status, "updated_by": middleware.AdminID(c), "updated_at": time.Now()})
+	updates := map[string]any{"title": in.Title, "content": in.Content, "message_type": in.MessageType, "status": in.Status, "updated_by": middleware.AdminID(c), "updated_at": time.Now()}
+	if in.StoreID != 0 {
+		updates["store_id"] = in.StoreID
+	}
+	result := q.Updates(updates)
 	if result.Error != nil {
 		response.Fail(c, http.StatusInternalServerError, "更新快捷回复失败")
 		return
@@ -827,11 +942,15 @@ func validQuickReplyUpdate(in *quickReplyInput) bool {
 	}
 	in.Title = strings.TrimSpace(in.Title)
 	in.Content = strings.TrimSpace(in.Content)
+	in.MessageType = strings.TrimSpace(in.MessageType)
 	in.Status = strings.TrimSpace(in.Status)
+	if in.MessageType == "" {
+		in.MessageType = "text"
+	}
 	if in.Status == "" {
 		in.Status = "enabled"
 	}
-	return in.Title != "" && len([]rune(in.Title)) <= 64 && in.Content != "" && len([]rune(in.Content)) <= 2000 && (in.Status == "enabled" || in.Status == "disabled")
+	return in.Title != "" && len([]rune(in.Title)) <= 64 && in.Content != "" && len([]rune(in.Content)) <= 2000 && (in.MessageType == "text" || in.MessageType == "image") && (in.Status == "enabled" || in.Status == "disabled")
 }
 
 func validServiceSettings(in *serviceSettings) bool {
@@ -839,7 +958,16 @@ func validServiceSettings(in *serviceSettings) bool {
 		return false
 	}
 	in.AutoReplyText = strings.TrimSpace(in.AutoReplyText)
+	in.EnterpriseWechatCorpID = strings.TrimSpace(in.EnterpriseWechatCorpID)
+	in.EnterpriseWechatURL = strings.TrimSpace(in.EnterpriseWechatURL)
 	in.QueueMode = strings.TrimSpace(in.QueueMode)
+	in.RedirectURL = strings.TrimSpace(in.RedirectURL)
+	in.ServicePhone = strings.TrimSpace(in.ServicePhone)
+	in.ServiceType = strings.TrimSpace(in.ServiceType)
+	if in.ServiceType == "" {
+		// Compatibility with the existing queue-only configuration.
+		in.ServiceType = "system"
+	}
 	if in.QueueMode == "" {
 		in.QueueMode = "manual"
 	}
@@ -849,7 +977,61 @@ func validServiceSettings(in *serviceSettings) bool {
 	if in.MaxSessionsPerAgent < 1 || in.MaxSessionsPerAgent > 200 || (in.QueueMode != "manual" && in.QueueMode != "round_robin") || len([]rune(in.AutoReplyText)) > 500 {
 		return false
 	}
-	return !in.AutoReplyEnabled || in.AutoReplyText != ""
+	switch in.ServiceType {
+	case "disabled", "mini_program":
+		in.AutoReplyEnabled = false
+	case "system":
+		return !in.AutoReplyEnabled || in.AutoReplyText != ""
+	case "phone":
+		in.AutoReplyEnabled = false
+		return validServicePhone(in.ServicePhone)
+	case "enterprise_wechat":
+		in.AutoReplyEnabled = false
+		return validServiceURL(in.EnterpriseWechatURL) && validEnterpriseWechatCorpID(in.EnterpriseWechatCorpID)
+	case "link":
+		in.AutoReplyEnabled = false
+		return validServiceURL(in.RedirectURL)
+	default:
+		return false
+	}
+	return true
+}
+
+func validServiceURL(raw string) bool {
+	parsed, err := url.ParseRequestURI(raw)
+	return err == nil && (parsed.Scheme == "https" || parsed.Scheme == "http") && parsed.Host != ""
+}
+
+func validServicePhone(raw string) bool {
+	if len([]rune(raw)) < 3 || len([]rune(raw)) > 32 {
+		return false
+	}
+	digits := 0
+	for _, char := range raw {
+		if char >= '0' && char <= '9' {
+			digits++
+			continue
+		}
+		switch char {
+		case '+', '-', ' ', '(', ')':
+		default:
+			return false
+		}
+	}
+	return digits >= 3
+}
+
+func validEnterpriseWechatCorpID(raw string) bool {
+	if len(raw) < 2 || len(raw) > 128 {
+		return false
+	}
+	for _, char := range raw {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '_' || char == '-' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func validUserNote(in *userNoteInput) bool {

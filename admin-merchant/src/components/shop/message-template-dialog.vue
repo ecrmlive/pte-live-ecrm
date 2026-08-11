@@ -281,7 +281,7 @@ async function saveTemplate() {
     </div>
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
-      <ElButton :loading="saving" type="primary" @click="saveTemplate">确定</ElButton>
+      <ElButton :loading="saving" type="primary" @click="saveTemplate">保存</ElButton>
     </template>
   </Modal>
 </template>

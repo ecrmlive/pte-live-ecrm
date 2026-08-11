@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_admin_user` (
   `username` varchar(64) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(64) NOT NULL,
+  -- 客服可关联 C 端用户；仅保存用户 ID，业务资料仍以 qixi_crm_b_user 为准。
+  `linked_user_id` bigint unsigned NOT NULL DEFAULT 0,
+  `avatar_url` varchar(1024) NOT NULL DEFAULT '',
   `phone` varchar(32) NOT NULL DEFAULT '',
   `status` tinyint NOT NULL DEFAULT 1,
   `auth_version` bigint unsigned NOT NULL DEFAULT 1,
@@ -280,6 +283,28 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_article` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`article_id`), KEY `idx_category_visible` (`cid`,`is_del`,`status`,`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_wechat_news` (
+  `wechat_news_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '图文组 ID',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态 1启用 0停用',
+  `items` json NOT NULL COMMENT '图文条目 [{title,author,synopsis,image,content}]',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`wechat_news_id`),
+  KEY `idx_status_ctime` (`status`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号图文消息';
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_wechat_reply` (
+  `wechat_reply_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '回复规则 ID',
+  `reply_key` varchar(64) NOT NULL COMMENT '关键字；subscribe=关注欢迎 default=默认回复',
+  `reply_type` varchar(32) NOT NULL DEFAULT 'text' COMMENT 'text/image/news',
+  `content` text NOT NULL COMMENT '回复内容（text 为纯文本；其它为 JSON）',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '0停用 1启用',
+  `sort` int NOT NULL DEFAULT 0 COMMENT '排序，越小越靠前',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`wechat_reply_id`),
+  UNIQUE KEY `uk_reply_key` (`reply_key`),
+  KEY `idx_status_sort` (`status`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号自动回复';
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_page` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `page_type` enum('home','store_street','member','custom') NOT NULL,
   `name` varchar(128) NOT NULL, `document` json NOT NULL, `status` enum('draft','published') NOT NULL DEFAULT 'draft',

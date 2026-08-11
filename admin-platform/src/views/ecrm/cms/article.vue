@@ -156,7 +156,7 @@ const imageUpload: ImageUploadOptions = {
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '提交',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -191,7 +191,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加文章' }).open();
+  formDrawerApi.setState({ title: '新增文章' }).open();
 }
 
 async function openEdit(row: ArticleRow) {
@@ -337,7 +337,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加文章
+          新增文章
         </ElButton>
       </template>
 

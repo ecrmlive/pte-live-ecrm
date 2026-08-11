@@ -1,18 +1,57 @@
 <script setup lang="ts">
-import { ElDialog, ElButton, ElMessage } from 'element-plus';
-import { ref, watch } from 'vue';
-const props = defineProps<{ modelValue?: boolean }>();
-const emit = defineEmits<{ 'update:modelValue': [boolean]; confirm: [unknown[]] }>();
-const open = ref(false);
-watch(() => props.modelValue, (v) => (open.value = !!v));
-watch(open, (v) => emit('update:modelValue', v));
+import type { PlatformProduct } from '#/api/core/platform-catalog';
+
+import { ref } from 'vue';
+
+import ProductPickerDialog from '#/components/shop/product-picker-dialog.vue';
+
+const props = withDefaults(
+  defineProps<{
+    excludeIds?: number[];
+    islist?: boolean;
+    isproduct?: boolean;
+  }>(),
+  { excludeIds: () => [], islist: false, isproduct: false },
+);
+
+const emit = defineEmits<{
+  closeDialog: [payload: { openDialog: boolean; params?: unknown; type: string }];
+}>();
+
+const completed = ref(false);
+
+function close(payload: { openDialog: boolean; params?: unknown; type: string }) {
+  emit('closeDialog', payload);
+}
+
+function select(row: PlatformProduct) {
+  if (props.excludeIds.includes(row.product_id)) return;
+  completed.value = true;
+  close({ openDialog: false, params: row, type: 'success' });
+}
+
+function confirm(rows: PlatformProduct[]) {
+  const picked = rows.filter((row) => !props.excludeIds.includes(row.product_id));
+  completed.value = true;
+  close({ openDialog: false, params: picked, type: 'success' });
+}
+
+function onOpenChange(visible: boolean) {
+  if (visible) {
+    completed.value = false;
+    return;
+  }
+  if (!completed.value) close({ openDialog: false, type: 'error' });
+  completed.value = false;
+}
 </script>
+
 <template>
-  <ElDialog v-model="open" title="选择商品" width="520px">
-    <p>平台端请先在接口侧配置商品选择；当前可保存空列表。</p>
-    <template #footer>
-      <ElButton @click="open = false">取消</ElButton>
-      <ElButton type="primary" @click="emit('confirm', []); open = false; ElMessage.success('已确认')">确定</ElButton>
-    </template>
-  </ElDialog>
+  <ProductPickerDialog
+    :open="props.isproduct"
+    :multiple="props.islist"
+    @update:open="onOpenChange"
+    @confirm="confirm"
+    @select="select"
+  />
 </template>

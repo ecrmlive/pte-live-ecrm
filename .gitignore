@@ -87,6 +87,17 @@ app-harmony/entry/build/
 app-harmony/oh_modules/
 app-harmony/entry/oh_modules/
 
+# 原生应用签名材料仅能保存在本机受控环境或 CI Secret，禁止入库。
+app-adnroid/**/*.jks
+app-adnroid/**/*.keystore
+app-harmony/**/*.p12
+app-harmony/**/*.pfx
+app-harmony/**/*.cer
+app-harmony/**/*.profile
+app-harmony/**/signing.json5
+app-ios/**/*.p12
+app-ios/**/*.mobileprovision
+
 # 单 Compose 运行时 YAML（只保留仓库中的 config.yaml.example）
 release/config.yaml
 release/config/

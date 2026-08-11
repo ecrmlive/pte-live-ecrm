@@ -317,7 +317,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '提交',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -338,7 +338,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加优惠券' }).open();
+  formDrawerApi.setState({ title: '新增优惠券' }).open();
 }
 
 function openEdit(row: PlatformCoupon) {
@@ -468,7 +468,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加优惠券
+          新增优惠券
         </ElButton>
       </template>
       <template #status="{ row }">

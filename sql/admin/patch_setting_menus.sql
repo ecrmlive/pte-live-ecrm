@@ -26,7 +26,11 @@ UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=997 WHERE `id`=189 OR `code`='se
 UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=998 WHERE `id`=190 OR `code`='setting.shop';
 UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=999 WHERE `id`=191 OR `code`='setting.pay';
 UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=1000 WHERE `id`=196 OR `code`='setting.storage';
-UPDATE `qixi_crm_a_menu` SET `status`=0, `sort`=1001 WHERE `id`=90 OR `code`='freight';
+-- 历史“快递公司”页面会在父目录隐藏后成为孤儿一级菜单；必须一并隐藏。
+-- 正式入口固定为「设置 → 系统设置 → 配送配置 → 物流公司」。
+UPDATE `qixi_crm_a_menu`
+SET `status`=0, `sort`=1001
+WHERE `id` IN (90,91) OR `code` IN ('freight','freight.express');
 
 -- L2：系统设置
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES

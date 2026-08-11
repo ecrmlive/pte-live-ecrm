@@ -305,7 +305,7 @@ onMounted(async () => {
     <Grid>
       <template #toolbar-actions>
         <ElButton type="primary" @click="openCreate">
-          添加秒杀活动
+          新增秒杀活动
         </ElButton>
       </template>
 

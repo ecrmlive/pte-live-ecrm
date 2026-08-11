@@ -66,8 +66,11 @@ const formOptions = computed((): VbenFormProps => ({
     },
   ],
   showCollapseButton: false,
+  resetButtonOptions: {
+    content: '重置',
+  },
   submitButtonOptions: {
-    content: '查询',
+    content: '搜索',
   },
   submitOnChange: false,
   submitOnEnter: true,

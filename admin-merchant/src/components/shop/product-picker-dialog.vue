@@ -33,8 +33,11 @@ const formOptions: VbenFormProps = {
     },
   ],
   showCollapseButton: false,
+  resetButtonOptions: {
+    content: '重置',
+  },
   submitButtonOptions: {
-    content: '查询',
+    content: '搜索',
   },
   submitOnChange: false,
   submitOnEnter: true,
@@ -122,8 +125,8 @@ watch(open, (visible) => {
   <Modal
     :close-on-click-modal="false"
     :destroy-on-close="true"
-    class="w-[860px]"
-    title="选择商品"
+    class="h-[min(76dvh,820px)] w-[min(94vw,1200px)] max-w-[94vw]"
+    title="请选择商品："
   >
     <Grid />
     <template #footer>

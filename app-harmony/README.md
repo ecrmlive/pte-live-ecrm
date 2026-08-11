@@ -32,3 +32,9 @@ config/app.example.yaml           非敏感环境配置示例
 3. 将 `common/constants/AppConfig.ets` 的占位 API 地址替换为构建时注入的环境配置。当前占位值不会连接任何生产服务。
 
 页面顶部导航固定为 44vp，并放在系统状态栏安全区之后；交互按钮最小高度为 44vp。
+
+## Release 打包
+
+`AppScope/app.json5` 的 `bundleName`、`versionName`、`versionCode` 是工程发布身份的唯一来源；发布前必须与后台“应用 → App → HarmonyOS”的 Bundle Name、版本和下载地址保持一致。DevEco Studio 的 Signing Config 只在本机受控环境中创建并绑定到 `build-profile.json5` 的 release 产品，证书、私钥、p12 与 profile 文件不得提交仓库或录入平台后台。
+
+后台仅保存签名证书 SHA-256 指纹（供第三方平台校验）、APP/HAP 格式、应用市场/企业分发下载地址和更新说明。应用市场发布应选择 APP；HAP 仅用于模块分发。

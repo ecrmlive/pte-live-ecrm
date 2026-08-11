@@ -69,7 +69,7 @@ onMounted(async () => {
       </el-form>
       <div class="mt-4 flex justify-end">
         <el-button @click="load">重置</el-button>
-        <el-button v-if="canManage" :loading="saving" type="primary" @click="save">保存设置</el-button>
+        <el-button v-if="canManage" :loading="saving" type="primary" @click="save">保存</el-button>
       </div>
     </el-card>
   </Page>

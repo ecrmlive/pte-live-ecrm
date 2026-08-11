@@ -73,7 +73,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -86,7 +86,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加用户分组' }).open();
+  formDrawerApi.setState({ title: '新增用户分组' }).open();
 }
 
 function openEdit(row: PlatformUserGroup) {
@@ -160,7 +160,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加用户分组
+          新增用户分组
         </ElButton>
       </template>
       <template #action="{ row }">

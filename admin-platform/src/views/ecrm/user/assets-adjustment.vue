@@ -5,6 +5,7 @@ import { Page } from '@vben/common-ui';
 import { ElMessage } from 'element-plus';
 
 import { adjustPlatformUserAsset } from '#/api/core/ecrm';
+import UserRelationSelect from '#/components/ecrm/UserRelationSelect.vue';
 
 const submitting = ref(false);
 const form = reactive({
@@ -52,7 +53,7 @@ async function submit() {
     <el-alert class="mb-4" type="warning" :closable="false" title="这是高风险财务操作：请基于已核验的工单执行，并填写可审计原因。余额或积分不足时系统拒绝扣减。" />
     <el-card shadow="never" class="max-w-3xl">
       <el-form label-width="108px" @submit.prevent="submit">
-        <el-form-item label="用户 ID" required><el-input-number v-model="form.user_id" :min="1" controls-position="right" /></el-form-item>
+        <el-form-item label="关联用户" required><UserRelationSelect v-model="form.user_id" /></el-form-item>
         <el-form-item label="资产类型" required><el-radio-group v-model="form.asset_type"><el-radio value="balance">余额</el-radio><el-radio value="points">积分</el-radio></el-radio-group></el-form-item>
         <el-form-item label="调整数" required><el-input-number v-model="form.amount" :precision="form.asset_type === 'points' ? 0 : 2" :step="form.asset_type === 'points' ? 1 : 0.01" controls-position="right" /><span class="ml-3 text-sm text-gray-500">正数增加，负数扣减</span></el-form-item>
         <el-form-item label="调账原因" required><el-input v-model="form.reason" type="textarea" :rows="4" maxlength="500" show-word-limit placeholder="例如：虚构中文工单演示，修正重复扣减。" /></el-form-item>

@@ -496,7 +496,7 @@ watch(
       <AddForm />
       <template #footer>
         <ElButton @click="addOpen = false">取消</ElButton>
-        <ElButton :loading="saving" type="primary" @click="submitAdd">提交</ElButton>
+        <ElButton :loading="saving" type="primary" @click="submitAdd">保存</ElButton>
       </template>
     </AddDrawer>
   </div>

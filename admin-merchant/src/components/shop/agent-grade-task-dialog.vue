@@ -306,7 +306,7 @@ async function deleteTask(row: AgentTaskItem) {
     <TaskForm />
     <template #footer>
       <ElButton @click="formOpen = false">取消</ElButton>
-      <ElButton :loading="submitting" type="primary" @click="submitForm">确定</ElButton>
+      <ElButton :loading="submitting" type="primary" @click="submitForm">保存</ElButton>
     </template>
   </FormModal>
 </template>

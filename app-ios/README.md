@@ -37,6 +37,12 @@ xcodegen generate
 - 令牌仅存 Keychain；不得将 JWT、支付参数、IM UserSig、密钥或真实用户数据写入源码、`Info.plist` 或日志。
 - 商户店铺业务必须先调用 `/auth/store-context` 换取上下文令牌；`X-AppId` 不是 IM SDK AppId。
 
+## Release 打包
+
+`project.yml` 已定义 `MARKETING_VERSION=0.1.0` 与 `CURRENT_PROJECT_VERSION=1`。每次发布前通过 Xcode Scheme 或 `xcodebuild` 覆写为递增构建编号，并在 Apple Developer 受控账号中完成签名；证书、Provisioning Profile、私钥和 App Store Connect 凭据均不得写入项目或平台后台。
+
+后台“应用 → App → iOS”维护 Bundle ID、发布版本、构建编号、App Store/企业分发下载地址、Universal Link 与更新说明。
+
 ## 后续实现顺序
 
 1. 认证与用户资料；2. 商品/店铺消费视图；3. 多商户购物车；4. 订单与支付；5. 售后、营销、会员与客服。

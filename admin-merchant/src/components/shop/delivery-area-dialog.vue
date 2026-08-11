@@ -273,7 +273,7 @@ watch(open, (visible) => {
     </div>
     <template #footer>
       <ElButton @click="closeArea">取消</ElButton>
-      <ElButton type="primary" @click="confirmArea">确定</ElButton>
+      <ElButton type="primary" @click="confirmArea">保存</ElButton>
     </template>
   </Modal>
 </template>

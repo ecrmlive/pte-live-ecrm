@@ -1,0 +1,36 @@
+---
+description: 管理后台弹窗和抽屉必须使用固定壳与仅列表滚动布局
+globs: admin-platform/src/**/*.{vue,ts,tsx,scss},admin-merchant/src/**/*.{vue,ts,tsx,scss},admin-platform/packages/@core/ui-kit/popup-ui/src/**/*.{vue,ts,tsx}
+alwaysApply: true
+---
+
+# 管理后台弹窗 / 抽屉布局强制约束
+
+适用于 `admin-platform`、`admin-merchant` 的所有选择器、列表弹窗、实体表单抽屉和详情抽屉。
+
+## 固定区域与滚动边界
+
+- 弹窗和抽屉必须是 `flex` 纵向固定壳：顶部标题区、搜索区、表格标题行、分页区、底部按钮区均不得随内容滚动。
+- 列表型弹窗/抽屉只能让**表格数据区**纵向滚动；禁止整个弹窗正文、搜索区或分页区一起滚动。
+- 使用 `useVbenModal` / `useVbenDrawer`，禁止绕过共享 `vben-popup__body` 布局；列表使用 `useVbenVxeGrid`，保持其筛选、表头和分页在固定区域。
+- 原生 `ElDialog` 仅允许用于选择器等例外，并必须继承同一固定壳与表格数据区滚动规则。
+
+## 尺寸
+
+- 弹窗宽高必须受视口限制：宽度不超过 `94vw`，高度不超过 `calc(100dvh - 96px)`；列表型弹窗默认宽度上限 `1200px`、高度上限 `820px`。
+- 详情/编辑抽屉默认使用合理宽度（推荐 `w-[1000px] max-w-[96vw]`）；不得使用固定像素高度或超出视口的宽高。
+- 移动端必须使用可视区全宽/全高，不得出现横向溢出。
+
+## 底部操作
+
+- 底部操作区必须固定并水平居中；新增、编辑继续遵循“取消、保存”或“重置、保存”的全局规则。
+- 选择、审核、删除、发货等非新增编辑操作保留其业务按钮文案，但同样必须固定在底部操作区。
+
+## 关联选择页（强制复用）
+
+- 用户、商品、店铺/门店属于关联数据，必须通过共享选择页关联；禁止输入、粘贴或编辑任何 ID、ID 列表、CSV 值或数据库键。
+- 平台端用户选择统一复用 `views/ecrm/customer-service/customer-user-picker.vue`；`components/ecrm/user-picker-modal.vue` 仅作为兼容转发层，禁止实现第二套用户列表页面。
+- 平台端商品选择统一复用 `components/shop/product-picker-dialog.vue`；平台端店铺选择统一复用 `components/ecrm/store-picker-modal.vue` 或 `components/ecrm/StoreRelationSelect.vue`。
+- 商户端商品选择统一复用 `components/shop/product-index-picker-dialog.vue`（单选）或 `components/shop/product-multi-picker-dialog.vue`（多选）；店铺选择统一复用 `components/shop/store-picker-dialog.vue`。业务页只能调用共享组件，禁止自建选择弹窗。
+- 所有共享选择页标题使用“请选择用户：”“请选择商品：”或“请选择店铺：”；搜索按钮顺序固定为“重置、搜索”。
+- 共享选择页必须固定标题、搜索、表头、分页与底部按钮，仅表格数据区滚动；默认尺寸为 `min(94vw, 1200px)` × `min(76dvh, 820px)`。

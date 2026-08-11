@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
 import { ref } from 'vue';
 
 import ImagePickerDialog from '#/components/shop/image-picker-dialog.vue';
@@ -17,6 +18,8 @@ const props = withDefaults(
     /** @deprecated 已废弃：默认不展示旁侧按钮 */
     showButton?: boolean;
     defaultLibrary?: 'merchant' | 'system';
+    /** 未选择图片时展示的业务默认图标；不传时保持通用上传加号。 */
+    emptyIcon?: Component;
   }>(),
   {
     disabled: false,
@@ -26,6 +29,7 @@ const props = withDefaults(
     buttonText: '',
     showButton: false,
     defaultLibrary: 'merchant',
+    emptyIcon: undefined,
   },
 );
 const open = ref(false);
@@ -68,6 +72,12 @@ function clearImage(event: Event) {
       @click="openPicker"
     >
       <img v-if="previewSrc()" :src="previewSrc()" alt="图片预览" />
+      <component
+        :is="props.emptyIcon"
+        v-else-if="props.emptyIcon"
+        class="image-field__empty-icon"
+        aria-hidden="true"
+      />
       <span v-else class="image-field__plus" aria-hidden="true">+</span>
       <span
         v-if="previewSrc() && !props.disabled"
@@ -138,6 +148,12 @@ function clearImage(event: Event) {
   font-size: 22px;
   font-weight: 300;
   line-height: 1;
+  color: var(--el-text-color-placeholder);
+}
+
+.image-field__empty-icon {
+  width: 38%;
+  height: 38%;
   color: var(--el-text-color-placeholder);
 }
 

@@ -10,7 +10,7 @@ import { getMerchantPaymentChannelsApi, updateMerchantPaymentChannelApi } from '
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '加密保存',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),

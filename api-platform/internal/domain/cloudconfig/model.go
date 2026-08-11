@@ -17,11 +17,13 @@ type Config struct {
 func (Config) TableName() string { return "qixi_crm_a_cloud_config" }
 
 type FieldMeta struct {
-	Key      string `json:"key"`
-	Label    string `json:"label"`
-	Secret   bool   `json:"secret"`
-	Required bool   `json:"required"`
-	Hint     string `json:"hint,omitempty"`
+	Key       string   `json:"key"`
+	Label     string   `json:"label"`
+	Secret    bool     `json:"secret"`
+	Required  bool     `json:"required"`
+	Hint      string   `json:"hint,omitempty"`
+	InputType string   `json:"input_type,omitempty"`
+	Options   []string `json:"options,omitempty"`
 }
 
 type GroupMeta struct {

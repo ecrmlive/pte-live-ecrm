@@ -115,7 +115,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -133,7 +133,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加商品标签' }).open();
+  formDrawerApi.setState({ title: '新增商品标签' }).open();
 }
 
 function openEdit(row: ProductLabelRow) {
@@ -200,7 +200,7 @@ async function remove(row: ProductLabelRow) {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加商品标签
+          新增商品标签
         </ElButton>
       </template>
       <template #status="{ row }">

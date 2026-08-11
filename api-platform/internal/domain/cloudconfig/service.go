@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -68,6 +70,59 @@ func Catalog() []GroupMeta {
 		{Key: "wechat_mini_program", Label: "微信小程序", Fields: []FieldMeta{
 			{Key: "enabled", Label: "启用微信小程序"}, {Key: "app_id", Label: "小程序 AppID", Required: true},
 			{Key: "app_secret", Label: "小程序 AppSecret", Secret: true, Required: true},
+		}},
+		{Key: "mobile_app_ios", Label: "iOS 应用", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 iOS 应用", InputType: "switch"},
+			{Key: "app_name", Label: "应用名称", Required: true},
+			{Key: "bundle_id", Label: "Bundle ID", Required: true, Hint: "必须与 Xcode 的 PRODUCT_BUNDLE_IDENTIFIER 一致"},
+			{Key: "version_name", Label: "发布版本", Required: true, Hint: "例如 1.0.0"},
+			{Key: "build_number", Label: "构建编号", Required: true, InputType: "number", Hint: "例如 1；每次 App Store 上传必须递增"},
+			{Key: "download_url", Label: "下载地址", Required: true, InputType: "url", Hint: "App Store 或企业分发 HTTPS 地址"},
+			{Key: "app_store_id", Label: "App Store ID", Hint: "用于跳转 App Store，例如 1234567890"},
+			{Key: "universal_link", Label: "Universal Link", InputType: "url", Hint: "例如 https://example.com/ios"},
+			{Key: "release_notes", Label: "更新说明", InputType: "textarea", Hint: "展示给用户的版本更新内容"},
+			{Key: "force_update", Label: "强制更新", InputType: "switch", Hint: "开启后客户端应阻止继续使用旧版本"},
+		}},
+		{Key: "mobile_app_android", Label: "Android 应用", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 Android 应用", InputType: "switch"},
+			{Key: "app_name", Label: "应用名称", Required: true},
+			{Key: "package_name", Label: "包名", Required: true, Hint: "必须与 Gradle applicationId 一致"},
+			{Key: "version_name", Label: "发布版本", Required: true, Hint: "例如 1.0.0"},
+			{Key: "version_code", Label: "版本号", Required: true, InputType: "number", Hint: "必须为递增整数，例如 1"},
+			{Key: "package_format", Label: "发布包格式", Required: true, InputType: "select", Options: []string{"apk", "aab"}, Hint: "APK 可直接下载；AAB 用于 Google Play 等应用商店"},
+			{Key: "download_url", Label: "下载地址", Required: true, InputType: "url", Hint: "APK 下载页或应用商店 HTTPS 地址"},
+			{Key: "signing_cert_sha256", Label: "签名证书 SHA-256", Required: true, Hint: "仅填写证书指纹，用于微信、友盟等平台校验；不要填写 keystore 或密码"},
+			{Key: "release_notes", Label: "更新说明", InputType: "textarea", Hint: "展示给用户的版本更新内容"},
+			{Key: "force_update", Label: "强制更新", InputType: "switch", Hint: "开启后客户端应阻止继续使用旧版本"},
+		}},
+		{Key: "mobile_app_harmony", Label: "HarmonyOS 应用", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 HarmonyOS 应用", InputType: "switch"},
+			{Key: "app_name", Label: "应用名称", Required: true},
+			{Key: "bundle_name", Label: "Bundle Name", Required: true, Hint: "必须与 AppScope/app.json5 的 bundleName 一致"},
+			{Key: "version_name", Label: "发布版本", Required: true, Hint: "例如 1.0.0"},
+			{Key: "version_code", Label: "版本号", Required: true, InputType: "number", Hint: "必须为递增整数，例如 1"},
+			{Key: "package_format", Label: "发布包格式", Required: true, InputType: "select", Options: []string{"app", "hap"}, Hint: "应用市场发布通常使用 APP；HAP 用于模块分发"},
+			{Key: "download_url", Label: "下载地址", Required: true, InputType: "url", Hint: "华为应用市场或企业分发 HTTPS 地址"},
+			{Key: "signing_cert_sha256", Label: "签名证书 SHA-256", Required: true, Hint: "仅填写证书指纹；私钥、p12 与 profile 文件仅保存在本机受控环境"},
+			{Key: "release_notes", Label: "更新说明", InputType: "textarea", Hint: "展示给用户的版本更新内容"},
+			{Key: "force_update", Label: "强制更新", InputType: "switch", Hint: "开启后客户端应阻止继续使用旧版本"},
+		}},
+		{Key: "umeng_push_ios", Label: "友盟推送 · iOS", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 iOS 推送"}, {Key: "app_key", Label: "友盟 AppKey", Required: true},
+			{Key: "app_master_secret", Label: "友盟 App Master Secret", Secret: true, Required: true},
+			{Key: "apns_key_id", Label: "APNs Key ID", Required: true}, {Key: "apns_team_id", Label: "Apple Team ID", Required: true},
+			{Key: "bundle_id", Label: "Bundle ID", Required: true}, {Key: "apns_p8_key", Label: "APNs P8 私钥", Secret: true, Required: true},
+		}},
+		{Key: "umeng_push_android", Label: "友盟推送 · Android", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 Android 推送"}, {Key: "app_key", Label: "友盟 AppKey", Required: true},
+			{Key: "umeng_message_secret", Label: "友盟 Message Secret", Secret: true, Required: true},
+			{Key: "app_master_secret", Label: "友盟 App Master Secret", Secret: true, Required: true},
+			{Key: "package_name", Label: "包名", Required: true},
+		}},
+		{Key: "umeng_push_harmony", Label: "友盟推送 · HarmonyOS", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用 HarmonyOS 推送"}, {Key: "app_key", Label: "友盟 AppKey", Required: true},
+			{Key: "app_master_secret", Label: "友盟 App Master Secret", Secret: true, Required: true},
+			{Key: "bundle_name", Label: "Bundle Name", Required: true},
 		}},
 		{Key: "sms", Label: "短信验证码网关", Fields: []FieldMeta{
 			{Key: "enabled", Label: "启用短信网关"}, {Key: "endpoint", Label: "短信网关 HTTPS 地址", Required: true},
@@ -241,6 +296,9 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 		if len(value) > 16*1024 {
 			return nil, ErrBadValue
 		}
+		if err := validateFieldValue(field, value); err != nil {
+			return nil, err
+		}
 		ciphertext, err := s.encrypt(value)
 		if err != nil {
 			return nil, err
@@ -251,6 +309,36 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 		}
 	}
 	return s.Get(ctx, meta.Key)
+}
+
+func validateFieldValue(field FieldMeta, value string) error {
+	if value == "" {
+		return nil
+	}
+	switch field.InputType {
+	case "number":
+		n, err := strconv.ParseUint(value, 10, 64)
+		if err != nil || n == 0 {
+			return ErrBadValue
+		}
+	case "select":
+		for _, option := range field.Options {
+			if value == option {
+				return nil
+			}
+		}
+		return ErrBadValue
+	case "switch":
+		if value != "true" && value != "false" && value != "1" && value != "0" {
+			return ErrBadValue
+		}
+	case "url":
+		parsed, err := url.ParseRequestURI(value)
+		if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" {
+			return ErrBadValue
+		}
+	}
+	return nil
 }
 
 func groupMeta(key string) (GroupMeta, bool) {

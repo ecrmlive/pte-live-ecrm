@@ -36,6 +36,8 @@ type adminListRow struct {
 	ID              uint64    `gorm:"column:id" json:"admin_id"`
 	Username        string    `gorm:"column:username" json:"account"`
 	DisplayName     string    `gorm:"column:display_name" json:"real_name"`
+	LinkedUserID    uint64    `gorm:"column:linked_user_id" json:"linked_user_id"`
+	AvatarURL       string    `gorm:"column:avatar_url" json:"avatar_url"`
 	Phone           string    `gorm:"column:phone" json:"phone"`
 	Status          int8      `gorm:"column:status" json:"status"`
 	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
@@ -53,6 +55,8 @@ type adminSaveRequest struct {
 	Username        string   `json:"username"`
 	Password        string   `json:"password"`
 	RealName        string   `json:"real_name"`
+	LinkedUserID    uint64   `json:"linked_user_id"`
+	AvatarURL       string   `json:"avatar_url"`
 	Phone           string   `json:"phone"`
 	Roles           string   `json:"roles"`
 	RoleCodes       []string `json:"role_codes"`
@@ -72,7 +76,7 @@ func (h *Handler) ListAdmins(c *gin.Context) {
 	}
 	rows := make([]adminListRow, 0)
 	if err := h.db.WithContext(c.Request.Context()).Table((adminUser{}).TableName()).
-		Select("id,username,display_name,phone,status,created_at,COALESCE(circle_agent_id, 0) AS circle_agent_id").Order("id DESC").
+		Select("id,username,display_name,linked_user_id,avatar_url,phone,status,created_at,COALESCE(circle_agent_id, 0) AS circle_agent_id").Order("id DESC").
 		Where("deleted_at IS NULL").
 		Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		writeError(c, err)
@@ -121,6 +125,10 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "账号、至少 8 位密码和角色必填")
 		return
 	}
+	if hasRole(roles, "customer_service") && strings.TrimSpace(req.AvatarURL) == "" {
+		response.Fail(c, http.StatusBadRequest, "客服头像不能为空")
+		return
+	}
 	if displayName == "" {
 		response.Fail(c, http.StatusBadRequest, "昵称不能为空")
 		return
@@ -130,7 +138,7 @@ func (h *Handler) CreateAdmin(c *gin.Context) {
 		writeError(c, err)
 		return
 	}
-	user := adminUser{Username: username, PasswordHash: string(hash), DisplayName: displayName, Phone: strings.TrimSpace(req.Phone), Status: req.Status, DataScopeVersion: 1}
+	user := adminUser{Username: username, PasswordHash: string(hash), DisplayName: displayName, LinkedUserID: req.LinkedUserID, AvatarURL: strings.TrimSpace(req.AvatarURL), Phone: strings.TrimSpace(req.Phone), Status: req.Status, DataScopeVersion: 1}
 	if user.Status == 0 {
 		user.Status = 1
 	}
@@ -184,6 +192,10 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "至少保留一个角色")
 		return
 	}
+	if hasRole(roles, "customer_service") && strings.TrimSpace(req.AvatarURL) == "" {
+		response.Fail(c, http.StatusBadRequest, "客服头像不能为空")
+		return
+	}
 	displayName := strings.TrimSpace(req.RealName)
 	if displayName == "" {
 		response.Fail(c, http.StatusBadRequest, "昵称不能为空")
@@ -200,7 +212,7 @@ func (h *Handler) UpdateAdmin(c *gin.Context) {
 		if err := validateCircleAgentBinding(c, tx, req.CircleAgentID, user.ID, roles); err != nil {
 			return err
 		}
-		updates := map[string]any{"display_name": displayName, "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1"), "circle_agent_id": nullableCircleAgentID(req.CircleAgentID)}
+		updates := map[string]any{"display_name": displayName, "linked_user_id": req.LinkedUserID, "avatar_url": strings.TrimSpace(req.AvatarURL), "phone": strings.TrimSpace(req.Phone), "status": req.Status, "data_scope_version": gorm.Expr("data_scope_version + 1"), "circle_agent_id": nullableCircleAgentID(req.CircleAgentID)}
 		if req.Password != "" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 			if err != nil {
@@ -301,7 +313,7 @@ func (h *Handler) adminRow(c *gin.Context, user adminUser) adminListRow {
 	merchantIDs, _ := h.merchantIDs(c, user.ID)
 	regionIDs, _ := h.regionIDs(c, user.ID)
 	serviceStoreIDs, _ := h.serviceStoreIDs(c, user.ID)
-	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), MerchantIDs: merchantIDs, RegionIDs: regionIDs, ServiceStoreIDs: serviceStoreIDs, IsAgent: boolToInt8(hasRole(roles, "region")), CircleID: derefCircleAgentID(user.CircleAgentID)}
+	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, LinkedUserID: user.LinkedUserID, AvatarURL: user.AvatarURL, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), MerchantIDs: merchantIDs, RegionIDs: regionIDs, ServiceStoreIDs: serviceStoreIDs, IsAgent: boolToInt8(hasRole(roles, "region")), CircleID: derefCircleAgentID(user.CircleAgentID)}
 }
 
 func nullableCircleAgentID(id uint64) any {

@@ -100,7 +100,7 @@ async function submitForm() {
         />
       </ElFormItem>
       <ElFormItem>
-        <ElButton :loading="loading" type="primary" @click="submitForm">提交</ElButton>
+        <ElButton :loading="loading" type="primary" @click="submitForm">保存</ElButton>
       </ElFormItem>
     </ElForm>
   </Page>

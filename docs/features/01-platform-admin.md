@@ -75,6 +75,7 @@
 | 应用 / 小程序 | `/app/routine` | — | ✓ | — | — | 2 |
 | 应用 / 小程序 / 小程序下载 | `/app/routine/download` | — | ✓ | — | — | 1 |
 | 应用 / 小程序 / 小程序订阅消息 | `/app/routine/template` | ✓ | ✓ | ✓ | ✓ | 6 |
+| 应用 / App（含推送配置） | `/app/mobile` | — | ✓ | ✓ | — | 2 |
 | 店铺 | `/mer` | ✓ | ✓ | — | — | 2 |
 | 店铺 / 区域代理 | `/business-zones/manage` | — | ✓ | — | — | 0 |
 | 店铺 / 区域代理 / 代理人员 | `/business-zones/agents` | ✓ | ✓ | ✓ | ✓ | 6 |
@@ -399,7 +400,7 @@
 
 | 操作 | CRUD | 标识 | 来源 |
 | --- | --- | --- | --- |
-| 编辑配置信息 | `CU` | `configSave` | 菜单权限 |
+| 选择关闭、系统客服、电话、企业微信、跳转链接或小程序客服，并维护对应入口信息 | `CU` | `configSave` | 菜单权限 |
 
 ### 分销
 
@@ -836,6 +837,7 @@
 | 用户与客服聊天记录 | `R` | `adminServiceServiceUserLogLst` | 菜单权限 |
 | 客服的聊天用户列表 | `R` | `adminServiceServiceMerchantUserList` | 菜单权限 |
 | 用户与商户聊天记录 | `R` | `adminServiceMerchantUserLogLst` | 菜单权限 |
+| 进入客服工作台 | `O` | `adminServiceLogin` | 七禧工作台入口 |
 
 #### 客服 / 客服自动回复
 
@@ -1002,6 +1004,16 @@
 | 编辑 | `U` | `systemTemplateMessageMinUpdate` | 菜单权限 |
 | 删除 | `D` | `systemTemplateMessageMinDelete` | 菜单权限 |
 | 修改状态 | `U` | `systemTemplateMessageMinSwitchStatus` | 菜单权限 |
+
+#### 应用 / App
+
+- 页面路由：`/app/mobile`
+- CRUD：C=— R=✓ U=✓ D=—
+
+| 操作 | CRUD | 标识 | 来源 |
+| --- | --- | --- | --- |
+| 维护 iOS、Android、HarmonyOS 应用配置（应用标识、版本、下载地址、更新说明、强制更新与证书指纹） | `U` | `app.mobile.manage` | 七禧菜单权限 |
+| 维护同一端的友盟 / APNs 推送配置（与基础与发布配置同页） | `U` | `app.push.manage` | 七禧菜单权限 |
 
 ### 店铺
 

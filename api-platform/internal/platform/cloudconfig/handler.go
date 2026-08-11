@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	configdomain "github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/cloudconfig"
-	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
 	svc       *configdomain.Service
-	id        *identity.Service
+	adminDB   *gorm.DB
 	publisher paymentPublisher
 }
 
@@ -23,8 +23,8 @@ type paymentPublisher interface {
 	Publish(context.Context, map[string]string) error
 }
 
-func NewHandler(svc *configdomain.Service, id *identity.Service, publisher ...paymentPublisher) *Handler {
-	h := &Handler{svc: svc, id: id}
+func NewHandler(svc *configdomain.Service, adminDB *gorm.DB, publisher ...paymentPublisher) *Handler {
+	h := &Handler{svc: svc, adminDB: adminDB}
 	if len(publisher) > 0 {
 		h.publisher = publisher[0]
 	}
@@ -34,7 +34,18 @@ func NewHandler(svc *configdomain.Service, id *identity.Service, publisher ...pa
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/setting/cloud-configs", h.List)
 	r.GET("/setting/cloud-configs/:group", h.Get)
-	r.PUT("/setting/cloud-configs/:group", middleware.RequirePlatformMenu(h.id, identity.PlatPermCloudConfigWrite), h.Save)
+	// 新统一后台的身份、角色和按钮权限均来自 qixi_crm_a_*。
+	// 不能使用 legacy identity.Service（其旧模型会访问 qixi_m_* 表）。
+	appSetting := middleware.RequireAdminRoles("platform")
+	routineManage := middleware.RequireAdminMenu(h.adminDB, "app.routine.manage")
+	r.GET("/setting/routine-config", appSetting, routineManage, h.GetRoutine)
+	r.PUT("/setting/routine-config", appSetting, routineManage, h.SaveRoutine)
+	mobileAppManage := middleware.RequireAdminMenu(h.adminDB, "app.mobile.manage")
+	r.GET("/setting/mobile-app-config/:platform", appSetting, mobileAppManage, h.GetMobileApp)
+	r.PUT("/setting/mobile-app-config/:platform", appSetting, mobileAppManage, h.SaveMobileApp)
+	pushManage := middleware.RequireAdminMenu(h.adminDB, "app.push.manage")
+	r.GET("/setting/push-config/:platform", appSetting, pushManage, h.GetPush)
+	r.PUT("/setting/push-config/:platform", appSetting, pushManage, h.SavePush)
 	// 高德 Web JS 需在浏览器侧使用 Key/安全密钥；云配置页对 Secret 字段掩码，故单独提供已鉴权只读接口。
 	r.GET("/setting/map-client-config", h.MapClientConfig)
 }
@@ -66,25 +77,87 @@ func (h *Handler) MapClientConfig(c *gin.Context) {
 	})
 }
 func (h *Handler) Get(c *gin.Context) {
-	row, err := h.svc.Get(c.Request.Context(), c.Param("group"))
+	h.getGroup(c, c.Param("group"))
+}
+
+func (h *Handler) GetRoutine(c *gin.Context) {
+	h.getGroup(c, "wechat_mini_program")
+}
+
+func (h *Handler) getGroup(c *gin.Context, group string) {
+	row, err := h.svc.Get(c.Request.Context(), group)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
 	response.OK(c, row)
 }
+
 func (h *Handler) Save(c *gin.Context) {
+	h.saveGroup(c, c.Param("group"))
+}
+
+func (h *Handler) SaveRoutine(c *gin.Context) {
+	h.saveGroup(c, "wechat_mini_program")
+}
+
+func (h *Handler) GetMobileApp(c *gin.Context) {
+	group, ok := nativeConfigGroup("mobile_app", c.Param("platform"))
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "不支持的应用平台")
+		return
+	}
+	h.getGroup(c, group)
+}
+
+func (h *Handler) SaveMobileApp(c *gin.Context) {
+	group, ok := nativeConfigGroup("mobile_app", c.Param("platform"))
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "不支持的应用平台")
+		return
+	}
+	h.saveGroup(c, group)
+}
+
+func (h *Handler) GetPush(c *gin.Context) {
+	group, ok := nativeConfigGroup("umeng_push", c.Param("platform"))
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "不支持的推送平台")
+		return
+	}
+	h.getGroup(c, group)
+}
+
+func (h *Handler) SavePush(c *gin.Context) {
+	group, ok := nativeConfigGroup("umeng_push", c.Param("platform"))
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "不支持的推送平台")
+		return
+	}
+	h.saveGroup(c, group)
+}
+
+func nativeConfigGroup(prefix, platform string) (string, bool) {
+	switch strings.TrimSpace(platform) {
+	case "ios", "android", "harmony":
+		return prefix + "_" + strings.TrimSpace(platform), true
+	default:
+		return "", false
+	}
+}
+
+func (h *Handler) saveGroup(c *gin.Context, group string) {
 	var in configdomain.SaveInput
 	if err := c.ShouldBindJSON(&in); err != nil {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	row, err := h.svc.Save(c.Request.Context(), c.Param("group"), in, middleware.AdminID(c))
+	row, err := h.svc.Save(c.Request.Context(), group, in, middleware.AdminID(c))
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
-	if c.Param("group") == "payment" && h.publisher != nil {
+	if group == "payment" && h.publisher != nil {
 		values, err := h.svc.Values(c.Request.Context(), "payment")
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "支付配置读取失败")

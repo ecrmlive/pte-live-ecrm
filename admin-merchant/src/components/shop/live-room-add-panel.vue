@@ -188,9 +188,9 @@ defineExpose({ initForm, resetForm, submit, submitting });
       @remove-product="removeProduct"
     />
 
-    <div v-if="!hideActions" class="live-room-add-panel__actions mt-6 flex gap-2">
+    <div v-if="!hideActions" class="live-room-add-panel__actions mt-6 flex justify-center gap-3">
       <el-button @click="emit('cancel')">取消</el-button>
-      <el-button :loading="submitting" type="primary" @click="submit">提交</el-button>
+      <el-button :loading="submitting" type="primary" @click="submit">保存</el-button>
     </div>
 
     <ProductAddDialog />

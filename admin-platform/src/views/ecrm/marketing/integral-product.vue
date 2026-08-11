@@ -249,7 +249,7 @@ const [ExchangeGrid, exchangeGridApi] = useVbenVxeGrid({
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -289,7 +289,7 @@ function resetForm() {
 function openCreate() {
   drawerMode.value = 'create';
   resetForm();
-  formDrawerApi.setState({ title: '添加积分商品' }).open();
+  formDrawerApi.setState({ title: '新增积分商品' }).open();
 }
 
 function openEdit(row: PlatformPointsProduct) {
@@ -337,7 +337,7 @@ function onProductPicked(product: PlatformProduct) {
     store_name: '',
     version: 0,
   });
-  formDrawerApi.setState({ title: '快速添加积分商品' }).open();
+  formDrawerApi.setState({ title: '新增积分商品' }).open();
 }
 
 async function save() {
@@ -488,10 +488,10 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加积分商品
+          新增积分商品
         </ElButton>
         <ElButton v-if="canManage" type="success" @click="openQuickAdd">
-          快速添加
+          新增积分商品
         </ElButton>
       </template>
       <template #cover="{ row }">

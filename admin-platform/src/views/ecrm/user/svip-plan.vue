@@ -129,7 +129,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -151,7 +151,7 @@ function resetForm() {
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '添加会员类型' }).open();
+  formDrawerApi.setState({ title: '新增会员类型' }).open();
 }
 
 function openEdit(row: SvipPlan) {
@@ -287,7 +287,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加会员类型
+          新增会员类型
         </ElButton>
       </template>
       <template #status="{ row }">

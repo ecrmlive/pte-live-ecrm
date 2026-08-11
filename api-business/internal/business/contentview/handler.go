@@ -138,6 +138,7 @@ func agreementLabel(key string) (string, bool) {
 		"sys_user_agree":            "用户协议",
 		"sys_userr_privacy":         "隐私政策",
 		"sys_svip":                  "付费会员协议",
+		"sys_receipt_agree":         "发票说明",
 		"sys_product_presell_agree": "预售协议",
 		"business_entry_agree":      "商户入驻协议",
 		"promoter_explain":          "分销说明",

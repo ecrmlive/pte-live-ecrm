@@ -27,6 +27,8 @@ type adminUser struct {
 	Username         string         `gorm:"column:username"`
 	PasswordHash     string         `gorm:"column:password_hash"`
 	DisplayName      string         `gorm:"column:display_name"`
+	LinkedUserID     uint64         `gorm:"column:linked_user_id"`
+	AvatarURL        string         `gorm:"column:avatar_url"`
 	Phone            string         `gorm:"column:phone"`
 	Status           int8           `gorm:"column:status"`
 	DataScopeVersion uint64         `gorm:"column:data_scope_version"`

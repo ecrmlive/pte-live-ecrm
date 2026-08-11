@@ -636,7 +636,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_customer_service_message` (
 -- 客服快捷回复属于业务数据；统一后台按客服授权店铺维护，删除采用软删除以保留审计线索。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_customer_service_quick_reply` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `store_id` bigint unsigned NOT NULL,
-  `title` varchar(64) NOT NULL, `content` varchar(2000) NOT NULL,
+  `title` varchar(64) NOT NULL, `content` varchar(2000) NOT NULL, `message_type` enum('text','image') NOT NULL DEFAULT 'text',
   `status` enum('enabled','disabled') NOT NULL DEFAULT 'enabled',
   `created_by` bigint unsigned NOT NULL, `updated_by` bigint unsigned NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -881,13 +881,35 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_refund_transaction` (
 -- mock 仅用于显式 sandbox 的本地闭环；生产环境退款执行器拒绝该渠道。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_order_invoice` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `order_id` bigint unsigned NOT NULL, `invoice_profile_id` bigint unsigned NOT NULL,
-  `profile_type` enum('personal', 'enterprise') NOT NULL, `title` varchar(255) NOT NULL,
+  `profile_type` enum('personal', 'enterprise') NOT NULL,
+  `invoice_type` tinyint NOT NULL DEFAULT 1 COMMENT '1普通发票 2专用发票',
+  `receipt_sn` varchar(64) NOT NULL DEFAULT '' COMMENT '发票申请单号',
+  `invoice_amount` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '发票金额',
+  `title` varchar(255) NOT NULL,
   `tax_no` varchar(64) NOT NULL DEFAULT '', `email` varchar(255) NOT NULL DEFAULT '',
   `status` enum('requested','issued','rejected','voided') NOT NULL DEFAULT 'requested', `invoice_no` varchar(128) NOT NULL DEFAULT '',
-  `file_url` varchar(1024) NOT NULL DEFAULT '', `rejection_reason` varchar(500) NOT NULL DEFAULT '', `requested_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `issued_at` datetime DEFAULT NULL,
+  `file_url` varchar(1024) NOT NULL DEFAULT '', `rejection_reason` varchar(500) NOT NULL DEFAULT '',
+  `mark` varchar(500) NOT NULL DEFAULT '' COMMENT '发票备注',
+  `requested_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `issued_at` datetime DEFAULT NULL,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), UNIQUE KEY `uk_order` (`order_id`)
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_order` (`order_id`), KEY `idx_receipt_sn` (`receipt_sn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_order_invoice' AND COLUMN_NAME='invoice_type')=0,
+    'ALTER TABLE `qixi_crm_b_order_invoice` ADD COLUMN `invoice_type` tinyint NOT NULL DEFAULT 1 COMMENT ''1普通发票 2专用发票'' AFTER `profile_type`, ADD COLUMN `receipt_sn` varchar(64) NOT NULL DEFAULT '''' COMMENT ''发票申请单号'' AFTER `invoice_type`, ADD COLUMN `invoice_amount` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT ''发票金额'' AFTER `receipt_sn`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
+SET @qixi_ddl := (
+  SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='qixi_crm_b_order_invoice' AND COLUMN_NAME='mark')=0,
+    'ALTER TABLE `qixi_crm_b_order_invoice` ADD COLUMN `mark` varchar(500) NOT NULL DEFAULT '''' COMMENT ''发票备注'' AFTER `rejection_reason`',
+    'SELECT 1'
+  )
+);
+PREPARE qixi_stmt FROM @qixi_ddl; EXECUTE qixi_stmt; DEALLOCATE PREPARE qixi_stmt;
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_order_verification` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `order_id` bigint unsigned NOT NULL,
   `verify_code` varchar(32) NOT NULL DEFAULT '', `verify_code_hash` char(64) NOT NULL,
@@ -1012,6 +1034,26 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_recharge_order` (
   `idempotency_key` varchar(128) NOT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `paid_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_recharge_no` (`recharge_no`), UNIQUE KEY `uk_user_idempotency` (`user_id`,`idempotency_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台「充值记录」对齐 CRMEB eb_user_recharge（与 C 端 funding recharge_order 分表）
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_recharge` (
+  `recharge_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uid` bigint unsigned NOT NULL DEFAULT 0 COMMENT '充值用户 UID',
+  `order_id` varchar(64) NOT NULL DEFAULT '' COMMENT '订单号',
+  `price` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '充值金额',
+  `give_price` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '赠送金额',
+  `recharge_type` varchar(32) NOT NULL DEFAULT '' COMMENT '充值类型 routine/weixin/h5/alipay',
+  `paid` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否支付 0未支付 1已支付',
+  `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
+  `refund_price` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '已退款金额',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`recharge_id`),
+  UNIQUE KEY `uk_order_id` (`order_id`),
+  KEY `idx_uid` (`uid`),
+  KEY `idx_paid` (`paid`),
+  KEY `idx_recharge_type` (`recharge_type`),
+  KEY `idx_pay_time` (`pay_time`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户余额充值记录';
 -- 用户充值与 SVIP 购买独立于商品交易：商品支付表带 group_order_id，不能复用。
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_recharge_plan` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `name` varchar(64) NOT NULL,
@@ -1073,6 +1115,34 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_b_withdrawal_application` (
   `idempotency_key` varchar(128) NOT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `paid_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_withdrawal_no` (`withdrawal_no`), UNIQUE KEY `uk_user_withdrawal_key` (`user_id`,`idempotency_key`), UNIQUE KEY `uk_user_payout_key` (`user_id`,`payout_idempotency_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 用户佣金提现（对齐 CRMEB eb_user_extract，平台「提现管理」）
+CREATE TABLE IF NOT EXISTS `qixi_crm_b_user_extract` (
+  `extract_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uid` bigint unsigned NOT NULL DEFAULT 0 COMMENT '用户 ID',
+  `extract_sn` varchar(64) NOT NULL DEFAULT '' COMMENT '提现单号',
+  `real_name` varchar(64) NOT NULL DEFAULT '' COMMENT '户名',
+  `extract_type` tinyint NOT NULL DEFAULT 0 COMMENT '0银行卡 1微信 2支付宝 3微信零钱 4余额',
+  `bank_code` varchar(64) NOT NULL DEFAULT '' COMMENT '银行卡号（演示脱敏）',
+  `bank_address` varchar(256) NOT NULL DEFAULT '' COMMENT '开户地址',
+  `bank_name` varchar(128) NOT NULL DEFAULT '' COMMENT '银行名称',
+  `alipay_code` varchar(64) NOT NULL DEFAULT '' COMMENT '支付宝账号（演示）',
+  `wechat` varchar(64) NOT NULL DEFAULT '' COMMENT '微信号（演示）',
+  `extract_pic` varchar(1024) NOT NULL DEFAULT '' COMMENT '收款码',
+  `extract_price` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '提现金额',
+  `balance` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '提现后佣金余额',
+  `mark` varchar(512) NOT NULL DEFAULT '' COMMENT '管理员备注',
+  `admin_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT '审核管理员',
+  `fail_msg` varchar(255) NOT NULL DEFAULT '' COMMENT '拒绝原因',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '-1已拒绝 0审核中 1已通过',
+  `status_time` datetime DEFAULT NULL COMMENT '审核时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间',
+  PRIMARY KEY (`extract_id`),
+  KEY `idx_uid` (`uid`),
+  KEY `idx_status` (`status`),
+  KEY `idx_extract_type` (`extract_type`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_extract_sn` (`extract_sn`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户佣金提现';
 -- 平台分销「提现银行」配置（用户银行卡提现时可选银行列表）
 CREATE TABLE IF NOT EXISTS `qixi_crm_b_withdraw_bank` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

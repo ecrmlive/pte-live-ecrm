@@ -210,11 +210,11 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
 
 const [ApplyDrawer, applyDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   title: '申请提现',
-  confirmText: '提交申请',
+  confirmText: '保存',
   onConfirm: async () => {
     if (form.extract_money <= 0) {
       ElMessage.warning('提现金额必须大于 0');

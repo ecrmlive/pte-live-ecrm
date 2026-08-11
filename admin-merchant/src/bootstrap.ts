@@ -1,7 +1,7 @@
 import { createApp, watchEffect } from 'vue';
 
 import { registerAccessDirective } from '@vben/access';
-import { registerLoadingDirective } from '@vben/common-ui';
+import { registerLoadingDirective, setDefaultDrawerProps } from '@vben/common-ui';
 import { preferences } from '@vben/preferences';
 import { initStores, useAccessStore } from '@vben/stores';
 import '@vben/styles';
@@ -27,6 +27,7 @@ import {
 
 /** Vben 壳层兼容样式（列表间距、Drawer/Modal 等） */
 import './styles/vben-legacy-compat.css';
+import './styles/admin-form-actions.scss';
 import './styles/merchant-list-page.scss';
 import './styles/native-list-page.scss';
 import './styles/native-form-page.scss';
@@ -34,6 +35,11 @@ import './styles/native-form-dialog.scss';
 import './styles/native-merchant-ui.scss';
 
 async function bootstrap(namespace: string) {
+  setDefaultDrawerProps({
+    cancelText: '取消',
+    confirmText: '保存',
+  });
+
   // 初始化组件适配器
   await initComponentAdapter();
 
@@ -43,10 +49,6 @@ async function bootstrap(namespace: string) {
   // // 设置弹窗的默认配置
   // setDefaultModalProps({
   //   fullscreenButton: false,
-  // });
-  // // 设置抽屉的默认配置
-  // setDefaultDrawerProps({
-  //   zIndex: 2000,
   // });
   const app = createApp(App);
 

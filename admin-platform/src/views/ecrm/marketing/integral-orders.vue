@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
 import { Page, confirm, useVbenDrawer } from '@vben/common-ui';
 import {
@@ -31,6 +31,10 @@ import {
   listPlatformIntegralOrdersApi,
   type PlatformIntegralOrderRow,
 } from '#/api/core/platform-integral-order';
+import {
+  listPrefixedKeywordFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
 import {
   platformListActionColumn,
   platformListPagerConfig,
@@ -95,39 +99,14 @@ function buildFilterParams(formValues?: Record<string, unknown>) {
   lastFormValues.value = values;
   const range = Array.isArray(values.date_range) ? values.date_range : [];
   const status = String(values.status ?? 'all');
+  const search = parseUserSearch(values, 'order_search');
   return {
     status: status === 'all' || status === '' ? undefined : status,
     date_from: range[0] as string | undefined,
     date_to: range[1] as string | undefined,
-    search_type: String(values.search_type ?? 'all') || 'all',
-    keyword: String(values.keyword ?? '').trim() || undefined,
+    search_type: search.type || 'all',
+    keyword: search.keyword || undefined,
   };
-}
-
-function renderSearchPrepend(
-  field: 'search_type',
-  options: Array<{ label: string; value: string }>,
-  defaultValue: string,
-) {
-  return (values: Record<string, any>, api: { setFieldValue: Function }) => ({
-    prepend: () =>
-      h(
-        ElSelect,
-        {
-          modelValue: values[field] || defaultValue,
-          style: { width: '110px' },
-          'onUpdate:modelValue': (v: string) => api.setFieldValue(field, v),
-        },
-        () =>
-          options.map((opt) =>
-            h(ElOption, {
-              label: opt.label,
-              value: opt.value,
-              key: opt.value,
-            }),
-          ),
-      ),
-  });
 }
 
 const formOptions: VbenFormProps = listFormOptionsDefaults(
@@ -147,25 +126,13 @@ const formOptions: VbenFormProps = listFormOptionsDefaults(
       ...LIST_DATE_RANGE_FIELD,
       label: '创建时间',
     },
-    {
-      component: 'Input',
-      componentProps: { clearable: true, placeholder: '请输入内容' },
-      defaultValue: '',
-      fieldName: 'keyword',
+    listPrefixedKeywordFormField({
+      fieldName: 'order_search',
       label: '搜索',
-      renderComponentContent: renderSearchPrepend(
-        'search_type',
-        SEARCH_OPTIONS,
-        'all',
-      ),
-    },
-    {
-      component: 'Input',
-      defaultValue: 'all',
-      dependencies: { show: () => false, triggerFields: [''] },
-      fieldName: 'search_type',
-      label: '搜索类型',
-    },
+      defaultType: 'all',
+      options: SEARCH_OPTIONS,
+      typeWidth: '110px',
+    }),
   ],
   {
     commonConfig: { componentProps: { class: 'w-full' } },

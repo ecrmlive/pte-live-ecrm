@@ -122,7 +122,7 @@ const [FieldDrawer, fieldDrawerApi] = useVbenDrawer({
 });
 
 const [CouponModal, couponModalApi] = useVbenModal({
-  title: '添加优惠券',
+  title: '新增优惠券',
   class: 'w-[860px] max-w-[96vw]',
   onConfirm: () => {
     const picked = couponRows.value.filter((row) =>
@@ -855,7 +855,7 @@ onMounted(async () => {
                     :disabled="!canManage"
                     @click="openCouponPicker"
                   >
-                    +添加优惠券
+                    +新增优惠券
                   </ElButton>
                 </template>
               </div>

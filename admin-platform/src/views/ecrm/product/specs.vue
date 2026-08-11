@@ -64,7 +64,7 @@ const form = reactive({
 
 const isReadonly = computed(() => drawerMode.value === 'view');
 const drawerTitle = computed(() => {
-  if (drawerMode.value === 'create') return '添加参数模板';
+  if (drawerMode.value === 'create') return '新增参数模板';
   if (drawerMode.value === 'edit') return '编辑参数模板';
   return '查看参数模板';
 });
@@ -398,7 +398,7 @@ onMounted(async () => {
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加参数模板
+          新增参数模板
         </ElButton>
       </template>
       <template #action="{ row }">
@@ -521,7 +521,7 @@ onMounted(async () => {
               class="mt-3"
               @click="addParam"
             >
-              添加参数
+              新增参数
             </ElButton>
           </div>
         </ElFormItem>

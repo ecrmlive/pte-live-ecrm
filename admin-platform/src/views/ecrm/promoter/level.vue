@@ -370,7 +370,7 @@ function openCreate() {
   applyForm();
   levelDrawerApi
     .setState({
-      title: '添加分销员等级',
+      title: '新增分销员等级',
       showConfirmButton: true,
       confirmText: '保存',
       cancelText: '取消',
@@ -518,7 +518,7 @@ const twoRateHint =
     <Grid>
       <template #toolbar-actions>
         <ElButton :icon="Plus" type="primary" @click="openCreate">
-          添加分销员等级
+          新增分销员等级
         </ElButton>
       </template>
 

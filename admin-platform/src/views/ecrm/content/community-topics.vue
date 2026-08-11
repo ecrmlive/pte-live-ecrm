@@ -123,7 +123,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '完成',
+  confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
   onConfirm: async () => save(),
@@ -162,7 +162,7 @@ async function loadCategories() {
 function openCreate() {
   resetForm();
   void loadCategories();
-  formDrawerApi.setState({ title: '添加社区话题' }).open();
+  formDrawerApi.setState({ title: '新增社区话题' }).open();
 }
 
 function openEdit(row: CommunityTopic) {
@@ -273,7 +273,7 @@ onMounted(async () => {
           type="primary"
           @click="openCreate"
         >
-          添加社区话题
+          新增社区话题
         </ElButton>
       </template>
       <template #pic="{ row }">

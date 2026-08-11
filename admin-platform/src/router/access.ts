@@ -77,6 +77,30 @@ async function generateAccess(options: GenerateAccessOptions) {
     (route) => !STANDALONE_ROUTE_PATHS.has(String(route.path || '')),
   );
 
+  // 图文新增/编辑：侧栏不展示，从列表跳入（activePath 高亮「图文管理」）
+  routerRoutes.push(
+    {
+      name: 'AppWechatNewsCreate',
+      path: '/app/wechat/newsCategory/create',
+      component: '../views/ecrm/app/wechat-news-save.vue',
+      meta: {
+        activePath: '/app/wechat/newsCategory',
+        hideInMenu: true,
+        title: '新增图文',
+      },
+    },
+    {
+      name: 'AppWechatNewsEdit',
+      path: '/app/wechat/newsCategory/edit/:id',
+      component: '../views/ecrm/app/wechat-news-save.vue',
+      meta: {
+        activePath: '/app/wechat/newsCategory',
+        hideInMenu: true,
+        title: '编辑图文',
+      },
+    },
+  );
+
   const result = await generateAccessible(preferences.app.accessMode, {
     ...options,
     fetchMenuListAsync: async () => routerRoutes,

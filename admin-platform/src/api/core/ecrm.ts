@@ -1382,6 +1382,8 @@ export interface PlatformAdminRow {
   service_store_ids: string;
   is_agent: number;
   circle_agent_id: number;
+  linked_user_id?: number;
+  avatar_url?: string;
   create_time?: string;
 }
 

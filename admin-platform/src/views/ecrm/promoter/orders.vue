@@ -20,6 +20,10 @@ import {
   type PlatformOrderTabCounts,
 } from '#/api/core/platform-trade';
 import {
+  listUserSearchFormField,
+  parseUserSearch,
+} from '#/components/ecrm/user-search-field';
+import {
   platformListActionColumn,
   platformListPagerConfig,
 } from '#/constants/platform-list-grid';
@@ -80,6 +84,7 @@ function buildListParams(
   const merCategoryId = Number(values.mer_category_id || 0);
   const activityType = values.activity_type;
   const productType = values.product_type;
+  const userSearch = parseUserSearch(values);
   return {
     page: page.currentPage,
     limit: page.pageSize,
@@ -99,9 +104,8 @@ function buildListParams(
     spread_keyword: String(values.spread_keyword ?? '').trim() || undefined,
     top_spread_keyword:
       String(values.top_spread_keyword ?? '').trim() || undefined,
-    user_search_type: 'any',
-    user_search_keyword:
-      String(values.user_search_keyword ?? '').trim() || undefined,
+    user_search_type: userSearch.type || 'nickname',
+    user_search_keyword: userSearch.keyword || undefined,
   };
 }
 
@@ -231,15 +235,7 @@ const formOptions: VbenFormProps = listFormOptionsDefaults([
     fieldName: 'top_spread_keyword',
     label: '上级推广',
   },
-  {
-    component: 'Input',
-    componentProps: {
-      clearable: true,
-      placeholder: '请输入用户昵称/手机号',
-    },
-    fieldName: 'user_search_keyword',
-    label: '用户信息',
-  },
+  listUserSearchFormField({ label: '用户信息' }),
 ]);
 
 const gridOptions: VxeGridProps<PlatformOrder> = {
