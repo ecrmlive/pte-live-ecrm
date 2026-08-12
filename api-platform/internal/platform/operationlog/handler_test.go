@@ -2,14 +2,22 @@ package operationlog
 
 import "testing"
 
-func TestDateRange(t *testing.T) {
-	start, end, ok := dateRange("2026-08-01", "2026-08-01")
-	if !ok || start.IsZero() || end.Sub(start).Hours() != 24 {
-		t.Fatalf("range start=%v end=%v ok=%v", start, end, ok)
+func TestSplitAction(t *testing.T) {
+	method, path := splitAction("POST /api/platform/v1/setting/admins/:id")
+	if method != "POST" || path != "/api/platform/v1/setting/admins/:id" {
+		t.Fatalf("splitAction() = %q, %q", method, path)
 	}
-	for _, values := range [][2]string{{"bad", ""}, {"2026-08-03", "2026-08-01"}} {
-		if _, _, ok := dateRange(values[0], values[1]); ok {
-			t.Fatalf("invalid range accepted: %v", values)
-		}
+	method, path = splitAction("更新配置")
+	if method != "" || path != "" {
+		t.Fatalf("non route action must stay empty, got %q, %q", method, path)
+	}
+}
+
+func TestOperationPermissionName(t *testing.T) {
+	if got := operationPermissionName("customer-service"); got != "客服管理" {
+		t.Fatalf("permission name=%q", got)
+	}
+	if got := operationPermissionName("unknown"); got != "平台管理" {
+		t.Fatalf("fallback permission name=%q", got)
 	}
 }

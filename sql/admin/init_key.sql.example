@@ -26,4 +26,14 @@
 --   ('amap','amap_android_key','','bootstrap-local-v1',NULL,NOW()),
 --   ('amap','amap_harmony_key','','bootstrap-local-v1',NULL,NOW())
 -- ON DUPLICATE KEY UPDATE `ciphertext`=VALUES(`ciphertext`),`key_version`=VALUES(`key_version`),`updated_at`=VALUES(`updated_at`);
+--
+-- 微信小程序、腾讯云短信与直播密钥示例。公开参数由 init_data.sql 提供；
+-- 下列占位符仅允许填写在本机被忽略的 init_key.sql，严禁提交真实值：
+-- INSERT INTO `qixi_crm_a_cloud_config` (`provider`,`config_key`,`ciphertext`,`key_version`,`updated_by`,`updated_at`) VALUES
+--   ('wechat_mini_program','app_id','YOUR_WECHAT_MINI_PROGRAM_APP_ID','bootstrap-local-v1',NULL,NOW()),
+--   ('wechat_mini_program','app_secret','YOUR_WECHAT_MINI_PROGRAM_APP_SECRET','bootstrap-local-v1',NULL,NOW()),
+--   ('tencent_sms','app_key','YOUR_TENCENT_SMS_APP_KEY','bootstrap-local-v1',NULL,NOW()),
+--   ('lvb','push_secret','YOUR_TENCENT_LVB_PUSH_SECRET','bootstrap-local-v1',NULL,NOW()),
+--   ('lvb','pull_secret','YOUR_TENCENT_LVB_PULL_SECRET','bootstrap-local-v1',NULL,NOW())
+-- ON DUPLICATE KEY UPDATE `ciphertext`=VALUES(`ciphertext`),`key_version`=VALUES(`key_version`),`updated_at`=VALUES(`updated_at`);
 USE `qixi_crm_admin`;

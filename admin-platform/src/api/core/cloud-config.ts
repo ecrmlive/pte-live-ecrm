@@ -44,6 +44,14 @@ export function saveRoutineConfigApi(values: Record<string, string>) {
   });
 }
 
+export function getTencentSMSConfigApi() {
+  return requestClient.get<CloudConfigGroup>('/setting/tencent-sms');
+}
+
+export function saveTencentSMSConfigApi(values: Record<string, string>) {
+  return requestClient.put<CloudConfigGroup>('/setting/tencent-sms', { values });
+}
+
 export type NativePlatform = 'android' | 'harmony' | 'ios';
 
 export function getMobileAppConfigApi(platform: NativePlatform) {

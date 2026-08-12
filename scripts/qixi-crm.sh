@@ -250,7 +250,7 @@ initialize_databases() {
 	local domain phase sql_file
 	require_shared_infra
 	for domain in admin business merchant; do
-		for phase in init_table init_config init_data init_key init_test_data; do
+		for phase in init_table init_config init_data init_key init_file init_test_data; do
 			sql_file="${ROOT_DIR}/sql/${domain}/${phase}.sql"
 			[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}；init_key.sql 不纳入 Git，请从 init_key.sql.example 复制后填写" >&2; exit 1; }
 			echo ">> 导入 sql/${domain}/${phase}.sql 到 pte_live_mysql"
@@ -276,11 +276,6 @@ initialize_databases() {
 	if [[ -f "${user_stat_demo_sql}" ]]; then
 		echo ">> 导入 sql/business/init_user_stat_demo.sql 到 pte_live_mysql"
 		shared_mysql <"${user_stat_demo_sql}"
-	fi
-	product_category_seed_sql="${ROOT_DIR}/sql/admin/seed_default_product_categories.sql"
-	if [[ -f "${product_category_seed_sql}" ]]; then
-		echo ">> 导入 sql/admin/seed_default_product_categories.sql 到 pte_live_mysql"
-		shared_mysql <"${product_category_seed_sql}"
 	fi
 	merchant_menu_sql="${ROOT_DIR}/sql/merchant/init_menu_crmeb_full.sql"
 	[[ -f "${merchant_menu_sql}" ]] || { echo "错误: 缺少 ${merchant_menu_sql}" >&2; exit 1; }

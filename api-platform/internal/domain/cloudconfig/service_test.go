@@ -87,3 +87,55 @@ func TestIgnoredKeySQLBootstrapCanSeedSecret(t *testing.T) {
 		t.Fatalf("values=%v err=%v", values, err)
 	}
 }
+
+func TestTencentSMSConfigEncryptsAppKeyAndKeepsPublicValues(t *testing.T) {
+	store := newMemoryStore()
+	svc, err := NewService(store, "test-master-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = svc.Save(context.Background(), "tencent_sms", SaveInput{Values: map[string]string{
+		"enabled":      "true",
+		"sdk_app_id":   "1401165606",
+		"app_key":      "local-app-key",
+		"sign_id":      "711884",
+		"sign_content": "杭州乐成体育",
+		"template_id":  "2701987",
+	}}, 9)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if store.rows["tencent_sms:app_key"].Ciphertext == "local-app-key" {
+		t.Fatal("App Key must be encrypted")
+	}
+	view, err := svc.Get(context.Background(), "tencent_sms")
+	if err != nil || view.Values["app_key"] != SecretMasked || view.Values["sign_content"] != "杭州乐成体育" {
+		t.Fatalf("view=%#v err=%v", view, err)
+	}
+}
+
+func TestTencentSMSRequiresAppKeyOnFirstSaveButKeepsConfiguredSecret(t *testing.T) {
+	store := newMemoryStore()
+	svc, err := NewService(store, "test-master-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	values := map[string]string{
+		"enabled":      "true",
+		"sdk_app_id":   "1401165606",
+		"sign_id":      "711884",
+		"sign_content": "杭州乐成体育",
+		"template_id":  "2701987",
+	}
+	if _, err = svc.Save(context.Background(), "tencent_sms", SaveInput{Values: values}, 9); err != ErrBadValue {
+		t.Fatalf("first save without app key err=%v, want %v", err, ErrBadValue)
+	}
+	values["app_key"] = "local-app-key"
+	if _, err = svc.Save(context.Background(), "tencent_sms", SaveInput{Values: values}, 9); err != nil {
+		t.Fatal(err)
+	}
+	values["app_key"] = SecretMasked
+	if _, err = svc.Save(context.Background(), "tencent_sms", SaveInput{Values: values}, 9); err != nil {
+		t.Fatalf("masked configured app key should be preserved: %v", err)
+	}
+}

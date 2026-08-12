@@ -124,10 +124,13 @@ func Catalog() []GroupMeta {
 			{Key: "app_master_secret", Label: "友盟 App Master Secret", Secret: true, Required: true},
 			{Key: "bundle_name", Label: "Bundle Name", Required: true},
 		}},
-		{Key: "sms", Label: "短信验证码网关", Fields: []FieldMeta{
-			{Key: "enabled", Label: "启用短信网关"}, {Key: "endpoint", Label: "短信网关 HTTPS 地址", Required: true},
-			{Key: "authorization", Label: "短信网关授权令牌", Secret: true, Required: true}, {Key: "template", Label: "验证码模板标识", Required: true},
-			{Key: "timeout_seconds", Label: "请求超时秒数", Hint: "默认 5"},
+		{Key: "tencent_sms", Label: "腾讯云短信", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用平台短信验证码", InputType: "switch"},
+			{Key: "sdk_app_id", Label: "SDKAppID", Required: true, InputType: "number"},
+			{Key: "app_key", Label: "App Key", Secret: true, Required: true},
+			{Key: "sign_id", Label: "签名管理 ID", Required: true, InputType: "number"},
+			{Key: "sign_content", Label: "签名内容", Required: true},
+			{Key: "template_id", Label: "模板 ID", Required: true, InputType: "number"},
 		}},
 		{Key: "tencent_account", Label: "腾讯云账号", Fields: []FieldMeta{
 			{Key: "secret_id", Label: "SecretId", Secret: true, Required: true}, {Key: "secret_key", Label: "SecretKey", Secret: true, Required: true},
@@ -279,6 +282,28 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 	for _, field := range meta.Fields {
 		allowed[field.Key] = field
 	}
+	// 先读取已有值，确保必填项不会因前端的“密钥掩码 / 留空不修改”语义被误判为缺失。
+	// 任何首次保存仍必须提交全部必填字段，尤其是 Secret 字段。
+	existingRows, err := s.store.ListByGroup(ctx, meta.Key)
+	if err != nil {
+		return nil, err
+	}
+	existing := make(map[string]struct{}, len(existingRows))
+	for _, row := range existingRows {
+		existing[row.ConfigKey] = struct{}{}
+	}
+	for _, field := range meta.Fields {
+		if !field.Required {
+			continue
+		}
+		value := strings.TrimSpace(in.Values[field.Key])
+		if value != "" && (!field.Secret || value != SecretMasked) {
+			continue
+		}
+		if _, exists := existing[field.Key]; !exists {
+			return nil, ErrBadValue
+		}
+	}
 	keys := make([]string, 0, len(in.Values))
 	for key := range in.Values {
 		keys = append(keys, key)
@@ -291,6 +316,10 @@ func (s *Service) Save(ctx context.Context, group string, in SaveInput, adminID 
 		}
 		value := strings.TrimSpace(in.Values[key])
 		if field.Secret && (value == "" || value == SecretMasked) {
+			continue
+		}
+		if field.Required && value == "" {
+			// 已有必填字段在局部更新时保持原值，禁止覆盖为空。
 			continue
 		}
 		if len(value) > 16*1024 {

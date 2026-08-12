@@ -67,10 +67,13 @@ func Catalog() []GroupMeta {
 			{Key: "enabled", Label: "启用微信小程序"}, {Key: "app_id", Label: "小程序 AppID", Required: true},
 			{Key: "app_secret", Label: "小程序 AppSecret", Secret: true, Required: true},
 		}},
-		{Key: "sms", Label: "短信验证码网关", Fields: []FieldMeta{
-			{Key: "enabled", Label: "启用短信网关"}, {Key: "endpoint", Label: "短信网关 HTTPS 地址", Required: true},
-			{Key: "authorization", Label: "短信网关授权令牌", Secret: true, Required: true}, {Key: "template", Label: "验证码模板标识", Required: true},
-			{Key: "timeout_seconds", Label: "请求超时秒数", Hint: "默认 5"},
+		{Key: "tencent_sms", Label: "腾讯云短信", Fields: []FieldMeta{
+			{Key: "enabled", Label: "启用平台短信验证码"},
+			{Key: "sdk_app_id", Label: "SDKAppID", Required: true},
+			{Key: "app_key", Label: "App Key", Secret: true, Required: true},
+			{Key: "sign_id", Label: "签名管理 ID", Required: true},
+			{Key: "sign_content", Label: "签名内容", Required: true},
+			{Key: "template_id", Label: "模板 ID", Required: true},
 		}},
 		{Key: "tencent_account", Label: "腾讯云账号", Fields: []FieldMeta{
 			{Key: "secret_id", Label: "SecretId", Secret: true, Required: true}, {Key: "secret_key", Label: "SecretKey", Secret: true, Required: true},

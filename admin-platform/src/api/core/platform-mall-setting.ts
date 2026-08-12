@@ -1,12 +1,47 @@
-import { requestClient } from '#/api/request';
+import { requestClient } from "#/api/request";
 
 export interface PlatformShopConfig {
-  site_name: string;
-  site_url: string;
+  /** 历史站点域名，仅供邀请链接兼容使用，不在商城设置页面展示。 */
+  site_url?: string;
+  /** 历史站点名称，仅供旧配置兼容使用，不在商城设置页面展示。 */
+  site_name?: string;
+  /** 历史总开关，仅供旧配置兼容使用，不在商城设置页面展示。 */
+  enabled?: boolean;
+  /** 历史备注，仅供旧配置兼容使用，不在商城设置页面展示。 */
+  remark?: string;
+  auto_parse_clipboard: boolean;
+  arrival_notice_enabled: boolean;
+  product_comment_enabled: boolean;
+  auto_positive_review_enabled: boolean;
+  default_copy_times: number;
   order_auto_cancel_minutes: number;
   order_auto_receive_days: number;
-  enabled: boolean;
-  remark: string;
+  after_sale_days: number;
+  merchant_refund_auto_days: number;
+  refund_reasons: string[];
+  platform_rights_enabled: boolean;
+  platform_rights_days: number;
+  merge_payment_enabled: boolean;
+  merchant_apply_enabled: boolean;
+  merchant_qualification_required: boolean;
+  merchant_margin_badge_enabled: boolean;
+  merchant_margin_badge_image: string;
+  merchant_category_limit: number;
+  mall_show_stores: boolean;
+  mall_recommend_enabled: boolean;
+  mall_recommend_distance_enabled: boolean;
+  mall_recommend_sort: "default" | "created_at" | "star";
+  live_stream_auto_approve: boolean;
+  live_product_auto_approve: boolean;
+  hot_ranking_enabled: boolean;
+  hot_ranking_category_level: 1 | 2 | 3;
+  hot_ranking_refresh_hours: number;
+  mall_search_mode: "fuzzy" | "split";
+  product_ranking_period: "month" | "today" | "week";
+  product_ranking_metric: "sales_amount" | "sales_quantity";
+  shop_ranking_period: "month" | "today" | "week";
+  shop_ranking_metric: "product_count" | "sales_amount";
+  dashboard_display_name: string;
 }
 
 export interface PlatformPayConfig {
@@ -37,38 +72,34 @@ function stringifyConfig<T>(config: T): string {
 }
 
 export function getPlatformShopConfigApi() {
-  return requestClient
-    .get<{ config: string; note: string }>('/setting/shop')
-    .then((data) => ({
-      note: data.note,
-      config: parseConfig<PlatformShopConfig>(data.config),
-    }));
+  return requestClient.get<{ config: string; note: string }>("/setting/shop").then((data) => ({
+    note: data.note,
+    config: parseConfig<PlatformShopConfig>(data.config),
+  }));
 }
 
 export function savePlatformShopConfigApi(config: PlatformShopConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/shop', { config: stringifyConfig(config) })
+    .put<{ config: string }>("/setting/shop", { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformShopConfig>(data.config));
 }
 
 export function getPlatformPayConfigApi() {
-  return requestClient
-    .get<{ config: string; note: string }>('/setting/pay')
-    .then((data) => ({
-      note: data.note,
-      config: parseConfig<PlatformPayConfig>(data.config),
-    }));
+  return requestClient.get<{ config: string; note: string }>("/setting/pay").then((data) => ({
+    note: data.note,
+    config: parseConfig<PlatformPayConfig>(data.config),
+  }));
 }
 
 export function savePlatformPayConfigApi(config: PlatformPayConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/pay', { config: stringifyConfig(config) })
+    .put<{ config: string }>("/setting/pay", { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformPayConfig>(data.config));
 }
 
 export function getPlatformWechatAppConfigApi() {
   return requestClient
-    .get<{ config: string; note: string }>('/setting/wechat-app')
+    .get<{ config: string; note: string }>("/setting/wechat-app")
     .then((data) => ({
       note: data.note,
       config: parseConfig<PlatformWechatAppConfig>(data.config),
@@ -77,22 +108,20 @@ export function getPlatformWechatAppConfigApi() {
 
 export function savePlatformWechatAppConfigApi(config: PlatformWechatAppConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/wechat-app', { config: stringifyConfig(config) })
+    .put<{ config: string }>("/setting/wechat-app", { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformWechatAppConfig>(data.config));
 }
 
 export function getPlatformMarginConfigApi() {
-  return requestClient
-    .get<{ config: string; note: string }>('/setting/margin')
-    .then((data) => ({
-      note: data.note,
-      config: parseConfig<PlatformMarginConfig>(data.config),
-    }));
+  return requestClient.get<{ config: string; note: string }>("/setting/margin").then((data) => ({
+    note: data.note,
+    config: parseConfig<PlatformMarginConfig>(data.config),
+  }));
 }
 
 export function savePlatformMarginConfigApi(config: PlatformMarginConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/margin', { config: stringifyConfig(config) })
+    .put<{ config: string }>("/setting/margin", { config: stringifyConfig(config) })
     .then((data) => parseConfig<PlatformMarginConfig>(data.config));
 }
 
@@ -124,18 +153,16 @@ export interface PlatformDistributionConfig {
 
 export function getPlatformDistributionConfigApi() {
   return requestClient
-    .get<{ config: string; note: string }>('/setting/distribution')
+    .get<{ config: string; note: string }>("/setting/distribution")
     .then((data) => ({
       note: data.note,
       config: parseConfig<PlatformDistributionConfig>(data.config),
     }));
 }
 
-export function savePlatformDistributionConfigApi(
-  config: PlatformDistributionConfig,
-) {
+export function savePlatformDistributionConfigApi(config: PlatformDistributionConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/distribution', {
+    .put<{ config: string }>("/setting/distribution", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformDistributionConfig>(data.config));
@@ -151,18 +178,16 @@ export interface PlatformGroupBuyingConfig {
 
 export function getPlatformGroupBuyingConfigApi() {
   return requestClient
-    .get<{ config: string; note: string }>('/setting/group-buying')
+    .get<{ config: string; note: string }>("/setting/group-buying")
     .then((data) => ({
       note: data.note,
       config: parseConfig<PlatformGroupBuyingConfig>(data.config),
     }));
 }
 
-export function savePlatformGroupBuyingConfigApi(
-  config: PlatformGroupBuyingConfig,
-) {
+export function savePlatformGroupBuyingConfigApi(config: PlatformGroupBuyingConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/group-buying', {
+    .put<{ config: string }>("/setting/group-buying", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformGroupBuyingConfig>(data.config));
@@ -191,17 +216,15 @@ export interface PlatformIntegralConfig {
 }
 
 export function getPlatformIntegralConfigApi() {
-  return requestClient
-    .get<{ config: string; note: string }>('/setting/integral')
-    .then((data) => ({
-      note: data.note,
-      config: parseConfig<PlatformIntegralConfig>(data.config),
-    }));
+  return requestClient.get<{ config: string; note: string }>("/setting/integral").then((data) => ({
+    note: data.note,
+    config: parseConfig<PlatformIntegralConfig>(data.config),
+  }));
 }
 
 export function savePlatformIntegralConfigApi(config: PlatformIntegralConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/integral', {
+    .put<{ config: string }>("/setting/integral", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformIntegralConfig>(data.config));
@@ -220,17 +243,15 @@ export interface PlatformBalanceConfig {
 }
 
 export function getPlatformBalanceConfigApi() {
-  return requestClient
-    .get<{ config: string; note: string }>('/setting/balance')
-    .then((data) => ({
-      note: data.note,
-      config: parseConfig<PlatformBalanceConfig>(data.config),
-    }));
+  return requestClient.get<{ config: string; note: string }>("/setting/balance").then((data) => ({
+    note: data.note,
+    config: parseConfig<PlatformBalanceConfig>(data.config),
+  }));
 }
 
 export function savePlatformBalanceConfigApi(config: PlatformBalanceConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/balance', {
+    .put<{ config: string }>("/setting/balance", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformBalanceConfig>(data.config));
@@ -238,33 +259,28 @@ export function savePlatformBalanceConfigApi(config: PlatformBalanceConfig) {
 
 /** 对齐 CRMEB 商户设置：入驻页背景 + 自定义表单字段 */
 export type MerchantApplyFieldType =
-  | 'checkbox'
-  | 'city'
-  | 'date'
-  | 'daterange'
-  | 'radio'
-  | 'select'
-  | 'text'
-  | 'textarea'
-  | 'time'
-  | 'timerange'
-  | 'image';
+  | "checkbox"
+  | "city"
+  | "date"
+  | "daterange"
+  | "radio"
+  | "select"
+  | "text"
+  | "textarea"
+  | "time"
+  | "timerange"
+  | "image";
 
-export type MerchantApplyContentType =
-  | 'text'
-  | 'number'
-  | 'mobile'
-  | 'idcard'
-  | 'email';
+export type MerchantApplyContentType = "text" | "number" | "mobile" | "idcard" | "email";
 
 export type MerchantApplyCityLevel =
-  | 'province_city'
-  | 'province_city_district'
-  | 'province_city_district_street';
+  | "province_city"
+  | "province_city_district"
+  | "province_city_district_street";
 
-export type MerchantApplyDefaultVisible = 'show' | 'hide';
+export type MerchantApplyDefaultVisible = "show" | "hide";
 
-export type MerchantApplyDefaultMode = 'current' | 'specify';
+export type MerchantApplyDefaultMode = "current" | "specify";
 
 export interface MerchantApplyFormField {
   id: string;
@@ -294,18 +310,16 @@ export interface PlatformMerchantApplyConfig {
 
 export function getPlatformMerchantApplyConfigApi() {
   return requestClient
-    .get<{ config: string; note: string }>('/setting/merchant-apply')
+    .get<{ config: string; note: string }>("/setting/merchant-apply")
     .then((data) => ({
       note: data.note,
       config: parseConfig<PlatformMerchantApplyConfig>(data.config),
     }));
 }
 
-export function savePlatformMerchantApplyConfigApi(
-  config: PlatformMerchantApplyConfig,
-) {
+export function savePlatformMerchantApplyConfigApi(config: PlatformMerchantApplyConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/merchant-apply', {
+    .put<{ config: string }>("/setting/merchant-apply", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformMerchantApplyConfig>(data.config));
@@ -321,7 +335,7 @@ export interface PlatformAgentZoneConfig {
 
 export function getPlatformAgentZoneConfigApi() {
   return requestClient
-    .get<{ config: string; note: string }>('/setting/agent-zone')
+    .get<{ config: string; note: string }>("/setting/agent-zone")
     .then((data) => ({
       note: data.note,
       config: parseConfig<PlatformAgentZoneConfig>(data.config),
@@ -330,7 +344,7 @@ export function getPlatformAgentZoneConfigApi() {
 
 export function savePlatformAgentZoneConfigApi(config: PlatformAgentZoneConfig) {
   return requestClient
-    .put<{ config: string }>('/setting/agent-zone', {
+    .put<{ config: string }>("/setting/agent-zone", {
       config: stringifyConfig(config),
     })
     .then((data) => parseConfig<PlatformAgentZoneConfig>(data.config));

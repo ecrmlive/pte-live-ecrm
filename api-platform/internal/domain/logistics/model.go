@@ -59,6 +59,14 @@ type ExpressInput struct {
 	IsShow *int8  `json:"is_show"`
 }
 
+// ExpressSyncResult 是平台内置物流公司目录同步的结果。同步仅维护目录名称和
+// 已删除状态，不覆盖运营人员维护的排序与是否显示。
+type ExpressSyncResult struct {
+	Created int `json:"created"`
+	Updated int `json:"updated"`
+	Total   int `json:"total"`
+}
+
 type RegionInput struct {
 	CityIDs       string  `json:"city_ids"`
 	First         float64 `json:"first"`

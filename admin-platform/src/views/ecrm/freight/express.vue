@@ -1,128 +1,182 @@
 <script lang="ts" setup>
-import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { VbenFormProps } from "#/adapter/form";
+import type { VxeGridProps } from "#/adapter/vxe-table";
 
-import { reactive, ref } from 'vue';
+import { reactive, ref } from "vue";
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
-import { ElButton, ElForm, ElFormItem, ElInput, ElInputNumber, ElMessage, ElMessageBox, ElSwitch } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
-
-import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { confirm, Page, useVbenDrawer } from "@vben/common-ui";
 import {
-  createExpress,
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElSwitch,
+} from "element-plus";
+
+import { useVbenVxeGrid } from "#/adapter/vxe-table";
+import {
   deleteExpress,
   fetchExpressList,
+  syncExpressCatalog,
   updateExpress,
   type ExpressRow,
-} from '#/api/core/ecrm';
+} from "#/api/core/ecrm";
+import { platformListActionColumn, platformListPagerConfig } from "#/constants/platform-list-grid";
+import { listFormOptionsDefaults } from "#/utils/list-form-defaults";
 
 const form = reactive({
-  name: '',
-  code: '',
+  code: "",
+  isShow: true,
+  name: "",
   sort: 0,
-  show: true,
 });
 const editingId = ref(0);
 
-const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
-  confirmText: '保存',
-  cancelText: '取消',
-  placement: 'right',
-  onConfirm: async () => {
-    if (!form.name.trim()) {
-      ElMessage.warning('请填写名称');
-      return;
-    }
-    const payload = {
-      name: form.name.trim(),
-      code: form.code.trim(),
-      sort: form.sort,
-      is_show: form.show ? 1 : 0,
-    };
-    if (editingId.value) {
-      await updateExpress(editingId.value, payload);
-    } else {
-      await createExpress(payload);
-    }
-    ElMessage.success('已保存');
-    formDrawerApi.close();
-    gridApi.reload();
-  },
+const [ExpressDrawer, expressDrawerApi] = useVbenDrawer({
+  class: "w-[1000px] max-w-[96vw]",
+  confirmText: "保存",
+  cancelText: "取消",
+  placement: "right",
+  onConfirm: saveExpress,
 });
 
-const gridOptions: VxeGridProps<ExpressRow> = {
-  border: true,
-  columns: [
-    { field: 'express_id', title: 'ID', width: 80 },
-    { field: 'name', minWidth: 160, title: '名称' },
-    { field: 'code', title: '编码', width: 140 },
-    { field: 'sort', title: '排序', width: 80 },
+const formOptions: VbenFormProps = listFormOptionsDefaults(
+  [
     {
-      field: 'is_show',
-      title: '状态',
-      width: 90,
-      formatter: ({ cellValue }) => (cellValue === 1 ? '展示' : '隐藏'),
+      component: "Input",
+      componentProps: {
+        clearable: true,
+        placeholder: "请输入物流公司名称或者编码",
+      },
+      fieldName: "keyword",
+      label: "搜索",
     },
-    { fixed: 'right', slots: { default: 'action' }, title: '操作', width: 160 },
   ],
-  height: 'auto',
-  pagerConfig: { enabled: true, pageSize: 10 },
+  { wrapperClass: "grid-cols-1 md:grid-cols-[520px_auto]" },
+);
+
+const gridOptions: VxeGridProps<ExpressRow> = {
+  columns: [
+    { field: "express_id", title: "ID", width: 88 },
+    { field: "name", minWidth: 260, title: "物流公司名称" },
+    { field: "code", minWidth: 220, title: "编码" },
+    { field: "sort", sortable: true, title: "排序", width: 120 },
+    {
+      align: "center",
+      field: "is_show",
+      slots: { default: "isShow" },
+      title: "是否显示",
+      width: 130,
+    },
+    platformListActionColumn({ width: 150 }),
+  ],
+  formOptions,
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async ({ page }) => {
+      query: async ({ page, sorts }, formValues) => {
+        const sort = Array.isArray(sorts) ? sorts.find((item) => item.field === "sort") : undefined;
         const data = await fetchExpressList({
-          page: page.currentPage,
+          keyword: String(formValues?.keyword ?? "").trim() || undefined,
           limit: page.pageSize,
+          page: page.currentPage,
+          sort_order: sort?.order === "asc" || sort?.order === "desc" ? sort.order : undefined,
         });
         return { items: data.list || [], total: data.total || 0 };
       },
     },
+    sort: true,
   },
-  rowConfig: { isHover: true, keyField: 'express_id' },
+  rowConfig: { isHover: true, keyField: "express_id" },
+  sortConfig: { multiple: false, remote: true, trigger: "cell" },
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
-
-function openCreate() {
-  editingId.value = 0;
-  form.name = '';
-  form.code = '';
-  form.sort = 0;
-  form.show = true;
-  formDrawerApi.setState({ title: '新建快递' });
-  formDrawerApi.open();
-}
 
 function openEdit(row: ExpressRow) {
   editingId.value = row.express_id;
   form.name = row.name;
   form.code = row.code;
   form.sort = row.sort;
-  form.show = row.is_show === 1;
-  formDrawerApi.setState({ title: '编辑快递' });
-  formDrawerApi.open();
+  form.isShow = row.is_show === 1;
+  expressDrawerApi.setState({ title: "编辑物流公司" });
+  expressDrawerApi.open();
+}
+
+async function saveExpress() {
+  const name = form.name.trim();
+  const code = form.code.trim();
+  if (!name || !code) {
+    ElMessage.warning("请填写物流公司名称和编码");
+    return;
+  }
+  await updateExpress(editingId.value, {
+    code,
+    is_show: form.isShow ? 1 : 0,
+    name,
+    sort: form.sort,
+  });
+  ElMessage.success("已保存");
+  expressDrawerApi.close();
+  await gridApi.reload();
+}
+
+async function toggleShow(row: ExpressRow, isShow: boolean) {
+  try {
+    await updateExpress(row.express_id, {
+      code: row.code,
+      is_show: isShow ? 1 : 0,
+      name: row.name,
+      sort: row.sort,
+    });
+    ElMessage.success("已保存");
+    await gridApi.reload();
+  } catch {
+    await gridApi.reload();
+  }
+}
+
+async function onSync() {
+  try {
+    await confirm({
+      content: "将同步平台内置物流公司目录，已有物流公司的排序和显示状态不会被覆盖。",
+      icon: "warning",
+      title: "同步物流公司",
+    });
+  } catch {
+    return;
+  }
+  const result = await syncExpressCatalog();
+  ElMessage.success(`同步完成：新增 ${result.created} 条，更新 ${result.updated} 条`);
+  await gridApi.reload();
 }
 
 async function onDelete(row: ExpressRow) {
   try {
-    await ElMessageBox.confirm(`删除快递「${row.name}」？`, '提示', {
-      type: 'warning',
+    await confirm({
+      content: `删除物流公司“${row.name}”后将不再用于后续发货选择。`,
+      icon: "warning",
+      title: "删除物流公司",
     });
   } catch {
     return;
   }
   await deleteExpress(row.express_id);
-  ElMessage.success('已删除');
-  gridApi.reload();
+  ElMessage.success("已删除");
+  await gridApi.reload();
 }
 </script>
 
 <template>
-  <Page auto-content-height title="物流公司">
+  <Page auto-content-height>
     <Grid>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">新建快递</ElButton>
+        <ElButton type="primary" @click="onSync">同步物流公司</ElButton>
+      </template>
+      <template #isShow="{ row }">
+        <ElSwitch :model-value="row.is_show === 1" @update:model-value="toggleShow(row, $event)" />
       </template>
       <template #action="{ row }">
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
@@ -130,21 +184,21 @@ async function onDelete(row: ExpressRow) {
       </template>
     </Grid>
 
-    <FormDrawer>
-      <ElForm label-position="top">
-        <ElFormItem label="名称" required>
-          <ElInput v-model="form.name" />
+    <ExpressDrawer>
+      <ElForm label-width="120px">
+        <ElFormItem label="物流公司名称" required>
+          <ElInput v-model="form.name" placeholder="请输入物流公司名称" />
         </ElFormItem>
-        <ElFormItem label="编码">
-          <ElInput v-model="form.code" />
+        <ElFormItem label="编码" required>
+          <ElInput v-model="form.code" placeholder="请输入物流公司编码" />
         </ElFormItem>
         <ElFormItem label="排序">
           <ElInputNumber v-model="form.sort" :min="0" class="w-full" />
         </ElFormItem>
-        <ElFormItem label="展示">
-          <ElSwitch v-model="form.show" />
+        <ElFormItem label="是否显示">
+          <ElSwitch v-model="form.isShow" />
         </ElFormItem>
       </ElForm>
-    </FormDrawer>
+    </ExpressDrawer>
   </Page>
 </template>

@@ -112,7 +112,7 @@ const platformQuickLinks: Array<{ icon: Component; label: string; route: string;
   { icon: User, label: '用户管理', route: '/user/list', tone: 'blue' },
   { icon: Document, label: '订单管理', route: '/order/list', tone: 'orange' },
   { icon: Connection, label: '分销管理', route: '/marketing/spread', tone: 'purple' },
-  { icon: Van, label: '一号通', route: '/setting/sms', tone: 'gold' },
+  { icon: Van, label: '服务配置', route: '/service/settings', tone: 'gold' },
   { icon: Document, label: '文章管理', route: '/cms/article', tone: 'cyan' },
   { icon: Ticket, label: '优惠券', route: '/marketing/coupon', tone: 'peach' },
   { icon: Setting, label: '系统设置', route: '/setting/admin', tone: 'amber' },

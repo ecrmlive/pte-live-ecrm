@@ -2,6 +2,25 @@ USE `qixi_crm_merchant`;
 SET NAMES utf8mb4;
 -- 不初始化店铺账号、密码或任何真实手机号。仅提供无个人信息的店铺读写模型夹具。
 
+-- 店铺、商户和商品均为本地演示数据，不应写入 init_data.sql。
+INSERT INTO `qixi_crm_m_merchant` (`id`,`name`,`status`,`region_id`) VALUES
+  (1,'七禧演示茶铺',1,10),(2,'七禧居家优选店',1,20),(3,'七禧数码生活店',1,10)
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`status`=VALUES(`status`),`region_id`=VALUES(`region_id`);
+INSERT INTO `qixi_crm_m_store` (`id`,`merchant_id`,`app_id`,`name`,`status`) VALUES
+  (1,1,'qixi.store.demo.1','七禧演示茶铺',1),(2,2,'qixi.store.demo.2','七禧居家优选店',1),(3,3,'qixi.store.demo.3','七禧数码生活店',1)
+ON DUPLICATE KEY UPDATE `merchant_id`=VALUES(`merchant_id`),`app_id`=VALUES(`app_id`),`name`=VALUES(`name`),`status`=VALUES(`status`);
+INSERT INTO `qixi_crm_m_product` (`id`,`store_id`,`title`,`category_id`,`status`,`version`) VALUES
+  (5001,1,'七禧春日茉莉花茶礼盒',101,'on_sale',1),(5002,2,'居家香氛扩香礼盒',102,'pending_review',1),(5003,3,'智能温控随行杯',103,'draft',1)
+ON DUPLICATE KEY UPDATE `store_id`=VALUES(`store_id`),`title`=VALUES(`title`),`category_id`=VALUES(`category_id`),`status`=VALUES(`status`),`version`=VALUES(`version`);
+INSERT INTO `qixi_crm_m_product_detail` (`product_id`,`brief`,`keyword`,`unit_name`,`cover_url`,`original_price`) VALUES
+  (5001,'虚构中文商品：清香茉莉花茶礼盒，供平台商品范围验收。','茉莉花茶,礼盒','盒','/demo/product-tea-v1.png',129.00),
+  (5002,'虚构中文商品：居家香氛礼盒，处于待审核状态。','香氛,家居','盒','/demo/product-fragrance-v1.png',199.00),
+  (5003,'虚构中文商品：智能温控随行杯草稿。','温控杯,数码','个','/demo/product-tumbler-v1.png',259.00)
+ON DUPLICATE KEY UPDATE `brief`=VALUES(`brief`),`keyword`=VALUES(`keyword`),`unit_name`=VALUES(`unit_name`),`cover_url`=VALUES(`cover_url`),`original_price`=VALUES(`original_price`);
+INSERT INTO `qixi_crm_m_product_sku` (`id`,`product_id`,`spec_json`,`price`,`stock`,`status`) VALUES
+  (5101,5001,JSON_OBJECT('规格','250克'),99.00,60,1),(5102,5002,JSON_OBJECT('规格','礼盒装'),159.00,36,1),(5103,5003,JSON_OBJECT('颜色','深空灰'),199.00,48,1)
+ON DUPLICATE KEY UPDATE `product_id`=VALUES(`product_id`),`spec_json`=VALUES(`spec_json`),`price`=VALUES(`price`),`stock`=VALUES(`stock`),`status`=VALUES(`status`);
+
 INSERT INTO `qixi_crm_m_product` (`id`,`store_id`,`title`,`category_id`,`brand_name`,`status`,`version`) VALUES
   (1001,1,'轻奢羊绒针织衫',101,'云锦织造','on_sale',1),
   (1002,1,'头层牛皮通勤托特包',101,'栖木皮具','on_sale',1),

@@ -1,5 +1,5 @@
-// Package nativeconfigitem manages platform config list items
-// (hot_search / group_data / system_form / backup) in qixi_crm_a_config_item.
+// Package nativeconfigitem manages ordinary platform config list items
+// (hot_search / system_form / backup) in qixi_crm_a_config_item.
 package nativeconfigitem
 
 import (
@@ -26,9 +26,46 @@ func NewHandler(adminDB *gorm.DB) *Handler { return &Handler{adminDB: adminDB} }
 func (h *Handler) Register(r gin.IRoutes) {
 	platformOnly := middleware.RequireAdminRoles("platform")
 	platformOrOps := middleware.RequireAdminRoles("platform", "operations")
+	// 组合数据具有“数据组 → 组内数据”的层级，不复用单条配置项表。
+	// 其余维护配置仍使用 qixi_crm_a_config_item。
+	groupData := newGroupDataHandler(h.adminDB)
+	groupRead := middleware.RequireAdminMenu(h.adminDB, "maintain.group_data")
+	groupManage := middleware.RequireAdminMenu(h.adminDB, "maintain.group_data.manage")
+	r.GET("/maintain/group-data", platformOnly, groupRead, groupData.list)
+	r.GET("/maintain/group-data/:id", platformOnly, groupRead, groupData.detail)
+	r.POST("/maintain/group-data", platformOnly, groupManage, groupData.create)
+	r.PUT("/maintain/group-data/:id", platformOnly, groupManage, groupData.update)
+	r.DELETE("/maintain/group-data/:id", platformOnly, groupManage, groupData.remove)
+	r.GET("/maintain/group-data/:id/items", platformOnly, groupRead, groupData.listItems)
+	r.POST("/maintain/group-data/:id/items", platformOnly, groupManage, groupData.createItem)
+	r.PUT("/maintain/group-data/:id/items/:itemID", platformOnly, groupManage, groupData.updateItem)
+	r.PUT("/maintain/group-data/:id/items/:itemID/status", platformOnly, groupManage, groupData.setItemStatus)
+	r.DELETE("/maintain/group-data/:id/items/:itemID", platformOnly, groupManage, groupData.removeItem)
+
+	// 配置分类是“分类 → 配置项”的独立实体，不能再回退到组合数据页。
+	configClassify := newConfigClassificationHandler(h.adminDB)
+	configClassifyPermission := middleware.RequireAdminMenu(h.adminDB, "maintain.config_classify")
+	configSettingPermission := middleware.RequireAdminMenu(h.adminDB, "maintain.config_setting")
+	r.GET("/maintain/config-classifications", platformOnly, configClassifyPermission, configClassify.list)
+	r.GET("/maintain/config-classifications/:id", platformOnly, configClassifyPermission, configClassify.detail)
+	r.POST("/maintain/config-classifications", platformOnly, configClassifyPermission, configClassify.create)
+	r.PUT("/maintain/config-classifications/:id", platformOnly, configClassifyPermission, configClassify.update)
+	r.PUT("/maintain/config-classifications/:id/status", platformOnly, configClassifyPermission, configClassify.setStatus)
+	r.DELETE("/maintain/config-classifications/:id", platformOnly, configClassifyPermission, configClassify.remove)
+	r.GET("/maintain/config-classifications/:id/items", platformOnly, configClassifyPermission, configClassify.listItems)
+	r.POST("/maintain/config-classifications/:id/items", platformOnly, configClassifyPermission, configClassify.createItem)
+	r.PUT("/maintain/config-classifications/:id/items/:itemID", platformOnly, configClassifyPermission, configClassify.updateItem)
+	r.PUT("/maintain/config-classifications/:id/items/:itemID/status", platformOnly, configClassifyPermission, configClassify.setItemStatus)
+	r.DELETE("/maintain/config-classifications/:id/items/:itemID", platformOnly, configClassifyPermission, configClassify.removeItem)
+	// 配置管理跨分类维护配置定义；配置值/密钥不通过该列表暴露。
+	r.GET("/maintain/config-settings", platformOnly, configSettingPermission, configClassify.listSettings)
+	r.POST("/maintain/config-settings", platformOnly, configSettingPermission, configClassify.createSetting)
+	r.PUT("/maintain/config-settings/:id", platformOnly, configSettingPermission, configClassify.updateSetting)
+	r.PUT("/maintain/config-settings/:id/status", platformOnly, configSettingPermission, configClassify.setSettingStatus)
+	r.DELETE("/maintain/config-settings/:id", platformOnly, configSettingPermission, configClassify.removeSetting)
+
 	for _, kind := range []itemKind{
-		{path: "/maintain/hot-search", typ: "hot_search", read: "maintain.hot_search", manage: "maintain.hot_search.manage", roles: platformOnly},
-		{path: "/maintain/group-data", typ: "group_data", read: "maintain.group_data", manage: "maintain.group_data.manage", roles: platformOnly},
+		{path: "/maintain/hot-search", typ: "hot_search", read: "setting.shop.hot.read", manage: "setting.shop.hot.manage", roles: platformOnly},
 		{path: "/maintain/backups", typ: "backup", read: "maintain.backup", manage: "maintain.backup.manage", roles: platformOnly},
 		{path: "/diy/system-forms", typ: "system_form", read: "operations.system_form", manage: "operations.system_form.manage", roles: platformOrOps},
 	} {
@@ -58,6 +95,7 @@ type itemRow struct {
 	Payload   string    `gorm:"column:payload"`
 	Status    int       `gorm:"column:status"`
 	Sort      int       `gorm:"column:sort"`
+	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
@@ -95,7 +133,7 @@ func (h *Handler) list(itemType string) gin.HandlerFunc {
 			return
 		}
 		rows := make([]itemRow, 0)
-		if err := q.Select("id,item_type,name,code,remark,payload,status,sort,updated_at").
+		if err := q.Select("id,item_type,name,code,remark,payload,status,sort,created_at,updated_at").
 			Order("sort ASC, id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 			fail(c)
 			return
@@ -250,7 +288,7 @@ func (h *Handler) load(c *gin.Context, itemType, rawID string) (*itemRow, bool) 
 	}
 	var row itemRow
 	err = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_config_item").
-		Select("id,item_type,name,code,remark,payload,status,sort,updated_at").
+		Select("id,item_type,name,code,remark,payload,status,sort,created_at,updated_at").
 		Where("id = ? AND item_type = ? AND is_del = 0", id, itemType).Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		response.Fail(c, http.StatusNotFound, "记录不存在")
@@ -311,6 +349,7 @@ func toItem(row itemRow) gin.H {
 		"status":     row.Status,
 		"enabled":    row.Status == 1,
 		"sort":       row.Sort,
+		"created_at": row.CreatedAt.Format("2006-01-02 15:04:05"),
 		"updated_at": row.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

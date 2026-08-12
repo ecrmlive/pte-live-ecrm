@@ -49,6 +49,16 @@ func TestParseServiceQueueScope(t *testing.T) {
 	}
 }
 
+func TestParseLegacyServiceQueueScope(t *testing.T) {
+	got, err := parseScopeIDs(json.RawMessage(`[1001,1002]`), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, []uint64{1001, 1002}) {
+		t.Fatalf("legacy store ids = %v", got)
+	}
+}
+
 func TestParseIDsRejectsInvalidCustomerServiceStore(t *testing.T) {
 	if _, err := parseIDs("1001,中文店铺", "客服授权店铺 ID"); err == nil {
 		t.Fatal("invalid store id must be rejected")

@@ -42,3 +42,8 @@ WHERE NOT EXISTS (
   SELECT 1 FROM `qixi_crm_a_data_scope` AS scope
   WHERE scope.`admin_user_id`=fixture.admin_user_id AND scope.`scope_type`='service_queue'
 );
+
+-- 早期夹具以数组保存；统一收敛为后端约定的 {"store_ids":[...]}，避免管理员列表解析失败。
+UPDATE `qixi_crm_a_data_scope`
+SET `scope_value`=JSON_OBJECT('store_ids', `scope_value`)
+WHERE `scope_type`='service_queue' AND JSON_TYPE(`scope_value`)='ARRAY';

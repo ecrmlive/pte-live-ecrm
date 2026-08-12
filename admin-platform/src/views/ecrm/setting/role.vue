@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { confirm, Page, useVbenDrawer } from '@vben/common-ui';
 import {
   ElButton,
   ElForm,
@@ -12,6 +11,8 @@ import {
   ElInput,
   ElMessage,
   ElSwitch,
+  ElTabPane,
+  ElTabs,
   ElTag,
   ElTree,
 } from 'element-plus';
@@ -20,98 +21,92 @@ import { Plus } from '@element-plus/icons-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   createPlatformRole,
+  deletePlatformRole,
   fetchPlatformMenuTree,
   fetchPlatformRoles,
   updatePlatformRole,
   type PlatformMenuNode,
   type PlatformRoleRow,
+  type PlatformRoleType,
 } from '#/api/core/ecrm';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
 import {
-  LIST_ENABLE_STATUS_FIELD,
-  LIST_KEYWORD_FIELD,
-  listFormOptionsDefaults,
-} from '#/utils/list-form-defaults';
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
 
+const ROLE_TABS: Array<{ label: string; value: PlatformRoleType }> = [
+  { label: '平台', value: 'platform' },
+  { label: '商户', value: 'merchant' },
+  { label: '区域', value: 'region' },
+];
+
+const activeRoleType = ref<PlatformRoleType>('platform');
 const menus = ref<PlatformMenuNode[]>([]);
 const editing = ref<PlatformRoleRow>();
 const menuTree = ref();
 const form = reactive({
-  code: '',
   role_name: '',
   status: 1,
-  is_agent: 0,
-  circle_id: 0,
 });
 
-function roleType(value: number) {
-  return value === 1 ? '区域角色' : '平台角色';
+const modalTitle = computed(() =>
+  editing.value ? '编辑身份管理' : '新增身份管理',
+);
+const activeRoleTypeLabel = computed(
+  () => ROLE_TABS.find((item) => item.value === activeRoleType.value)?.label || '平台',
+);
+
+function roleTypeLabel(value: PlatformRoleType) {
+  return ROLE_TABS.find((item) => item.value === value)?.label || '平台';
 }
 
 function roleIDs(row?: PlatformRoleRow) {
   return row?.rules ? row.rules.split(',').map(Number).filter(Boolean) : [];
 }
 
-const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_KEYWORD_FIELD('角色名称 / 代码'),
-  LIST_ENABLE_STATUS_FIELD('状态'),
-]);
-
 const gridOptions: VxeGridProps<PlatformRoleRow> = {
   columns: [
-    { field: 'role_id', title: 'ID', width: 72 },
-    { field: 'code', minWidth: 140, title: '角色代码' },
-    { field: 'role_name', minWidth: 160, title: '角色名称' },
+    { field: 'role_id', title: 'ID', width: 84 },
+    { field: 'role_name', minWidth: 220, title: '身份名称' },
     {
-      field: 'is_agent',
-      slots: { default: 'is_agent' },
-      title: '类型',
-      width: 120,
+      align: 'center',
+      field: 'role_type',
+      slots: { default: 'role_type' },
+      title: '身份类型',
+      width: 160,
     },
     {
-      field: 'rules',
-      formatter: ({ row }) => String(roleIDs(row).length),
-      title: '权限数',
-      width: 100,
-    },
-    {
+      align: 'center',
       field: 'status',
       slots: { default: 'status' },
-      title: '状态',
-      width: 90,
+      title: '是否开启',
+      width: 130,
     },
-    platformListActionColumn({ width: 90 }),
+    {
+      field: 'created_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 190,
+      title: '创建时间',
+    },
+    {
+      field: 'updated_at',
+      formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
+      minWidth: 190,
+      title: '更新时间',
+    },
+    platformListActionColumn({ width: 150 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 50, pageSizes: [20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async ({ page }, formValues) => {
-        const keyword = String(formValues?.keyword ?? '')
-          .trim()
-          .toLowerCase();
-        const statusRaw = formValues?.status;
+      query: async ({ page }) => {
         const result = await fetchPlatformRoles({
-          page: page.currentPage,
           limit: page.pageSize,
+          page: page.currentPage,
+          role_type: activeRoleType.value,
         });
-        let list = result.list || [];
-        if (keyword) {
-          list = list.filter(
-            (row) =>
-              row.code.toLowerCase().includes(keyword) ||
-              row.role_name.toLowerCase().includes(keyword),
-          );
-        }
-        if (statusRaw === 0 || statusRaw === 1) {
-          list = list.filter((row) => row.status === Number(statusRaw));
-        }
-        return {
-          items: list,
-          total:
-            keyword || statusRaw === 0 || statusRaw === 1
-              ? list.length
-              : result.total,
-        };
+        return { items: result.list || [], total: result.total || 0 };
       },
     },
   },
@@ -125,58 +120,46 @@ const gridOptions: VxeGridProps<PlatformRoleRow> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  cancelText: '取消',
   class: 'w-[1000px] max-w-[96vw]',
   confirmText: '保存',
-  cancelText: '取消',
   placement: 'right',
-  onConfirm: async () => save(),
+  onConfirm: save,
 });
 
-const modalTitle = computed(() =>
-  editing.value ? '编辑角色' : '新增角色',
-);
-
 async function ensureMenus() {
-  if (!menus.value.length) menus.value = await fetchPlatformMenuTree();
+  menus.value = await fetchPlatformMenuTree(activeRoleType.value);
+}
+
+function onRoleTypeChange(value: string | number) {
+  activeRoleType.value = value as PlatformRoleType;
+  menus.value = [];
+  gridApi.reload({ page: 1 });
 }
 
 async function openCreate() {
   editing.value = undefined;
-  Object.assign(form, {
-    code: '',
-    role_name: '',
-    status: 1,
-    is_agent: 0,
-    circle_id: 0,
-  });
+  Object.assign(form, { role_name: '', status: 1 });
   await ensureMenus();
-  formDrawerApi.setState({ title: '新增角色' }).open();
+  formDrawerApi.setState({ title: '新增身份管理' }).open();
   requestAnimationFrame(() => menuTree.value?.setCheckedKeys([]));
 }
 
 async function openEdit(row: PlatformRoleRow) {
   editing.value = row;
-  Object.assign(form, {
-    code: row.code,
-    role_name: row.role_name,
-    status: row.status,
-    is_agent: row.is_agent,
-    circle_id: row.circle_id,
-  });
+  Object.assign(form, { role_name: row.role_name, status: row.status });
   await ensureMenus();
-  formDrawerApi.setState({ title: '编辑角色' }).open();
+  formDrawerApi.setState({ title: '编辑身份管理' }).open();
   requestAnimationFrame(() => menuTree.value?.setCheckedKeys(roleIDs(row)));
 }
 
 async function save() {
-  if (
-    !form.role_name.trim() ||
-    (!editing.value && !/^[a-z0-9_]{1,32}$/.test(form.code))
-  ) {
-    ElMessage.warning('请填写角色名称和小写角色代码');
+  const roleName = form.role_name.trim();
+  if (!roleName) {
+    ElMessage.warning('请填写身份名称');
     return;
   }
   formDrawerApi.lock();
@@ -184,24 +167,49 @@ async function save() {
     const menu_ids = menuTree.value?.getCheckedKeys(false) || [];
     if (editing.value) {
       await updatePlatformRole(editing.value.role_id, {
-        role_name: form.role_name.trim(),
-        status: form.status,
         menu_ids,
+        role_name: roleName,
+        status: form.status,
       });
     } else {
       await createPlatformRole({
-        code: form.code.trim(),
-        role_name: form.role_name.trim(),
-        status: form.status,
         menu_ids,
+        role_name: roleName,
+        role_type: activeRoleType.value,
+        status: form.status,
       });
     }
     formDrawerApi.close();
-    ElMessage.success('角色权限已保存');
-    gridApi.reload();
+    ElMessage.success('已保存');
+    await gridApi.reload();
   } finally {
     formDrawerApi.unlock();
   }
+}
+
+async function toggleStatus(row: PlatformRoleRow, enabled: boolean | string | number) {
+  await updatePlatformRole(row.role_id, {
+    menu_ids: roleIDs(row),
+    role_name: row.role_name,
+    status: enabled ? 1 : 0,
+  });
+  ElMessage.success('已保存');
+  await gridApi.reload();
+}
+
+async function remove(row: PlatformRoleRow) {
+  try {
+    await confirm({
+      content: `删除身份“${row.role_name}”后不可恢复。`,
+      icon: 'warning',
+      title: '删除身份管理',
+    });
+  } catch {
+    return;
+  }
+  await deletePlatformRole(row.role_id);
+  ElMessage.success('已删除');
+  await gridApi.reload();
 }
 </script>
 
@@ -209,41 +217,51 @@ async function save() {
   <Page auto-content-height>
     <Grid>
       <template #toolbar-actions>
-        <ElButton :icon="Plus" type="primary" @click="openCreate">
-          新增角色
-        </ElButton>
+        <div class="role-toolbar">
+          <ElTabs :model-value="activeRoleType" @tab-change="onRoleTypeChange">
+            <ElTabPane
+              v-for="item in ROLE_TABS"
+              :key="item.value"
+              :label="item.label"
+              :name="item.value"
+            />
+          </ElTabs>
+          <div class="role-toolbar__actions">
+            <ElButton :icon="Plus" type="primary" @click="openCreate">
+              新增身份管理
+            </ElButton>
+          </div>
+        </div>
       </template>
-      <template #is_agent="{ row }">
-        <ElTag :type="row.is_agent === 1 ? 'warning' : 'success'">
-          {{ roleType(row.is_agent) }}
+      <template #role_type="{ row }">
+        <ElTag effect="plain" type="info">
+          {{ roleTypeLabel(row.role_type) }}
         </ElTag>
       </template>
       <template #status="{ row }">
-        <ElTag :type="row.status === 1 ? 'success' : 'danger'">
-          {{ row.status === 1 ? '启用' : '禁用' }}
-        </ElTag>
+        <ElSwitch
+          :model-value="row.status === 1"
+          @update:model-value="toggleStatus(row, $event)"
+        />
       </template>
       <template #action="{ row }">
         <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="remove(row)">删除</ElButton>
       </template>
     </Grid>
 
     <FormDrawer :title="modalTitle">
-      <ElForm label-width="110px">
-        <ElFormItem label="角色代码" required>
-          <ElInput
-            v-model="form.code"
-            :disabled="!!editing"
-            placeholder="如 operations、region_custom"
-          />
+      <ElForm label-width="120px">
+        <ElFormItem label="身份类型">
+          <ElTag effect="plain" type="info">{{ activeRoleTypeLabel }}</ElTag>
         </ElFormItem>
-        <ElFormItem label="角色名称" required>
-          <ElInput v-model="form.role_name" />
+        <ElFormItem label="身份名称" required>
+          <ElInput v-model="form.role_name" maxlength="64" placeholder="请输入身份名称" />
         </ElFormItem>
-        <ElFormItem label="状态">
+        <ElFormItem label="是否开启">
           <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
         </ElFormItem>
-        <ElFormItem label="菜单与按钮">
+        <ElFormItem label="权限菜单">
           <div class="w-full rounded border p-3">
             <ElTree
               ref="menuTree"
@@ -260,3 +278,26 @@ async function save() {
     </FormDrawer>
   </Page>
 </template>
+
+<style scoped>
+.role-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 620px;
+  width: 100%;
+}
+
+.role-toolbar__actions {
+  display: flex;
+  width: fit-content;
+}
+
+.role-toolbar :deep(.el-tabs__header) {
+  margin: 0;
+}
+
+.role-toolbar :deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--el-border-color-lighter);
+}
+</style>

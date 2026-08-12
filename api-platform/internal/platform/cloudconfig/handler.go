@@ -37,6 +37,9 @@ func (h *Handler) Register(r gin.IRoutes) {
 	// 新统一后台的身份、角色和按钮权限均来自 qixi_crm_a_*。
 	// 不能使用 legacy identity.Service（其旧模型会访问 qixi_m_* 表）。
 	appSetting := middleware.RequireAdminRoles("platform")
+	smsManage := middleware.RequireAdminMenu(h.adminDB, "setting.sms.manage")
+	r.GET("/setting/tencent-sms", appSetting, smsManage, h.GetTencentSMS)
+	r.PUT("/setting/tencent-sms", appSetting, smsManage, h.SaveTencentSMS)
 	routineManage := middleware.RequireAdminMenu(h.adminDB, "app.routine.manage")
 	r.GET("/setting/routine-config", appSetting, routineManage, h.GetRoutine)
 	r.PUT("/setting/routine-config", appSetting, routineManage, h.SaveRoutine)
@@ -48,6 +51,14 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.PUT("/setting/push-config/:platform", appSetting, pushManage, h.SavePush)
 	// 高德 Web JS 需在浏览器侧使用 Key/安全密钥；云配置页对 Secret 字段掩码，故单独提供已鉴权只读接口。
 	r.GET("/setting/map-client-config", h.MapClientConfig)
+}
+
+func (h *Handler) GetTencentSMS(c *gin.Context) {
+	h.getGroup(c, "tencent_sms")
+}
+
+func (h *Handler) SaveTencentSMS(c *gin.Context) {
+	h.saveGroup(c, "tencent_sms")
 }
 
 func (h *Handler) List(c *gin.Context) {

@@ -25,7 +25,9 @@ job/           -> release/pte-live-ecrm-job/bin/job
 | `release/config/api-merchant/app.yaml` | 店铺系统 API |
 | `release/config/job/app.yaml` | 异步任务（仅 `databases.business`） |
 
-所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。COS、平台支付、小程序密钥不写入运行 YAML，也不写入 Git：统一保存于被忽略的 `sql/admin/init_key.sql`，`make local-db-init` / `make test-db-init` 自动导入到统一后台配置表；`sql/business/init_key.sql` 与 `sql/merchant/init_key.sql` 只保留各自数据库边界说明。local 与 test 必须使用同一份三文件密钥 SQL。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
+所有运行 YAML 被 Git 忽略。仓库只保留不含真实值的 [`release/config.yaml.example`](../../release/config.yaml.example) 与各独立服务 `conf/app.yaml` 模板。COS、平台支付、小程序密钥不写入运行 YAML，也不写入 Git：统一保存于被忽略的 `sql/admin/init_key.sql`，模板为 `sql/admin/init_key.sql.example`；`make local-db-init` / `make test-db-init` 自动导入到统一后台配置表；`sql/business/init_key.sql` 与 `sql/merchant/init_key.sql` 只保留各自数据库边界说明。local 与 test 必须使用同一份三文件密钥 SQL。配置加载器不再提供内置 JWT 或支付密钥，`jwt.secret` 缺失会拒绝启动。
+
+初始化数据分层：`init_data.sql` 初始化可版本化的系统默认配置，`init_file.sql` 在本机 COS 基础地址已配置且资源已上传后登记系统素材引用，`init_test_data.sql` 仅提供本地演示夹具。`init_file.sql` 不保存 COS 密钥或真实资源地址。
 
 三套目标 API 只允许读取各自所属库的 `databases.<scope>.dsn`：`api-platform → admin`、`api-business → business`、`api-merchant → merchant`。跨库数据只能通过受控 API 或 NATS 事件读模型同步，禁止共享单一 `mysql.dsn`。
 

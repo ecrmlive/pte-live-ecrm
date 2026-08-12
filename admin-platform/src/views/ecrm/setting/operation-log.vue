@@ -5,6 +5,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import { onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+
 import { ElAlert } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -22,61 +23,61 @@ import {
 const canRead = ref(false);
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_DATE_RANGE_FIELD,
-  {
-    component: 'Input',
-    componentProps: { clearable: true, placeholder: '管理员 ID' },
-    fieldName: 'admin_user_id',
-    label: '管理员 ID',
-  },
-  {
-    component: 'Input',
-    componentProps: { clearable: true, maxlength: 32, placeholder: '角色代码' },
-    fieldName: 'role_code',
-    label: '角色',
-  },
   {
     component: 'Input',
     componentProps: {
       clearable: true,
       maxlength: 128,
-      placeholder: '如 POST /coupons',
+      placeholder: '请输入管理员ID/名称',
     },
-    fieldName: 'action',
-    label: '操作',
+    fieldName: 'admin_keyword',
+    label: '管理员搜索',
   },
   {
-    component: 'Input',
-    componentProps: { clearable: true, maxlength: 64, placeholder: '资源类型' },
-    fieldName: 'resource_type',
-    label: '资源',
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      options: [
+        { label: 'GET', value: 'GET' },
+        { label: 'POST', value: 'POST' },
+        { label: 'PUT', value: 'PUT' },
+        { label: 'PATCH', value: 'PATCH' },
+        { label: 'DELETE', value: 'DELETE' },
+      ],
+      placeholder: '请选择',
+    },
+    fieldName: 'request_method',
+    label: '请求方式',
+  },
+  {
+    ...LIST_DATE_RANGE_FIELD,
+    label: '操作时间',
   },
 ]);
 
 const gridOptions: VxeGridProps<PlatformOperationLog> = {
   columns: [
-    { field: 'id', title: '日志 ID', width: 100 },
     { field: 'admin_user_id', title: '管理员 ID', width: 120 },
-    { field: 'role_code', title: '角色', width: 130 },
+    { field: 'admin_name', title: '管理员姓名', width: 150 },
     {
-      field: 'action',
+      field: 'permission_name',
+      title: '权限名称',
+      width: 170,
+    },
+    {
+      field: 'request',
+      minWidth: 260,
+      showOverflow: 'tooltip',
+      title: '请求',
+    },
+    { field: 'request_method', title: '请求方式', width: 120 },
+    {
+      field: 'link',
       minWidth: 300,
-      showOverflow: false,
-      title: '成功操作',
+      showOverflow: 'tooltip',
+      title: '链接',
     },
-    { field: 'resource_type', title: '资源类型', width: 140 },
-    {
-      field: 'resource_id',
-      formatter: ({ cellValue }) => cellValue || '—',
-      title: '资源 ID',
-      width: 120,
-    },
-    {
-      field: 'request_id',
-      minWidth: 220,
-      showOverflow: false,
-      title: '请求号',
-    },
+    { field: 'ip', title: 'IP', width: 150 },
     {
       field: 'created_at',
       formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
@@ -92,15 +93,13 @@ const gridOptions: VxeGridProps<PlatformOperationLog> = {
         const range = Array.isArray(formValues?.date_range)
           ? formValues.date_range
           : [];
-        const adminIdRaw = String(formValues?.admin_user_id ?? '').trim();
         const result = await listPlatformOperationLogs({
           page: page.currentPage,
           limit: page.pageSize,
-          admin_user_id: adminIdRaw ? Number(adminIdRaw) : undefined,
-          role_code: String(formValues?.role_code ?? '').trim() || undefined,
-          action: String(formValues?.action ?? '').trim() || undefined,
-          resource_type:
-            String(formValues?.resource_type ?? '').trim() || undefined,
+          admin_keyword:
+            String(formValues?.admin_keyword ?? '').trim() || undefined,
+          request_method:
+            String(formValues?.request_method ?? '').trim() || undefined,
           start_date: range[0],
           end_date: range[1],
         });

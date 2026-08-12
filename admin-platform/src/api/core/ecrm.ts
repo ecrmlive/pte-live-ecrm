@@ -1,4 +1,4 @@
-import { requestClient } from '#/api/request';
+import { requestClient } from "#/api/request";
 
 export interface PageResult<T> {
   list: T[];
@@ -121,7 +121,6 @@ export interface PlatformMerchantSaveInput {
   mer_avatar?: string;
 }
 
-
 export interface MerchantIntentionRow {
   mer_intention_id: number;
   uid: number;
@@ -150,7 +149,7 @@ export interface MerchantCategoryRow {
 }
 
 export function fetchMerchantCategories() {
-  return requestClient.get<{ list: MerchantCategoryRow[] }>('/merchant-categories');
+  return requestClient.get<{ list: MerchantCategoryRow[] }>("/merchant-categories");
 }
 
 export interface MerchantTypeRow {
@@ -180,7 +179,7 @@ export interface MerchantTypeSaveInput {
 }
 
 export function fetchMerchantTypes(params?: { keyword?: string }) {
-  return requestClient.get<{ list: MerchantTypeRow[] }>('/merchant-types', {
+  return requestClient.get<{ list: MerchantTypeRow[] }>("/merchant-types", {
     params,
   });
 }
@@ -221,7 +220,15 @@ export function fetchMerchantDepositLedgers(
     { params },
   );
 }
-export interface ProductLabelRow { id: number; name: string; description: string; color: string; sort: number; status: number; created_at: string; }
+export interface ProductLabelRow {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  sort: number;
+  status: number;
+  created_at: string;
+}
 export interface ProductGuaranteeRow {
   id: number;
   name: string;
@@ -235,7 +242,7 @@ export interface ProductGuaranteeRow {
 }
 export type ProductGuaranteeSaveInput = Pick<
   ProductGuaranteeRow,
-  'name' | 'content' | 'icon_url' | 'sort' | 'status'
+  "name" | "content" | "icon_url" | "sort" | "status"
 >;
 export interface ProductParameterItem {
   name: string;
@@ -282,12 +289,23 @@ export interface StoreParameterTemplateDetail extends StoreParameterTemplateRow 
   is_required?: number;
   params: StoreParameterItem[];
 }
-export function fetchProductLabels() { return requestClient.get<{ list: ProductLabelRow[] }>('/product/labels'); }
-export function saveProductLabel(id: number | undefined, value: Omit<ProductLabelRow, 'id' | 'created_at'>) { return id ? requestClient.put(`/product/labels/${id}`, value) : requestClient.post('/product/labels', value); }
+export function fetchProductLabels() {
+  return requestClient.get<{ list: ProductLabelRow[] }>("/product/labels");
+}
+export function saveProductLabel(
+  id: number | undefined,
+  value: Omit<ProductLabelRow, "id" | "created_at">,
+) {
+  return id
+    ? requestClient.put(`/product/labels/${id}`, value)
+    : requestClient.post("/product/labels", value);
+}
 export function updateProductLabelStatus(id: number, status: number) {
   return requestClient.put(`/product/labels/${id}/status`, { status });
 }
-export function deleteProductLabel(id: number) { return requestClient.delete(`/product/labels/${id}`); }
+export function deleteProductLabel(id: number) {
+  return requestClient.delete(`/product/labels/${id}`);
+}
 export function fetchProductGuarantees(params?: {
   page?: number;
   limit?: number;
@@ -295,23 +313,21 @@ export function fetchProductGuarantees(params?: {
   date_from?: string;
   date_to?: string;
 }) {
-  return requestClient.get<{ list: ProductGuaranteeRow[]; total?: number }>(
-    '/product/guarantees',
-    { params },
-  );
+  return requestClient.get<{ list: ProductGuaranteeRow[]; total?: number }>("/product/guarantees", {
+    params,
+  });
 }
-export function saveProductGuarantee(
-  id: number | undefined,
-  value: ProductGuaranteeSaveInput,
-) {
+export function saveProductGuarantee(id: number | undefined, value: ProductGuaranteeSaveInput) {
   return id
     ? requestClient.put(`/product/guarantees/${id}`, value)
-    : requestClient.post('/product/guarantees', value);
+    : requestClient.post("/product/guarantees", value);
 }
 export function updateProductGuaranteeStatus(id: number, status: number) {
   return requestClient.put(`/product/guarantees/${id}/status`, { status });
 }
-export function deleteProductGuarantee(id: number) { return requestClient.delete(`/product/guarantees/${id}`); }
+export function deleteProductGuarantee(id: number) {
+  return requestClient.delete(`/product/guarantees/${id}`);
+}
 export function fetchProductParameterTemplates(params?: {
   page?: number;
   limit?: number;
@@ -324,12 +340,10 @@ export function fetchProductParameterTemplates(params?: {
     total?: number;
     page?: number;
     limit?: number;
-  }>('/product/parameter-templates', { params });
+  }>("/product/parameter-templates", { params });
 }
 export function fetchProductParameterTemplate(id: number) {
-  return requestClient.get<ProductParameterTemplateRow>(
-    `/product/parameter-templates/${id}`,
-  );
+  return requestClient.get<ProductParameterTemplateRow>(`/product/parameter-templates/${id}`);
 }
 export function saveProductParameterTemplate(
   id: number | undefined,
@@ -337,7 +351,7 @@ export function saveProductParameterTemplate(
 ) {
   return id
     ? requestClient.put(`/product/parameter-templates/${id}`, value)
-    : requestClient.post('/product/parameter-templates', value);
+    : requestClient.post("/product/parameter-templates", value);
 }
 export function deleteProductParameterTemplate(id: number) {
   return requestClient.delete(`/product/parameter-templates/${id}`);
@@ -374,18 +388,15 @@ export function fetchProductPriceRules(params?: {
     total?: number;
     page?: number;
     limit?: number;
-  }>('/product/price-rules', { params });
+  }>("/product/price-rules", { params });
 }
 export function fetchProductPriceRule(id: number) {
   return requestClient.get<ProductPriceRuleRow>(`/product/price-rules/${id}`);
 }
-export function saveProductPriceRule(
-  id: number | undefined,
-  value: ProductPriceRuleSaveInput,
-) {
+export function saveProductPriceRule(id: number | undefined, value: ProductPriceRuleSaveInput) {
   return id
     ? requestClient.put(`/product/price-rules/${id}`, value)
-    : requestClient.post('/product/price-rules', value);
+    : requestClient.post("/product/price-rules", value);
 }
 export function updateProductPriceRuleStatus(id: number, status: number) {
   return requestClient.put(`/product/price-rules/${id}/status`, { status });
@@ -405,7 +416,7 @@ export function fetchStoreParameterTemplates(params?: {
     total: number;
     page: number;
     limit: number;
-  }>('/product/store-parameter-templates', { params });
+  }>("/product/store-parameter-templates", { params });
 }
 export function fetchStoreParameterTemplate(id: number) {
   return requestClient.get<StoreParameterTemplateDetail>(
@@ -422,7 +433,7 @@ export function createStoreParameterTemplate(value: {
   sort?: number;
 }) {
   return requestClient.post<StoreParameterTemplateDetail>(
-    '/product/store-parameter-templates',
+    "/product/store-parameter-templates",
     value,
   );
 }
@@ -442,7 +453,7 @@ export function copyStoreParameterTemplate(
     name: string;
   }>(`/product/store-parameter-templates/${id}/copy`, value);
 }
-export type ProductCommentStatus = 'hidden' | 'pending' | 'published';
+export type ProductCommentStatus = "hidden" | "pending" | "published";
 export interface ProductCommentRow {
   id: number;
   product_id: number;
@@ -451,7 +462,7 @@ export interface ProductCommentRow {
   content: string;
   media: string;
   reply_content: string;
-  source: 'user' | 'virtual';
+  source: "user" | "virtual";
   virtual_author_name: string;
   virtual_author_avatar?: string;
   sort: number;
@@ -470,13 +481,23 @@ export function fetchProductComments(params: {
   user_name?: string;
   date_from?: string;
   date_to?: string;
-  sort_field?: 'score';
-  sort_order?: 'asc' | 'desc';
+  sort_field?: "score";
+  sort_order?: "asc" | "desc";
 }) {
-  return requestClient.get<PageResult<ProductCommentRow>>('/product/comments', { params });
+  return requestClient.get<PageResult<ProductCommentRow>>("/product/comments", { params });
 }
-export function fetchProductComment(id: number) { return requestClient.get<ProductCommentRow>(`/product/comments/${id}`); }
-export function moderateProductComment(id: number, input: { action: 'hide' | 'publish'; idempotency_key: string; note?: string }) { return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/moderate`, input); }
+export function fetchProductComment(id: number) {
+  return requestClient.get<ProductCommentRow>(`/product/comments/${id}`);
+}
+export function moderateProductComment(
+  id: number,
+  input: { action: "hide" | "publish"; idempotency_key: string; note?: string },
+) {
+  return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>(
+    `/product/comments/${id}/moderate`,
+    input,
+  );
+}
 export interface VirtualProductCommentInput {
   product_id?: number;
   score: number;
@@ -487,15 +508,67 @@ export interface VirtualProductCommentInput {
   attachment_ids?: number[];
   idempotency_key: string;
 }
-export function createVirtualProductComment(input: Required<VirtualProductCommentInput>) { return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>('/product/comments/virtual', input); }
-export function updateVirtualProductComment(id: number, input: Omit<VirtualProductCommentInput, 'product_id'>) { return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/virtual`, input); }
-export function sortVirtualProductComment(id: number, input: { sort: number; idempotency_key: string }) { return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(`/product/comments/${id}/sort`, input); }
-export function deleteVirtualProductComment(id: number, input: { idempotency_key: string; note?: string }) { return requestClient.delete<{ comment_id: number; status: string }>(`/product/comments/${id}`, { data: input }); }
-export interface UserFeedbackRow { id:number; user_id:number; type:string; content:string; status:'pending'|'replied'|'closed'; reply:string; created_at:string; updated_at:string; }
-export function fetchUserFeedback(params:{page:number;limit:number;status?:string;keyword?:string;date_from?:string;date_to?:string}) { return requestClient.get<PageResult<UserFeedbackRow>>('/user-feedback',{params}); }
-export function replyUserFeedback(id:number,input:{reply:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/reply`,input); }
-export function closeUserFeedback(id:number,input:{reply?:string;idempotency_key:string}) { return requestClient.post(`/user-feedback/${id}/close`,input); }
-export function deleteUserFeedback(id:number,input:{idempotency_key:string}) { return requestClient.delete(`/user-feedback/${id}`,{data:input}); }
+export function createVirtualProductComment(input: Required<VirtualProductCommentInput>) {
+  return requestClient.post<{ comment_id: number; status: ProductCommentStatus }>(
+    "/product/comments/virtual",
+    input,
+  );
+}
+export function updateVirtualProductComment(
+  id: number,
+  input: Omit<VirtualProductCommentInput, "product_id">,
+) {
+  return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(
+    `/product/comments/${id}/virtual`,
+    input,
+  );
+}
+export function sortVirtualProductComment(
+  id: number,
+  input: { sort: number; idempotency_key: string },
+) {
+  return requestClient.put<{ comment_id: number; status: ProductCommentStatus }>(
+    `/product/comments/${id}/sort`,
+    input,
+  );
+}
+export function deleteVirtualProductComment(
+  id: number,
+  input: { idempotency_key: string; note?: string },
+) {
+  return requestClient.delete<{ comment_id: number; status: string }>(`/product/comments/${id}`, {
+    data: input,
+  });
+}
+export interface UserFeedbackRow {
+  id: number;
+  user_id: number;
+  type: string;
+  content: string;
+  status: "pending" | "replied" | "closed";
+  reply: string;
+  created_at: string;
+  updated_at: string;
+}
+export function fetchUserFeedback(params: {
+  page: number;
+  limit: number;
+  status?: string;
+  keyword?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return requestClient.get<PageResult<UserFeedbackRow>>("/user-feedback", { params });
+}
+export function replyUserFeedback(id: number, input: { reply: string; idempotency_key: string }) {
+  return requestClient.post(`/user-feedback/${id}/reply`, input);
+}
+export function closeUserFeedback(id: number, input: { reply?: string; idempotency_key: string }) {
+  return requestClient.post(`/user-feedback/${id}/close`, input);
+}
+export function deleteUserFeedback(id: number, input: { idempotency_key: string }) {
+  return requestClient.delete(`/user-feedback/${id}`, { data: input });
+}
 export interface UserFeedbackCategory {
   id: number;
   pid: number;
@@ -507,7 +580,7 @@ export interface UserFeedbackCategory {
   children?: UserFeedbackCategory[];
 }
 export function fetchUserFeedbackCategories() {
-  return requestClient.get<{ list: UserFeedbackCategory[] }>('/user-feedback/categories');
+  return requestClient.get<{ list: UserFeedbackCategory[] }>("/user-feedback/categories");
 }
 export function createUserFeedbackCategory(input: {
   name: string;
@@ -516,7 +589,7 @@ export function createUserFeedbackCategory(input: {
   status: 0 | 1;
   idempotency_key: string;
 }) {
-  return requestClient.post('/user-feedback/categories', input);
+  return requestClient.post("/user-feedback/categories", input);
 }
 export function updateUserFeedbackCategory(
   id: number,
@@ -536,10 +609,7 @@ export function setUserFeedbackCategoryStatus(
 ) {
   return requestClient.put(`/user-feedback/categories/${id}/status`, input);
 }
-export function deleteUserFeedbackCategory(
-  id: number,
-  input: { idempotency_key: string },
-) {
+export function deleteUserFeedbackCategory(id: number, input: { idempotency_key: string }) {
   return requestClient.delete(`/user-feedback/categories/${id}`, { data: input });
 }
 export interface PlatformUserRow {
@@ -577,7 +647,7 @@ export function fetchPlatformUsers(params: {
   date_from?: string;
   date_to?: string;
 }) {
-  return requestClient.get<PageResult<PlatformUserRow>>('/user-list', { params });
+  return requestClient.get<PageResult<PlatformUserRow>>("/user-list", { params });
 }
 export function setPlatformUserListSvip(
   id: number,
@@ -585,8 +655,24 @@ export function setPlatformUserListSvip(
 ) {
   return requestClient.put(`/user-list/${id}/svip`, body);
 }
-export interface PlatformUserExport { file_name:string; content:string; row_count:number; truncated:boolean; }
-export function exportPlatformUsers(input:{id?:number;keyword?:string;nickname?:string;phone?:string;status?:0|1;date_from?:string;date_to?:string;reason:string}) { return requestClient.post<PlatformUserExport>('/user-list/export',input); }
+export interface PlatformUserExport {
+  file_name: string;
+  content: string;
+  row_count: number;
+  truncated: boolean;
+}
+export function exportPlatformUsers(input: {
+  id?: number;
+  keyword?: string;
+  nickname?: string;
+  phone?: string;
+  status?: 0 | 1;
+  date_from?: string;
+  date_to?: string;
+  reason: string;
+}) {
+  return requestClient.post<PlatformUserExport>("/user-list/export", input);
+}
 export interface PlatformUserDetail {
   profile: PlatformUserRow & {
     commission: number;
@@ -595,7 +681,7 @@ export interface PlatformUserDetail {
   };
   assets: Array<{
     id: number;
-    asset_type: 'balance' | 'points' | 'commission';
+    asset_type: "balance" | "points" | "commission";
     amount: number;
     reference_type: string;
     reference_id: string;
@@ -638,10 +724,10 @@ export interface PlatformUserDetail {
     coupon_id: number;
     store_id: number;
     name: string;
-    discount_type: 'amount' | 'rate';
+    discount_type: "amount" | "rate";
     discount_value: number;
     min_amount: number;
-    status: 'unused' | 'locked' | 'used' | 'expired';
+    status: "unused" | "locked" | "used" | "expired";
     obtained_at: string;
     ends_at?: string;
   }>;
@@ -652,15 +738,56 @@ export interface PlatformUserDetail {
     promoter_status: -1 | 0 | 1;
   };
 }
-export interface PlatformUserGroupOption { group_id:number; group_name:string; sort:number; }
-export function fetchPlatformUserGroupOptions() { return requestClient.get<{list:PlatformUserGroupOption[]}>('/user-list/groups'); }
-export function assignPlatformUserGroups(input:{user_ids:number[];group_id:number;reason:string;idempotency_key:string}) { return requestClient.post('/user-list/groups/assign', input); }
-export function assignPlatformUserGroup(id:number,input:{group_id:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/group`,input); }
-export interface PlatformUserLabelOption { label_id:number; label_name:string; sort:number; }
-export function fetchPlatformUserLabelOptions() { return requestClient.get<{list:PlatformUserLabelOption[]}>('/user-list/labels'); }
-export function assignPlatformUserLabels(input:{user_ids:number[];label_ids:number[];reason:string;idempotency_key:string}) { return requestClient.post('/user-list/labels/assign', input); }
-export function assignPlatformUserLabel(id:number,input:{label_ids:number[];reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/labels`,input); }
-export function changePlatformUserStatus(id:number,input:{status:0|1;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/status`,input); }
+export interface PlatformUserGroupOption {
+  group_id: number;
+  group_name: string;
+  sort: number;
+}
+export function fetchPlatformUserGroupOptions() {
+  return requestClient.get<{ list: PlatformUserGroupOption[] }>("/user-list/groups");
+}
+export function assignPlatformUserGroups(input: {
+  user_ids: number[];
+  group_id: number;
+  reason: string;
+  idempotency_key: string;
+}) {
+  return requestClient.post("/user-list/groups/assign", input);
+}
+export function assignPlatformUserGroup(
+  id: number,
+  input: { group_id: number; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${id}/group`, input);
+}
+export interface PlatformUserLabelOption {
+  label_id: number;
+  label_name: string;
+  sort: number;
+}
+export function fetchPlatformUserLabelOptions() {
+  return requestClient.get<{ list: PlatformUserLabelOption[] }>("/user-list/labels");
+}
+export function assignPlatformUserLabels(input: {
+  user_ids: number[];
+  label_ids: number[];
+  reason: string;
+  idempotency_key: string;
+}) {
+  return requestClient.post("/user-list/labels/assign", input);
+}
+export function assignPlatformUserLabel(
+  id: number,
+  input: { label_ids: number[]; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${id}/labels`, input);
+}
+export function changePlatformUserStatus(
+  id: number,
+  input: { status: 0 | 1; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${id}/status`, input);
+}
 export function createPlatformUser(input: {
   account: string;
   password: string;
@@ -675,22 +802,107 @@ export function createPlatformUser(input: {
   reason?: string;
   idempotency_key: string;
 }) {
-  return requestClient.post<{ user_id: number }>('/user-list', input);
+  return requestClient.post<{ user_id: number }>("/user-list", input);
 }
-export function updatePlatformUserProfile(id:number,input:{nickname:string;avatar_url:string;gender:0|1|2;bio:string;reason:string;idempotency_key:string}) { return requestClient.put(`/user-list/${id}/profile`,input); }
-export function resetPlatformUserPassword(id:number,input:{password:string;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/password`,input); }
-export function assignPlatformUserPromoters(input:{user_ids:number[];status:0|1;reason:string;idempotency_key:string}) { return requestClient.post('/user-list/promoters/assign',input); }
-export function sendPlatformUserInAppNotification(id:number,input:{title:string;body:string;cover_url:string;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/notifications`,input); }
-export function fetchPlatformUserDetail(id:number) { return requestClient.get<PlatformUserDetail>(`/user-list/${id}/detail`); }
-export function adjustPlatformUserAsset(id:number,input:{asset_type:'balance'|'points';amount:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/assets/adjust`,input); }
-export interface PlatformMemberLevel { id:number; name:string; rank:number; status:number; }
-export function fetchPlatformMemberLevels() { return requestClient.get<{list:PlatformMemberLevel[]}>('/user-list/member-levels'); }
-export function adjustPlatformUserMemberLevel(id:number,input:{level_id:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${id}/member-level`,input); }
-export interface PlatformCouponTemplate { coupon_id:number; name:string; store_id:number; discount_type:'amount'|'rate'; discount_value:number; min_amount:number; }
-export function fetchPlatformCouponTemplates() { return requestClient.get<{list:PlatformCouponTemplate[]}>('/user-list/coupon-templates'); }
-export function issuePlatformUserCoupon(userId:number,couponId:number,input:{reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/coupons/${couponId}/issue`,input); }
-export function revokePlatformUserCoupon(userId:number,couponId:number,input:{reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/coupons/${couponId}/revoke`,input); }
-export function changePlatformUserReferrer(userId:number,input:{parent_user_id:number;reason:string;idempotency_key:string}) { return requestClient.post(`/user-list/${userId}/referrer`,input); }
+export function updatePlatformUserProfile(
+  id: number,
+  input: {
+    nickname: string;
+    avatar_url: string;
+    gender: 0 | 1 | 2;
+    bio: string;
+    reason: string;
+    idempotency_key: string;
+  },
+) {
+  return requestClient.put(`/user-list/${id}/profile`, input);
+}
+export function resetPlatformUserPassword(
+  id: number,
+  input: { password: string; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${id}/password`, input);
+}
+export function assignPlatformUserPromoters(input: {
+  user_ids: number[];
+  status: 0 | 1;
+  reason: string;
+  idempotency_key: string;
+}) {
+  return requestClient.post("/user-list/promoters/assign", input);
+}
+export function sendPlatformUserInAppNotification(
+  id: number,
+  input: {
+    title: string;
+    body: string;
+    cover_url: string;
+    reason: string;
+    idempotency_key: string;
+  },
+) {
+  return requestClient.post(`/user-list/${id}/notifications`, input);
+}
+export function fetchPlatformUserDetail(id: number) {
+  return requestClient.get<PlatformUserDetail>(`/user-list/${id}/detail`);
+}
+export function adjustPlatformUserAsset(
+  id: number,
+  input: {
+    asset_type: "balance" | "points";
+    amount: number;
+    reason: string;
+    idempotency_key: string;
+  },
+) {
+  return requestClient.post(`/user-list/${id}/assets/adjust`, input);
+}
+export interface PlatformMemberLevel {
+  id: number;
+  name: string;
+  rank: number;
+  status: number;
+}
+export function fetchPlatformMemberLevels() {
+  return requestClient.get<{ list: PlatformMemberLevel[] }>("/user-list/member-levels");
+}
+export function adjustPlatformUserMemberLevel(
+  id: number,
+  input: { level_id: number; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${id}/member-level`, input);
+}
+export interface PlatformCouponTemplate {
+  coupon_id: number;
+  name: string;
+  store_id: number;
+  discount_type: "amount" | "rate";
+  discount_value: number;
+  min_amount: number;
+}
+export function fetchPlatformCouponTemplates() {
+  return requestClient.get<{ list: PlatformCouponTemplate[] }>("/user-list/coupon-templates");
+}
+export function issuePlatformUserCoupon(
+  userId: number,
+  couponId: number,
+  input: { reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${userId}/coupons/${couponId}/issue`, input);
+}
+export function revokePlatformUserCoupon(
+  userId: number,
+  couponId: number,
+  input: { reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${userId}/coupons/${couponId}/revoke`, input);
+}
+export function changePlatformUserReferrer(
+  userId: number,
+  input: { parent_user_id: number; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/user-list/${userId}/referrer`, input);
+}
 export interface MerchantDepositRefund {
   id: number;
   merchant_id: number;
@@ -707,7 +919,7 @@ export interface MerchantDepositRefund {
   created_at: string;
 }
 export function fetchMerchantDeposits(params?: {
-  tab?: 'pending' | 'funded' | string;
+  tab?: "pending" | "funded" | string;
   merchant_id?: number;
   keyword?: string;
   status?: string;
@@ -720,7 +932,7 @@ export function fetchMerchantDeposits(params?: {
   limit?: number;
 }) {
   return requestClient.get<{ list: MerchantDepositAccount[]; total?: number }>(
-    '/merchant-deposits',
+    "/merchant-deposits",
     { params },
   );
 }
@@ -746,19 +958,14 @@ export function fetchProfitsharingApplications(params?: {
   date_to?: string;
 }) {
   return requestClient.get<{ list: ProfitsharingApplication[]; total?: number }>(
-    '/merchant-profitsharing-applications',
+    "/merchant-profitsharing-applications",
     { params },
   );
 }
 export function fetchProfitsharingApplication(id: number) {
-  return requestClient.get<ProfitsharingApplication>(
-    `/merchant-profitsharing-applications/${id}`,
-  );
+  return requestClient.get<ProfitsharingApplication>(`/merchant-profitsharing-applications/${id}`);
 }
-export function reviewProfitsharingApplication(
-  id: number,
-  data: { status: string; note: string },
-) {
+export function reviewProfitsharingApplication(id: number, data: { status: string; note: string }) {
   return requestClient.post(`/merchant-profitsharing-applications/${id}/review`, data);
 }
 export function saveProfitsharingApplicationNote(id: number, note: string) {
@@ -779,29 +986,45 @@ export function fetchMerchantDepositRefunds(params?: {
   limit?: number;
 }) {
   return requestClient.get<{ list: MerchantDepositRefund[]; total?: number }>(
-    '/merchant-deposit-refunds',
+    "/merchant-deposit-refunds",
     { params },
   );
 }
-export function deductMerchantDeposit(merchantId: number, input: { amount: number; reason: string; idempotency_key: string }) { return requestClient.post(`/merchant-deposits/${merchantId}/deduct`, input); }
+export function deductMerchantDeposit(
+  merchantId: number,
+  input: { amount: number; reason: string; idempotency_key: string },
+) {
+  return requestClient.post(`/merchant-deposits/${merchantId}/deduct`, input);
+}
 export function fundMerchantDepositOffline(
   merchantId: number,
   input: { amount?: number; mark?: string; idempotency_key: string },
 ) {
   return requestClient.post(`/merchant-deposits/${merchantId}/fund-offline`, input);
 }
-export function reviewMerchantDepositRefund(id: number, approved: boolean, note: string) { return requestClient.post(`/merchant-deposit-refunds/${id}/${approved ? 'approve' : 'reject'}`, { note }); }
+export function reviewMerchantDepositRefund(id: number, approved: boolean, note: string) {
+  return requestClient.post(`/merchant-deposit-refunds/${id}/${approved ? "approve" : "reject"}`, {
+    note,
+  });
+}
 export function markMerchantDepositRefundNote(id: number, note: string) {
   return requestClient.post(`/merchant-deposit-refunds/${id}/mark`, { note });
 }
-export function markMerchantDepositRefundPaid(id: number, input: { idempotency_key: string; payout_reference: string }) { return requestClient.post(`/merchant-deposit-refunds/${id}/mark-paid`, input); }
+export function markMerchantDepositRefundPaid(
+  id: number,
+  input: { idempotency_key: string; payout_reference: string },
+) {
+  return requestClient.post(`/merchant-deposit-refunds/${id}/mark-paid`, input);
+}
 
 export function fetchMerchantType(id: number) {
   return requestClient.get<MerchantTypeRow>(`/merchant-types/${id}`);
 }
 
 export function saveMerchantType(id: number | undefined, input: MerchantTypeSaveInput) {
-  return id ? requestClient.put<MerchantTypeRow>(`/merchant-types/${id}`, input) : requestClient.post<MerchantTypeRow>('/merchant-types', input);
+  return id
+    ? requestClient.put<MerchantTypeRow>(`/merchant-types/${id}`, input)
+    : requestClient.post<MerchantTypeRow>("/merchant-types", input);
 }
 
 export function setMerchantTypeRemark(id: number, remark: string) {
@@ -817,10 +1040,13 @@ export function deleteMerchantType(id: number) {
 }
 
 export function createMerchantCategory(input: { category_name: string; commission_rate: number }) {
-  return requestClient.post<MerchantCategoryRow>('/merchant-categories', input);
+  return requestClient.post<MerchantCategoryRow>("/merchant-categories", input);
 }
 
-export function updateMerchantCategory(id: number, input: { category_name: string; commission_rate: number }) {
+export function updateMerchantCategory(
+  id: number,
+  input: { category_name: string; commission_rate: number },
+) {
   return requestClient.put<{ ok: boolean }>(`/merchant-categories/${id}`, input);
 }
 
@@ -878,7 +1104,7 @@ export interface DiyPageOption {
 }
 
 export function fetchStoreGroups(keyword?: string) {
-  return requestClient.get<{ list: StoreGroupRow[] }>('/store-groups', { params: { keyword } });
+  return requestClient.get<{ list: StoreGroupRow[] }>("/store-groups", { params: { keyword } });
 }
 
 export function fetchStoreGroup(id: number) {
@@ -888,7 +1114,7 @@ export function fetchStoreGroup(id: number) {
 export function saveStoreGroup(id: number | undefined, input: StoreGroupSaveInput) {
   return id
     ? requestClient.put<StoreGroupRow>(`/store-groups/${id}`, input)
-    : requestClient.post<StoreGroupRow>('/store-groups', input);
+    : requestClient.post<StoreGroupRow>("/store-groups", input);
 }
 
 export function deleteStoreGroup(id: number) {
@@ -907,12 +1133,8 @@ export function fetchStoreGroupMerchants(id: number) {
   return requestClient.get<{ list: StoreGroupMerchantRow[] }>(`/store-groups/${id}/merchants`);
 }
 
-export function fetchPlatformDiyPages(params?: {
-  page?: number;
-  limit?: number;
-  name?: string;
-}) {
-  return requestClient.get<PageResult<DiyPageOption>>('/diy/pages', {
+export function fetchPlatformDiyPages(params?: { page?: number; limit?: number; name?: string }) {
+  return requestClient.get<PageResult<DiyPageOption>>("/diy/pages", {
     params: {
       page: params?.page ?? 1,
       limit: params?.limit ?? 10,
@@ -934,7 +1156,7 @@ export function fetchPlatformMerchants(params: {
   date_from?: string;
   date_to?: string;
 }) {
-  return requestClient.get<PageResult<PlatformMerchantRow>>('/merchants', {
+  return requestClient.get<PageResult<PlatformMerchantRow>>("/merchants", {
     params,
   });
 }
@@ -972,7 +1194,7 @@ export function fetchMerchantOperateLogs(
 }
 
 export function createPlatformMerchant(input: PlatformMerchantSaveInput) {
-  return requestClient.post<PlatformMerchantRow>('/merchants', input);
+  return requestClient.post<PlatformMerchantRow>("/merchants", input);
 }
 
 export function updatePlatformMerchant(id: number, input: PlatformMerchantSaveInput) {
@@ -1019,10 +1241,7 @@ export function fetchMerchantIntentions(params: {
   date_from?: string;
   date_to?: string;
 }) {
-  return requestClient.get<PageResult<MerchantIntentionRow>>(
-    '/merchant-intentions',
-    { params },
-  );
+  return requestClient.get<PageResult<MerchantIntentionRow>>("/merchant-intentions", { params });
 }
 
 export function fetchMerchantIntention(id: number) {
@@ -1040,7 +1259,7 @@ export function createMerchantIntention(data: {
   category_name?: string;
   type_name?: string;
 }) {
-  return requestClient.post<MerchantIntentionRow>('/merchant-intentions', data);
+  return requestClient.post<MerchantIntentionRow>("/merchant-intentions", data);
 }
 
 export function auditMerchantIntention(
@@ -1058,15 +1277,22 @@ export function auditMerchantIntention(
 }
 
 export function assignMerchantIntentionRegion(id: number, region_id: number) {
-  return requestClient.post<MerchantIntentionRow>(`/merchant-intentions/${id}/assign-region`, { region_id });
+  return requestClient.post<MerchantIntentionRow>(`/merchant-intentions/${id}/assign-region`, {
+    region_id,
+  });
 }
 
 export function deleteMerchantIntention(id: number) {
   return requestClient.delete<{ ok: boolean }>(`/merchant-intentions/${id}`);
 }
 
-export function fetchExpressList(params: { page: number; limit: number }) {
-  return requestClient.get<PageResult<ExpressRow>>('/express', { params });
+export function fetchExpressList(params: {
+  page: number;
+  limit: number;
+  keyword?: string;
+  sort_order?: "asc" | "desc";
+}) {
+  return requestClient.get<PageResult<ExpressRow>>("/express", { params });
 }
 
 export function createExpress(data: {
@@ -1075,7 +1301,7 @@ export function createExpress(data: {
   sort?: number;
   is_show?: number;
 }) {
-  return requestClient.post<ExpressRow>('/express', data);
+  return requestClient.post<ExpressRow>("/express", data);
 }
 
 export function updateExpress(
@@ -1089,13 +1315,17 @@ export function deleteExpress(id: number) {
   return requestClient.delete(`/express/${id}`);
 }
 
+export function syncExpressCatalog() {
+  return requestClient.post<{ created: number; total: number; updated: number }>("/express/sync");
+}
+
 export function fetchArticles(params: {
   page: number;
   limit: number;
   title?: string;
   cid?: number;
 }) {
-  return requestClient.get<PageResult<ArticleRow>>('/articles', { params });
+  return requestClient.get<PageResult<ArticleRow>>("/articles", { params });
 }
 
 export function getArticle(id: number) {
@@ -1103,7 +1333,7 @@ export function getArticle(id: number) {
 }
 
 export function createArticle(data: Partial<ArticleRow>) {
-  return requestClient.post<ArticleRow>('/articles', data);
+  return requestClient.post<ArticleRow>("/articles", data);
 }
 
 export function updateArticle(id: number, data: Partial<ArticleRow>) {
@@ -1115,19 +1345,16 @@ export function deleteArticle(id: number) {
 }
 
 export function fetchUserLabels(params: { page: number; limit: number }) {
-  return requestClient.get<PageResult<UserLabelRow>>('/user/labels', {
+  return requestClient.get<PageResult<UserLabelRow>>("/user/labels", {
     params,
   });
 }
 
 export function createUserLabel(data: { label_name: string; sort?: number }) {
-  return requestClient.post<UserLabelRow>('/user/labels', data);
+  return requestClient.post<UserLabelRow>("/user/labels", data);
 }
 
-export function updateUserLabel(
-  id: number,
-  data: { label_name: string; sort?: number },
-) {
+export function updateUserLabel(id: number, data: { label_name: string; sort?: number }) {
   return requestClient.put<UserLabelRow>(`/user/labels/${id}`, data);
 }
 
@@ -1253,7 +1480,7 @@ export function fetchBusinessZones(params: {
   page: number;
   limit: number;
 }) {
-  return requestClient.get<PageResult<BusinessZoneRow>>('/business-zones', { params });
+  return requestClient.get<PageResult<BusinessZoneRow>>("/business-zones", { params });
 }
 
 export function fetchBusinessZone(id: number) {
@@ -1268,13 +1495,13 @@ export interface BusinessZoneOptionNode {
 
 /** type=0 区域，type=1 所属商户（CRMEB business_id）。 */
 export function fetchBusinessZoneOptions(type?: 0 | 1) {
-  return requestClient.get<{ list: BusinessZoneOptionNode[] }>('/business-zones/options', {
+  return requestClient.get<{ list: BusinessZoneOptionNode[] }>("/business-zones/options", {
     params: type === undefined ? undefined : { type },
   });
 }
 
 export function createBusinessZone(data: BusinessZoneSaveInput) {
-  return requestClient.post<BusinessZoneRow>('/business-zones', data);
+  return requestClient.post<BusinessZoneRow>("/business-zones", data);
 }
 
 export function updateBusinessZone(id: number, data: BusinessZoneSaveInput) {
@@ -1316,23 +1543,57 @@ export function fetchBusinessZoneAgents(params: {
   page: number;
   limit: number;
 }) {
-  return requestClient.get<PageResult<BusinessZoneAgentRow>>('/business-zone-agents', { params });
+  return requestClient.get<PageResult<BusinessZoneAgentRow>>("/business-zone-agents", { params });
 }
 
 export function fetchBusinessZoneAgent(id: number) {
   return requestClient.get<BusinessZoneAgentRow>(`/business-zone-agents/${id}`);
 }
-export interface BusinessZoneAgentOption { circle_agent_id:number; name:string; phone?:string; type:0|1; }
-export interface BusinessZoneAgentMerchant { merchant_id:number; merchant_name:string; region_id:number; status:number; }
+export interface BusinessZoneAgentOption {
+  circle_agent_id: number;
+  name: string;
+  phone?: string;
+  type: 0 | 1;
+}
+export interface BusinessZoneAgentMerchant {
+  merchant_id: number;
+  merchant_name: string;
+  region_id: number;
+  status: number;
+}
 export function fetchBusinessZoneAgentOptions(type?: 0 | 1) {
-  return requestClient.get<{ list: BusinessZoneAgentOption[] }>('/business-zone-agents/options', {
+  return requestClient.get<{ list: BusinessZoneAgentOption[] }>("/business-zone-agents/options", {
     params: type === undefined ? undefined : { type },
   });
 }
-export function fetchBusinessZoneAgentMerchants(id:number) { return requestClient.get<{list:BusinessZoneAgentMerchant[]}>(`/business-zone-agents/${id}/merchants`); }
-export interface BusinessZoneAgentSettings { status_counts:{pending:number;approved:number;rejected:number;revoked:number}; review:{platform_review_required:boolean;rejection_reason_required:boolean}; security:{payment_credentials_write_only:boolean;admin_binding_required:boolean;password_min_length:number;password_max_length:number}; revocation:{hard_delete:boolean;blocked_when:string[]}; }
-export function fetchBusinessZoneAgentSettings() { return requestClient.get<BusinessZoneAgentSettings>('/business-zone-agents/settings'); }
-export function resetBusinessZoneAgentPassword(id:number,input:{password:string;reason:string;idempotency_key:string}) { return requestClient.post<{circle_agent_id:number;replayed:boolean}>(`/business-zone-agents/${id}/password`, input); }
+export function fetchBusinessZoneAgentMerchants(id: number) {
+  return requestClient.get<{ list: BusinessZoneAgentMerchant[] }>(
+    `/business-zone-agents/${id}/merchants`,
+  );
+}
+export interface BusinessZoneAgentSettings {
+  status_counts: { pending: number; approved: number; rejected: number; revoked: number };
+  review: { platform_review_required: boolean; rejection_reason_required: boolean };
+  security: {
+    payment_credentials_write_only: boolean;
+    admin_binding_required: boolean;
+    password_min_length: number;
+    password_max_length: number;
+  };
+  revocation: { hard_delete: boolean; blocked_when: string[] };
+}
+export function fetchBusinessZoneAgentSettings() {
+  return requestClient.get<BusinessZoneAgentSettings>("/business-zone-agents/settings");
+}
+export function resetBusinessZoneAgentPassword(
+  id: number,
+  input: { password: string; reason: string; idempotency_key: string },
+) {
+  return requestClient.post<{ circle_agent_id: number; replayed: boolean }>(
+    `/business-zone-agents/${id}/password`,
+    input,
+  );
+}
 
 export type BusinessZoneAgentSaveInput = Partial<BusinessZoneAgentRow> & {
   account?: string;
@@ -1345,12 +1606,12 @@ export type BusinessZoneAgentSaveInput = Partial<BusinessZoneAgentRow> & {
 };
 
 export function createBusinessZoneAgent(data: BusinessZoneAgentSaveInput) {
-  return requestClient.post<BusinessZoneAgentRow>('/business-zone-agents', data);
+  return requestClient.post<BusinessZoneAgentRow>("/business-zone-agents", data);
 }
 
 /** 区域列表表单内快速新增代理人（zone.manage 权限，立即通过）。 */
 export function createBusinessZoneRegionAgent(data: BusinessZoneAgentSaveInput) {
-  return requestClient.post<BusinessZoneAgentRow>('/business-zones/agents', {
+  return requestClient.post<BusinessZoneAgentRow>("/business-zones/agents", {
     ...data,
     type: 0,
     auto_approve: true,
@@ -1361,41 +1622,63 @@ export function updateBusinessZoneAgent(id: number, data: BusinessZoneAgentSaveI
   return requestClient.put<BusinessZoneAgentRow>(`/business-zone-agents/${id}`, data);
 }
 
-export function auditBusinessZoneAgent(id: number, status: -1 | 1, audit_reason = '') {
+export function auditBusinessZoneAgent(id: number, status: -1 | 1, audit_reason = "") {
   return requestClient.post(`/business-zone-agents/${id}/audit`, { status, audit_reason });
 }
-export function revokeBusinessZoneAgent(id: number, input: { reason: string; idempotency_key: string }) {
+export function revokeBusinessZoneAgent(
+  id: number,
+  input: { reason: string; idempotency_key: string },
+) {
   return requestClient.delete(`/business-zone-agents/${id}`, { data: input });
 }
 
 /** 平台管理员（含区域管理员绑定）。 */
 export interface PlatformAdminRow {
-  admin_id: number;
   account: string;
-  real_name: string;
-  phone: string;
-  roles: string;
-  status: number;
-  level: number;
-  merchant_ids: string;
-  region_ids: string;
-  service_store_ids: string;
-  is_agent: number;
-  circle_agent_id: number;
-  linked_user_id?: number;
+  admin_id: number;
   avatar_url?: string;
-  create_time?: string;
+  circle_agent_id: number;
+  created_at?: string;
+  is_agent: number;
+  level: number;
+  linked_user_id?: number;
+  merchant_ids: string;
+  phone: string;
+  real_name: string;
+  region_ids: string;
+  region_names?: string;
+  role_codes?: string[];
+  role_names?: string;
+  roles: string;
+  service_store_ids: string;
+  status: number;
 }
 
-export function fetchPlatformAdmins(params: { page: number; limit: number }) {
-  return requestClient.get<PageResult<PlatformAdminRow>>('/setting/admins', { params });
+export function fetchPlatformAdmins(params: {
+  date_from?: string;
+  date_to?: string;
+  keyword?: string;
+  page: number;
+  limit: number;
+  status?: number;
+}) {
+  return requestClient.get<PageResult<PlatformAdminRow>>("/setting/admins", { params });
+}
+
+export function fetchPlatformAdminRegions() {
+  return requestClient.get<{ list: Array<{ label: string; value: number }> }>(
+    "/setting/admin-regions",
+  );
 }
 
 export function createPlatformAdmin(data: Partial<PlatformAdminRow> & { password: string }) {
-  return requestClient.post<PlatformAdminRow>('/setting/admins', data);
+  return requestClient.post<PlatformAdminRow>("/setting/admins", data);
 }
 
-export function updatePlatformAdmin(id: number, data: Partial<PlatformAdminRow> & { password?: string }) {
+export function updatePlatformAdmin(
+  id: number,
+  data: Partial<PlatformAdminRow> & { password?: string },
+) {
   return requestClient.put<PlatformAdminRow>(`/setting/admins/${id}`, data);
 }
 
@@ -1409,10 +1692,12 @@ export interface PlatformRoleRow {
   role_name: string;
   rules: string;
   status: number;
-  mer_id: number;
-  is_agent: number;
-  circle_id: number;
+  role_type: PlatformRoleType;
+  created_at: string;
+  updated_at: string;
 }
+
+export type PlatformRoleType = 'merchant' | 'platform' | 'region';
 
 export interface PlatformMenuNode {
   menu_id: number;
@@ -1420,34 +1705,70 @@ export interface PlatformMenuNode {
   children?: PlatformMenuNode[];
 }
 
-export function fetchPlatformRoles(params: { page: number; limit: number }) {
-  return requestClient.get<PageResult<PlatformRoleRow>>('/setting/roles', { params });
+export function fetchPlatformRoles(params: {
+  page: number;
+  limit: number;
+  role_type?: PlatformRoleType;
+}) {
+  return requestClient.get<PageResult<PlatformRoleRow>>("/setting/roles", { params });
 }
 
-export function createPlatformRole(data: { code: string; role_name: string; menu_ids: number[]; status: number; is_agent?: number; circle_id?: number }) {
-  return requestClient.post<PlatformRoleRow>('/setting/roles', data);
+export function createPlatformRole(data: {
+  role_name: string;
+  menu_ids: number[];
+  status: number;
+  role_type: PlatformRoleType;
+}) {
+  return requestClient.post<PlatformRoleRow>("/setting/roles", data);
 }
 
-export function updatePlatformRole(id: number, data: { role_name: string; menu_ids: number[]; status: number }) {
+export function updatePlatformRole(
+  id: number,
+  data: { role_name: string; menu_ids: number[]; status: number },
+) {
   return requestClient.put<PlatformRoleRow>(`/setting/roles/${id}`, data);
 }
 
-export async function fetchPlatformMenuTree() {
-  const result = await requestClient.get<{ list: PlatformMenuNode[] }>('/setting/menus/tree');
+export function deletePlatformRole(id: number) {
+  return requestClient.delete<{ ok: true }>(`/setting/roles/${id}`);
+}
+
+export async function fetchPlatformMenuTree(scope: PlatformRoleType = 'platform') {
+  const result = await requestClient.get<{ list: PlatformMenuNode[] }>("/setting/menus/tree", {
+    params: { scope },
+  });
   return result.list || [];
 }
 
+export type PlatformMenuKind = 'button' | 'directory' | 'page';
+export type PlatformMenuScope = PlatformRoleType;
+
 export interface PlatformMenuRow {
-  menu_id: number;
-  pid: number;
-  path: string;
+  created_at: string;
   icon: string;
+  is_agent: number;
+  is_menu: number;
+  is_show: number;
+  kind: PlatformMenuKind;
+  menu_id: number;
   menu_name: string;
+  menu_scope: PlatformMenuScope;
+  path: string;
+  pid: number;
   route: string;
   sort: number;
+}
+
+export interface PlatformMenuSaveInput {
+  code: string;
+  icon: string;
   is_show: number;
-  is_menu: number;
-  is_agent: number;
+  kind: PlatformMenuKind;
+  menu_name: string;
+  menu_scope: PlatformMenuScope;
+  parent_id: number;
+  path: string;
+  sort: number;
 }
 
 export interface MerchantStoreMenuRow extends PlatformMenuRow {
@@ -1470,22 +1791,35 @@ export type MerchantStoreMenuInput = {
   status?: number;
 };
 
-export async function fetchPlatformMenus() {
-  const result = await requestClient.get<{ list: PlatformMenuRow[] }>('/setting/menus');
+export async function fetchPlatformMenus(scope: PlatformMenuScope = 'platform') {
+  const result = await requestClient.get<{ list: PlatformMenuRow[] }>("/setting/menus", {
+    params: { scope },
+  });
   return result.list || [];
 }
 
-export function updatePlatformMenu(id: number, data: { menu_name?: string; sort?: number; is_show?: number }) {
+export function createPlatformMenu(data: PlatformMenuSaveInput) {
+  return requestClient.post<PlatformMenuRow>("/setting/menus", data);
+}
+
+export function updatePlatformMenu(
+  id: number,
+  data: PlatformMenuSaveInput,
+) {
   return requestClient.put<PlatformMenuRow>(`/setting/menus/${id}`, data);
 }
 
+export function deletePlatformMenu(id: number) {
+  return requestClient.delete<{ ok: true }>(`/setting/menus/${id}`);
+}
+
 export async function fetchMerchantStoreMenus() {
-  const result = await requestClient.get<{ list: MerchantStoreMenuRow[] }>('/merchant-menus');
+  const result = await requestClient.get<{ list: MerchantStoreMenuRow[] }>("/merchant-menus");
   return result.list || [];
 }
 
 export function createMerchantStoreMenu(data: MerchantStoreMenuInput) {
-  return requestClient.post<MerchantStoreMenuRow>('/merchant-menus', data);
+  return requestClient.post<MerchantStoreMenuRow>("/merchant-menus", data);
 }
 
 export function updateMerchantStoreMenu(id: number, data: MerchantStoreMenuInput) {

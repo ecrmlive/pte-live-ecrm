@@ -27,6 +27,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	manage := middleware.RequireAdminMenu(h.adminDB, "freight.express.manage")
 	platform := middleware.RequireAdminRoles("platform")
 	r.GET("/express", platform, manage, h.ListExpress)
+	r.POST("/express/sync", platform, manage, h.SyncExpress)
 	r.POST("/express", platform, manage, h.CreateExpress)
 	r.PUT("/express/:id", platform, manage, h.UpdateExpress)
 	r.DELETE("/express/:id", platform, manage, h.DeleteExpress)
@@ -37,9 +38,18 @@ func (h *Handler) Register(r gin.IRoutes) {
 func (h *Handler) ListExpress(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListExpress(c.Request.Context(), page, limit, false)
+	res, err := h.svc.ListExpress(c.Request.Context(), page, limit, false, c.Query("keyword"), c.Query("sort_order"))
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
+		return
+	}
+	response.OK(c, res)
+}
+
+func (h *Handler) SyncExpress(c *gin.Context) {
+	res, err := h.svc.SyncExpressCatalog(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "同步物流公司失败")
 		return
 	}
 	response.OK(c, res)
@@ -129,6 +139,8 @@ func writeErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, logistics.ErrBadParam):
 		response.Fail(c, http.StatusBadRequest, err.Error())
+	case errors.Is(err, logistics.ErrExpressExists):
+		response.Fail(c, http.StatusConflict, err.Error())
 	case errors.Is(err, logistics.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
 	default:

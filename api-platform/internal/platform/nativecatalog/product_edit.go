@@ -77,19 +77,19 @@ func (h *Handler) productStoreOptions(c *gin.Context) {
 }
 
 type productEditSKU struct {
-	SKUId       uint64             `json:"sku_id"`
-	Spec        map[string]string  `json:"spec"`
-	SpecText    string             `json:"spec_text"`
-	Image       string             `json:"image"`
-	Price       float64            `json:"price"`
-	OtPrice     float64            `json:"ot_price"`
-	Stock       int                `json:"stock"`
-	BarCode     string             `json:"bar_code"`
-	Code        string             `json:"code"`
-	Weight      float64            `json:"weight"`
-	Volume      float64            `json:"volume"`
+	SKUId        uint64            `json:"sku_id"`
+	Spec         map[string]string `json:"spec"`
+	SpecText     string            `json:"spec_text"`
+	Image        string            `json:"image"`
+	Price        float64           `json:"price"`
+	OtPrice      float64           `json:"ot_price"`
+	Stock        int               `json:"stock"`
+	BarCode      string            `json:"bar_code"`
+	Code         string            `json:"code"`
+	Weight       float64           `json:"weight"`
+	Volume       float64           `json:"volume"`
 	ExtensionOne float64           `json:"extension_one"`
-	Status      int8               `json:"status"`
+	Status       int8              `json:"status"`
 }
 
 type productEditDetail struct {
@@ -144,14 +144,14 @@ type productEditDetail struct {
 	MerParams       []kvParam        `json:"mer_params"`
 	PlatformParams  []kvParam        `json:"platform_params"`
 	// 详情页「营销信息」只读字段（缺表/缺列时返回默认或空，前端展示 —）
-	MerRecommend      int8     `json:"mer_recommend"`
-	CareCount         int      `json:"care_count"`
-	Ficti             int      `json:"ficti"`
-	SVIPPrice         float64  `json:"svip_price"`
-	CommissionText    string   `json:"commission_text"`
-	ActivityLabels    []string `json:"activity_labels"`
-	SysLabelNames     []string `json:"sys_label_names"`
-	IsGiftBag        int8     `json:"is_gift_bag"`
+	MerRecommend   int8     `json:"mer_recommend"`
+	CareCount      int      `json:"care_count"`
+	Ficti          int      `json:"ficti"`
+	SVIPPrice      float64  `json:"svip_price"`
+	CommissionText string   `json:"commission_text"`
+	ActivityLabels []string `json:"activity_labels"`
+	SysLabelNames  []string `json:"sys_label_names"`
+	IsGiftBag      int8     `json:"is_gift_bag"`
 }
 
 type kvParam struct {
@@ -377,7 +377,7 @@ func (h *Handler) buildEditDetail(c *gin.Context, row productRow) (*productEditD
 		CommissionText:  "—",
 		ActivityLabels:  []string{},
 		SysLabelNames:   sysLabelNames,
-		IsGiftBag:      row.IsGiftBag,
+		IsGiftBag:       row.IsGiftBag,
 	}, nil
 }
 
@@ -1240,14 +1240,22 @@ func (h *Handler) writeProductOperateLog(c *gin.Context, productID uint64, actio
 	if claims != nil && len(claims.Roles) > 0 {
 		role = claims.Roles[0]
 	}
+	path := c.FullPath()
+	if path == "" {
+		path = c.Request.URL.Path
+	}
 	_ = h.adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_operation_log").Create(map[string]any{
-		"admin_user_id": middleware.AdminID(c),
-		"role_code":     role,
-		"action":        action,
-		"resource_type": "product",
-		"resource_id":   strconv.FormatUint(productID, 10),
-		"request_id":    c.GetHeader("X-Request-Id"),
-		"created_at":    time.Now(),
+		"admin_user_id":   middleware.AdminID(c),
+		"role_code":       role,
+		"action":          action,
+		"resource_type":   "product",
+		"resource_id":     strconv.FormatUint(productID, 10),
+		"request_id":      c.GetHeader("X-Request-Id"),
+		"request_method":  c.Request.Method,
+		"request_path":    path,
+		"request_ip":      c.ClientIP(),
+		"permission_name": "商品管理",
+		"created_at":      time.Now(),
 	}).Error
 	_ = label
 }

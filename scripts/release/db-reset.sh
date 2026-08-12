@@ -26,7 +26,7 @@ for database_name in qixi_crm_admin qixi_crm_business qixi_crm_merchant; do
 done
 
 for domain in admin business merchant; do
-	for phase in init_table init_config init_data init_key init_test_data; do
+	for phase in init_table init_config init_data init_key init_file init_test_data; do
 		sql_file="${ROOT_DIR}/sql/${domain}/${phase}.sql"
 		[[ -f "${sql_file}" ]] || { echo "错误: 缺少 ${sql_file}；init_key.sql 不纳入 Git，请从 init_key.sql.example 复制后填写" >&2; exit 1; }
 		echo ">> 导入 sql/${domain}/${phase}.sql"
@@ -56,12 +56,6 @@ user_stat_demo_sql="${ROOT_DIR}/sql/business/init_user_stat_demo.sql"
 if [[ -f "${user_stat_demo_sql}" ]]; then
 	echo ">> 导入 sql/business/init_user_stat_demo.sql"
 	mysql_exec <"${user_stat_demo_sql}"
-fi
-
-product_category_seed_sql="${ROOT_DIR}/sql/admin/seed_default_product_categories.sql"
-if [[ -f "${product_category_seed_sql}" ]]; then
-	echo ">> 导入 sql/admin/seed_default_product_categories.sql"
-	mysql_exec <"${product_category_seed_sql}"
 fi
 
 # CRMEB 商户菜单全量（is_mer=1）；须在 merchant/init_data 之后覆盖写入。

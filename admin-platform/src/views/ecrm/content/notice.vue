@@ -1,117 +1,158 @@
 <script setup lang="ts">
+import type { ImageUploadOptions } from '@vben/plugins/tiptap';
+
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Page, useVbenDrawer } from '@vben/common-ui';
+import { confirm, Page, useVbenDrawer } from '@vben/common-ui';
+import { VbenTiptap, VbenTiptapPreview } from '@vben/plugins/tiptap';
+
+import { Plus } from '@element-plus/icons-vue';
 import {
   ElButton,
   ElForm,
   ElFormItem,
   ElInput,
-  ElInputNumber,
   ElMessage,
-  ElMessageBox,
+  ElOption,
+  ElRadio,
+  ElRadioGroup,
+  ElSelect,
   ElSwitch,
   ElTag,
 } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { uploadAttachmentApi } from '#/api/core/attachment';
 import { getAccessCodesApi } from '#/api/core/auth';
+import {
+  fetchMerchantCategories,
+  fetchMerchantTypes,
+  type MerchantCategoryRow,
+  type MerchantTypeRow,
+} from '#/api/core/ecrm';
 import {
   createPlatformNoticeApi,
   deletePlatformNoticeApi,
+  getPlatformNoticeApi,
   listPlatformNoticesApi,
-  updatePlatformNoticeApi,
+  type NoticeScopeType,
   type PlatformNotice,
+  updatePlatformNoticeApi,
+  updatePlatformNoticeStatusApi,
 } from '#/api/core/platform-content';
-import { platformListActionColumn } from '#/constants/platform-list-grid';
+import StorePickerModal, {
+  type PickedStore,
+} from '#/components/ecrm/store-picker-modal.vue';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
 import { formatShanghaiDateTime } from '#/utils/date-time';
 import {
-  LIST_KEYWORD_FIELD,
+  LIST_DATE_RANGE_FIELD,
   listFormOptionsDefaults,
 } from '#/utils/list-form-defaults';
 
+type NoticeForm = {
+  content: string;
+  is_show: number;
+  scope_ids: number[];
+  scope_items: PickedStore[];
+  scope_type: NoticeScopeType;
+  title: string;
+};
+
 const canManage = ref(false);
 const editing = ref<PlatformNotice>();
-const form = reactive({ content: '', is_show: 1, sort: 0, title: '' });
+const detail = ref<PlatformNotice>();
+const storePickerOpen = ref(false);
+const merchantTypes = ref<MerchantTypeRow[]>([]);
+const merchantCategories = ref<MerchantCategoryRow[]>([]);
+const form = reactive<NoticeForm>({
+  content: '',
+  is_show: 1,
+  scope_ids: [],
+  scope_items: [],
+  scope_type: 'all',
+  title: '',
+});
+
+const imageUpload: ImageUploadOptions = {
+  accept: 'image/jpeg,image/png,image/gif,image/webp',
+  maxSize: 5 * 1024 * 1024,
+  upload: async (file) => (await uploadAttachmentApi(file)).attachment_src,
+  onUploadError: () => ElMessage.error('图片上传失败'),
+};
 
 const formOptions: VbenFormProps = listFormOptionsDefaults([
-  LIST_KEYWORD_FIELD('公告标题'),
+  {
+    ...LIST_DATE_RANGE_FIELD,
+    label: '时间选择',
+  },
   {
     component: 'Select',
     componentProps: {
       clearable: true,
       options: [
-        { label: '展示', value: 1 },
-        { label: '隐藏', value: 0 },
+        { label: '启用', value: 1 },
+        { label: '停用', value: 0 },
       ],
-      placeholder: '全部状态',
+      placeholder: '请选择',
     },
     fieldName: 'is_show',
-    label: '展示状态',
+    label: '启用状态',
+  },
+  {
+    component: 'Input',
+    componentProps: { clearable: true, placeholder: '请输入消息名称搜索' },
+    fieldName: 'keyword',
+    label: '消息名称',
   },
 ]);
 
 const gridOptions: VxeGridProps<PlatformNotice> = {
   columns: [
-    { field: 'notice_id', title: 'ID', width: 80 },
+    { field: 'title', minWidth: 240, title: '公告名称' },
     {
-      field: 'title',
-      minWidth: 220,
-      showOverflow: false,
-      title: '标题',
+      field: 'scope_type',
+      minWidth: 240,
+      slots: { default: 'scope' },
+      title: '店铺范围',
     },
-    {
-      field: 'content',
-      minWidth: 260,
-      showOverflow: false,
-      title: '正文',
-    },
-    { field: 'sort', title: '排序', width: 90 },
     {
       field: 'is_show',
       slots: { default: 'is_show' },
-      title: '展示',
-      width: 90,
+      title: '启用状态',
+      width: 120,
     },
     {
       field: 'create_time',
       formatter: ({ cellValue }) => formatShanghaiDateTime(cellValue),
       minWidth: 180,
-      title: '发布时间',
+      title: '发送日期',
     },
-    platformListActionColumn({ width: 150 }),
+    platformListActionColumn({ width: 210 }),
   ],
-  pagerConfig: { enabled: true, pageSize: 10, pageSizes: [10, 20, 50, 100] },
+  pagerConfig: platformListPagerConfig(),
   proxyConfig: {
     ajax: {
-      query: async ({ page }, formValues) => {
-        const keyword = String(formValues?.keyword ?? '')
-          .trim()
-          .toLowerCase();
-        const showRaw = formValues?.is_show;
+      query: async ({ page }, values) => {
+        const range = Array.isArray(values?.date_range)
+          ? values.date_range
+          : [];
+        const isShow = Number(values?.is_show);
         const result = await listPlatformNoticesApi({
-          page: page.currentPage,
+          date_from: range[0] ? `${range[0]} 00:00:00` : undefined,
+          date_to: range[1] ? `${range[1]} 23:59:59` : undefined,
+          is_show: isShow === 0 || isShow === 1 ? isShow : undefined,
+          keyword: String(values?.keyword ?? '').trim() || undefined,
           limit: page.pageSize,
+          page: page.currentPage,
         });
-        let list = result.list || [];
-        if (keyword) {
-          list = list.filter(
-            (row) =>
-              row.title.toLowerCase().includes(keyword) ||
-              row.content.toLowerCase().includes(keyword),
-          );
-        }
-        if (showRaw === 0 || showRaw === 1) {
-          list = list.filter((row) => row.is_show === Number(showRaw));
-        }
-        return {
-          items: list,
-          total: keyword || showRaw === 0 || showRaw === 1 ? list.length : result.total || 0,
-        };
+        return { items: result.list || [], total: result.total || 0 };
       },
     },
   },
@@ -128,44 +169,128 @@ const gridOptions: VxeGridProps<PlatformNotice> = {
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  class: 'w-[1000px] max-w-[96vw]',
+  class: 'w-[min(96vw,1180px)]',
   confirmText: '保存',
   cancelText: '取消',
   placement: 'right',
-  onConfirm: async () => save(),
+  onConfirm: save,
+});
+
+const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
+  class: 'w-[min(96vw,1040px)]',
+  footer: false,
+  placement: 'right',
+});
+
+const scopeSelectionLabel = computed(() => {
+  if (form.scope_type === 'store_name') {
+    return form.scope_items.map((item) => item.mer_name).filter(Boolean);
+  }
+  if (form.scope_type === 'store_type') {
+    return merchantTypes.value
+      .filter((item) => form.scope_ids.includes(item.id))
+      .map((item) => item.name);
+  }
+  if (form.scope_type === 'store_category') {
+    return merchantCategories.value
+      .filter((item) => form.scope_ids.includes(item.merchant_category_id))
+      .map((item) => item.category_name);
+  }
+  return [];
 });
 
 function resetForm() {
   editing.value = undefined;
-  Object.assign(form, { content: '', is_show: 1, sort: 0, title: '' });
+  Object.assign(form, {
+    content: '',
+    is_show: 1,
+    scope_ids: [],
+    scope_items: [],
+    scope_type: 'all',
+    title: '',
+  });
+}
+
+function applyNoticeToForm(row: PlatformNotice) {
+  Object.assign(form, {
+    content: row.content || '',
+    is_show: row.is_show,
+    scope_ids: [...(row.scope_ids || [])],
+    scope_items: (row.scope_items || []).map((item) => ({
+      mer_id: item.id,
+      mer_name: item.name,
+      mer_phone: '',
+      real_name: '',
+    })),
+    scope_type: row.scope_type || 'all',
+    title: row.title || '',
+  });
 }
 
 function openCreate() {
   resetForm();
-  formDrawerApi.setState({ title: '发布公告' }).open();
+  formDrawerApi.setState({ title: '新增公告' }).open();
 }
 
-function openEdit(row: PlatformNotice) {
-  editing.value = row;
-  Object.assign(form, {
-    content: row.content,
-    is_show: row.is_show,
-    sort: row.sort,
-    title: row.title,
-  });
+async function openEdit(row: PlatformNotice) {
+  const latest = await getPlatformNoticeApi(row.notice_id);
+  editing.value = latest;
+  applyNoticeToForm(latest);
   formDrawerApi.setState({ title: '编辑公告' }).open();
 }
 
+async function openDetail(row: PlatformNotice) {
+  detail.value = await getPlatformNoticeApi(row.notice_id);
+  detailDrawerApi.setState({ title: '公告详情' }).open();
+}
+
+function changeScopeType() {
+  form.scope_ids = [];
+  form.scope_items = [];
+}
+
+function selectStores(stores: PickedStore[]) {
+  form.scope_items = stores;
+  form.scope_ids = stores.map((item) => item.mer_id);
+}
+
+function scopeLabel(row: PlatformNotice) {
+  if (row.scope_type === 'all') return '全部';
+  const names = (row.scope_items || [])
+    .map((item) => item.name)
+    .filter(Boolean);
+  const prefix =
+    row.scope_type === 'store_name'
+      ? '指定店铺'
+      : row.scope_type === 'store_type'
+        ? '店铺类别'
+        : '店铺分类';
+  if (names.length === 0) return prefix;
+  if (names.length <= 2) return `${prefix}：${names.join('、')}`;
+  return `${prefix}：${names.slice(0, 2).join('、')} 等 ${names.length} 项`;
+}
+
+function validScope() {
+  return form.scope_type === 'all' || form.scope_ids.length > 0;
+}
+
 async function save() {
-  if (!form.title.trim() || !form.content.trim()) {
-    ElMessage.warning('请填写公告标题和正文');
+  const content = form.content.trim();
+  if (!form.title.trim() || !content || content === '<p></p>') {
+    ElMessage.warning('请填写消息名称和公告内容');
+    return;
+  }
+  if (!validScope()) {
+    ElMessage.warning('请完成店铺范围关联选择');
     return;
   }
   formDrawerApi.lock();
   try {
     const payload = {
-      ...form,
-      content: form.content.trim(),
+      content,
+      is_show: form.is_show,
+      scope_ids: form.scope_ids,
+      scope_type: form.scope_type,
       title: form.title.trim(),
     };
     if (editing.value) {
@@ -175,30 +300,46 @@ async function save() {
     }
     formDrawerApi.close();
     ElMessage.success('公告已保存');
-    gridApi.reload();
+    await gridApi.reload();
   } finally {
     formDrawerApi.unlock();
   }
 }
 
+async function toggleStatus(row: PlatformNotice, value: boolean | number | string) {
+  try {
+    await updatePlatformNoticeStatusApi(row.notice_id, Number(value));
+    row.is_show = Number(value);
+    ElMessage.success('状态已保存');
+  } catch {
+    await gridApi.reload();
+  }
+}
+
 async function remove(row: PlatformNotice) {
   try {
-    await ElMessageBox.confirm(
-      `删除公告“${row.title}”后不可恢复，是否继续？`,
-      '删除公告',
-      { type: 'warning' },
-    );
+    await confirm({
+      content: `删除公告“${row.title}”后不可恢复，是否继续？`,
+      icon: 'warning',
+      title: '删除公告',
+    });
     await deletePlatformNoticeApi(row.notice_id);
     ElMessage.success('公告已删除');
-    gridApi.reload();
+    await gridApi.reload();
   } catch {
-    /* 取消 */
+    // 用户取消或统一请求层处理。
   }
 }
 
 onMounted(async () => {
-  const permissions = await getAccessCodesApi();
-  canManage.value = permissions.includes('content.notice.manage');
+  const [codes, categoriesResult, typesResult] = await Promise.all([
+    getAccessCodesApi(),
+    fetchMerchantCategories().catch(() => ({ list: [] as MerchantCategoryRow[] })),
+    fetchMerchantTypes().catch(() => ({ list: [] as MerchantTypeRow[] })),
+  ]);
+  canManage.value = codes.includes('content.notice.manage');
+  merchantCategories.value = categoriesResult.list || [];
+  merchantTypes.value = typesResult.list || [];
 });
 </script>
 
@@ -215,35 +356,178 @@ onMounted(async () => {
           发布公告
         </ElButton>
       </template>
+      <template #scope="{ row }">
+        {{ scopeLabel(row) }}
+      </template>
       <template #is_show="{ row }">
-        <ElTag :type="row.is_show === 1 ? 'success' : 'info'">
-          {{ row.is_show === 1 ? '展示' : '隐藏' }}
-        </ElTag>
+        <ElSwitch
+          :disabled="!canManage"
+          :model-value="row.is_show === 1"
+          @change="(value) => toggleStatus(row, value ? 1 : 0)"
+        />
       </template>
       <template #action="{ row }">
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
         <template v-if="canManage">
           <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
           <ElButton link type="danger" @click="remove(row)">删除</ElButton>
         </template>
-        <span v-else>—</span>
       </template>
     </Grid>
 
     <FormDrawer>
-      <ElForm label-width="72px">
-        <ElFormItem label="标题" required>
-          <ElInput v-model="form.title" maxlength="100" show-word-limit />
+      <ElForm label-width="108px" class="notice-form">
+        <ElFormItem label="消息名称" required>
+          <ElInput
+            v-model="form.title"
+            maxlength="20"
+            placeholder="请输入消息名称"
+            show-word-limit
+          />
         </ElFormItem>
-        <ElFormItem label="正文" required>
-          <ElInput v-model="form.content" :rows="10" type="textarea" />
+        <ElFormItem label="选择店铺">
+          <ElRadioGroup
+            v-model="form.scope_type"
+            @change="changeScopeType"
+          >
+            <ElRadio value="all">全部</ElRadio>
+            <ElRadio value="store_name">店铺名称</ElRadio>
+            <ElRadio value="store_type">店铺类别</ElRadio>
+            <ElRadio value="store_category">店铺分类</ElRadio>
+          </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem label="排序">
-          <ElInputNumber v-model="form.sort" :min="0" />
+        <ElFormItem
+          v-if="form.scope_type === 'store_name'"
+          label="关联店铺"
+          required
+        >
+          <div class="notice-form__association">
+            <ElButton type="primary" plain @click="storePickerOpen = true">
+              选择店铺
+            </ElButton>
+            <div v-if="scopeSelectionLabel.length" class="notice-form__tags">
+              <ElTag v-for="name in scopeSelectionLabel" :key="name">
+                {{ name }}
+              </ElTag>
+            </div>
+          </div>
         </ElFormItem>
-        <ElFormItem label="展示">
-          <ElSwitch v-model="form.is_show" :active-value="1" :inactive-value="0" />
+        <ElFormItem
+          v-else-if="form.scope_type === 'store_type'"
+          label="关联类别"
+          required
+        >
+          <ElSelect
+            v-model="form.scope_ids"
+            class="w-full"
+            collapse-tags
+            collapse-tags-tooltip
+            multiple
+            placeholder="请选择店铺类别"
+          >
+            <ElOption
+              v-for="item in merchantTypes"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem
+          v-else-if="form.scope_type === 'store_category'"
+          label="关联分类"
+          required
+        >
+          <ElSelect
+            v-model="form.scope_ids"
+            class="w-full"
+            collapse-tags
+            collapse-tags-tooltip
+            multiple
+            placeholder="请选择店铺分类"
+          >
+            <ElOption
+              v-for="item in merchantCategories"
+              :key="item.merchant_category_id"
+              :label="item.category_name"
+              :value="item.merchant_category_id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="公告内容" required>
+          <VbenTiptap
+            v-model="form.content"
+            class="w-full"
+            :image-upload="imageUpload"
+            :max-height="520"
+            :min-height="360"
+            :previewable="false"
+            placeholder="请输入公告内容…"
+          />
         </ElFormItem>
       </ElForm>
     </FormDrawer>
+
+    <DetailDrawer>
+      <div v-if="detail" class="notice-detail">
+        <div class="notice-detail__item">
+          <span>消息名称</span><strong>{{ detail.title }}</strong>
+        </div>
+        <div class="notice-detail__item">
+          <span>店铺范围</span><strong>{{ scopeLabel(detail) }}</strong>
+        </div>
+        <div class="notice-detail__item">
+          <span>发送日期</span><strong>{{ formatShanghaiDateTime(detail.create_time) }}</strong>
+        </div>
+        <VbenTiptapPreview :content="detail.content" :min-height="280" />
+      </div>
+    </DetailDrawer>
+
+    <StorePickerModal
+      v-model:open="storePickerOpen"
+      :selected="form.scope_items"
+      @confirm="selectStores"
+    />
   </Page>
 </template>
+
+<style scoped>
+.notice-form {
+  margin: 8px auto 0;
+  max-width: 980px;
+}
+
+.notice-form__association {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notice-form__tags {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+  padding-top: 2px;
+}
+
+.notice-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notice-detail__item {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.notice-detail__item strong {
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+</style>

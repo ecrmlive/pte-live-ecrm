@@ -61,6 +61,7 @@ release/pte-live-ecrm-*/config/test/app.yaml
 release/pte-live-ecrm-*/bin/
 release/pte-live-ecrm-*/dist/
 release/pte-live-ecrm-db/sql/
+release/backups/
 # opts：忽略证书/私钥站点目录，保留 nginx 模板与 README
 release/opts/*/
 !release/opts/README.md

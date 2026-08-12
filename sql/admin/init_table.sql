@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_role` (
   `code` varchar(32) NOT NULL,
   `name` varchar(64) NOT NULL,
   `status` tinyint NOT NULL DEFAULT 1,
+  `role_type` enum('platform','merchant','region') NOT NULL DEFAULT 'platform',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), UNIQUE KEY `uk_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -48,7 +51,9 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_menu` (
   `kind` enum('directory','page','button') NOT NULL,
   `sort` int NOT NULL DEFAULT 0,
   `status` tinyint NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`), UNIQUE KEY `uk_code` (`code`)
+  `menu_scope` enum('platform','merchant','region') NOT NULL DEFAULT 'platform',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_code` (`code`), KEY `idx_menu_scope_parent` (`menu_scope`,`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -94,8 +99,12 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_operation_log` (
   `resource_type` varchar(64) NOT NULL,
   `resource_id` varchar(64) NOT NULL DEFAULT '',
   `request_id` varchar(64) NOT NULL,
+  `request_method` varchar(16) NOT NULL DEFAULT '',
+  `request_path` varchar(512) NOT NULL DEFAULT '',
+  `request_ip` varchar(64) NOT NULL DEFAULT '',
+  `permission_name` varchar(128) NOT NULL DEFAULT '',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`), KEY `idx_request` (`request_id`), KEY `idx_user_time` (`admin_user_id`,`created_at`)
+  PRIMARY KEY (`id`), KEY `idx_request` (`request_id`), KEY `idx_user_time` (`admin_user_id`,`created_at`), KEY `idx_method_time` (`request_method`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_region` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `parent_id` bigint unsigned NOT NULL DEFAULT 0,
@@ -257,15 +266,80 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_content` (
 -- 公告、协议和通道 stub 都是统一后台配置，不复用 CRMEB 旧缓存表。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_notice` (
   `notice_id` bigint unsigned NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `content` longtext NOT NULL,
-  `is_show` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0, `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_show` tinyint NOT NULL DEFAULT 1, `sort` int NOT NULL DEFAULT 0,
+  `scope_type` enum('all','store_name','store_type','store_category') NOT NULL DEFAULT 'all',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `is_del` tinyint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`notice_id`), KEY `idx_visible_sort` (`is_del`,`is_show`,`sort`)
+  PRIMARY KEY (`notice_id`), KEY `idx_visible_sort` (`is_del`,`is_show`,`sort`),
+  KEY `idx_notice_scope_type` (`scope_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_notice_scope` (
+  `notice_id` bigint unsigned NOT NULL,
+  `scope_kind` enum('store_name','store_type','store_category') NOT NULL,
+  `scope_id` bigint unsigned NOT NULL,
+  PRIMARY KEY (`notice_id`,`scope_kind`,`scope_id`),
+  KEY `idx_scope_lookup` (`scope_kind`,`scope_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告店铺范围关联';
+-- 通知会员/通知店铺的固定文本与渠道开关。外部凭据只保存在受控云配置中，不在此表存储。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_notification_config` (
+  `notification_id` bigint unsigned NOT NULL,
+  `audience` enum('member','store') NOT NULL,
+  `notice_type` varchar(100) NOT NULL,
+  `scene` varchar(255) NOT NULL,
+  `wechat_enabled` tinyint NOT NULL DEFAULT 0,
+  `mini_program_enabled` tinyint NOT NULL DEFAULT 0,
+  `sms_enabled` tinyint NOT NULL DEFAULT 0,
+  `wechat_text` varchar(500) NOT NULL DEFAULT '',
+  `mini_program_text` varchar(500) NOT NULL DEFAULT '',
+  `sms_text` varchar(500) NOT NULL DEFAULT '',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`notification_id`),
+  KEY `idx_notification_audience` (`audience`,`notification_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='默认通知行为与固定文本';
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_setting_cache` (
   `key` varchar(128) NOT NULL, `expire_time` int NOT NULL DEFAULT 0, `result` longtext NOT NULL,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 缓存清理操作审计；仅记录本平台 ecrm:platform:* 命名空间的实际清理结果。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_cache_clear_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `scope` varchar(32) NOT NULL,
+  `deleted_keys` bigint unsigned NOT NULL DEFAULT 0,
+  `updated_assets` bigint unsigned NOT NULL DEFAULT 0,
+  `operator_admin_id` bigint unsigned NOT NULL,
+  `detail` varchar(512) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), KEY `idx_scope_time` (`scope`,`created_at`), KEY `idx_operator_time` (`operator_admin_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 本地数据库备份及表维护记录；备份文件写入 Docker 挂载的 release/backups，不入 Git。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_database_backup` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `file_name` varchar(255) NOT NULL,
+  `database_scope` enum('admin','business') NOT NULL,
+  `table_names_json` longtext NOT NULL,
+  `table_count` int unsigned NOT NULL DEFAULT 0,
+  `size_bytes` bigint unsigned NOT NULL DEFAULT 0,
+  `status` enum('ready','deleted','failed') NOT NULL DEFAULT 'ready',
+  `created_by` bigint unsigned NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_backup_file_name` (`file_name`),
+  KEY `idx_backup_status_time` (`status`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='本地数据库备份记录';
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_database_maintenance_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `action` enum('backup','optimize','repair','delete') NOT NULL,
+  `database_scope` enum('admin','business') NOT NULL,
+  `table_names_json` longtext NOT NULL,
+  `operator_admin_id` bigint unsigned NOT NULL,
+  `detail` varchar(1024) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_maintenance_action_time` (`action`,`created_at`),
+  KEY `idx_maintenance_operator_time` (`operator_admin_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据库维护审计记录';
 -- 文章与分类由统一后台直接维护；不再依赖 CRMEB 旧后台表。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_article_category` (
   `cid` bigint unsigned NOT NULL AUTO_INCREMENT, `title` varchar(128) NOT NULL,
@@ -305,6 +379,21 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_wechat_reply` (
   UNIQUE KEY `uk_reply_key` (`reply_key`),
   KEY `idx_status_sort` (`status`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号自动回复';
+-- 一号通服务套餐（字段与 CRMEB eb_serve_meal 对齐）。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_serve_meal` (
+  `meal_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '套餐 ID',
+  `name` varchar(30) NOT NULL COMMENT '套餐名称',
+  `type` tinyint NOT NULL DEFAULT 1 COMMENT '套餐类型：1商品采集，2电子面单',
+  `price` decimal(8,2) NOT NULL DEFAULT 0.00 COMMENT '价格',
+  `num` int NOT NULL DEFAULT 0 COMMENT '购买数量（次数）',
+  `sort` int NOT NULL DEFAULT 0 COMMENT '排序',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '是否显示：1显示，0隐藏',
+  `is_del` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`meal_id`),
+  KEY `idx_visible_sort` (`is_del`,`status`,`sort`,`meal_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='一号通服务套餐';
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_page` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `page_type` enum('home','store_street','member','custom') NOT NULL,
   `name` varchar(128) NOT NULL, `document` json NOT NULL, `status` enum('draft','published') NOT NULL DEFAULT 'draft',
@@ -786,7 +875,7 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_record` (
   KEY `idx_user` (`user_id`),
   KEY `idx_mobile` (`mobile`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 平台配置条目（热门搜索/组合数据/系统表单/备份登记），取代 setting_cache list stub。
+-- 平台配置条目（热门搜索/系统表单/备份登记）；group_data 枚举仅用于历史数据迁移。
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `item_type` enum('hot_search','group_data','system_form','backup') NOT NULL,
@@ -797,6 +886,69 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_item` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_visible` (`item_type`,`is_del`,`status`,`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 平台组合数据：数据组与组内数据分表，不能与普通配置条目混用。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_data_group` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(128) NOT NULL COMMENT '数据组名称',
+  `group_key` varchar(64) NOT NULL COMMENT '数据组 key',
+  `description` varchar(500) NOT NULL DEFAULT '' COMMENT '数据组说明',
+  `fields` json NOT NULL COMMENT '组内数据字段定义',
+  `sort` int NOT NULL DEFAULT 0,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_group_key` (`group_key`),
+  KEY `idx_visible_sort` (`is_del`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台组合数据组';
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_data_group_item` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `group_id` bigint unsigned NOT NULL COMMENT '数据组 ID',
+  `data` json NOT NULL COMMENT '组合数据内容',
+  `sort` int NOT NULL DEFAULT 0,
+  `status` tinyint NOT NULL DEFAULT 1,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_group_visible_sort` (`group_id`,`is_del`,`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台组合数据项';
+-- 平台配置分类与配置项：仅存放可公开维护的配置定义，密钥仍只允许在 init_key.sql / 专用配置页维护。
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_classification` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `parent_id` bigint unsigned NOT NULL DEFAULT 0,
+  `name` varchar(128) NOT NULL,
+  `classify_key` varchar(64) NOT NULL,
+  `description` varchar(500) NOT NULL DEFAULT '',
+  `icon` varchar(96) NOT NULL DEFAULT '',
+  `status` tinyint NOT NULL DEFAULT 1,
+  `sort` int NOT NULL DEFAULT 0,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_classify_key` (`classify_key`),
+  KEY `idx_visible_sort` (`is_del`,`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台配置分类';
+CREATE TABLE IF NOT EXISTS `qixi_crm_a_config_classification_item` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `classification_id` bigint unsigned NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `config_key` varchar(128) NOT NULL,
+  `field_type` varchar(32) NOT NULL DEFAULT 'input' COMMENT '配置控件类型',
+  `backend_type` tinyint NOT NULL DEFAULT 0 COMMENT '0=总后台 1=商户后台',
+  `content` text NOT NULL,
+  `description` varchar(500) NOT NULL DEFAULT '',
+  `status` tinyint NOT NULL DEFAULT 1,
+  `sort` int NOT NULL DEFAULT 0,
+  `is_del` tinyint NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_classification_config_key` (`classification_id`,`config_key`),
+  KEY `idx_classification_visible_sort` (`classification_id`,`is_del`,`status`,`sort`,`id`),
+  KEY `idx_backend_visible_sort` (`backend_type`,`is_del`,`status`,`sort`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台配置分类项';
 -- 平台报名活动（对齐 CRMEB store_activity form）+ 用户报名记录
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_signup_activity` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

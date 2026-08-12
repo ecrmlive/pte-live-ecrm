@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"unicode/utf8"
 
 	"gorm.io/gorm"
 )
 
 type Store interface {
-	ListNotices(ctx context.Context, onlyShow bool, page, limit int) ([]Notice, int64, error)
+	ListNotices(ctx context.Context, onlyShow bool, filter NoticeListFilter) ([]Notice, int64, error)
 	GetNotice(ctx context.Context, id uint) (*Notice, error)
-	CreateNotice(ctx context.Context, n *Notice) error
-	UpdateNotice(ctx context.Context, n *Notice) error
+	CreateNotice(ctx context.Context, n *Notice, scopeIDs []uint) error
+	UpdateNotice(ctx context.Context, n *Notice, scopeIDs []uint) error
+	ListNoticeScopes(ctx context.Context, noticeIDs []uint) ([]NoticeScope, error)
+	UpdateNoticeStatus(ctx context.Context, id uint, isShow int8) error
 	SoftDeleteNotice(ctx context.Context, id uint) error
 	GetCache(ctx context.Context, key string) (*Cache, error)
 	UpsertCache(ctx context.Context, row *Cache) error
@@ -26,21 +29,23 @@ type Service struct {
 func NewService(store Store) *Service { return &Service{store: store} }
 
 func (s *Service) ListApp(ctx context.Context, page, limit int) (*PageResult[Notice], error) {
-	list, total, err := s.store.ListNotices(ctx, true, page, limit)
-	if err != nil {
-		return nil, err
-	}
-	page, limit = normalize(page, limit)
-	return &PageResult[Notice]{List: list, Total: total, Page: page, Limit: limit}, nil
+	return s.list(ctx, true, NoticeListFilter{Page: page, Limit: limit})
 }
 
-func (s *Service) ListAdmin(ctx context.Context, page, limit int) (*PageResult[Notice], error) {
-	list, total, err := s.store.ListNotices(ctx, false, page, limit)
+func (s *Service) ListAdmin(ctx context.Context, filter NoticeListFilter) (*PageResult[Notice], error) {
+	return s.list(ctx, false, filter)
+}
+
+func (s *Service) list(ctx context.Context, onlyShow bool, filter NoticeListFilter) (*PageResult[Notice], error) {
+	filter.Page, filter.Limit = normalize(filter.Page, filter.Limit)
+	list, total, err := s.store.ListNotices(ctx, onlyShow, filter)
 	if err != nil {
 		return nil, err
 	}
-	page, limit = normalize(page, limit)
-	return &PageResult[Notice]{List: list, Total: total, Page: page, Limit: limit}, nil
+	if err := s.hydrateScopes(ctx, list); err != nil {
+		return nil, err
+	}
+	return &PageResult[Notice]{List: list, Total: total, Page: filter.Page, Limit: filter.Limit}, nil
 }
 
 func (s *Service) Get(ctx context.Context, id uint) (*Notice, error) {
@@ -51,20 +56,26 @@ func (s *Service) Get(ctx context.Context, id uint) (*Notice, error) {
 		}
 		return nil, err
 	}
+	if err := s.hydrateNotice(ctx, n); err != nil {
+		return nil, err
+	}
 	return n, nil
 }
 
 func (s *Service) Create(ctx context.Context, in NoticeInput) (*Notice, error) {
-	title := strings.TrimSpace(in.Title)
-	content := strings.TrimSpace(in.Content)
-	if title == "" || content == "" {
+	title, content, scopeType, scopeIDs, err := normalizeNoticeInput(in)
+	if err != nil {
 		return nil, ErrBadParam
 	}
-	n := &Notice{Title: title, Content: content, IsShow: 1, Sort: in.Sort}
+	n := &Notice{Title: title, Content: content, IsShow: 1, ScopeType: scopeType}
 	if in.IsShow != nil {
 		n.IsShow = *in.IsShow
 	}
-	if err := s.store.CreateNotice(ctx, n); err != nil {
+	if err := s.store.CreateNotice(ctx, n, scopeIDs); err != nil {
+		return nil, err
+	}
+	n.ScopeIDs = scopeIDs
+	if err := s.hydrateNotice(ctx, n); err != nil {
 		return nil, err
 	}
 	return n, nil
@@ -75,21 +86,37 @@ func (s *Service) Update(ctx context.Context, id uint, in NoticeInput) (*Notice,
 	if err != nil {
 		return nil, err
 	}
-	title := strings.TrimSpace(in.Title)
-	content := strings.TrimSpace(in.Content)
-	if title == "" || content == "" {
+	title, content, scopeType, scopeIDs, validateErr := normalizeNoticeInput(in)
+	if validateErr != nil {
 		return nil, ErrBadParam
 	}
 	n.Title = title
 	n.Content = content
-	n.Sort = in.Sort
+	n.ScopeType = scopeType
 	if in.IsShow != nil {
 		n.IsShow = *in.IsShow
 	}
-	if err := s.store.UpdateNotice(ctx, n); err != nil {
+	if err := s.store.UpdateNotice(ctx, n, scopeIDs); err != nil {
+		return nil, err
+	}
+	n.ScopeIDs = scopeIDs
+	if err := s.hydrateNotice(ctx, n); err != nil {
 		return nil, err
 	}
 	return n, nil
+}
+
+func (s *Service) UpdateStatus(ctx context.Context, id uint, in NoticeStatusInput) error {
+	if in.IsShow != 0 && in.IsShow != 1 {
+		return ErrBadParam
+	}
+	if _, err := s.store.GetNotice(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return s.store.UpdateNoticeStatus(ctx, id, in.IsShow)
 }
 
 func (s *Service) Delete(ctx context.Context, id uint) error {
@@ -99,15 +126,92 @@ func (s *Service) Delete(ctx context.Context, id uint) error {
 	return s.store.SoftDeleteNotice(ctx, id)
 }
 
-// AgreeCatalog 平台可维护的协议键（对齐 CRMEB CacheRepository 常用项；key≤32）。
+func normalizeNoticeInput(in NoticeInput) (string, string, NoticeScopeType, []uint, error) {
+	title := strings.TrimSpace(in.Title)
+	content := strings.TrimSpace(in.Content)
+	if title == "" || utf8.RuneCountInString(title) > 20 || content == "" {
+		return "", "", "", nil, ErrBadParam
+	}
+	scopeType := in.ScopeType
+	if scopeType == "" {
+		scopeType = NoticeScopeAll
+	}
+	if scopeType != NoticeScopeAll && scopeType != NoticeScopeStoreName && scopeType != NoticeScopeStoreType && scopeType != NoticeScopeStoreCategory {
+		return "", "", "", nil, ErrBadParam
+	}
+	if scopeType == NoticeScopeAll {
+		return title, content, scopeType, nil, nil
+	}
+	seen := make(map[uint]struct{}, len(in.ScopeIDs))
+	ids := make([]uint, 0, len(in.ScopeIDs))
+	for _, id := range in.ScopeIDs {
+		if id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 || len(ids) > 200 {
+		return "", "", "", nil, ErrBadParam
+	}
+	return title, content, scopeType, ids, nil
+}
+
+func (s *Service) hydrateScopes(ctx context.Context, notices []Notice) error {
+	ids := make([]uint, 0, len(notices))
+	for _, item := range notices {
+		if item.NoticeID > 0 && item.ScopeType != NoticeScopeAll {
+			ids = append(ids, item.NoticeID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	scopes, err := s.store.ListNoticeScopes(ctx, ids)
+	if err != nil {
+		return err
+	}
+	byNotice := make(map[uint][]NoticeScope)
+	for _, scope := range scopes {
+		byNotice[scope.NoticeID] = append(byNotice[scope.NoticeID], scope)
+	}
+	for i := range notices {
+		notices[i].ScopeItems = byNotice[notices[i].NoticeID]
+		notices[i].ScopeIDs = make([]uint, 0, len(notices[i].ScopeItems))
+		for _, scope := range notices[i].ScopeItems {
+			notices[i].ScopeIDs = append(notices[i].ScopeIDs, scope.ScopeID)
+		}
+	}
+	return nil
+}
+
+func (s *Service) hydrateNotice(ctx context.Context, notice *Notice) error {
+	list := []Notice{*notice}
+	if err := s.hydrateScopes(ctx, list); err != nil {
+		return err
+	}
+	*notice = list[0]
+	return nil
+}
+
+// AgreeCatalog 是所有已被平台业务使用的协议键。保留既有键，避免其它协议维护页失效。
 func AgreeCatalog() []AgreeMeta {
 	return []AgreeMeta{
 		{Key: "sys_user_agree", Label: "用户协议"},
 		{Key: "sys_userr_privacy", Label: "隐私政策"},
+		{Key: "the_cancellation_prompt", Label: "注销提示"},
+		{Key: "platform_rule", Label: "平台规则"},
+		{Key: "sys_intention_agree", Label: "店铺入驻申请协议"},
+		{Key: "circle_entry_agree", Label: "代理入驻申请协议"},
+		{Key: "the_cancellation_msg", Label: "注销声明"},
+		{Key: "sys_certificate", Label: "资质证照"},
 		{Key: "sys_svip", Label: "付费会员协议"},
 		{Key: "sys_receipt_agree", Label: "发票说明"},
 		{Key: "sys_product_presell_agree", Label: "预售协议"},
-		{Key: "business_entry_agree", Label: "商户入驻协议"},
+		{Key: "business_entry_agree", Label: "商户入驻申请协议"},
 		{Key: "promoter_explain", Label: "分销说明"},
 		{Key: "sys_coupon_agree", Label: "优惠券使用说明"},
 		{Key: "sys_extension_agree", Label: "佣金说明"},
@@ -126,9 +230,26 @@ func AgreeCatalog() []AgreeMeta {
 	}
 }
 
+// AgreementSettingsCatalog 是“协议设置”页面固定展示的产品协议。顺序与平台设置菜单一致。
+func AgreementSettingsCatalog() []AgreeMeta {
+	return []AgreeMeta{
+		{Key: "sys_user_agree", Label: "用户协议"},
+		{Key: "sys_userr_privacy", Label: "隐私政策"},
+		{Key: "the_cancellation_prompt", Label: "注销提示"},
+		{Key: "platform_rule", Label: "平台规则"},
+		{Key: "sys_intention_agree", Label: "店铺入驻申请协议"},
+		{Key: "circle_entry_agree", Label: "代理入驻申请协议"},
+		{Key: "business_entry_agree", Label: "商户入驻申请协议"},
+		{Key: "the_cancellation_msg", Label: "注销声明"},
+		{Key: "sys_about_us", Label: "关于我们"},
+		{Key: "sys_certificate", Label: "资质证照"},
+	}
+}
+
 func (s *Service) ListAgreements(ctx context.Context) ([]AgreeView, error) {
-	out := make([]AgreeView, 0, len(AgreeCatalog()))
-	for _, m := range AgreeCatalog() {
+	catalog := AgreementSettingsCatalog()
+	out := make([]AgreeView, 0, len(catalog))
+	for _, m := range catalog {
 		row, err := s.store.GetCache(ctx, m.Key)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -182,95 +303,54 @@ func agreeMeta(key string) (AgreeMeta, bool) {
 	return AgreeMeta{}, false
 }
 
-const smsConfigKey = "sms_config"
-
-// smsStubConfig intentionally has no provider credentials. The current product
-// baseline only exposes a non-delivery stub; real SMS channel secrets belong in
-// an external secret manager, never in the unified-admin cache or response.
-type smsStubConfig struct {
-	Enabled  bool   `json:"enabled"`
-	Provider string `json:"provider"`
-	Sign     string `json:"sign"`
-	Remark   string `json:"remark"`
-}
-
-func defaultSMSConfig() smsStubConfig {
-	return smsStubConfig{Enabled: false, Provider: "stub", Sign: "七禧商城", Remark: "未配置真实短信通道"}
-}
-
-func marshalSMSConfig(config smsStubConfig) string {
-	data, _ := json.Marshal(config)
-	return string(data)
-}
-
-func parseSMSConfig(raw string) (smsStubConfig, error) {
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &fields); err != nil {
-		return smsStubConfig{}, ErrBadParam
-	}
-	for key := range fields {
-		switch key {
-		case "enabled", "provider", "sign", "remark":
-		default:
-			return smsStubConfig{}, ErrBadParam
-		}
-	}
-	var config smsStubConfig
-	if err := json.Unmarshal([]byte(raw), &config); err != nil || strings.TrimSpace(config.Provider) != "stub" || len([]rune(config.Sign)) > 64 || len([]rune(config.Remark)) > 500 {
-		return smsStubConfig{}, ErrBadParam
-	}
-	config.Provider = "stub"
-	config.Sign = strings.TrimSpace(config.Sign)
-	config.Remark = strings.TrimSpace(config.Remark)
-	if config.Sign == "" {
-		config.Sign = defaultSMSConfig().Sign
-	}
-	if config.Remark == "" {
-		config.Remark = defaultSMSConfig().Remark
-	}
-	return config, nil
-}
-
-// GetSMSConfig returns only a validated non-secret stub configuration. Legacy
-// malformed or secret-bearing cache values are never echoed back to browsers.
-func (s *Service) GetSMSConfig(ctx context.Context) (string, error) {
-	row, err := s.store.GetCache(ctx, smsConfigKey)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return marshalSMSConfig(defaultSMSConfig()), nil
-		}
-		return "", err
-	}
-	config, err := parseSMSConfig(row.Result)
-	if err != nil {
-		return marshalSMSConfig(defaultSMSConfig()), nil
-	}
-	return marshalSMSConfig(config), nil
-}
-
-func (s *Service) SaveSMSConfig(ctx context.Context, raw string) (string, error) {
-	config, err := parseSMSConfig(raw)
-	if err != nil {
-		return "", err
-	}
-	canonical := marshalSMSConfig(config)
-	if err := s.store.UpsertCache(ctx, &Cache{Key: smsConfigKey, ExpireTime: 0, Result: canonical}); err != nil {
-		return "", err
-	}
-	return canonical, nil
-}
-
 const shopConfigKey = "mall_shop_config"
 const payConfigKey = "mall_pay_config"
 const wechatAppConfigKey = "wechat_app_config"
 
 type shopConfig struct {
-	SiteName               string `json:"site_name"`
-	SiteURL                string `json:"site_url"`
-	OrderAutoCancelMinutes int    `json:"order_auto_cancel_minutes"`
-	OrderAutoReceiveDays   int    `json:"order_auto_receive_days"`
-	Enabled                bool   `json:"enabled"`
-	Remark                 string `json:"remark"`
+	// 保留历史字段，供店铺入驻邀请链接读取；商城设置页面不展示它们。
+	SiteName string `json:"site_name,omitempty"`
+	SiteURL  string `json:"site_url,omitempty"`
+	Enabled  bool   `json:"enabled,omitempty"`
+	Remark   string `json:"remark,omitempty"`
+
+	AutoParseClipboard        bool `json:"auto_parse_clipboard"`
+	ArrivalNoticeEnabled      bool `json:"arrival_notice_enabled"`
+	ProductCommentEnabled     bool `json:"product_comment_enabled"`
+	AutoPositiveReviewEnabled bool `json:"auto_positive_review_enabled"`
+	DefaultCopyTimes          int  `json:"default_copy_times"`
+
+	OrderAutoCancelMinutes int      `json:"order_auto_cancel_minutes"`
+	OrderAutoReceiveDays   int      `json:"order_auto_receive_days"`
+	AfterSaleDays          int      `json:"after_sale_days"`
+	MerchantRefundAutoDays int      `json:"merchant_refund_auto_days"`
+	RefundReasons          []string `json:"refund_reasons"`
+	PlatformRightsEnabled  bool     `json:"platform_rights_enabled"`
+	PlatformRightsDays     int      `json:"platform_rights_days"`
+	MergePaymentEnabled    bool     `json:"merge_payment_enabled"`
+
+	MerchantApplyEnabled          bool   `json:"merchant_apply_enabled"`
+	MerchantQualificationRequired bool   `json:"merchant_qualification_required"`
+	MerchantMarginBadgeEnabled    bool   `json:"merchant_margin_badge_enabled"`
+	MerchantMarginBadgeImage      string `json:"merchant_margin_badge_image"`
+	MerchantCategoryLimit         int    `json:"merchant_category_limit"`
+
+	MallShowStores               bool   `json:"mall_show_stores"`
+	MallRecommendEnabled         bool   `json:"mall_recommend_enabled"`
+	MallRecommendDistanceEnabled bool   `json:"mall_recommend_distance_enabled"`
+	MallRecommendSort            string `json:"mall_recommend_sort"`
+	LiveStreamAutoApprove        bool   `json:"live_stream_auto_approve"`
+	LiveProductAutoApprove       bool   `json:"live_product_auto_approve"`
+	HotRankingEnabled            bool   `json:"hot_ranking_enabled"`
+	HotRankingCategoryLevel      int    `json:"hot_ranking_category_level"`
+	HotRankingRefreshHours       int    `json:"hot_ranking_refresh_hours"`
+	MallSearchMode               string `json:"mall_search_mode"`
+
+	ProductRankingPeriod string `json:"product_ranking_period"`
+	ProductRankingMetric string `json:"product_ranking_metric"`
+	ShopRankingPeriod    string `json:"shop_ranking_period"`
+	ShopRankingMetric    string `json:"shop_ranking_metric"`
+	DashboardDisplayName string `json:"dashboard_display_name"`
 }
 
 type payConfig struct {
@@ -288,12 +368,43 @@ type wechatAppConfig struct {
 
 func defaultShopConfig() shopConfig {
 	return shopConfig{
-		SiteName:               "七禧商城",
-		SiteURL:                "",
-		OrderAutoCancelMinutes: 30,
-		OrderAutoReceiveDays:   7,
-		Enabled:                true,
-		Remark:                 "",
+		SiteName:                      "七禧商城",
+		SiteURL:                       "",
+		Enabled:                       true,
+		Remark:                        "",
+		AutoParseClipboard:            true,
+		ArrivalNoticeEnabled:          true,
+		ProductCommentEnabled:         true,
+		AutoPositiveReviewEnabled:     true,
+		DefaultCopyTimes:              8,
+		OrderAutoCancelMinutes:        15,
+		OrderAutoReceiveDays:          7,
+		AfterSaleDays:                 1,
+		MerchantRefundAutoDays:        1,
+		RefundReasons:                 []string{"商品质量问题", "不想要了", "未收到货"},
+		PlatformRightsEnabled:         true,
+		PlatformRightsDays:            1,
+		MergePaymentEnabled:           true,
+		MerchantApplyEnabled:          true,
+		MerchantQualificationRequired: true,
+		MerchantMarginBadgeEnabled:    false,
+		MerchantMarginBadgeImage:      "",
+		MerchantCategoryLimit:         5,
+		MallShowStores:                true,
+		MallRecommendEnabled:          true,
+		MallRecommendDistanceEnabled:  true,
+		MallRecommendSort:             "star",
+		LiveStreamAutoApprove:         false,
+		LiveProductAutoApprove:        false,
+		HotRankingEnabled:             true,
+		HotRankingCategoryLevel:       2,
+		HotRankingRefreshHours:        24,
+		MallSearchMode:                "fuzzy",
+		ProductRankingPeriod:          "month",
+		ProductRankingMetric:          "sales_amount",
+		ShopRankingPeriod:             "month",
+		ShopRankingMetric:             "product_count",
+		DashboardDisplayName:          "数据大屏",
 	}
 }
 
@@ -335,13 +446,21 @@ func parseShopConfig(raw string) (shopConfig, error) {
 		return shopConfig{}, ErrBadParam
 	}
 	for key := range fields {
+		if isSensitiveConfigKey(key) {
+			return shopConfig{}, ErrBadParam
+		}
 		switch key {
-		case "site_name", "site_url", "order_auto_cancel_minutes", "order_auto_receive_days", "enabled", "remark":
+		case "site_name", "site_url", "enabled", "remark",
+			"auto_parse_clipboard", "arrival_notice_enabled", "product_comment_enabled", "auto_positive_review_enabled", "default_copy_times",
+			"order_auto_cancel_minutes", "order_auto_receive_days", "after_sale_days", "merchant_refund_auto_days", "refund_reasons", "platform_rights_enabled", "platform_rights_days", "merge_payment_enabled",
+			"merchant_apply_enabled", "merchant_qualification_required", "merchant_margin_badge_enabled", "merchant_margin_badge_image", "merchant_category_limit",
+			"mall_show_stores", "mall_recommend_enabled", "mall_recommend_distance_enabled", "mall_recommend_sort", "live_stream_auto_approve", "live_product_auto_approve", "hot_ranking_enabled", "hot_ranking_category_level", "hot_ranking_refresh_hours", "mall_search_mode",
+			"product_ranking_period", "product_ranking_metric", "shop_ranking_period", "shop_ranking_metric", "dashboard_display_name":
 		default:
 			return shopConfig{}, ErrBadParam
 		}
 	}
-	var config shopConfig
+	config := defaultShopConfig()
 	if err := json.Unmarshal([]byte(raw), &config); err != nil {
 		return shopConfig{}, ErrBadParam
 	}
@@ -351,11 +470,56 @@ func parseShopConfig(raw string) (shopConfig, error) {
 	if config.SiteName == "" {
 		config.SiteName = defaultShopConfig().SiteName
 	}
-	if config.OrderAutoCancelMinutes < 0 || config.OrderAutoReceiveDays < 0 ||
-		len([]rune(config.SiteName)) > 128 || len([]rune(config.SiteURL)) > 256 || len([]rune(config.Remark)) > 500 {
+	config.MerchantMarginBadgeImage = strings.TrimSpace(config.MerchantMarginBadgeImage)
+	config.DashboardDisplayName = strings.TrimSpace(config.DashboardDisplayName)
+	if config.DashboardDisplayName == "" {
+		config.DashboardDisplayName = defaultShopConfig().DashboardDisplayName
+	}
+	if config.OrderAutoCancelMinutes < 0 || config.OrderAutoCancelMinutes > 10080 ||
+		config.OrderAutoReceiveDays < 0 || config.OrderAutoReceiveDays > 365 ||
+		config.AfterSaleDays < 0 || config.AfterSaleDays > 365 ||
+		config.MerchantRefundAutoDays < 0 || config.MerchantRefundAutoDays > 365 ||
+		config.PlatformRightsDays < 0 || config.PlatformRightsDays > 365 ||
+		config.DefaultCopyTimes < 0 || config.DefaultCopyTimes > 1000000 ||
+		config.MerchantCategoryLimit < 0 || config.MerchantCategoryLimit > 10000 ||
+		config.HotRankingRefreshHours < 1 || config.HotRankingRefreshHours > 720 ||
+		config.HotRankingCategoryLevel < 1 || config.HotRankingCategoryLevel > 3 ||
+		len([]rune(config.SiteName)) > 128 || len([]rune(config.SiteURL)) > 256 || len([]rune(config.Remark)) > 500 ||
+		len([]rune(config.MerchantMarginBadgeImage)) > 512 || len([]rune(config.DashboardDisplayName)) > 64 ||
+		!oneOf(config.MallRecommendSort, "default", "star", "created_at") ||
+		!oneOf(config.MallSearchMode, "fuzzy", "split") ||
+		!oneOf(config.ProductRankingPeriod, "today", "week", "month") ||
+		!oneOf(config.ProductRankingMetric, "sales_quantity", "sales_amount") ||
+		!oneOf(config.ShopRankingPeriod, "today", "week", "month") ||
+		!oneOf(config.ShopRankingMetric, "sales_amount", "product_count") {
+		return shopConfig{}, ErrBadParam
+	}
+	config.RefundReasons = normalizeRefundReasons(config.RefundReasons)
+	if len(config.RefundReasons) == 0 || len(config.RefundReasons) > 50 {
 		return shopConfig{}, ErrBadParam
 	}
 	return config, nil
+}
+
+func oneOf(value string, options ...string) bool {
+	for _, option := range options {
+		if value == option {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeRefundReasons(reasons []string) []string {
+	result := make([]string, 0, len(reasons))
+	for _, reason := range reasons {
+		reason = strings.TrimSpace(reason)
+		if reason == "" || len([]rune(reason)) > 100 {
+			continue
+		}
+		result = append(result, reason)
+	}
+	return result
 }
 
 func isSensitiveConfigKey(key string) bool {

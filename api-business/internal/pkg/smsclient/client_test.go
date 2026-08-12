@@ -33,3 +33,10 @@ func TestSendUsesAuthorizationAndRejectsFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestSendTencentRejectsIncompleteConfig(t *testing.T) {
+	c := New()
+	if err := c.SendTencent(context.Background(), TencentConfig{SDKAppID: "1401165606", TemplateID: "2701987"}, "13800000000", "123456"); err != ErrNotConfigured {
+		t.Fatalf("err=%v", err)
+	}
+}

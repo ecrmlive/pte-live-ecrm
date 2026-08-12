@@ -25,6 +25,7 @@ import (
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/identity"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/logistics"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/merchant"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/notification"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/presell"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/promotion"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/reservation"
@@ -54,6 +55,7 @@ import (
 	identitypersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/identity"
 	logisticspersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/logistics"
 	merchantpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/merchant"
+	notificationpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/notification"
 	presellpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/presell"
 	promotionpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/promotion"
 	reservationpersist "github.com/crmlive/pte-live-ecrm/api-platform/internal/infra/persist/reservation"
@@ -72,6 +74,7 @@ import (
 	platformassist "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/assist"
 	platformattachment "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/attachment"
 	platformbroadcast "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/broadcast"
+	platformcapitalflow "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/capitalflow"
 	platformcircle "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/circle"
 	platformcloudconfig "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/cloudconfig"
 	platformcombination "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/combination"
@@ -79,6 +82,7 @@ import (
 	platformcommunity "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/community"
 	platformcontent "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/content"
 	platformcoupon "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/coupon"
+	platformdatabasebackup "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/databasebackup"
 	platformdiy "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/diy"
 	platformfeedback "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/feedback"
 	platformintegralcate "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/integralcate"
@@ -100,29 +104,30 @@ import (
 	platformnativerefund "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativerefund"
 	platformnativesettlement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativesettlement"
 	platformnativewithdraw "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/nativewithdraw"
+	platformnotification "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/notification"
 	platformoperationlog "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/operationlog"
+	platformorderprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/orderprofitsharing"
 	platformpoints "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/points"
 	platformpresell "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/presell"
 	platformproductmeta "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/productmeta"
-	platformorderprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/orderprofitsharing"
 	platformprofitsharing "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/profitsharing"
 	platformrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/recharge"
 	platformseckill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/seckill"
+	platformservicemeal "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/servicemeal"
 	platformstatement "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/statement"
-	platformtransferrecord "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/transferrecord"
-	platformuserextract "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userextract"
-	platformuserrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userrecharge"
-	platformuserbill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userbill"
-	platformcapitalflow "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/capitalflow"
-	platformwechatnews "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatnews"
-	platformwechatreply "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatreply"
 	platformstoregroup "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storegroup"
 	platformstoremenu "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/storemenu"
 	platformsvip "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svip"
 	platformsvipinterest "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/svipinterest"
+	platformtransferrecord "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/transferrecord"
+	platformuserbill "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userbill"
+	platformuserextract "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userextract"
 	platformuserlist "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userlist"
+	platformuserrecharge "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/userrecharge"
 	platformusersearch "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/usersearch"
 	platformusertag "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/usertag"
+	platformwechatnews "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatnews"
+	platformwechatreply "github.com/crmlive/pte-live-ecrm/api-platform/internal/platform/wechatreply"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/serviceportal"
 	"github.com/gin-gonic/gin"
 )
@@ -239,6 +244,7 @@ func main() {
 		AppID: cfg.IM.AppID, Token: cfg.IM.IntegrationToken, Secret: cfg.JWT.Secret,
 	}, cloudConfigSvc)
 	logisticsSvc := logistics.NewService(logisticspersist.NewRepo(gdb))
+	notificationSvc := notification.NewService(notificationpersist.NewRepo(gdb))
 	articleSvc := article.NewService(articlepersist.NewRepo(gdb))
 	userTagSvc := usertag.NewService(usertagpersist.NewRepo(businessDB))
 	// 上传只使用后台加密配置；未启用或未补齐密钥时明确拒绝上传。
@@ -273,8 +279,9 @@ func main() {
 	platformMarketingDecorH := platformnativemarketingdecor.NewHandler(gdb)
 	platformActivityFormH := platformactivityform.NewHandler(gdb)
 	platformConfigItemH := platformnativeconfigitem.NewHandler(gdb)
+	platformDatabaseBackupH := platformdatabasebackup.NewHandler(gdb, businessDB)
 	platformCouponH := platformcoupon.NewHandler(promoSvc, gdb)
-	platformContentH := platformcontent.NewHandler(contentSvc, gdb)
+	platformContentH := platformcontent.NewHandler(contentSvc, gdb, cfg.Redis)
 	platformDiyH := platformdiy.NewHandler(diySvc, gdb)
 	platformSeckillH := platformseckill.NewHandler(seckillSvc, gdb)
 	platformComboH := platformcombination.NewHandler(comboSvc, gdb)
@@ -287,6 +294,7 @@ func main() {
 	platformSvipInterestH := platformsvipinterest.New(businessDB, gdb)
 	platformCloudConfigH := platformcloudconfig.NewHandler(cloudConfigSvc, gdb, paymentConfigStore)
 	platformLogisticsH := platformlogistics.NewHandler(logisticsSvc, gdb)
+	platformNotificationH := platformnotification.NewHandler(notificationSvc, gdb)
 	platformProductMetaH := platformproductmeta.NewHandler(gdb, merchantDB)
 	platformCommentH := platformcomment.NewHandler(businessDB, gdb, productCommentCommands)
 	platformFeedbackH := platformfeedback.New(businessDB, gdb, feedbackCommands)
@@ -309,6 +317,7 @@ func main() {
 	platformCapitalFlowH := platformcapitalflow.NewHandler(businessDB, gdb)
 	platformWechatNewsH := platformwechatnews.NewHandler(gdb)
 	platformWechatReplyH := platformwechatreply.NewHandler(gdb)
+	platformServiceMealH := platformservicemeal.NewHandler(gdb)
 	platformRechargeH := platformrecharge.NewHandler(businessDB, gdb)
 	serviceH := serviceportal.NewHandler(idSvc, jwtMgr, tradeSvc, csSvc, chatSvc)
 
@@ -354,6 +363,7 @@ func main() {
 	platformMarketingDecorH.Register(platformAuthed)
 	platformActivityFormH.Register(platformAuthed)
 	platformConfigItemH.Register(platformAuthed)
+	platformDatabaseBackupH.Register(platformAuthed)
 	platformCouponH.Register(platformAuthed)
 	platformContentH.Register(platformAuthed)
 	platformDiyH.Register(platformAuthed)
@@ -368,6 +378,7 @@ func main() {
 	platformSvipInterestH.Register(platformAuthed)
 	platformCloudConfigH.Register(platformAuthed)
 	platformLogisticsH.Register(platformAuthed)
+	platformNotificationH.Register(platformAuthed)
 	platformProductMetaH.Register(platformAuthed)
 	platformCommentH.Register(platformAuthed)
 	platformFeedbackH.Register(platformAuthed)
@@ -390,6 +401,7 @@ func main() {
 	platformCapitalFlowH.Register(platformAuthed)
 	platformWechatNewsH.Register(platformAuthed)
 	platformWechatReplyH.Register(platformAuthed)
+	platformServiceMealH.Register(platformAuthed)
 	platformRechargeH.Register(platformAuthed)
 	platformCustomerServiceH.Register(platformAuthed)
 

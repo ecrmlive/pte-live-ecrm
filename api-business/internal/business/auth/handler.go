@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/domain/cloudconfig"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/authjwt"
@@ -378,18 +376,22 @@ func (h *Handler) SendSMS(c *gin.Context) {
 		response.Fail(c, http.StatusServiceUnavailable, "短信服务未配置")
 		return
 	}
-	values, err := h.cloud.Values(c.Request.Context(), "sms")
+	values, err := h.cloud.Values(c.Request.Context(), "tencent_sms")
 	if err != nil || strings.TrimSpace(values["enabled"]) != "true" {
 		response.Fail(c, http.StatusServiceUnavailable, "短信服务未配置")
 		return
 	}
-	timeout, _ := strconv.Atoi(values["timeout_seconds"])
 	code, err := h.svc.CreateSMSCode(c.Request.Context(), req.Mobile, req.Purpose)
 	if err != nil {
 		writeError(c, err)
 		return
 	}
-	if err = h.sms.Send(c.Request.Context(), smsclient.Config{Endpoint: values["endpoint"], Authorization: values["authorization"], Template: values["template"], Timeout: time.Duration(timeout) * time.Second}, strings.TrimSpace(req.Mobile), code, smsCodeTTL); err != nil {
+	if err = h.sms.SendTencent(c.Request.Context(), smsclient.TencentConfig{
+		AppKey:      values["app_key"],
+		SDKAppID:    values["sdk_app_id"],
+		SignContent: values["sign_content"],
+		TemplateID:  values["template_id"],
+	}, strings.TrimSpace(req.Mobile), code); err != nil {
 		_ = h.svc.DiscardSMSCode(c.Request.Context(), req.Mobile, req.Purpose, code)
 		response.Fail(c, http.StatusBadGateway, "短信发送失败，请稍后重试")
 		return

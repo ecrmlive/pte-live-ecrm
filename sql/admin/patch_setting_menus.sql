@@ -47,11 +47,10 @@ ON DUPLICATE KEY UPDATE
 
 -- L3 目录（截图）
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
-  (1501,1500,'setting.serve','一号通','lucide:cloud','/serve','directory',1,1),
-  (1502,1500,'setting.shop.dir','商城设置','lucide:store','/shop','directory',2,1),
-  (1503,1500,'setting.delivery.dir','配送配置','lucide:truck','/delivery_config','directory',3,1),
-  (1504,1500,'setting.rbac.dir','权限管理','lucide:shield-check','/setting/rbac','directory',4,1),
-  (1505,1500,'setting.notice.dir','消息管理','lucide:bell','/notice','directory',5,1)
+  (1502,1500,'setting.shop.dir','商城设置','lucide:store','/shop','directory',3,1),
+  (1503,1500,'setting.delivery.dir','配送配置','lucide:truck','/delivery_config','directory',4,1),
+  (1504,1500,'setting.rbac.dir','权限管理','lucide:shield-check','/setting/rbac','directory',5,1),
+  (1505,1500,'setting.notice.dir','消息管理','lucide:bell','/notice','directory',6,1)
 ON DUPLICATE KEY UPDATE
   `parent_id`=1500,
   `code`=VALUES(`code`),
@@ -62,13 +61,12 @@ ON DUPLICATE KEY UPDATE
   `sort`=VALUES(`sort`),
   `status`=1;
 
--- L4：一号通（保留入口页即可；短信等可再展开）
+-- 系统设置仅保留服务配置与平台短信验证码配置。
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
-  (1510,1501,'setting.serve.login','登陆入口','lucide:log-in','/setting/sms/sms_config/index','page',1,1),
-  (1511,1501,'setting.serve.config','服务配置','lucide:settings-2','/service/settings','page',2,1),
-  (1512,1501,'setting.serve.sms','短信设置','lucide:mail','/sms','page',3,1)
+  (1511,1500,'setting.system.service','服务配置','lucide:settings-2','/service/settings','page',1,1),
+  (1512,1500,'setting.system.sms','短信配置','lucide:mail','/setting/sms','page',2,1)
 ON DUPLICATE KEY UPDATE
-  `parent_id`=1501,
+  `parent_id`=1500,
   `code`=VALUES(`code`),
   `title`=VALUES(`title`),
   `icon`=VALUES(`icon`),
@@ -77,11 +75,18 @@ ON DUPLICATE KEY UPDATE
   `sort`=VALUES(`sort`),
   `status`=1;
 
+-- 原一号通目录及其呼叫系统登录入口不属于本项目，移除菜单与授权。
+DELETE FROM `qixi_crm_a_role_menu` WHERE `menu_id` IN (1501,1510);
+DELETE FROM `qixi_crm_a_menu` WHERE `id` IN (1501,1510) OR `code` IN ('setting.serve','setting.serve.login');
+UPDATE `qixi_crm_a_menu`
+SET `parent_id`=1512, `route_path`='setting/sms', `title`='维护平台短信验证码配置'
+WHERE `id`=20936 OR `code`='setting.sms.manage';
+
 -- L4：商城设置
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
   (1520,1502,'setting.shop.form','商城设置','lucide:store','/systemForm/Basics/shop_tabs','page',1,1),
   (1521,1502,'setting.shop.hot','热门搜索','lucide:search','/group/config/67','page',2,1),
-  (1522,1502,'setting.shop.agreements','协议规则','lucide:file-text','/setting/agreements','page',3,1)
+  (1522,1502,'setting.shop.agreements','协议设置','lucide:file-text','/setting/agreements','page',3,1)
 ON DUPLICATE KEY UPDATE
   `parent_id`=1502,
   `code`=VALUES(`code`),
@@ -91,6 +96,24 @@ ON DUPLICATE KEY UPDATE
   `kind`='page',
   `sort`=VALUES(`sort`),
   `status`=1;
+
+-- 热门搜索按商城设置新菜单授权，旧维护菜单不再作为接口权限来源。
+INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
+  (21570,1521,'setting.shop.hot.read','查看热门搜索','','group/config/67','button',1,1),
+  (21571,1521,'setting.shop.hot.manage','维护热门搜索','','group/config/67','button',2,1)
+ON DUPLICATE KEY UPDATE
+  `parent_id`=1521,
+  `title`=VALUES(`title`),
+  `route_path`=VALUES(`route_path`),
+  `kind`='button',
+  `sort`=VALUES(`sort`),
+  `status`=1;
+
+INSERT IGNORE INTO `qixi_crm_a_role_menu` (`role_id`,`menu_id`)
+SELECT r.id, m.id
+FROM `qixi_crm_a_role` AS r
+CROSS JOIN `qixi_crm_a_menu` AS m
+WHERE r.code='platform' AND m.code IN ('setting.shop.hot','setting.shop.hot.read','setting.shop.hot.manage');
 
 -- L4：配送配置
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
@@ -104,6 +127,17 @@ ON DUPLICATE KEY UPDATE
   `kind`='page',
   `sort`=VALUES(`sort`),
   `status`=1;
+
+-- 物流公司维护权限挂在正式配送配置入口，避免历史按钮成为孤儿或一级菜单。
+UPDATE `qixi_crm_a_menu`
+SET `parent_id`=1530, `route_path`='freight/express', `title`='维护物流公司', `status`=1
+WHERE `id`=20932 OR `code`='freight.express.manage';
+
+INSERT IGNORE INTO `qixi_crm_a_role_menu` (`role_id`,`menu_id`)
+SELECT r.id, m.id
+FROM `qixi_crm_a_role` AS r
+CROSS JOIN `qixi_crm_a_menu` AS m
+WHERE r.code='platform' AND m.code='freight.express.manage';
 
 -- L4：权限管理
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
@@ -147,8 +181,8 @@ FROM `qixi_crm_a_role` AS r
 CROSS JOIN `qixi_crm_a_menu` AS m
 WHERE r.code = 'platform'
   AND m.id IN (
-    1500,1501,1502,1503,1504,1505,
-    1510,1511,1512,
+    1500,1502,1503,1504,1505,
+    1511,1512,
     1520,1521,1522,
     1530,
     1540,1541,1542,

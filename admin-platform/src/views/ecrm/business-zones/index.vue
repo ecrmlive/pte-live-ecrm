@@ -339,7 +339,7 @@ async function loadAgentOptions(keyword = '') {
 async function loadRoleOptions(keyword = '') {
   const result = await fetchPlatformRoles({ page: 1, limit: 100 });
   let list = (result.list || []).filter(
-    (item) => item.status === 1 && (item.is_agent === 1 || item.code.includes('region')),
+    (item) => item.status === 1 && item.role_type === 'region',
   );
   if (!list.length) {
     list = (result.list || []).filter((item) => item.status === 1);

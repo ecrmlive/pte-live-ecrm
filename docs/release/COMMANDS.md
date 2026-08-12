@@ -20,7 +20,9 @@ release/config/api-merchant/app.yaml
 release/config/job/app.yaml
 ```
 
-仅在这些 YAML 中填写密码、JWT 和 pte-live-im 受控 API 凭证。COS、平台支付、小程序密钥统一写入被 Git 忽略的 `sql/admin/init_key.sql`；`sql/business/init_key.sql`、`sql/merchant/init_key.sql` 只保留各库边界说明。`make local-db-init` / `make test-db-init` 会按三库固定顺序自动导入；local 与 test 必须同步同一份三文件密钥 SQL。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
+仅在这些 YAML 中填写密码、JWT 和 pte-live-im 受控 API 凭证。COS、平台支付、小程序密钥统一写入被 Git 忽略的 `sql/admin/init_key.sql`；模板为 `sql/admin/init_key.sql.example`，只允许保留占位符。`sql/business/init_key.sql`、`sql/merchant/init_key.sql` 只保留各库边界说明。`make local-db-init` / `make test-db-init` 会按三库固定顺序自动导入；local 与 test 必须同步同一份三文件密钥 SQL。`local` 与 `test` 的 C 端 JWT 必须一致，统一后台 JWT 必须一致；店铺 JWT 独立。不得使用 `.env`、`jwt.env`、环境变量注入或把真实值提交到 Git。
+
+初始化 SQL 职责固定：`init_data.sql` 只放系统默认配置（通知策略、商城设置、物流目录、服务套餐、维护配置等），`init_file.sql` 只放已上传 COS 的系统素材引用，`init_test_data.sql` 只放商品、店铺、用户等演示夹具。`init_key.sql` 始终被忽略，禁止提交。
 
 ## 构建与启动
 

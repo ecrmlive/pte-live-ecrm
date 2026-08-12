@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"gorm.io/gorm"
@@ -10,15 +11,19 @@ import (
 
 type mallSettingStore struct{ cache *Cache }
 
-func (s *mallSettingStore) ListNotices(context.Context, bool, int, int) ([]Notice, int64, error) {
+func (s *mallSettingStore) ListNotices(context.Context, bool, NoticeListFilter) ([]Notice, int64, error) {
 	return nil, 0, nil
 }
 func (s *mallSettingStore) GetNotice(context.Context, uint) (*Notice, error) {
 	return nil, gorm.ErrRecordNotFound
 }
-func (s *mallSettingStore) CreateNotice(context.Context, *Notice) error  { return nil }
-func (s *mallSettingStore) UpdateNotice(context.Context, *Notice) error  { return nil }
-func (s *mallSettingStore) SoftDeleteNotice(context.Context, uint) error { return nil }
+func (s *mallSettingStore) CreateNotice(context.Context, *Notice, []uint) error { return nil }
+func (s *mallSettingStore) UpdateNotice(context.Context, *Notice, []uint) error { return nil }
+func (s *mallSettingStore) ListNoticeScopes(context.Context, []uint) ([]NoticeScope, error) {
+	return nil, nil
+}
+func (s *mallSettingStore) UpdateNoticeStatus(context.Context, uint, int8) error { return nil }
+func (s *mallSettingStore) SoftDeleteNotice(context.Context, uint) error         { return nil }
 func (s *mallSettingStore) GetCache(_ context.Context, key string) (*Cache, error) {
 	if s.cache == nil || s.cache.Key != key {
 		return nil, gorm.ErrRecordNotFound
@@ -41,13 +46,24 @@ func TestShopConfigRejectsUnknownKeys(t *testing.T) {
 func TestShopConfigCanonicalizesChineseValues(t *testing.T) {
 	store := &mallSettingStore{}
 	svc := NewService(store)
-	got, err := svc.SaveShopConfig(context.Background(), `{"site_name":"七禧商城","site_url":"https://example.test","order_auto_cancel_minutes":15,"order_auto_receive_days":10,"enabled":true,"remark":"中文商城设置"}`)
+	got, err := svc.SaveShopConfig(context.Background(), `{"auto_parse_clipboard":true,"arrival_notice_enabled":true,"product_comment_enabled":true,"auto_positive_review_enabled":true,"default_copy_times":8,"order_auto_cancel_minutes":15,"order_auto_receive_days":10,"after_sale_days":1,"merchant_refund_auto_days":1,"refund_reasons":["测试","不要了"],"platform_rights_enabled":true,"platform_rights_days":1,"merge_payment_enabled":true,"merchant_apply_enabled":true,"merchant_qualification_required":true,"merchant_margin_badge_enabled":false,"merchant_margin_badge_image":"/attachment/badge.png","merchant_category_limit":5,"mall_show_stores":true,"mall_recommend_enabled":true,"mall_recommend_distance_enabled":true,"mall_recommend_sort":"star","live_stream_auto_approve":false,"live_product_auto_approve":false,"hot_ranking_enabled":true,"hot_ranking_category_level":2,"hot_ranking_refresh_hours":24,"mall_search_mode":"fuzzy","product_ranking_period":"month","product_ranking_metric":"sales_amount","shop_ranking_period":"month","shop_ranking_metric":"product_count","dashboard_display_name":"数据大屏"}`)
 	if err != nil {
 		t.Fatalf("save shop config: %v", err)
 	}
-	want := `{"site_name":"七禧商城","site_url":"https://example.test","order_auto_cancel_minutes":15,"order_auto_receive_days":10,"enabled":true,"remark":"中文商城设置"}`
-	if got != want || store.cache == nil || store.cache.Result != want {
+	if !strings.Contains(got, `"dashboard_display_name":"数据大屏"`) || !strings.Contains(got, `"refund_reasons":["测试","不要了"]`) || store.cache == nil || store.cache.Result != got {
 		t.Fatalf("canonical shop config = %q, stored = %#v", got, store.cache)
+	}
+}
+
+func TestShopConfigRejectsInvalidEnumsAndSensitiveKeys(t *testing.T) {
+	svc := NewService(&mallSettingStore{})
+	for _, raw := range []string{
+		`{"mall_search_mode":"anything"}`,
+		`{"dashboard_display_name":"数据大屏","secret_key":"not-allowed"}`,
+	} {
+		if _, err := svc.SaveShopConfig(context.Background(), raw); !errors.Is(err, ErrBadParam) {
+			t.Fatalf("shop config %q error = %v, want ErrBadParam", raw, err)
+		}
 	}
 }
 

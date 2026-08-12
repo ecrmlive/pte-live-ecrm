@@ -1,6 +1,6 @@
 import { requestClient } from '#/api/request';
 
-export type ConfigItemType = 'backup' | 'group_data' | 'hot_search' | 'system_form';
+export type ConfigItemType = 'backup' | 'hot_search' | 'system_form';
 
 export interface ConfigItem {
   code: string;
@@ -12,6 +12,7 @@ export interface ConfigItem {
   remark: string;
   sort: number;
   status: number;
+  created_at: string;
   updated_at: string;
 }
 
@@ -33,7 +34,6 @@ export interface ConfigItemInput {
 
 const pathByType: Record<ConfigItemType, string> = {
   backup: '/maintain/backups',
-  group_data: '/maintain/group-data',
   hot_search: '/maintain/hot-search',
   system_form: '/diy/system-forms',
 };

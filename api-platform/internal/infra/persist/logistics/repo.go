@@ -2,6 +2,8 @@ package logistics
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/logistics"
 	"gorm.io/gorm"
@@ -11,18 +13,39 @@ type Repo struct{ db *gorm.DB }
 
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-func (r *Repo) ListExpress(ctx context.Context, page, limit int, showOnly bool) ([]logistics.Express, int64, error) {
+func (r *Repo) ListExpress(ctx context.Context, page, limit int, showOnly bool, keyword, sortOrder string) ([]logistics.Express, int64, error) {
 	var total int64
 	q := r.db.WithContext(ctx).Model(&logistics.Express{}).Where("is_del = 0")
 	if showOnly {
 		q = q.Where("is_show = 1")
 	}
+	if keyword != "" {
+		like := "%" + keyword + "%"
+		q = q.Where("name LIKE ? OR code LIKE ?", like, like)
+	}
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
+	order := "is_show DESC, sort DESC, express_id ASC"
+	if sortOrder == "asc" || sortOrder == "desc" {
+		order = "sort " + strings.ToUpper(sortOrder) + ", express_id ASC"
+	}
 	var rows []logistics.Express
-	err := q.Order("sort DESC, express_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
+	err := q.Order(order).Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+func (r *Repo) ExistsExpress(ctx context.Context, name, code string, excludeID uint) (bool, error) {
+	var total int64
+	q := r.db.WithContext(ctx).Model(&logistics.Express{}).
+		Where("is_del = 0 AND (name = ? OR code = ?)", name, code)
+	if excludeID > 0 {
+		q = q.Where("express_id <> ?", excludeID)
+	}
+	if err := q.Count(&total).Error; err != nil {
+		return false, err
+	}
+	return total > 0, nil
 }
 
 func (r *Repo) GetExpress(ctx context.Context, id uint) (*logistics.Express, error) {
@@ -41,6 +64,33 @@ func (r *Repo) UpdateExpress(ctx context.Context, row *logistics.Express) error 
 
 func (r *Repo) SoftDeleteExpress(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Model(&logistics.Express{}).Where("express_id = ?", id).Update("is_del", 1).Error
+}
+
+func (r *Repo) SyncExpressCatalog(ctx context.Context, rows []logistics.Express) (created, updated int, err error) {
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, item := range rows {
+			var existing logistics.Express
+			err := tx.Where("code = ?", item.Code).First(&existing).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				if err := tx.Create(&item).Error; err != nil {
+					return err
+				}
+				created++
+			case err != nil:
+				return err
+			default:
+				if err := tx.Model(&logistics.Express{}).
+					Where("express_id = ?", existing.ExpressID).
+					Updates(map[string]any{"name": item.Name, "is_del": 0}).Error; err != nil {
+					return err
+				}
+				updated++
+			}
+		}
+		return nil
+	})
+	return created, updated, err
 }
 
 func (r *Repo) ListCity(ctx context.Context, parentID *uint) ([]logistics.City, error) {

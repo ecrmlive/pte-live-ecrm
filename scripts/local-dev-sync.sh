@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 本机开发同步：把 sql patch/seed 导入 local MySQL，并把改过的 API pack 后重启容器。
+# 本机开发同步：把配置初始化、sql patch/seed 导入 local MySQL，并把改过的 API pack 后重启容器。
 # 用法：
 #   scripts/local-dev-sync.sh              # 自动：git 变更涉及的 sql + api
-#   scripts/local-dev-sync.sh sql          # 仅导入 patch/seed
+#   scripts/local-dev-sync.sh sql          # 仅导入配置初始化、patch/seed
 #   scripts/local-dev-sync.sh api          # 仅按 git 变更 pack+重启
 #   scripts/local-dev-sync.sh api api-platform api-business
 #   scripts/local-dev-sync.sh all          # 全量 patch/seed + 三个 API
@@ -59,12 +59,29 @@ apply_domain_sql() {
 	done < <(find "${dir}" -maxdepth 1 -type f \( -name 'patch_*.sql' -o -name 'seed_*_local.sql' -o -name 'seed_*.sql' \) | LC_ALL=C sort)
 }
 
+apply_domain_init_defaults() {
+	local domain="$1" db="$2"
+	local dir="${ROOT_DIR}/sql/${domain}"
+	[[ -d "${dir}" ]] || return 0
+	local phase file
+	# init_key.sql 只在完整 db-init 中导入，避免本地同步读取或覆盖本机密钥。
+	for phase in init_config init_data init_file; do
+		file="${dir}/${phase}.sql"
+		[[ -f "${file}" ]] || continue
+		apply_sql_file "${db}" "${file}"
+	done
+}
+
 apply_sql() {
 	require_mysql
-	echo "==> 导入 local SQL patch / seed"
+	echo "==> 导入 local patch / 配置初始化 / seed"
+	# 结构补丁优先：新默认配置可能依赖本次新增的表。
 	apply_domain_sql admin qixi_crm_admin
 	apply_domain_sql business qixi_crm_business
 	apply_domain_sql merchant qixi_crm_merchant
+	apply_domain_init_defaults admin qixi_crm_admin
+	apply_domain_init_defaults business qixi_crm_business
+	apply_domain_init_defaults merchant qixi_crm_merchant
 	echo "==> SQL 同步完成"
 }
 

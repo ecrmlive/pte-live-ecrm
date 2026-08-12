@@ -33,20 +33,44 @@ func AuditAdminMutation(adminDB *gorm.DB) gin.HandlerFunc {
 			path = c.Request.URL.Path
 		}
 		resourceType, resourceID := operationResource(path, c)
+		permissionName := operationPermissionName(resourceType)
 		requestID := strings.TrimSpace(c.GetHeader("X-Request-Id"))
 		if len(requestID) == 0 || len(requestID) > 64 {
 			requestID = fmt.Sprintf("admin-op-%d-%d", claims.AdminID, time.Now().UnixNano())
 		}
 		if err := adminDB.WithContext(c.Request.Context()).Table("qixi_crm_a_operation_log").Create(map[string]any{
-			"admin_user_id": claims.AdminID,
-			"role_code":     boundedOperationLogValue(strings.Join(roles, ","), 32),
-			"action":        boundedOperationLogValue(operationAction(c.Request.Method, path), 128),
-			"resource_type": boundedOperationLogValue(resourceType, 64),
-			"resource_id":   boundedOperationLogValue(resourceID, 64),
-			"request_id":    requestID,
+			"admin_user_id":   claims.AdminID,
+			"role_code":       boundedOperationLogValue(strings.Join(roles, ","), 32),
+			"action":          boundedOperationLogValue(operationAction(c.Request.Method, path), 128),
+			"resource_type":   boundedOperationLogValue(resourceType, 64),
+			"resource_id":     boundedOperationLogValue(resourceID, 64),
+			"request_id":      requestID,
+			"request_method":  boundedOperationLogValue(c.Request.Method, 16),
+			"request_path":    boundedOperationLogValue(path, 512),
+			"request_ip":      boundedOperationLogValue(c.ClientIP(), 64),
+			"permission_name": boundedOperationLogValue(permissionName, 128),
 		}).Error; err != nil {
 			log.Printf("admin operation log write failed: %v", err)
 		}
+	}
+}
+
+func operationPermissionName(resource string) string {
+	switch resource {
+	case "setting", "maintain":
+		return "系统设置"
+	case "customer-service":
+		return "客服管理"
+	case "product", "products":
+		return "商品管理"
+	case "merchants":
+		return "商户管理"
+	case "stores":
+		return "店铺管理"
+	case "users", "user-list":
+		return "用户管理"
+	default:
+		return "平台管理"
 	}
 }
 

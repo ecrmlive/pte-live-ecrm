@@ -21,15 +21,19 @@ import (
 func (h *Handler) RegisterSettings(authed gin.IRoutes) {
 	platformOnly := middleware.RequireAdminRoles("platform")
 	authed.GET("/setting/admins", platformOnly, h.ListAdmins)
+	authed.GET("/setting/admin-regions", platformOnly, h.ListAdminRegions)
 	authed.POST("/setting/admins", platformOnly, h.CreateAdmin)
 	authed.PUT("/setting/admins/:id", platformOnly, h.UpdateAdmin)
 	authed.DELETE("/setting/admins/:id", platformOnly, h.DeleteAdmin)
 	authed.GET("/setting/roles", platformOnly, h.ListRoles)
 	authed.POST("/setting/roles", platformOnly, h.CreateRole)
 	authed.PUT("/setting/roles/:id", platformOnly, h.UpdateRole)
+	authed.DELETE("/setting/roles/:id", platformOnly, h.DeleteRole)
 	authed.GET("/setting/menus/tree", platformOnly, h.MenuTree)
 	authed.GET("/setting/menus", platformOnly, h.ListMenus)
+	authed.POST("/setting/menus", platformOnly, h.CreateMenu)
 	authed.PUT("/setting/menus/:id", platformOnly, h.UpdateMenu)
+	authed.DELETE("/setting/menus/:id", platformOnly, h.DeleteMenu)
 }
 
 type adminListRow struct {
@@ -42,8 +46,11 @@ type adminListRow struct {
 	Status          int8      `gorm:"column:status" json:"status"`
 	CreatedAt       time.Time `gorm:"column:created_at" json:"created_at"`
 	Roles           string    `json:"roles"`
+	RoleCodes       []string  `json:"role_codes"`
+	RoleNames       string    `json:"role_names"`
 	MerchantIDs     string    `json:"merchant_ids"`
 	RegionIDs       string    `json:"region_ids"`
+	RegionNames     string    `json:"region_names"`
 	ServiceStoreIDs string    `json:"service_store_ids"`
 	IsAgent         int8      `json:"is_agent"`
 	Level           int8      `json:"level"`
@@ -69,15 +76,43 @@ type adminSaveRequest struct {
 
 func (h *Handler) ListAdmins(c *gin.Context) {
 	page, limit := pageParams(c, 20)
+	query := h.db.WithContext(c.Request.Context()).Table((adminUser{}).TableName()).Where("deleted_at IS NULL")
+	if keyword := strings.TrimSpace(c.Query("keyword")); keyword != "" {
+		like := "%" + keyword + "%"
+		query = query.Where("username LIKE ? OR display_name LIKE ? OR phone LIKE ?", like, like, like)
+	}
+	if raw := strings.TrimSpace(c.Query("status")); raw != "" {
+		status, err := strconv.ParseInt(raw, 10, 8)
+		if err != nil || (status != 0 && status != 1) {
+			response.Fail(c, http.StatusBadRequest, "账号状态参数错误")
+			return
+		}
+		query = query.Where("status = ?", status)
+	}
+	if raw := strings.TrimSpace(c.Query("date_from")); raw != "" {
+		value, err := time.ParseInLocation("2006-01-02", raw, time.Local)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "开始时间格式错误")
+			return
+		}
+		query = query.Where("created_at >= ?", value)
+	}
+	if raw := strings.TrimSpace(c.Query("date_to")); raw != "" {
+		value, err := time.ParseInLocation("2006-01-02", raw, time.Local)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "结束时间格式错误")
+			return
+		}
+		query = query.Where("created_at < ?", value.AddDate(0, 0, 1))
+	}
 	var total int64
-	if err := h.db.WithContext(c.Request.Context()).Model(&adminUser{}).Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		writeError(c, err)
 		return
 	}
 	rows := make([]adminListRow, 0)
-	if err := h.db.WithContext(c.Request.Context()).Table((adminUser{}).TableName()).
+	if err := query.
 		Select("id,username,display_name,linked_user_id,avatar_url,phone,status,created_at,COALESCE(circle_agent_id, 0) AS circle_agent_id").Order("id DESC").
-		Where("deleted_at IS NULL").
 		Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		writeError(c, err)
 		return
@@ -89,8 +124,19 @@ func (h *Handler) ListAdmins(c *gin.Context) {
 			return
 		}
 		rows[i].Roles = strings.Join(roles, ",")
+		rows[i].RoleCodes = roles
+		rows[i].RoleNames, err = h.roleNames(c, rows[i].ID)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
 		rows[i].IsAgent = boolToInt8(hasRole(roles, "region"))
 		rows[i].MerchantIDs, err = h.merchantIDs(c, rows[i].ID)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		rows[i].RegionNames, err = h.regionNames(c, rows[i].RegionIDs)
 		if err != nil {
 			writeError(c, err)
 			return
@@ -107,6 +153,20 @@ func (h *Handler) ListAdmins(c *gin.Context) {
 		}
 	}
 	response.OK(c, gin.H{"list": rows, "total": total})
+}
+
+// ListAdminRegions 供管理员表单选择区域；只返回有效区域名称和 ID，禁止前端手填 ID。
+func (h *Handler) ListAdminRegions(c *gin.Context) {
+	rows := make([]struct {
+		ID   uint64 `gorm:"column:id" json:"value"`
+		Name string `gorm:"column:name" json:"label"`
+	}, 0)
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_region").
+		Select("id,name").Where("status = 1").Order("parent_id ASC,id ASC").Scan(&rows).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"list": rows})
 }
 
 func (h *Handler) CreateAdmin(c *gin.Context) {
@@ -310,10 +370,12 @@ func allowsAdminDeletion(operatorID, targetID uint64, targetRoles []string, othe
 
 func (h *Handler) adminRow(c *gin.Context, user adminUser) adminListRow {
 	roles, _ := h.roles(c, user.ID)
+	roleNames, _ := h.roleNames(c, user.ID)
 	merchantIDs, _ := h.merchantIDs(c, user.ID)
 	regionIDs, _ := h.regionIDs(c, user.ID)
+	regionNames, _ := h.regionNames(c, regionIDs)
 	serviceStoreIDs, _ := h.serviceStoreIDs(c, user.ID)
-	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, LinkedUserID: user.LinkedUserID, AvatarURL: user.AvatarURL, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), MerchantIDs: merchantIDs, RegionIDs: regionIDs, ServiceStoreIDs: serviceStoreIDs, IsAgent: boolToInt8(hasRole(roles, "region")), CircleID: derefCircleAgentID(user.CircleAgentID)}
+	return adminListRow{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, LinkedUserID: user.LinkedUserID, AvatarURL: user.AvatarURL, Phone: user.Phone, Status: user.Status, Roles: strings.Join(roles, ","), RoleCodes: roles, RoleNames: roleNames, MerchantIDs: merchantIDs, RegionIDs: regionIDs, RegionNames: regionNames, ServiceStoreIDs: serviceStoreIDs, IsAgent: boolToInt8(hasRole(roles, "region")), CircleID: derefCircleAgentID(user.CircleAgentID)}
 }
 
 func nullableCircleAgentID(id uint64) any {
@@ -463,6 +525,39 @@ func (h *Handler) regionIDs(c *gin.Context, userID uint64) (string, error) {
 	return strings.Join(parts, ","), nil
 }
 
+func (h *Handler) roleNames(c *gin.Context, userID uint64) (string, error) {
+	var names []string
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role AS r").
+		Select("r.name").Joins("INNER JOIN qixi_crm_a_admin_user_role AS ur ON ur.role_id = r.id").
+		Where("ur.admin_user_id = ?", userID).Order("r.id ASC").Scan(&names).Error
+	return strings.Join(names, "、"), err
+}
+
+func (h *Handler) regionNames(c *gin.Context, rawIDs string) (string, error) {
+	ids, err := parseIDs(rawIDs, "区域 ID")
+	if err != nil || len(ids) == 0 {
+		return "", err
+	}
+	var rows []struct {
+		ID   uint64 `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_region").Select("id,name").Where("id IN ?", ids).Scan(&rows).Error; err != nil {
+		return "", err
+	}
+	nameByID := make(map[uint64]string, len(rows))
+	for _, row := range rows {
+		nameByID[row.ID] = row.Name
+	}
+	names := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if name := strings.TrimSpace(nameByID[id]); name != "" {
+			names = append(names, name)
+		}
+	}
+	return strings.Join(names, "、"), nil
+}
+
 type serviceQueueScope struct {
 	StoreIDs []uint64 `json:"store_ids"`
 }
@@ -506,10 +601,15 @@ func (h *Handler) serviceStoreIDs(c *gin.Context, userID uint64) (string, error)
 func parseScopeIDs(raw json.RawMessage, serviceQueue bool) ([]uint64, error) {
 	if serviceQueue {
 		var scope serviceQueueScope
-		if err := json.Unmarshal(raw, &scope); err != nil {
+		if err := json.Unmarshal(raw, &scope); err == nil && scope.StoreIDs != nil {
+			return scope.StoreIDs, nil
+		}
+		// 兼容早期本地客服夹具使用的 JSON 数组；写入时统一使用对象结构。
+		var legacyStoreIDs []uint64
+		if err := json.Unmarshal(raw, &legacyStoreIDs); err != nil {
 			return nil, err
 		}
-		return scope.StoreIDs, nil
+		return legacyStoreIDs, nil
 	}
 	var values []uint64
 	if err := json.Unmarshal(raw, &values); err != nil {
@@ -519,31 +619,54 @@ func parseScopeIDs(raw json.RawMessage, serviceQueue bool) ([]uint64, error) {
 }
 
 type roleListRow struct {
-	ID       uint64 `gorm:"column:id" json:"role_id"`
-	Code     string `gorm:"column:code" json:"code"`
-	Name     string `gorm:"column:name" json:"role_name"`
-	Status   int8   `gorm:"column:status" json:"status"`
-	Rules    string `json:"rules"`
-	IsAgent  int8   `json:"is_agent"`
-	CircleID uint64 `json:"circle_id"`
-	MerID    uint64 `json:"mer_id"`
+	ID        uint64    `gorm:"column:id" json:"role_id"`
+	Code      string    `gorm:"column:code" json:"code"`
+	Name      string    `gorm:"column:name" json:"role_name"`
+	Status    int8      `gorm:"column:status" json:"status"`
+	RoleType  string    `gorm:"column:role_type" json:"role_type"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
+	Rules     string    `json:"rules"`
 }
 type roleSaveRequest struct {
 	Code     string   `json:"code"`
 	RoleName string   `json:"role_name"`
+	RoleType string   `json:"role_type"`
 	Status   int8     `json:"status"`
 	MenuIDs  []uint64 `json:"menu_ids"`
 }
 
 func (h *Handler) ListRoles(c *gin.Context) {
-	page, limit := pageParams(c, 50)
+	page, limit := pageParams(c, 10)
+	roleType := strings.TrimSpace(c.Query("role_type"))
+	if roleType != "" && !validRoleType(roleType) {
+		response.Fail(c, http.StatusBadRequest, "身份类型错误")
+		return
+	}
+	keyword := strings.TrimSpace(c.Query("keyword"))
+	status := strings.TrimSpace(c.Query("status"))
+	query := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role")
+	if roleType != "" {
+		query = query.Where("role_type = ?", roleType)
+	}
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR code LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if status != "" {
+		parsed, err := strconv.ParseInt(status, 10, 8)
+		if err != nil || (parsed != 0 && parsed != 1) {
+			response.Fail(c, http.StatusBadRequest, "状态参数错误")
+			return
+		}
+		query = query.Where("status = ?", parsed)
+	}
 	var total int64
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		writeError(c, err)
 		return
 	}
 	rows := make([]roleListRow, 0)
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Select("id,code,name,status").Order("id ASC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
+	if err := query.Select("id,code,name,status,role_type,created_at,updated_at").Order("id ASC").Offset((page - 1) * limit).Limit(limit).Scan(&rows).Error; err != nil {
 		writeError(c, err)
 		return
 	}
@@ -554,7 +677,6 @@ func (h *Handler) ListRoles(c *gin.Context) {
 			return
 		}
 		rows[i].Rules = rules
-		rows[i].IsAgent = boolToInt8(strings.HasPrefix(rows[i].Code, "region"))
 	}
 	response.OK(c, gin.H{"list": rows, "total": total})
 }
@@ -565,16 +687,25 @@ func (h *Handler) CreateRole(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	if !validRoleCode(req.Code) || strings.TrimSpace(req.RoleName) == "" {
-		response.Fail(c, http.StatusBadRequest, "角色代码和名称必填，代码仅支持小写字母、数字和下划线")
+	if strings.TrimSpace(req.RoleName) == "" || !validRoleType(req.RoleType) {
+		response.Fail(c, http.StatusBadRequest, "身份名称和身份类型必填")
 		return
 	}
-	row := roleListRow{Code: strings.TrimSpace(req.Code), Name: strings.TrimSpace(req.RoleName), Status: req.Status}
-	if row.Status == 0 {
-		row.Status = 1
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		code = "custom_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 	}
+	if !validRoleCode(code) {
+		response.Fail(c, http.StatusBadRequest, "身份代码仅支持小写字母、数字和下划线")
+		return
+	}
+	if err := h.validateRoleMenuScope(c, req.RoleType, req.MenuIDs); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	row := roleListRow{Code: code, Name: strings.TrimSpace(req.RoleName), RoleType: req.RoleType, Status: req.Status}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Table("qixi_crm_a_role").Create(map[string]any{"code": row.Code, "name": row.Name, "status": row.Status}).Error; err != nil {
+		if err := tx.Table("qixi_crm_a_role").Create(map[string]any{"code": row.Code, "name": row.Name, "role_type": row.RoleType, "status": row.Status}).Error; err != nil {
 			return err
 		}
 		var saved struct{ ID uint64 }
@@ -591,7 +722,6 @@ func (h *Handler) CreateRole(c *gin.Context) {
 		writeError(c, err)
 		return
 	}
-	row.IsAgent = boolToInt8(strings.HasPrefix(row.Code, "region"))
 	row.Rules = idsToCSV(req.MenuIDs)
 	response.OK(c, row)
 }
@@ -611,6 +741,19 @@ func (h *Handler) UpdateRole(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "角色名称必填")
 		return
 	}
+	var current roleListRow
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Select("id,role_type").Where("id = ?", id).Take(&current).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Fail(c, http.StatusNotFound, "身份不存在")
+			return
+		}
+		writeError(c, err)
+		return
+	}
+	if err := h.validateRoleMenuScope(c, current.RoleType, req.MenuIDs); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Table("qixi_crm_a_role").Where("id = ?", id).Updates(map[string]any{"name": strings.TrimSpace(req.RoleName), "status": req.Status}).Error; err != nil {
 			return err
@@ -621,13 +764,52 @@ func (h *Handler) UpdateRole(c *gin.Context) {
 		return
 	}
 	var row roleListRow
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Select("id,code,name,status").Where("id = ?", id).Scan(&row).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Select("id,code,name,status,role_type,created_at,updated_at").Where("id = ?", id).Scan(&row).Error; err != nil {
 		writeError(c, err)
 		return
 	}
 	row.Rules = idsToCSV(req.MenuIDs)
-	row.IsAgent = boolToInt8(strings.HasPrefix(row.Code, "region"))
 	response.OK(c, row)
+}
+
+func (h *Handler) DeleteRole(c *gin.Context) {
+	id, err := parseID(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "身份 ID 错误")
+		return
+	}
+	var row roleListRow
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role").Select("id,code,name").Where("id = ?", id).Scan(&row).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	if row.ID == 0 {
+		response.Fail(c, http.StatusNotFound, "身份不存在")
+		return
+	}
+	if builtInRoleCode(row.Code) {
+		response.Fail(c, http.StatusConflict, "系统预置身份不能删除")
+		return
+	}
+	var assigned int64
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_admin_user_role").Where("role_id = ?", id).Count(&assigned).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	if assigned > 0 {
+		response.Fail(c, http.StatusConflict, "身份已关联后台用户，不能删除")
+		return
+	}
+	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("qixi_crm_a_role_menu").Where("role_id = ?", id).Delete(&roleMenu{}).Error; err != nil {
+			return err
+		}
+		return tx.Table("qixi_crm_a_role").Where("id = ?", id).Delete(&roleListRow{}).Error
+	}); err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) replaceRoleMenus(c *gin.Context, tx *gorm.DB, roleID uint64, menuIDs []uint64) error {
@@ -644,6 +826,35 @@ func (h *Handler) replaceRoleMenus(c *gin.Context, tx *gorm.DB, roleID uint64, m
 	return tx.WithContext(c.Request.Context()).Create(&rows).Error
 }
 
+func (h *Handler) validateRoleMenuScope(c *gin.Context, scope string, menuIDs []uint64) error {
+	if len(menuIDs) == 0 {
+		return nil
+	}
+	menuScope, err := validMenuScope(scope)
+	if err != nil {
+		return err
+	}
+	unique := make(map[uint64]struct{}, len(menuIDs))
+	for _, id := range menuIDs {
+		if id == 0 {
+			return errors.New("菜单 ID 错误")
+		}
+		unique[id] = struct{}{}
+	}
+	ids := make([]uint64, 0, len(unique))
+	for id := range unique {
+		ids = append(ids, id)
+	}
+	var count int64
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Where("menu_scope = ? AND id IN ?", menuScope, ids).Count(&count).Error; err != nil {
+		return err
+	}
+	if count != int64(len(ids)) {
+		return errors.New("所选菜单与身份归属不一致")
+	}
+	return nil
+}
+
 type roleMenu struct{ RoleID, MenuID uint64 }
 
 func (roleMenu) TableName() string { return "qixi_crm_a_role_menu" }
@@ -654,15 +865,21 @@ func (h *Handler) menuIDs(c *gin.Context, roleID uint64) (string, error) {
 }
 
 type menuTreeRow struct {
-	ID       uint64         `gorm:"column:id" json:"menu_id"`
-	ParentID uint64         `gorm:"column:parent_id" json:"pid"`
-	Title    string         `gorm:"column:title" json:"menu_name"`
-	Children []*menuTreeRow `json:"children,omitempty"`
+	ID       uint64 `gorm:"column:id" json:"menu_id"`
+	ParentID uint64 `gorm:"column:parent_id" json:"pid"`
+	Title    string `gorm:"column:title" json:"menu_name"`
+	// 菜单树由查询结果在内存中组装；该字段不是数据库关联，必须排除 GORM 的字段解析。
+	Children []*menuTreeRow `gorm:"-" json:"children,omitempty"`
 }
 
 func (h *Handler) MenuTree(c *gin.Context) {
+	scope, err := validMenuScope(c.DefaultQuery("scope", "platform"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
 	var rows []*menuTreeRow
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Select("id,parent_id,title").Where("status = 1").Order("sort ASC,id ASC").Scan(&rows).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Select("id,parent_id,title").Where("status = 1 AND menu_scope = ?", scope).Order("sort ASC,id ASC").Scan(&rows).Error; err != nil {
 		writeError(c, err)
 		return
 	}
@@ -682,56 +899,275 @@ func (h *Handler) MenuTree(c *gin.Context) {
 }
 
 type menuListRow struct {
-	MenuID   uint64 `json:"menu_id"`
-	PID      uint64 `json:"pid"`
-	Path     string `json:"path"`
-	Icon     string `json:"icon"`
-	MenuName string `json:"menu_name"`
-	Route    string `json:"route"`
-	Sort     int    `json:"sort"`
-	IsShow   int8   `json:"is_show"`
-	IsMenu   int8   `json:"is_menu"`
-	IsAgent  int8   `json:"is_agent"`
+	CreatedAt time.Time `json:"created_at"`
+	Icon      string    `json:"icon"`
+	IsAgent   int8      `json:"is_agent"`
+	IsMenu    int8      `json:"is_menu"`
+	IsShow    int8      `json:"is_show"`
+	Kind      string    `json:"kind"`
+	MenuID    uint64    `json:"menu_id"`
+	MenuName  string    `json:"menu_name"`
+	MenuScope string    `json:"menu_scope"`
+	PID       uint64    `json:"pid"`
+	Path      string    `json:"path"`
+	Route     string    `json:"route"`
+	Sort      int       `json:"sort"`
+}
+
+type menuRecord struct {
+	Code      string    `gorm:"column:code"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+	Icon      string    `gorm:"column:icon"`
+	ID        uint64    `gorm:"column:id"`
+	Kind      string    `gorm:"column:kind"`
+	MenuScope string    `gorm:"column:menu_scope"`
+	ParentID  uint64    `gorm:"column:parent_id"`
+	RoutePath string    `gorm:"column:route_path"`
+	Sort      int       `gorm:"column:sort"`
+	Status    int8      `gorm:"column:status"`
+	Title     string    `gorm:"column:title"`
+}
+
+type menuSaveRequest struct {
+	Code      *string `json:"code"`
+	Icon      *string `json:"icon"`
+	IsShow    *int8   `json:"is_show"`
+	Kind      *string `json:"kind"`
+	MenuName  *string `json:"menu_name"`
+	MenuScope *string `json:"menu_scope"`
+	ParentID  *uint64 `json:"parent_id"`
+	Path      *string `json:"path"`
+	Sort      *int    `json:"sort"`
+}
+
+func validMenuScope(value string) (string, error) {
+	switch strings.TrimSpace(value) {
+	case "platform", "merchant", "region":
+		return strings.TrimSpace(value), nil
+	default:
+		return "", errors.New("菜单归属仅支持平台、商户或区域")
+	}
+}
+
+func validMenuKind(value string) bool {
+	switch value {
+	case "directory", "page", "button":
+		return true
+	default:
+		return false
+	}
+}
+
+func validMenuCode(value string) bool {
+	if len(value) == 0 || len(value) > 128 {
+		return false
+	}
+	for index, char := range value {
+		if (char >= 'a' && char <= 'z') || (index > 0 && ((char >= '0' && char <= '9') || char == '.' || char == '_' || char == '-')) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func menuRow(record menuRecord) menuListRow {
+	isMenu := int8(1)
+	if record.Kind == "button" {
+		isMenu = 2
+	}
+	return menuListRow{
+		CreatedAt: record.CreatedAt,
+		Icon:      record.Icon,
+		IsAgent:   0,
+		IsMenu:    isMenu,
+		IsShow:    record.Status,
+		Kind:      record.Kind,
+		MenuID:    record.ID,
+		MenuName:  record.Title,
+		MenuScope: record.MenuScope,
+		PID:       record.ParentID,
+		Path:      record.RoutePath,
+		Route:     record.Code,
+		Sort:      record.Sort,
+	}
+}
+
+func (h *Handler) listMenuRecords(c *gin.Context, scope string) ([]menuRecord, error) {
+	rows := make([]menuRecord, 0)
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
+		Select("id,parent_id,code,title,icon,route_path,kind,sort,status,menu_scope,created_at").
+		Where("menu_scope = ?", scope).
+		Order("sort ASC, id ASC").Scan(&rows).Error
+	return rows, err
 }
 
 func (h *Handler) ListMenus(c *gin.Context) {
-	var rows []struct {
-		ID        uint64 `gorm:"column:id"`
-		ParentID  uint64 `gorm:"column:parent_id"`
-		Code      string `gorm:"column:code"`
-		Title     string `gorm:"column:title"`
-		Icon      string `gorm:"column:icon"`
-		RoutePath string `gorm:"column:route_path"`
-		Kind      string `gorm:"column:kind"`
-		Sort      int    `gorm:"column:sort"`
-		Status    int8   `gorm:"column:status"`
+	scope, err := validMenuScope(c.DefaultQuery("scope", "platform"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
 	}
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
-		Select("id,parent_id,code,title,icon,route_path,kind,sort,status").
-		Order("sort ASC, id ASC").Scan(&rows).Error; err != nil {
+	rows, err := h.listMenuRecords(c, scope)
+	if err != nil {
 		writeError(c, err)
 		return
 	}
 	out := make([]menuListRow, 0, len(rows))
 	for _, row := range rows {
-		isMenu := int8(1)
-		if row.Kind == "button" {
-			isMenu = 2
-		}
-		out = append(out, menuListRow{
-			MenuID:   row.ID,
-			PID:      row.ParentID,
-			Path:     row.RoutePath,
-			Icon:     row.Icon,
-			MenuName: row.Title,
-			Route:    row.Code,
-			Sort:     row.Sort,
-			IsShow:   row.Status,
-			IsMenu:   isMenu,
-			IsAgent:  0,
-		})
+		out = append(out, menuRow(row))
 	}
 	response.OK(c, gin.H{"list": out, "total": len(out)})
+}
+
+func menuRecordFromRequest(req menuSaveRequest, base menuRecord, creating bool) (menuRecord, error) {
+	next := base
+	if req.Code != nil {
+		next.Code = strings.TrimSpace(*req.Code)
+	}
+	if req.Icon != nil {
+		next.Icon = strings.TrimSpace(*req.Icon)
+	}
+	if req.IsShow != nil {
+		next.Status = *req.IsShow
+	}
+	if req.Kind != nil {
+		next.Kind = strings.TrimSpace(*req.Kind)
+	}
+	if req.MenuName != nil {
+		next.Title = strings.TrimSpace(*req.MenuName)
+	}
+	if req.MenuScope != nil {
+		next.MenuScope = strings.TrimSpace(*req.MenuScope)
+	}
+	if req.ParentID != nil {
+		next.ParentID = *req.ParentID
+	}
+	if req.Path != nil {
+		next.RoutePath = strings.TrimSpace(*req.Path)
+	}
+	if req.Sort != nil {
+		next.Sort = *req.Sort
+	}
+	if creating && req.IsShow == nil {
+		next.Status = 1
+	}
+	if next.Title == "" || len([]rune(next.Title)) > 64 {
+		return menuRecord{}, errors.New("菜单名称不能为空且不超过 64 字")
+	}
+	if !validMenuCode(next.Code) {
+		return menuRecord{}, errors.New("菜单标识仅支持小写字母开头、数字、点、下划线和连字符")
+	}
+	if len(next.Icon) > 96 {
+		return menuRecord{}, errors.New("菜单图标不超过 96 字")
+	}
+	if len(next.RoutePath) > 255 {
+		return menuRecord{}, errors.New("菜单地址不超过 255 字")
+	}
+	if !validMenuKind(next.Kind) {
+		return menuRecord{}, errors.New("菜单类型错误")
+	}
+	scope, err := validMenuScope(next.MenuScope)
+	if err != nil {
+		return menuRecord{}, err
+	}
+	next.MenuScope = scope
+	if next.Status != 0 && next.Status != 1 {
+		return menuRecord{}, errors.New("显示状态仅支持 0/1")
+	}
+	return next, nil
+}
+
+func (h *Handler) validateMenuParent(c *gin.Context, record menuRecord) error {
+	if record.ParentID == 0 {
+		return nil
+	}
+	if record.ParentID == record.ID {
+		return errors.New("上级菜单不能选择当前菜单")
+	}
+	rows, err := h.listMenuRecords(c, record.MenuScope)
+	if err != nil {
+		return err
+	}
+	parents := make(map[uint64]uint64, len(rows))
+	found := false
+	for _, row := range rows {
+		parents[row.ID] = row.ParentID
+		if row.ID == record.ParentID {
+			found = true
+		}
+	}
+	if !found {
+		return errors.New("上级菜单不存在或不属于当前菜单归属")
+	}
+	visited := make(map[uint64]struct{}, len(parents))
+	for current := record.ParentID; current != 0; current = parents[current] {
+		if _, exists := visited[current]; exists {
+			return errors.New("菜单层级存在循环引用")
+		}
+		visited[current] = struct{}{}
+		if current == record.ID {
+			return errors.New("上级菜单不能选择当前菜单的子菜单")
+		}
+	}
+	return nil
+}
+
+func (h *Handler) menuHasChildren(c *gin.Context, id uint64) (bool, error) {
+	var count int64
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Where("parent_id = ?", id).Count(&count).Error
+	return count > 0, err
+}
+
+func (h *Handler) readMenuRecord(c *gin.Context, id uint64) (menuRecord, error) {
+	var row menuRecord
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
+		Select("id,parent_id,code,title,icon,route_path,kind,sort,status,menu_scope,created_at").
+		Where("id = ?", id).Take(&row).Error
+	return row, err
+}
+
+func (h *Handler) CreateMenu(c *gin.Context) {
+	var req menuSaveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	row, err := menuRecordFromRequest(req, menuRecord{}, true)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.validateMenuParent(c, row); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Create(map[string]any{
+		"parent_id":  row.ParentID,
+		"code":       row.Code,
+		"title":      row.Title,
+		"icon":       row.Icon,
+		"route_path": row.RoutePath,
+		"kind":       row.Kind,
+		"sort":       row.Sort,
+		"status":     row.Status,
+		"menu_scope": row.MenuScope,
+	}).Error; err != nil {
+		if isDuplicate(err) {
+			response.Fail(c, http.StatusConflict, "菜单标识已存在")
+			return
+		}
+		writeError(c, err)
+		return
+	}
+	var created menuRecord
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
+		Select("id,parent_id,code,title,icon,route_path,kind,sort,status,menu_scope,created_at").
+		Where("code = ?", row.Code).Take(&created).Error; err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, menuRow(created))
 }
 
 func (h *Handler) UpdateMenu(c *gin.Context) {
@@ -740,79 +1176,103 @@ func (h *Handler) UpdateMenu(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "菜单 ID 错误")
 		return
 	}
-	var req struct {
-		MenuName *string `json:"menu_name"`
-		Sort     *int    `json:"sort"`
-		IsShow   *int8   `json:"is_show"`
-	}
+	var req menuSaveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "参数错误")
 		return
 	}
-	updates := map[string]any{}
-	if req.MenuName != nil {
-		name := strings.TrimSpace(*req.MenuName)
-		if name == "" || len([]rune(name)) > 64 {
-			response.Fail(c, http.StatusBadRequest, "菜单名称不能为空且不超过 64 字")
+	current, err := h.readMenuRecord(c, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Fail(c, http.StatusNotFound, "菜单不存在")
 			return
 		}
-		updates["title"] = name
-	}
-	if req.Sort != nil {
-		updates["sort"] = *req.Sort
-	}
-	if req.IsShow != nil {
-		if *req.IsShow != 0 && *req.IsShow != 1 {
-			response.Fail(c, http.StatusBadRequest, "显示状态仅支持 0/1")
-			return
-		}
-		updates["status"] = *req.IsShow
-	}
-	if len(updates) == 0 {
-		response.Fail(c, http.StatusBadRequest, "无更新字段")
-		return
-	}
-	res := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Where("id = ?", id).Updates(updates)
-	if res.Error != nil {
-		writeError(c, res.Error)
-		return
-	}
-	if res.RowsAffected == 0 {
-		response.Fail(c, http.StatusNotFound, "菜单不存在")
-		return
-	}
-	var row struct {
-		ID        uint64 `gorm:"column:id"`
-		ParentID  uint64 `gorm:"column:parent_id"`
-		Code      string `gorm:"column:code"`
-		Title     string `gorm:"column:title"`
-		Icon      string `gorm:"column:icon"`
-		RoutePath string `gorm:"column:route_path"`
-		Kind      string `gorm:"column:kind"`
-		Sort      int    `gorm:"column:sort"`
-		Status    int8   `gorm:"column:status"`
-	}
-	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").
-		Select("id,parent_id,code,title,icon,route_path,kind,sort,status").
-		Where("id = ?", id).Take(&row).Error; err != nil {
 		writeError(c, err)
 		return
 	}
-	isMenu := int8(1)
-	if row.Kind == "button" {
-		isMenu = 2
+	next, err := menuRecordFromRequest(req, current, false)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
 	}
-	response.OK(c, menuListRow{
-		MenuID:   row.ID,
-		PID:      row.ParentID,
-		Path:     row.RoutePath,
-		Icon:     row.Icon,
-		MenuName: row.Title,
-		Route:    row.Code,
-		Sort:     row.Sort,
-		IsShow:   row.Status,
-		IsMenu:   isMenu,
-	})
+	if next.MenuScope != current.MenuScope {
+		response.Fail(c, http.StatusBadRequest, "菜单归属不能通过编辑变更")
+		return
+	}
+	if err := h.validateMenuParent(c, next); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if next.Kind == "button" {
+		hasChildren, err := h.menuHasChildren(c, id)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		if hasChildren {
+			response.Fail(c, http.StatusBadRequest, "含有子菜单时不能改为按钮权限")
+			return
+		}
+	}
+	if err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu").Where("id = ?", id).Updates(map[string]any{
+		"parent_id":  next.ParentID,
+		"code":       next.Code,
+		"title":      next.Title,
+		"icon":       next.Icon,
+		"route_path": next.RoutePath,
+		"kind":       next.Kind,
+		"sort":       next.Sort,
+		"status":     next.Status,
+	}).Error; err != nil {
+		if isDuplicate(err) {
+			response.Fail(c, http.StatusConflict, "菜单标识已存在")
+			return
+		}
+		writeError(c, err)
+		return
+	}
+	updated, err := h.readMenuRecord(c, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, menuRow(updated))
+}
+
+func (h *Handler) DeleteMenu(c *gin.Context) {
+	id, err := parseID(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "菜单 ID 错误")
+		return
+	}
+	row, err := h.readMenuRecord(c, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Fail(c, http.StatusNotFound, "菜单不存在")
+			return
+		}
+		writeError(c, err)
+		return
+	}
+	hasChildren, err := h.menuHasChildren(c, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	if hasChildren {
+		response.Fail(c, http.StatusConflict, "请先删除子菜单")
+		return
+	}
+	if err := h.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("qixi_crm_a_role_menu").Where("menu_id = ?", id).Delete(&roleMenu{}).Error; err != nil {
+			return err
+		}
+		return tx.Table("qixi_crm_a_menu").Where("id = ?", row.ID).Delete(&menuRecord{}).Error
+	}); err != nil {
+		writeError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func normalizedRoleCodes(req adminSaveRequest) []string {
@@ -906,6 +1366,25 @@ func validRoleCode(value string) bool {
 	}
 	return true
 }
+
+func validRoleType(value string) bool {
+	switch value {
+	case "platform", "merchant", "region":
+		return true
+	default:
+		return false
+	}
+}
+
+func builtInRoleCode(value string) bool {
+	switch value {
+	case "platform", "merchant", "region", "customer_service", "operations":
+		return true
+	default:
+		return false
+	}
+}
+
 func isDuplicate(err error) bool {
 	return err != nil && strings.Contains(strings.ToLower(err.Error()), "duplicate")
 }

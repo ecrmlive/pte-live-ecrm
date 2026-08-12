@@ -1,1 +1,0 @@
-import { requestClient } from '#/api/request'; export function getPlatformSMSApi(){return requestClient.get<{config:string;note:string}>('/setting/sms')} export function savePlatformSMSApi(config:string){return requestClient.put<{config:string}>('/setting/sms',{config})}

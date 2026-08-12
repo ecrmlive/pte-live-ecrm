@@ -4,9 +4,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/content"
+	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/config"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/middleware"
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -14,20 +18,23 @@ import (
 )
 
 type Handler struct {
-	svc     *content.Service
-	adminDB *gorm.DB
+	svc          *content.Service
+	adminDB      *gorm.DB
+	runtimeCache runtimeCacheClient
 }
 
-func NewHandler(svc *content.Service, adminDB *gorm.DB) *Handler {
-	return &Handler{svc: svc, adminDB: adminDB}
+func NewHandler(svc *content.Service, adminDB *gorm.DB, redis config.RedisConfig) *Handler {
+	return &Handler{svc: svc, adminDB: adminDB, runtimeCache: runtimeCacheClient{addr: redis.Addr, password: redis.Password, db: redis.DB}}
 }
 
 func (h *Handler) Register(r gin.IRoutes) {
-	r.GET("/notices", h.List)
 	operationWrite := middleware.RequireAdminRoles("platform", "operations")
 	noticeWrite := middleware.RequireAdminMenu(h.adminDB, "content.notice.manage")
+	r.GET("/notices", h.List)
+	r.GET("/notices/:id", h.Get)
 	r.POST("/notices", operationWrite, noticeWrite, h.Create)
 	r.PUT("/notices/:id", operationWrite, noticeWrite, h.Update)
+	r.PUT("/notices/:id/status", operationWrite, noticeWrite, h.UpdateStatus)
 	r.DELETE("/notices/:id", operationWrite, noticeWrite, h.Delete)
 	r.GET("/agreements", h.ListAgreements)
 	r.GET("/agreements/:key", h.GetAgreement)
@@ -37,8 +44,6 @@ func (h *Handler) Register(r gin.IRoutes) {
 		"user.level.description.manage",
 		"accounts.invoice.desc.manage",
 	), h.SaveAgreement)
-	r.GET("/setting/sms", h.GetSMS)
-	r.PUT("/setting/sms", middleware.RequireAdminRoles("platform"), middleware.RequireAdminMenu(h.adminDB, "setting.sms.manage"), h.SaveSMS)
 	shopSetting := middleware.RequireAdminRoles("platform")
 	shopManage := middleware.RequireAdminMenu(h.adminDB, "setting.shop.manage")
 	r.GET("/setting/shop", shopSetting, shopManage, h.GetShop)
@@ -118,19 +123,49 @@ func (h *Handler) Register(r gin.IRoutes) {
 
 	maintainSetting := middleware.RequireAdminRoles("platform")
 	maintainManage := middleware.RequireAdminMenu(h.adminDB, "maintain.cache.manage")
-	r.POST("/maintain/cache/clear", maintainSetting, maintainManage, h.ClearMaintainCache)
+	r.POST("/maintain/cache/actions", maintainSetting, maintainManage, h.ClearMaintainCache)
 	// 热搜/组合数据/备份/系统表单已迁至 nativeconfigitem（qixi_crm_a_config_item）。
 }
 
 func (h *Handler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	res, err := h.svc.ListAdmin(c.Request.Context(), page, limit)
+	filter := content.NoticeListFilter{
+		Page:     page,
+		Limit:    limit,
+		Keyword:  c.Query("keyword"),
+		DateFrom: c.Query("date_from"),
+		DateTo:   c.Query("date_to"),
+	}
+	if raw := c.Query("is_show"); raw != "" {
+		value, err := strconv.ParseInt(raw, 10, 8)
+		if err != nil || (value != 0 && value != 1) {
+			response.Fail(c, http.StatusBadRequest, "参数错误")
+			return
+		}
+		isShow := int8(value)
+		filter.IsShow = &isShow
+	}
+	res, err := h.svc.ListAdmin(c.Request.Context(), filter)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
 	}
 	response.OK(c, res)
+}
+
+func (h *Handler) Get(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	n, err := h.svc.Get(c.Request.Context(), uint(id))
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, n)
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -160,6 +195,24 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	response.OK(c, n)
+}
+
+func (h *Handler) UpdateStatus(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	var in content.NoticeStatusInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	if err := h.svc.UpdateStatus(c.Request.Context(), uint(id), in); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -203,33 +256,6 @@ func (h *Handler) SaveAgreement(c *gin.Context) {
 	response.OK(c, row)
 }
 
-type smsSaveReq struct {
-	Config string `json:"config" binding:"required"`
-}
-
-func (h *Handler) GetSMS(c *gin.Context) {
-	raw, err := h.svc.GetSMSConfig(c.Request.Context())
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "查询失败")
-		return
-	}
-	response.OK(c, gin.H{"config": raw, "note": "仅允许无密钥 stub 配置；不保存或回显真实短信通道凭据"})
-}
-
-func (h *Handler) SaveSMS(c *gin.Context) {
-	var req smsSaveReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "参数错误")
-		return
-	}
-	raw, err := h.svc.SaveSMSConfig(c.Request.Context(), req.Config)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	response.OK(c, gin.H{"config": raw})
-}
-
 type jsonConfigSaveReq struct {
 	Config string `json:"config" binding:"required"`
 }
@@ -240,7 +266,7 @@ func (h *Handler) GetShop(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
 	}
-	response.OK(c, gin.H{"config": raw, "note": "仅保存商城基础开关与超时规则；不含密钥或支付凭据"})
+	response.OK(c, gin.H{"config": raw, "note": "商城商品、交易、商户、展示与数据大屏配置"})
 }
 
 func (h *Handler) SaveShop(c *gin.Context) {
@@ -551,12 +577,112 @@ func (h *Handler) SaveWechatNews(c *gin.Context) {
 	h.saveAppStubSetting(c, content.WechatNewsConfigKey)
 }
 
+type cacheActionRequest struct {
+	Scope     string `json:"scope"`
+	OldDomain string `json:"old_domain"`
+	NewDomain string `json:"new_domain"`
+}
+
 func (h *Handler) ClearMaintainCache(c *gin.Context) {
-	if err := h.svc.ClearMaintainCache(c.Request.Context()); err != nil {
-		writeErr(c, err)
+	var req cacheActionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "缓存清理参数错误")
 		return
 	}
-	response.OK(c, gin.H{"ok": true, "note": "已提交缓存清理请求；不含密钥或敏感凭据"})
+	req.Scope = strings.TrimSpace(req.Scope)
+	pattern, ok := cacheScopePattern(req.Scope)
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, "不支持的缓存类型")
+		return
+	}
+	var oldDomain, newDomain string
+	if req.Scope == "replace_domain" {
+		var validOld, validNew bool
+		oldDomain, validOld = normalizeResourceDomain(req.OldDomain)
+		newDomain, validNew = normalizeResourceDomain(req.NewDomain)
+		if !validOld || !validNew || oldDomain == newDomain {
+			response.Fail(c, http.StatusBadRequest, "请输入不同的有效资源域名")
+			return
+		}
+	}
+
+	deletedKeys, err := h.runtimeCache.deletePattern(c.Request.Context(), pattern)
+	if err != nil {
+		response.Fail(c, http.StatusServiceUnavailable, "缓存服务暂不可用，请稍后重试")
+		return
+	}
+
+	actionDetail := ""
+	if req.Scope == "replace_domain" {
+		updated, err := h.replaceAttachmentDomain(c.Request.Context(), oldDomain, newDomain)
+		if err != nil {
+			response.Fail(c, http.StatusInternalServerError, "资源域名更换失败")
+			return
+		}
+		actionDetail = oldDomain + " -> " + newDomain
+		if err := h.recordCacheAction(c.Request.Context(), req.Scope, deletedKeys, uint64(middleware.AdminID(c)), actionDetail, updated); err != nil {
+			response.Fail(c, http.StatusInternalServerError, "缓存清理记录失败")
+			return
+		}
+		response.OK(c, gin.H{"ok": true, "deleted_keys": deletedKeys, "updated_assets": updated, "note": "资源域名已更换，并刷新相关运行缓存"})
+		return
+	}
+
+	if err := h.recordCacheAction(c.Request.Context(), req.Scope, deletedKeys, uint64(middleware.AdminID(c)), actionDetail, 0); err != nil {
+		response.Fail(c, http.StatusInternalServerError, "缓存清理记录失败")
+		return
+	}
+	response.OK(c, gin.H{"ok": true, "deleted_keys": deletedKeys, "note": "已清理 " + cacheScopeLabel(req.Scope) + "运行缓存"})
+}
+
+func cacheScopePattern(scope string) (string, bool) {
+	switch scope {
+	case "all":
+		return "ecrm:platform:*", true
+	case "store":
+		return "ecrm:platform:store:*", true
+	case "config":
+		return "ecrm:platform:config:*", true
+	case "replace_domain":
+		return "ecrm:platform:config:*", true
+	default:
+		return "", false
+	}
+}
+
+func cacheScopeLabel(scope string) string {
+	switch scope {
+	case "all":
+		return "全部"
+	case "store":
+		return "店铺"
+	case "config":
+		return "配置"
+	default:
+		return "相关"
+	}
+}
+
+func normalizeResourceDomain(raw string) (string, bool) {
+	parsed, err := url.ParseRequestURI(strings.TrimSpace(raw))
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.RawQuery != "" || parsed.Fragment != "" || (parsed.Path != "" && parsed.Path != "/") {
+		return "", false
+	}
+	return parsed.Scheme + "://" + parsed.Host, true
+}
+
+func (h *Handler) replaceAttachmentDomain(ctx context.Context, oldDomain, newDomain string) (int64, error) {
+	result := h.adminDB.WithContext(ctx).Table("qixi_crm_a_attachment_asset").
+		Where("attachment_src LIKE ?", oldDomain+"/%").
+		Update("attachment_src", gorm.Expr("CONCAT(?, SUBSTRING(attachment_src, ?))", newDomain, len(oldDomain)+1))
+	return result.RowsAffected, result.Error
+}
+
+func (h *Handler) recordCacheAction(ctx context.Context, scope string, deletedKeys int64, adminID uint64, detail string, updatedAssets int64) error {
+	return h.adminDB.WithContext(ctx).Table("qixi_crm_a_cache_clear_log").Create(map[string]any{
+		"scope": scope, "deleted_keys": deletedKeys, "updated_assets": updatedAssets,
+		"operator_admin_id": adminID, "detail": detail, "created_at": time.Now(),
+	}).Error
 }
 
 func (h *Handler) getJSONSetting(c *gin.Context, load func(context.Context) (string, error), note string) {

@@ -8,14 +8,19 @@ servers:
 paths:
   /notices:
     get:
-      summary: 公告列表（含未展示）
+      summary: 公告列表（含未展示、时间/状态/名称筛选）
     post:
-      summary: 新建公告（需 content/notice/manage）
+      summary: 新增公告（店铺范围使用真实关联选择，需 content/notice/manage）
   /notices/{id}:
+    get:
+      summary: 公告详情（含店铺范围关联）
     put:
       summary: 更新公告（需 content/notice/manage）
     delete:
       summary: 软删除公告（需 content/notice/manage）
+  /notices/{id}/status:
+    put:
+      summary: 修改公告启用状态（需 content/notice/manage）
   /agreements:
     get:
       summary: 协议键列表（含正文）
@@ -24,6 +29,17 @@ paths:
       summary: 协议详情
     put:
       summary: 保存协议正文（按钮权 agreement/update）
+  /notification-configs:
+    get:
+      summary: 通知会员或通知店铺的默认发送配置列表（需 audience=member|store）
+  /notification-configs/{id}:
+    get:
+      summary: 通知场景配置详情
+    put:
+      summary: 保存公众号、小程序订阅、短信的开关与固定文本
+  /notification-configs/sync:
+    post:
+      summary: 同步外部模板；未配置外部平台凭据时明确返回未执行同步
   /article/categories:
     get: { summary: 文章分类列表, security: [{ bearerAuth: [] }] }
     post: { summary: 创建文章分类, security: [{ bearerAuth: [] }] }
