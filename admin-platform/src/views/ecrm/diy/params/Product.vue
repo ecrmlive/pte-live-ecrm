@@ -33,7 +33,57 @@ const loading = ref(true);
 const CategoryList = ref<Array<Record<string, unknown>>>([]);
 const currCategory = ref<Array<number | string>>([]);
 
+function ensureProductDefaults() {
+  const item = props.curItem as Record<string, Record<string, any>>;
+  const params =
+    item.params && typeof item.params === 'object'
+      ? (item.params as Record<string, any>)
+      : {};
+  const style =
+    item.style && typeof item.style === 'object'
+      ? (item.style as Record<string, any>)
+      : {};
+  item.params = params;
+  item.style = style;
+
+  const auto =
+    params.auto && typeof params.auto === 'object'
+      ? (params.auto as Record<string, any>)
+      : {};
+  params.auto = auto;
+  if (auto.showNum === undefined || auto.showNum === null) auto.showNum = 8;
+  if (!auto.productSort) auto.productSort = 'all';
+
+  const defaults: Record<string, unknown> = {
+    cartAction: 'detail',
+    cartType: 2,
+    comment: 1,
+    filterVisible: 0,
+    linePrice: 1,
+    memberPrice: 1,
+    productComment: 1,
+    productLabel: 1,
+    productName: 1,
+    productPrice: 1,
+    productSales: 1,
+    productScore: 1,
+    showCart: 1,
+    storeDistance: 1,
+  };
+  Object.entries(defaults).forEach(([key, value]) => {
+    if (params[key] === undefined || params[key] === null) {
+      params[key] = value;
+    }
+  });
+  if (style.cardShadow === undefined || style.cardShadow === null) {
+    style.cardShadow = 0;
+  }
+}
+
+ensureProductDefaults();
+
 function changeColumn(column: number) {
+  ensureProductDefaults();
   changeProductColumn(props.curItem, column);
 }
 

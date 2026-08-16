@@ -52,14 +52,20 @@ export default {
     isDiy() {
       return isHomeDiyMode(this.mode);
     },
+    isCartEditor() {
+      return this.$route.path === '/setting/diy/cart';
+    },
     pageTitle() {
+      if (this.isCartEditor) {
+        return '购物车装修';
+      }
       const titles: Record<DiyEditorMode, string> = {
         'center-add': '新增个人中心页',
         'center-edit': '个人中心',
         'custom-add': '返回 页面列表',
         'custom-edit': '编辑页面',
-        'home-add': '新增首页',
-        'home-edit': '首页装修',
+        'home-add': '新增页面',
+        'home-edit': '编辑页面',
       };
       return titles[this.mode] ?? '页面装修';
     },
@@ -164,6 +170,10 @@ export default {
       this.$refs.model?.onEditer(insertIndex);
     },
     onAddItemWithRules(key: string) {
+		if (key === 'bottomNav' && this.diyData.items.some((i) => i.type === 'bottomNav')) {
+			ElMessage.error('每个 DIY 页面只能配置一个底部导航');
+			return;
+		}
       if (key === 'option' || key === 'search') {
         if (this.diyData.items.some((i) => i.type === 'topMerge')) {
           ElMessage.error('轮播搜索不能与选项卡或者搜索框同时存在');
@@ -193,7 +203,10 @@ export default {
       const item = this.stampDiyItem(resolved as Record<string, unknown>, key);
       let insertIndex = 0;
 
-      if (key === 'topMerge' || key === 'search' || key === 'option') {
+      if (key === 'bottomNav') {
+        insertIndex = this.diyData.items.length;
+        this.diyData.items.push(item);
+      } else if (key === 'topMerge' || key === 'search' || key === 'option') {
         if (key === 'option' && this.diyData.items[0]?.type === 'search') {
           this.diyData.items.splice(1, 0, item);
           insertIndex = 1;
@@ -273,6 +286,7 @@ export default {
     <div
       v-loading="loading"
       class="diy-editor-shell native-form-page native-form-shell"
+      :class="{ 'diy-editor-shell--cart': isCartEditor }"
     >
       <div class="diy-editor-header flex-shrink-0">
         <div

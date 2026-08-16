@@ -1,146 +1,269 @@
 <template>
-	<div class="drag optional" @click.stop="diyEditer(index)"
-		:class="{ selected: index === selectedIndex }" :style="{
-			background: item.style.background,
-			paddingLeft: item.style.paddingLeft + 'px',
-			paddingRight: item.style.paddingLeft + 'px',
-			paddingTop: item.style.paddingTop + 'px',
-			paddingBottom: item.style.paddingBottom + 'px'
-		}">
-		<div class="diy-banner" :style="'height:' + item.style.height * 0.5 + 'px;'">
-			<div class="img-list pr">
-				<img
-					class="banner-img"
-					style="display: block;"
-					:style="{
-						height: item.style.height * 0.5 + 'px',
-						borderTopLeftRadius: item.style.topRadio + 'px',
-						borderTopRightRadius: item.style.topRadio + 'px',
-						borderBottomLeftRadius: item.style.bottomRadio + 'px',
-						borderBottomRightRadius: item.style.bottomRadio + 'px'
-					}"
-					v-img-url="item.data[0] && item.data[0].imgUrl"
-				/>
-				<div class="dots center d-c-c">
-					<div :key="index" :class="index == 0 ? 'active ' + item.style.imgShape : item.style.imgShape"
-						v-for="(banner, index) in item.data"
-						:style="index == 0 ? 'background:' + item.style.btnColor : 'background:' + item.style.btnColor + ';opacity: 0.4;'">
-					</div>
-				</div>
-			</div>
+  <div
+    class="drag optional diy-banner-host"
+    :class="{ selected: index === selectedIndex }"
+    :style="hostStyle"
+    @click.stop="diyEditer(index)"
+  >
+    <div class="diy-banner" :class="`banner--${bannerStyle}`" :style="bannerStyleObject">
+      <div class="img-list pr">
+        <img
+          v-if="activeBanner"
+          v-img-url="activeBanner.imgUrl"
+          class="banner-img"
+          :style="imageStyle"
+          alt="轮播图"
+        />
+        <div v-else class="banner-empty" :style="imageStyle">请添加轮播图片</div>
 
-		</div>
-		<div class="btn-edit-del">
-			<div class="btn-del" @click.stop="diyDeleteItem(index)">删除</div>
-		</div>
-	</div>
+        <div class="dots" :class="[`dots--${indicatorPosition}`, `dots--${indicatorStyle}`]">
+          <button
+            v-for="(_banner, bannerIndex) in banners"
+            :key="bannerIndex"
+            type="button"
+            :class="{ active: bannerIndex === activeIndex }"
+            :style="indicatorDotStyle(bannerIndex)"
+            :aria-label="`切换至第${bannerIndex + 1}张`"
+            @click.stop="setActive(bannerIndex)"
+          ></button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-edit-del">
+      <div class="btn-del" @click.stop="diyDeleteItem(index)">删除</div>
+    </div>
+  </div>
 </template>
 
 <script>
 export default {
   inject: ['diyModel'],
-	data() {
-		return {};
-	},
-	props: ['item', 'index', 'selectedIndex'],
-	methods: {
-  diyEditer(index) {
-    this.diyModel?.onEditer(index);
+  props: ['item', 'index', 'selectedIndex'],
+  data() {
+    return {
+      activeIndex: 0,
+      timer: null,
+    };
   },
-  diyDeleteItem(index) {
-    this.diyModel?.onDeleleItem(index);
+  computed: {
+    style() {
+      return this.item?.style || {};
+    },
+    params() {
+      return this.item?.params || {};
+    },
+    banners() {
+      return Array.isArray(this.item?.data) ? this.item.data.filter((banner) => banner?.imgUrl) : [];
+    },
+    activeBanner() {
+      return this.banners[this.activeIndex] || this.banners[0] || null;
+    },
+    bannerStyle() {
+      return this.params.bannerStyle || 'style1';
+    },
+    indicatorStyle() {
+      if (this.style.indicatorStyle) return this.style.indicatorStyle;
+      if (this.style.imgShape === 'square') return 'style2';
+      if (this.style.imgShape === 'rectangle') return 'style3';
+      return 'style1';
+    },
+    indicatorPosition() {
+      return this.style.indicatorPosition || this.style.btnShape || 'center';
+    },
+    indicatorColor() {
+      return this.style.indicatorTone === 'custom'
+        ? this.style.indicatorColor || '#ffffff'
+        : this.style.btnColor || '#ffffff';
+    },
+    imageRadius() {
+      const radius = Number(this.style.imageRadius ?? this.style.topRadio ?? 0);
+      if (this.style.radiusMode !== 'individual') {
+        return `${radius}px`;
+      }
+      return [
+        Number(this.style.topLeftRadio ?? radius),
+        Number(this.style.topRightRadio ?? radius),
+        Number(this.style.bottomRightRadio ?? this.style.bottomRadio ?? radius),
+        Number(this.style.bottomLeftRadio ?? this.style.bottomRadio ?? radius),
+      ]
+        .map((value) => `${value}px`)
+        .join(' ');
+    },
+    hostStyle() {
+      const paddingLeft = Number(this.style.paddingLeft || 0);
+      const float = Number(this.style.float || 0);
+      return {
+        background: this.style.background || '#ffffff',
+        marginTop: `${Number(this.style.marginTop || 0)}px`,
+        paddingTop: `${Number(this.style.paddingTop || 0)}px`,
+        paddingRight: `${Number(this.style.paddingRight ?? paddingLeft)}px`,
+        paddingBottom: `${Number(this.style.paddingBottom || 0)}px`,
+        paddingLeft: `${paddingLeft}px`,
+        transform: float ? `translateY(-${float}px)` : '',
+        zIndex: float ? 1 : '',
+      };
+    },
+    bannerStyleObject() {
+      return {
+        height: `${Number(this.style.height || 340) * 0.5}px`,
+        boxShadow:
+          this.style.cardShadow === 'on' ? '0 4px 16px rgba(0, 0, 0, 0.16)' : 'none',
+      };
+    },
+    imageStyle() {
+      return {
+        height: `${Number(this.style.height || 340) * 0.5}px`,
+        borderRadius: this.imageRadius,
+        boxShadow:
+          this.style.imageShadow === 'on' ? '0 3px 12px rgba(0, 0, 0, 0.18)' : 'none',
+      };
+    },
   },
-}
+  watch: {
+    banners: {
+      handler() {
+        if (this.activeIndex >= this.banners.length) this.activeIndex = 0;
+        this.restartAutoPlay();
+      },
+      deep: true,
+    },
+  },
+  mounted() {
+    this.restartAutoPlay();
+  },
+  beforeUnmount() {
+    this.stopAutoPlay();
+  },
+  methods: {
+    diyEditer(index) {
+      this.diyModel?.onEditer(index);
+    },
+    diyDeleteItem(index) {
+      this.diyModel?.onDeleleItem(index);
+    },
+    indicatorDotStyle(bannerIndex) {
+      return {
+        background: this.indicatorColor,
+        opacity: bannerIndex === this.activeIndex ? 1 : 0.45,
+      };
+    },
+    setActive(index) {
+      this.activeIndex = index;
+      this.restartAutoPlay();
+    },
+    stopAutoPlay() {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    },
+    restartAutoPlay() {
+      this.stopAutoPlay();
+      if (this.banners.length < 2) return;
+      this.timer = setInterval(() => {
+        this.activeIndex = (this.activeIndex + 1) % this.banners.length;
+      }, 3000);
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-	.p15 {
-		padding: 15px;
-	}
+.diy-banner-host {
+  position: relative;
+  transition: transform 0.2s ease;
+}
 
-	.diy-banner.round {
-		padding: 12px;
-		box-sizing: content-box;
-		overflow: hidden;
-		text-align: center;
-	}
+.diy-banner {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
 
-	.diy-banner.round img {
-		width: 100%;
-		height: 100px;
-		object-fit: fill;
-		border-radius: 10px;
-		margin-bottom: 12px;
-		box-sizing: content-box;
-	}
+.img-list {
+  height: 100%;
+}
 
-	.diy-banner.square {
-		height: 100px;
-		overflow: hidden;
-		text-align: center;
-	}
+.banner-img,
+.banner-empty {
+  display: block;
+  width: 100%;
+}
 
-	.diy-banner.square img {
-		width: 100%;
-		height: 100px;
-		object-fit: fill;
-	}
+.banner-img {
+  object-fit: cover;
+}
 
-	.diy-banner .dots {
-		position: absolute;
-		left: 0;
-		right: 0;
-		margin: 0 auto;
-		bottom: 10px;
-		width: 100%;
-		z-index: 1;
-	}
+.banner--style2 .banner-img {
+  background: #fff;
+  object-fit: contain;
+}
 
-	.diy-banner.round .dots {
-		position: absolute;
-		left: 0;
-		right: 0;
-		margin: 0 auto;
-		bottom: 20px;
-	}
+.banner--style3 .banner-img {
+  filter: saturate(1.06);
+}
 
-	.diy-banner .dots .square,
-	.diy-banner .dots .round,
-	.diy-banner .dots .rectangle {
-		bottom: 40rpx;
-		left: 0;
-		right: 0;
-		margin: auto;
-	}
+.banner-empty {
+  align-items: center;
+  background: #edf5ff;
+  color: #9aa7b7;
+  display: flex;
+  justify-content: center;
+}
 
-	.diy-banner .dots .square {
-		width: 7px;
-		height: 7px;
-		margin: 0 2px;
-		background: #ebedf0;
-		opacity: 0.3;
-	}
+.dots {
+  align-items: center;
+  bottom: 10px;
+  display: flex;
+  gap: 5px;
+  position: absolute;
+  z-index: 1;
+}
 
-	.diy-banner .dots .round {
-		width: 7px;
-		height: 7px;
-		margin: 0 2px;
-		background: #ebedf0;
-		opacity: 0.3;
-		border-radius: 50%;
-	}
+.dots--left {
+  left: 12px;
+}
 
-	.diy-banner .dots .rectangle {
-		width: 20px;
-		height: 3px;
-		margin: 0 2px;
-		background: #ebedf0;
-		opacity: 0.3;
-		border-radius: 4rpx;
-	}
+.dots--center {
+  left: 50%;
+  transform: translateX(-50%);
+}
 
-	.diy-banner .dots .active {
-		opacity: 1;
-	}
+.dots--right {
+  right: 12px;
+}
+
+.dots button {
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.dots--style1 button {
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.dots--style2 button {
+  height: 8px;
+  width: 8px;
+}
+
+.dots--style3 button {
+  border-radius: 4px;
+  height: 4px;
+  width: 18px;
+}
+
+.dots--style4 button {
+  border-radius: 4px;
+  height: 3px;
+  width: 12px;
+}
+
+.dots--style4 button.active {
+  width: 24px;
+}
 </style>

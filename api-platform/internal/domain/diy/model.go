@@ -6,6 +6,31 @@ import (
 	"time"
 )
 
+// SystemDefaultHomePageID 是平台内置首页模板。该模板用于恢复首页能力，不能被直接编辑或删除。
+const SystemDefaultHomePageID uint = 4001
+
+// CategoryDecorationPageName 是分类装修的内部存储标识。它复用已同步到
+// C 端的 DIY 页面投影，避免业务服务跨库读取平台配置；该记录不出现在微页面列表中。
+const CategoryDecorationPageName = "__category_decoration__"
+
+// ProductDetailDecorationPageName 是商品详情装修的内部存储标识。
+// 与分类装修一致，复用 DIY 页面投影保存平台侧的详情页配置。
+const ProductDetailDecorationPageName = "__product_detail_decoration__"
+
+type CategoryDecoration struct {
+	Layout string `json:"layout"`
+}
+
+// ProductDetailDecoration 保存商品详情装修页的可视化配置。
+// 具体字段由管理端随 CRMEB 的详情装修协议演进，服务端保持透传，避免丢失新配置。
+type ProductDetailDecoration struct {
+	Config map[string]any `json:"config"`
+}
+
+func IsSystemDefaultHomePage(p *Page) bool {
+	return p != nil && p.ID == SystemDefaultHomePageID && p.IsDiy == 1 && p.MerID == 0
+}
+
 // PageDoc 可视化装修文档（对齐 pte-live-shop {page,items[]}）。
 type PageDoc struct {
 	Page  map[string]any   `json:"page"`

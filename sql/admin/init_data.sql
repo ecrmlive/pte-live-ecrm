@@ -9,6 +9,46 @@ ON DUPLICATE KEY UPDATE
   `status`=VALUES(`status`),
   `role_type`=VALUES(`role_type`);
 
+-- 页面装修默认首页模板属于系统配置，不属于商品、店铺、用户演示数据。
+INSERT INTO `qixi_crm_a_diy_page` (`id`,`page_type`,`name`,`document`,`status`,`updated_by`) VALUES
+  (4001,'home','七禧平台首页',JSON_OBJECT(
+    'page',JSON_OBJECT('type','page','name','页面设置','params',JSON_OBJECT('name','七禧平台首页','title','七禧平台首页')),
+    'items',JSON_ARRAY(
+      JSON_OBJECT('type','topMerge','name','顶部定位搜索','params',JSON_OBJECT('showLocation',TRUE,'locationText','定位中','searchText','搜索商品','showCategory',FALSE,'type',1),'style',JSON_OBJECT('bgcolor_color1','#fff7f5','topRadio',12,'bottomRadio',12,'btnShape','center','btnColor','#ffffff','btnOpColor','rgba(255,255,255,.45)','imgShape','round'),'images',JSON_ARRAY(JSON_OBJECT('imgUrl','/demo/home-hero-v1.png')),'data',JSON_ARRAY()),
+      JSON_OBJECT('type','navBar','name','商品分类模块','params',JSON_OBJECT('title','商品分类','pageSize',10),'style',JSON_OBJECT('background','#ffffff','bgcolor','#f6f7fb','paddingLeft',10,'paddingRight',10,'paddingTop',8,'paddingBottom',8,'topRadio',12,'bottomRadio',12,'rowsNum',5),'data',JSON_ARRAY(
+        JSON_OBJECT('text','生鲜食品','icon','鲜','iconBg','#e7f8ea','iconColor','#24a148'),JSON_OBJECT('text','服饰鞋包','icon','衣','iconBg','#fff0ea','iconColor','#f36b3c'),JSON_OBJECT('text','数码家电','icon','电','iconBg','#e9f2ff','iconColor','#3478f6'),JSON_OBJECT('text','美妆个护','icon','美','iconBg','#fff0f5','iconColor','#e85d94'),JSON_OBJECT('text','家居生活','icon','居','iconBg','#fff7df','iconColor','#be7d00')
+      )),
+      JSON_OBJECT('type','navBar','name','快捷入口模块','params',JSON_OBJECT('title','快捷入口','pageSize',10),'style',JSON_OBJECT('background','#ffffff','bgcolor','#f6f7fb','paddingLeft',10,'paddingRight',10,'paddingTop',0,'paddingBottom',8,'topRadio',12,'bottomRadio',12,'rowsNum',5),'data',JSON_ARRAY(
+        JSON_OBJECT('text','品牌好店','icon','店','iconBg','#e8f1ff','iconColor','#3578f6'),JSON_OBJECT('text','商户入驻','icon','驻','iconBg','#eaf8ef','iconColor','#1fa566'),JSON_OBJECT('text','积分商城','icon','分','iconBg','#fff5df','iconColor','#dc8d00'),JSON_OBJECT('text','领券中心','icon','券','iconBg','#fff0f3','iconColor','#ef5c75'),JSON_OBJECT('text','会员中心','icon','会','iconBg','#f4edff','iconColor','#8d62df'),
+        JSON_OBJECT('text','行业资讯','icon','资','iconBg','#edf7ff','iconColor','#3287c8'),JSON_OBJECT('text','助力活动','icon','助','iconBg','#fff0ea','iconColor','#e85d3b'),JSON_OBJECT('text','预售活动','icon','预','iconBg','#f3edff','iconColor','#885ee8'),JSON_OBJECT('text','签到中心','icon','签','iconBg','#eaf7ff','iconColor','#2b90cd'),JSON_OBJECT('text','我的收藏','icon','藏','iconBg','#fff0f6','iconColor','#df6298'),
+        JSON_OBJECT('text','直播精选','icon','播','iconBg','#fff0ea','iconColor','#e75a36'),JSON_OBJECT('text','限时秒杀','icon','秒','iconBg','#fff4df','iconColor','#e28400')
+      )),
+      JSON_OBJECT('type','homeFeatureArea','name','热门区域模块','params',JSON_OBJECT('title','热门专区','subtitle','今日精选','action','更多 ›','columns',2),'data',JSON_ARRAY(
+        JSON_OBJECT('title','限时秒杀','subtitle','爆款直降','icon','秒','iconBg','#ff6b53','background','#fff0eb','badge','限时'),JSON_OBJECT('title','热销团购','subtitle','多人拼更省','icon','团','iconBg','#ff9d39','background','#fff7e9','badge','热卖'),JSON_OBJECT('title','热门分类','subtitle','发现好物','icon','热','iconBg','#5a9cff','background','#edf4ff'),JSON_OBJECT('title','新人专享','subtitle','首单福利','icon','新','iconBg','#9a6cff','background','#f3efff')
+      )),
+      JSON_OBJECT('type','discountGroup','name','折扣组','params',JSON_OBJECT(
+        'title','心动购物季','promotion','券后低至7.3折','slogan','真低价 放心买','iconImage','',
+        'items',JSON_ARRAY(
+          JSON_OBJECT('enabled',TRUE,'title','全球美妆','image','','productId',0,'productName','','price',''),
+          JSON_OBJECT('enabled',TRUE,'title','大牌鞋包','image','','productId',0,'productName','','price',''),
+          JSON_OBJECT('enabled',TRUE,'title','数码产品','image','','productId',0,'productName','','price',''),
+          JSON_OBJECT('enabled',TRUE,'title','精品腕表','image','','productId',0,'productName','','price','')
+        )
+      ),'style',JSON_OBJECT(
+        'float',0,'background','rgba(255, 255, 255, 0)','bgcolor','#f5f5f5','paddingTop',9,'paddingBottom',0,'paddingLeft',10,'paddingRight',10,'marginTop',0,'radiusMode','all','cardRadius',0,'cardShadow','off'
+      )),
+      JSON_OBJECT('type','homeMarketingSection','name','直播模块','params',JSON_OBJECT('title','直播精选','subtitle','正在热播','action','进入直播 ›','tone','#ed6b58'),'data',JSON_ARRAY(JSON_OBJECT('title','直播爆款','subtitle','人气好物','price','¥99','icon','LIVE','background','#fff0ed'),JSON_OBJECT('title','主播推荐','subtitle','限量福利','price','¥129','icon','播','background','#fff7e7'))),
+      JSON_OBJECT('type','homeMarketingSection','name','秒杀模块','params',JSON_OBJECT('title','限时秒杀','subtitle','手慢无','action','查看秒杀 ›','tone','#f05252'),'data',JSON_ARRAY(JSON_OBJECT('title','秒杀好物','subtitle','仅剩 02:18:36','price','¥39','icon','秒','background','#fff0f0'),JSON_OBJECT('title','今日爆款','subtitle','限量抢购','price','¥69','icon','抢','background','#fff6e7'))),
+      JSON_OBJECT('type','homeMarketingSection','name','拼团模块','params',JSON_OBJECT('title','拼团专区','subtitle','拼着买更省','action','发起拼团 ›','tone','#f08b45'),'data',JSON_ARRAY(JSON_OBJECT('title','2 人拼团','subtitle','已有 96 人参团','price','¥59','icon','团','background','#fff5e9'),JSON_OBJECT('title','好物拼单','subtitle','到手更划算','price','¥88','icon','拼','background','#fff0e8'))),
+      JSON_OBJECT('type','homeMarketingSection','name','预售模块','params',JSON_OBJECT('title','预售新品','subtitle','抢先预订','action','立即预售 ›','tone','#8a66e8'),'data',JSON_ARRAY(JSON_OBJECT('title','新品预订','subtitle','尾款立减','price','¥199','icon','预','background','#f3efff'),JSON_OBJECT('title','限定新品','subtitle','预售专享','price','¥299','icon','新','background','#f0edff'))),
+      JSON_OBJECT('type','homeMarketingSection','name','助力模块','params',JSON_OBJECT('title','好友助力','subtitle','邀好友一起省','action','发起助力 ›','tone','#3e9fd6'),'data',JSON_ARRAY(JSON_OBJECT('title','助力享好礼','subtitle','还差 2 人','price','¥49','icon','助','background','#edf8ff'),JSON_OBJECT('title','好友砍价','subtitle','最低 0 元购','price','¥0','icon','砍','background','#eaf7ff'))),
+      JSON_OBJECT('type','homeMarketingSection','name','积分模块','params',JSON_OBJECT('title','积分商城','subtitle','积分兑换好礼','action','去兑换 ›','tone','#d99527'),'data',JSON_ARRAY(JSON_OBJECT('title','积分好礼','subtitle','100 积分起','price','100 积分','icon','分','background','#fff8e5'),JSON_OBJECT('title','会员兑换','subtitle','专属权益','price','200 积分','icon','礼','background','#fff4dd'))),
+      JSON_OBJECT('type','homeMarketingSection','name','推荐商品模块','params',JSON_OBJECT('title','为你推荐','subtitle','猜你喜欢','action','更多商品 ›','tone','#397bf6'),'data',JSON_ARRAY(JSON_OBJECT('title','品质生活','subtitle','口碑好物','price','¥129','icon','荐','background','#edf4ff'),JSON_OBJECT('title','新品首发','subtitle','今日上新','price','¥159','icon','新','background','#eef5ff')))
+    ),
+    '_qixi',JSON_OBJECT('title','七禧平台首页','template_name','system-default-home','is_diy',1,'is_show',1,'is_default',1,'system_template',TRUE)
+  ),'published',0)
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`),`document`=VALUES(`document`),`status`=VALUES(`status`);
+
 -- 平台、商户、区域、客服、运营共用同一套 Vben 应用，由角色决定可见菜单。
 -- “统一后台”是系统身份，不是侧栏菜单；控制台是所有有权限账号的首个业务入口。
 -- 顶层顺序对齐 CRMEB 平台侧栏（sort ASC）；顶层 icon 用离线 ant-design:*。
@@ -247,19 +287,21 @@ INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_pat
 
   -- 装修（嵌套见 patch_operations_menus.sql）
   (110,0,'operations','装修','ant-design:format-painter-outlined','/operations','directory',11),
-  (111,110,'operations.diy','页面装修','lucide:paintbrush','/setting/diy/list','page',1),
-  (800,110,'operations.merchant_diy','店铺模板','lucide:store','/setting/merchant/diyList','page',2),
-  (801,110,'operations.product_detail','商品详情','lucide:package','/setting/diy/product_detail','page',3),
-  (802,110,'operations.page_config','页面配置','lucide:sliders-horizontal','/setting/system_visualization_data','page',4),
-  (803,110,'operations.page_links','页面链接','lucide:link','/setting/page','directory',5),
+  (111,110,'operations.diy','首页装修','lucide:house','/setting/diy/list','page',1),
+  (806,110,'operations.product_category','分类装修','lucide:folder-tree','/setting/product_category','page',2),
+  (811,110,'operations.cart_diy','购物车装修','lucide:shopping-cart','/setting/diy/cart','page',3),
+  (812,110,'operations.member_diy','我的装修','lucide:circle-user-round','/setting/diy/personal','page',4),
+  (801,110,'operations.product_detail','详情装修','lucide:package','/setting/diy/product_detail','page',5),
+  (800,110,'operations.merchant_diy','店铺装修','lucide:store','/setting/merchant/diyList','page',6),
+  (802,110,'operations.page_config','页面配置','lucide:sliders-horizontal','/setting/system_visualization_data','page',7),
+  (212,110,'operations.system_form','表单配置','lucide:clipboard-pen','/systemForm/form_list','page',8),
+  (805,110,'operations.fab','悬浮菜单','lucide:circle-dot','/setting/fab','page',9),
+  (803,110,'operations.page_links','页面链接','lucide:link','/setting/page','directory',10),
   (807,803,'operations.page_links.platform_cat','平台页面分类','lucide:folder-tree','/setting/diy/plantform/category/list','page',1),
   (808,803,'operations.page_links.platform','平台页面链接','lucide:link','/setting/diy/links/list','page',2),
   (809,803,'operations.page_links.merchant_cat','商户页面分类','lucide:folder-tree','/setting/diy/merchant/category/list','page',3),
   (810,803,'operations.page_links.merchant','商户页面链接','lucide:link','/setting/diy/merLink/list','page',4),
-  (804,110,'operations.material','素材管理','lucide:images','/config/picture','page',6),
-  (212,110,'operations.system_form','系统表单','lucide:clipboard-pen','/systemForm/form_list','page',7),
-  (805,110,'operations.fab','悬浮菜单','lucide:circle-dot','/setting/fab','page',8),
-  (806,110,'operations.product_category','商品分类','lucide:folder-tree','/setting/product_category','page',9),
+  (804,110,'operations.material','素材管理','lucide:images','/config/picture','page',11),
 
   -- 客服
   (30,0,'service','客服','ant-design:customer-service-outlined','/service','directory',12),
@@ -599,12 +641,20 @@ WHERE r.code = 'platform'
       'marketing.application.nav','marketing.application.read','marketing.application.manage',
       'user','user.feedback','user.feedback.category','user.feedback.category.read','user.feedback.category.manage','user.group','user.group.read','user.group.manage','user.label','user.label.read','user.label.manage','user.svip','user.svip.plan','user.svip.record','user.svip.interest','user.svip.agreement','user.svip.plan.manage','user.svip.record.read','user.svip.interest.manage','user.svip.agreement.read','user.svip.agreement.manage',
       'content','content.notice','content.community','content.community.category','content.community.topic','content.community.list','content.community.reply','content.attachment','content.article','content.article.dir','content.article.category','content.article.read',
-      'operations','operations.diy','operations.system_form','operations.system_form.manage','setting','setting.agreements',
+      'operations','operations.diy','operations.product_category','operations.cart_diy','operations.member_diy','operations.product_detail','operations.merchant_diy','operations.page_config','operations.system_form','operations.fab','operations.page_links','operations.page_links.platform_cat','operations.page_links.platform','operations.page_links.merchant_cat','operations.page_links.merchant','operations.material','operations.system_form.manage','setting','setting.agreements',
       'content.article.manage','content.article_category.read','content.article_category.manage','content.community_category.read','content.community_category.manage','content.community_topic.read','content.community_topic.manage','content.community_list.read','content.community_list.manage','content.community_reply.read','content.community_reply.manage','content.notice.manage','setting.agreement.manage','setting.notice.dir','setting.notice.list','setting.notice.config.manage',
       'operations.diy.manage','marketing.seckill.manage','marketing.combination.manage','marketing.presell.manage','marketing.coupon.manage','marketing.assist.manage','marketing.points.manage','marketing.recharge.manage',
       'maintain','maintain.cache','maintain.cache.manage','maintain.backup','maintain.backup.manage','maintain.group_data','maintain.group_data.manage','maintain.hot_search','maintain.hot_search.manage',
       'setting.shop.hot','setting.shop.hot.read','setting.shop.hot.manage',
       'content.attachment.manage','content.community.audit','content.community.delete','marketing.broadcast.audit'));
+
+-- 平台、商户、区域分别使用独立菜单树。即使旧库曾存在跨树授权，也必须在
+-- 每次默认配置初始化时回收，避免侧栏将多个身份的“首页/控制台”混在一起。
+DELETE rm
+FROM `qixi_crm_a_role_menu` AS rm
+INNER JOIN `qixi_crm_a_role` AS r ON r.id = rm.role_id
+INNER JOIN `qixi_crm_a_menu` AS m ON m.id = rm.menu_id
+WHERE m.menu_scope <> r.role_type;
 
 -- 系统设置不包含一号通/呼叫系统登录入口；服务配置与短信配置直接挂在系统设置。
 DELETE FROM `qixi_crm_a_role_menu` WHERE `menu_id` IN (1501,1510);

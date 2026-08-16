@@ -3,113 +3,230 @@ import type { VbenFormSchema } from '#/adapter/form';
 
 import { computed, ref } from 'vue';
 
-import { ArrowRight, CloseBold } from '@element-plus/icons-vue';
-import { ElIcon, ElSwitch } from 'element-plus';
+import { ArrowRight, CloseBold, Rank } from '@element-plus/icons-vue';
+import { ElIcon, ElMessage, ElSwitch } from 'element-plus';
 import draggable from 'vuedraggable';
 
 import DiyLinkPickerDialog from '#/components/shop/diy-link-picker-dialog.vue';
 
 import DiyInputField from './shared/diy-input-field.vue';
-import { type FormRecord, getByPath, parseIntFields, setByPath } from './shared/path-utils';
 import {
-  DIY_PADDING_FIELDS,
-  DIY_RADIUS_FIELDS,
-  diyBgColors,
+  diyColor,
   diyRadioGroup,
   diySection,
+  diySlider,
 } from './shared/schema-helpers';
 import { useDiyCurItemForm } from './shared/use-diy-cur-item-form';
-import DiyColorField from './shared/diy-color-field.vue';
 import DiyLinkInputField from './shared/diy-link-input-field.vue';
-import DiySliderField from './shared/diy-slider-field.vue';
 import { useDiyAdapterComponents } from './shared/use-diy-adapter-components';
 import { useDiyEditor } from './shared/use-diy-editor';
 
 defineOptions({ name: 'DiyParamsNavBar' });
 
-const { PrimaryButton, RadioGroup, Checkbox } = useDiyAdapterComponents();
+type DiyRecord = Record<string, any>;
+
+const { PrimaryButton } = useDiyAdapterComponents();
 
 const props = defineProps<{
-  curItem: Record<string, unknown> & {
-    data?: Array<Record<string, unknown>>;
-  };
-  opts?: unknown;
+  curItem: DiyRecord & { data?: DiyRecord[]; params?: DiyRecord; style?: DiyRecord };
   selectedIndex?: number;
 }>();
 
 const editor = useDiyEditor();
+const styleType = ref<'content' | 'style'>('content');
 const isLinkset = ref(false);
 const linkIndex = ref(0);
-const linkData = ref<null | Record<string, unknown>>(null);
+const linkData = ref<DiyRecord | null>(null);
 
-const schema = computed((): VbenFormSchema[] => [
-  diySection('样式设置'),
-  ...diyBgColors('#ffffff', '#f2f2f2'),
-  ...DIY_PADDING_FIELDS,
-  ...DIY_RADIUS_FIELDS,
-  diySection('导航模式'),
-  diyRadioGroup('style.rowsNum', '每行数量：', [
+const navigationItems = computed<DiyRecord[]>({
+  get: () => props.curItem.data ?? [],
+  set: (value) => {
+    props.curItem.data = value;
+  },
+});
+
+function ensureNavBarDefaults(item: DiyRecord) {
+  const style = (item.style ??= {}) as DiyRecord;
+
+  if (!Array.isArray(item.data)) item.data = [];
+  if (!style.navigationType) style.navigationType = 'icon-text';
+  if (!style.displayMode) style.displayMode = 'fixed';
+  const rowsNum = Number(style.rowsNum);
+  if (!Number.isFinite(rowsNum) || rowsNum < 3 || rowsNum > 5) style.rowsNum = 5;
+
+  if (style.iconRadiusMode === undefined) style.iconRadiusMode = 'all';
+  if (style.iconRadius === undefined) style.iconRadius = style.topRadio ?? 8;
+  if (style.iconTopLeftRadius === undefined) style.iconTopLeftRadius = style.iconRadius;
+  if (style.iconTopRightRadius === undefined) style.iconTopRightRadius = style.iconRadius;
+  if (style.iconBottomRightRadius === undefined) style.iconBottomRightRadius = style.iconRadius;
+  if (style.iconBottomLeftRadius === undefined) style.iconBottomLeftRadius = style.iconRadius;
+  if (!style.iconShadow) style.iconShadow = 'off';
+
+  if (style.float === undefined) style.float = 0;
+  if (style.bgcolor === undefined) style.bgcolor = 'rgba(255, 255, 255, 0)';
+  if (style.bgcolorEnd === undefined) style.bgcolorEnd = 'rgba(255, 255, 255, 0)';
+  if (style.background === undefined) style.background = 'rgba(255, 0, 0, 0)';
+  if (!style.textColor) style.textColor = '#333333';
+  if (style.paddingTop === undefined) style.paddingTop = 0;
+  if (style.paddingBottom === undefined) style.paddingBottom = 10;
+  if (style.paddingLeft === undefined) style.paddingLeft = 0;
+  if (style.paddingRight === undefined) style.paddingRight = style.paddingLeft;
+  if (style.marginTop === undefined) style.marginTop = 0;
+  if (!style.cardRadiusMode) style.cardRadiusMode = 'all';
+  if (style.cardRadius === undefined) style.cardRadius = 0;
+  if (style.cardTopLeftRadius === undefined) style.cardTopLeftRadius = style.cardRadius;
+  if (style.cardTopRightRadius === undefined) style.cardTopRightRadius = style.cardRadius;
+  if (style.cardBottomRightRadius === undefined) style.cardBottomRightRadius = style.cardRadius;
+  if (style.cardBottomLeftRadius === undefined) style.cardBottomLeftRadius = style.cardRadius;
+  if (!style.cardShadow) style.cardShadow = 'off';
+
+  item.data.forEach((entry) => {
+    if (!entry.text) entry.text = '导航名称';
+    if (entry.hide === undefined) entry.hide = false;
+  });
+}
+
+const contentSchema = computed((): VbenFormSchema[] => [
+  diySection('展示设置'),
+  diyRadioGroup('style.navigationType', '导航样式：', [
+    { label: '图片加文字', value: 'icon-text' },
+    { label: '图片', value: 'icon' },
+    { label: '文字', value: 'text' },
+  ]),
+  diyRadioGroup('style.rowsNum', '单行显示：', [
     { label: '3个', value: 3 },
     { label: '4个', value: 4 },
     { label: '5个', value: 5 },
   ]),
-  diySection('图片设置', '图片建议宽度88*88px；鼠标拖拽左侧圆点可调整导航顺序'),
+  diyRadioGroup('style.displayMode', '展示样式：', [
+    { label: '固定显示', value: 'fixed' },
+    { label: '分页滑动', value: 'page' },
+  ]),
+  diySection('内容设置', '最多可添加13张图片，建议宽度90 × 90px'),
 ]);
 
-function ensureNavBarStyle(item: FormRecord) {
-  if (!item.style || typeof item.style !== 'object') {
-    item.style = {};
-  }
-  parseIntFields(item, ['style.rowsNum']);
-  const raw = getByPath(item, 'style.rowsNum');
-  const num = Number(raw);
-  if (!Number.isFinite(num) || num <= 0) {
-    setByPath(item, 'style.rowsNum', 5);
-  }
-}
+const styleSchema = computed((): VbenFormSchema[] => {
+  const style = props.curItem.style ?? {};
+  return [
+    diySection('图标样式'),
+    diyRadioGroup(
+      'style.iconRadiusMode',
+      '背景圆角：',
+      [
+        { label: '全部', value: 'all' },
+        { label: '单个', value: 'individual' },
+      ],
+      true,
+    ),
+    ...(style.iconRadiusMode === 'individual'
+      ? [
+          diySlider('style.iconTopLeftRadius', '左上圆角：', { max: 48, min: 0 }),
+          diySlider('style.iconTopRightRadius', '右上圆角：', { max: 48, min: 0 }),
+          diySlider('style.iconBottomRightRadius', '右下圆角：', { max: 48, min: 0 }),
+          diySlider('style.iconBottomLeftRadius', '左下圆角：', { max: 48, min: 0 }),
+        ]
+      : [diySlider('style.iconRadius', '圆角值：', { max: 48, min: 0 })]),
+    diyRadioGroup('style.iconShadow', '开启阴影：', [
+      { label: '关闭', value: 'off' },
+      { label: '开启', value: 'on' },
+    ]),
+    diySection('卡片样式'),
+    diySlider('style.float', '组件上浮：', { max: 48, min: 0 }),
+    diyColor('style.bgcolor', '组件背景：', 'rgba(255, 255, 255, 0)', '透明'),
+    diyColor('style.bgcolorEnd', '组件背景渐变：', 'rgba(255, 255, 255, 0)', '透明'),
+    diyColor('style.background', '底部背景：', 'rgba(255, 0, 0, 0)', '透明'),
+    diyColor('style.textColor', '文字颜色：', '#333333'),
+    diySlider('style.paddingTop', '上边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingBottom', '下边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingLeft', '左右边距：', { max: 48, min: 0 }),
+    diySlider('style.marginTop', '页面上间距：', { max: 96, min: 0 }),
+    diyRadioGroup(
+      'style.cardRadiusMode',
+      '背景圆角：',
+      [
+        { label: '全部', value: 'all' },
+        { label: '单个', value: 'individual' },
+      ],
+      true,
+    ),
+    ...(style.cardRadiusMode === 'individual'
+      ? [
+          diySlider('style.cardTopLeftRadius', '左上圆角：', { max: 48, min: 0 }),
+          diySlider('style.cardTopRightRadius', '右上圆角：', { max: 48, min: 0 }),
+          diySlider('style.cardBottomRightRadius', '右下圆角：', { max: 48, min: 0 }),
+          diySlider('style.cardBottomLeftRadius', '左下圆角：', { max: 48, min: 0 }),
+        ]
+      : [diySlider('style.cardRadius', '圆角值：', { max: 48, min: 0 })]),
+    diyRadioGroup('style.cardShadow', '开启阴影：', [
+      { label: '关闭', value: 'off' },
+      { label: '开启', value: 'on' },
+    ]),
+  ];
+});
 
-const { Form } = useDiyCurItemForm(() => props.curItem, schema, {
-  fieldPaths: [
-    'style.background',
-    'style.bgcolor',
-    'style.paddingTop',
-    'style.paddingBottom',
-    'style.paddingLeft',
-    'style.topRadio',
-    'style.bottomRadio',
-    'style.rowsNum',
-  ],
-  onInit: ensureNavBarStyle,
+const { Form: ContentForm } = useDiyCurItemForm(() => props.curItem, contentSchema, {
+  onInit: ensureNavBarDefaults,
+});
+const { Form: StyleForm } = useDiyCurItemForm(() => props.curItem, styleSchema, {
+  onInit: ensureNavBarDefaults,
 });
 
 function changeLink(index: number) {
   isLinkset.value = true;
   linkIndex.value = index;
-  linkData.value = props.curItem.data?.[index] ?? null;
+  linkData.value = navigationItems.value[index] ?? null;
 }
 
-function closeLinkset(e: null | { name?: string; type?: string; url?: string }) {
+function closeLinkset(value: { name?: string; type?: string; url?: string } | null) {
   isLinkset.value = false;
-  if (e && props.curItem.data?.[linkIndex.value]) {
-    const row = props.curItem.data[linkIndex.value]!;
-    row.linkeType = e.type;
-    row.linkUrl = e.url;
-    row.name = e.name;
+  const item = navigationItems.value[linkIndex.value];
+  if (!value || !item) return;
+  item.linkeType = value.type;
+  item.linkUrl = value.url;
+  item.name = value.name;
+}
+
+function addNavigationItem() {
+  if (navigationItems.value.length >= 13) {
+    ElMessage.warning('导航组最多添加13项');
+    return;
   }
+  navigationItems.value.push({
+    hide: false,
+    imgUrl: '',
+    linkUrl: '',
+    text: '导航名称',
+  });
+}
+
+function setItemEnabled(item: DiyRecord, enabled: boolean) {
+  item.hide = !enabled;
 }
 </script>
 
 <template>
   <div>
-    <div class="common-form">
+    <div class="common-form common-form-new">
       <span>{{ curItem.name }}</span>
+      <div class="diy-changes">
+        <div class="diy-change" :class="{ active: styleType === 'content' }" @click="styleType = 'content'">
+          内容
+        </div>
+        <div class="diy-change" :class="{ active: styleType === 'style' }" @click="styleType = 'style'">
+          样式
+        </div>
+      </div>
     </div>
-    <Form />
-    <template v-if="curItem.data && curItem.data.length > 0">
-      <draggable v-model="curItem.data" class="draggable-list" group="people" item-key="index">
+
+    <div v-show="styleType === 'content'">
+      <ContentForm />
+      <draggable v-model="navigationItems" class="draggable-list" group="navigation-items" item-key="index">
         <template #item="{ element, index }">
-          <div class="d-c-c param-img-item navbar">
-            <div class="d-c d-c-c" style="margin-right: 28px">
+          <div class="d-c-c param-img-item navbar nav-item-card">
+            <div class="nav-item-card__drag" title="拖拽调整顺序">
+              <ElIcon><Rank /></ElIcon>
+            </div>
+            <div class="d-c d-c-c nav-item-card__image">
               <div class="icon">
                 <img
                   v-img-url="element.imgUrl"
@@ -118,39 +235,45 @@ function closeLinkset(e: null | { name?: string; type?: string; url?: string }) 
                 />
               </div>
             </div>
-            <div class="right">
+            <div class="right nav-item-card__fields">
               <ElIcon
                 class="el-icon-DeleteFilled"
-                @click="editor.onEditorDeleleData(index, selectedIndex ?? 0)"
+                @click.stop="editor.onEditorDeleleData(index, selectedIndex ?? 0)"
               >
                 <CloseBold />
               </ElIcon>
               <div class="url-box mb16 flex-1 d-s-c ww100">
-                <span class="key-name">名称</span>
+                <span class="key-name">标题</span>
                 <DiyInputField v-model="element.text" :maxlength="6" show-word-limit />
               </div>
-              <div class="d-s-c ww100">
-                <div class="url-box flex-1 d-s-c">
-                  <span class="key-name">链接</span>
-                  <DiyLinkInputField v-model="element.linkUrl" @click="changeLink(index)">
-<template #suffix>
-<ElIcon color="#333" size="16px"><ArrowRight /></ElIcon>
-</template>
-</DiyLinkInputField>
-                </div>
-              </div>
               <div class="url-box mb16 flex-1 d-s-c ww100">
-                <div class="form-label">隐藏：</div>
-                <ElSwitch v-model="element.hide" :active-value="true" :inactive-value="false" />
+                <span class="key-name">链接</span>
+                <DiyLinkInputField v-model="element.linkUrl" @click="changeLink(index)">
+                  <template #suffix>
+                    <ElIcon color="#333" size="16px"><ArrowRight /></ElIcon>
+                  </template>
+                </DiyLinkInputField>
+              </div>
+              <div class="url-box flex-1 d-s-c ww100">
+                <span class="key-name">状态</span>
+                <ElSwitch
+                  :model-value="!element.hide"
+                  @update:model-value="setItemEnabled(element, $event as boolean)"
+                />
               </div>
             </div>
           </div>
         </template>
       </draggable>
-    </template>
-    <div class="d-c-c pb16">
-      <component :is="PrimaryButton" plain @click="editor.onEditorAddData()">+新增图文导航</component>
+      <div class="d-c-c pb16">
+        <component :is="PrimaryButton" plain @click="addNavigationItem">+ 添加</component>
+      </div>
     </div>
+
+    <div v-show="styleType === 'style'">
+      <StyleForm />
+    </div>
+
     <DiyLinkPickerDialog
       v-if="isLinkset"
       :is_linkset="isLinkset"
@@ -161,3 +284,39 @@ function closeLinkset(e: null | { name?: string; type?: string; url?: string }) 
     </DiyLinkPickerDialog>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.nav-item-card {
+  align-items: center;
+  min-height: 132px;
+}
+
+.nav-item-card__drag {
+  display: flex;
+  width: 24px;
+  align-items: center;
+  justify-content: center;
+  color: #b7c0cf;
+  cursor: move;
+}
+
+.nav-item-card__image {
+  width: 108px;
+  margin-right: 16px;
+}
+
+.nav-item-card__image .icon img {
+  display: block;
+  width: 90px;
+  height: 90px;
+  margin: 0;
+  cursor: pointer;
+  border: 1px dashed #d9dfe9;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.nav-item-card__fields {
+  flex: 1;
+}
+</style>

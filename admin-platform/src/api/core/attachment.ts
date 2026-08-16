@@ -63,6 +63,7 @@ export function listAttachmentsApi(params: {
   category_id?: number;
   /** 1 = 仅行级系统预置素材（侧栏「系统素材」） */
   is_system?: 0 | 1;
+  keyword?: string;
   limit?: number;
   page?: number;
   type?: AttachmentKind;
@@ -88,4 +89,11 @@ export function uploadAttachmentApi(
 
 export function deleteAttachmentApi(id: number) {
   return requestClient.delete(`/attachments/${id}`);
+}
+
+export function moveAttachmentsApi(attachmentIDs: number[], categoryID: number) {
+  return requestClient.patch('/attachments/move', {
+    attachment_ids: attachmentIDs,
+    category_id: categoryID,
+  });
 }

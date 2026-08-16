@@ -30,6 +30,16 @@
 			<template v-if="form.curItem.type == 'hotspot'">
 				<Hotspot :curItem="form.curItem" :selectedIndex="form.selectedIndex"></Hotspot>
 			</template>
+			<!--折扣组-->
+			<template v-if="form.curItem.type == 'discountGroup'">
+				<DiscountGroup :curItem="form.curItem" :selectedIndex="form.selectedIndex"></DiscountGroup>
+			</template>
+			<template v-if="form.curItem.type == 'ranking'">
+				<Ranking :curItem="form.curItem" :selectedIndex="form.selectedIndex"></Ranking>
+			</template>
+			<template v-if="form.curItem.type == 'community'">
+				<Community :curItem="form.curItem" :selectedIndex="form.selectedIndex"></Community>
+			</template>
 			<!--视频组件-->
 			<template v-if="form.curItem.type == 'video'">
 				<Video :curItem="form.curItem" :selectedIndex="form.selectedIndex"></Video>
@@ -49,6 +59,9 @@
 			<!--导航组-->
 			<template v-if="form.curItem.type == 'navBar'">
 				<NavBar :curItem="form.curItem" :selectedIndex="form.selectedIndex"></NavBar>
+			</template>
+			<template v-if="form.curItem.type == 'bottomNav'">
+				<BottomNav :curItem="form.curItem" :selectedIndex="form.selectedIndex"></BottomNav>
 			</template>
 			<!--商品组-->
 			<template v-if="form.curItem.type == 'product'">
@@ -167,11 +180,15 @@
 	import ImageSingle from './params/ImageSingle.vue';
 	import Window from './params/Window.vue';
 	import Hotspot from './params/Hotspot.vue';
+	import DiscountGroup from './params/DiscountGroup.vue';
+	import Ranking from './params/Ranking.vue';
+	import Community from './params/Community.vue';
 	import Video from './params/Video.vue';
 	import ArticleIndex from './params/Article.vue';
 	import Special from './params/Special.vue';
 	import Notice from './params/Notice.vue';
 	import NavBar from './params/NavBar.vue';
+	import BottomNav from './params/BottomNav.vue';
 	import ProductIndex from './params/Product.vue';
 	import Coupon from './params/Coupon.vue';
 	import Store from './params/Store.vue';
@@ -212,6 +229,9 @@
 			Window,
 			/*热区*/
 			Hotspot,
+			DiscountGroup,
+			Ranking,
+			Community,
 			/*视频*/
 			Video,
 			/*文章*/
@@ -222,6 +242,7 @@
 			Notice,
 			/*导航组*/
 			NavBar,
+			BottomNav,
 			/*商品组*/
 			ProductIndex,
 			/*优惠券*/

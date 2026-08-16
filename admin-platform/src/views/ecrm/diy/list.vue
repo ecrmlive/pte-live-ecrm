@@ -2,8 +2,9 @@
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page } from '@vben/common-ui';
-import { ElButton, ElMessage, ElMessageBox, ElRadioButton, ElRadioGroup, ElTag } from 'element-plus';
-import { ref } from 'vue';
+import { ElButton, ElEmpty, ElMessage, ElMessageBox } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -12,134 +13,262 @@ import {
   copyDiyPageApi,
   deleteDiyPageApi,
   listDiyPagesApi,
-  recoveryDiyPageApi,
+  type DiyPageDoc,
   type DiyPageRow,
 } from '#/api/core/diy';
 import { getAccessCodesApi } from '#/api/core/auth';
+import {
+  platformListActionColumn,
+  platformListPagerConfig,
+} from '#/constants/platform-list-grid';
+import { formatShanghaiDateTime } from '#/utils/date-time';
+
+import DiyPreview from './Preview.vue';
 
 const router = useRouter();
 const route = useRoute();
 const editorPath = '/setting/diy/index';
-const pageKind = ref<'home' | 'micro'>(
-  route.path.includes('/micro/') || route.query.kind === 'micro' ? 'micro' : 'home',
-);
+const SYSTEM_DEFAULT_HOME_PAGE_ID = 4001;
+const pageKind = route.path.includes('/micro/') || route.query.kind === 'micro' ? 'micro' : 'home';
 const canManage = ref(false);
+const previewPage = ref<DiyPageRow>();
+const previewForm = ref({ curItem: {}, selectedIndex: -1 });
+
+const pageTitle = computed(() => (pageKind === 'home' ? '页面装修' : '微页面'));
+const createLabel = computed(() => (pageKind === 'home' ? '新增页面' : '新增微页面'));
+const previewDoc = computed<DiyPageDoc>(() =>
+  previewPage.value?.doc || {
+    page: { params: { name: '页面预览', title: '页面预览' } },
+    items: [],
+  },
+);
+
+function isSystemDefaultTemplate(row: DiyPageRow) {
+  return pageKind === 'home' && row.id === SYSTEM_DEFAULT_HOME_PAGE_ID;
+}
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
     columns: [
-      { field: 'id', title: 'ID', width: 80 },
-      { field: 'name', title: '页面名称', minWidth: 160 },
-      { field: 'title', title: '标题', minWidth: 140 },
+      { field: 'id', title: '页面ID', width: 100 },
+      { field: 'name', title: '模板名称', minWidth: 180 },
       {
-        field: 'status',
-        title: '状态',
-        width: 100,
-        slots: { default: 'status' },
+        field: 'add_time',
+        formatter: ({ cellValue }) => formatTime(cellValue),
+        minWidth: 170,
+        title: '添加时间',
       },
-      { field: 'update_time', title: '更新时间', minWidth: 170 },
       {
-        field: 'action',
-        title: '操作',
-        width: 380,
-        fixed: 'right',
-        slots: { default: 'action' },
+        field: 'update_time',
+        formatter: ({ cellValue }) => formatTime(cellValue),
+        minWidth: 170,
+        title: '更新时间',
       },
+      platformListActionColumn({ width: 350 }),
     ],
-    height: 'auto',
-    keepSource: true,
+    pagerConfig: platformListPagerConfig(),
     proxyConfig: {
       ajax: {
         query: async ({ page }) => {
           const res = await listDiyPagesApi({
             page: page.currentPage,
             limit: page.pageSize,
-            is_diy: pageKind.value === 'home' ? 1 : 0,
+            is_diy: pageKind === 'home' ? 1 : 0,
           });
-          return { items: res.list || [], total: res.total || 0 };
+          const rows = res.list || [];
+          if (!previewPage.value || !rows.some((row) => row.id === previewPage.value?.id)) {
+            previewPage.value =
+              rows.find((row) => isSystemDefaultTemplate(row)) ||
+              rows.find((row) => row.status === 1) ||
+              rows[0];
+          }
+          return { items: rows, total: res.total || 0 };
         },
       },
     },
-    toolbarConfig: { search: false, refresh: true },
+    rowConfig: { isHover: true, keyField: 'id' },
+    toolbarConfig: {
+      custom: false,
+      export: false,
+      refresh: false,
+      search: false,
+      zoom: false,
+    },
   } as VxeGridProps<DiyPageRow>,
 });
+
+function formatTime(value?: string) {
+  return value ? formatShanghaiDateTime(value) : '—';
+}
 
 function openEditor(id?: number) {
   router.push({
     path: editorPath,
-    query: id
-      ? { id: String(id), types: pageKind.value === 'home' ? '1' : '0' }
-      : { types: pageKind.value === 'home' ? '1' : '0' },
+    query: id ? { id: String(id), types: pageKind === 'home' ? '1' : '0' } : { types: pageKind === 'home' ? '1' : '0' },
   });
 }
 
+function selectPreview(row: DiyPageRow) {
+  previewForm.value = { curItem: {}, selectedIndex: -1 };
+  previewPage.value = row;
+}
+
 async function onActive(row: DiyPageRow) {
+  if (isSystemDefaultTemplate(row)) {
+    ElMessage.warning('系统默认模板仅支持预览和复制');
+    return;
+  }
   await activeDiyPageApi(row.id);
   ElMessage.success('已设为首页');
-  gridApi.reload();
+  await gridApi.reload();
 }
 
 async function onCopy(row: DiyPageRow) {
   await copyDiyPageApi(row.id);
   ElMessage.success('已复制');
-  gridApi.reload();
-}
-
-async function onRecovery(row: DiyPageRow) {
-  await ElMessageBox.confirm(
-    `恢复会覆盖「${row.name}」当前的组件和页面设置，确认继续？`,
-    '恢复默认页面',
-    { cancelButtonText: '取消', confirmButtonText: '确认恢复', type: 'warning' },
-  );
-  await recoveryDiyPageApi(row.id);
-  ElMessage.success('已恢复默认页面');
-  gridApi.reload();
+  await gridApi.reload();
 }
 
 async function onDelete(row: DiyPageRow) {
-  if (pageKind.value === 'home' && row.status === 1) {
-    ElMessage.warning('请先取消启用再删除');
+  if (isSystemDefaultTemplate(row)) {
+    ElMessage.warning('系统默认模板仅支持预览和复制');
     return;
   }
-  await ElMessageBox.confirm(`确认删除「${row.name}」？`, '提示');
+  if (pageKind === 'home' && row.status === 1) {
+    ElMessage.warning('请先设置其他首页模板，再删除当前首页');
+    return;
+  }
+  await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除页面', {
+    cancelButtonText: '取消',
+    confirmButtonText: '删除',
+    type: 'warning',
+  });
   await deleteDiyPageApi(row.id);
+  if (previewPage.value?.id === row.id) previewPage.value = undefined;
   ElMessage.success('已删除');
-  gridApi.reload();
+  await gridApi.reload();
 }
 
-function onKindChange() {
-  gridApi.reload();
-}
-
-getAccessCodesApi().then((permissions) => { canManage.value = permissions.includes('operations.diy.manage'); });
+getAccessCodesApi().then((permissions) => {
+  canManage.value = permissions.includes('operations.diy.manage');
+});
 </script>
 
 <template>
-  <Page :title="pageKind === 'home' ? '页面装修' : '微页面'" :description="pageKind === 'home' ? '平台首页 DIY 可视化装修' : '可被首页组件链接引用的独立 H5 / 小程序页面'">
-    <template #extra>
-      <ElRadioGroup v-model="pageKind" class="mr-3" @change="onKindChange"><ElRadioButton value="home">首页</ElRadioButton><ElRadioButton value="micro">微页面</ElRadioButton></ElRadioGroup>
-      <ElButton v-if="canManage" type="primary" @click="openEditor()">{{ pageKind === 'home' ? '新建首页' : '新建微页面' }}</ElButton>
-    </template>
-    <Grid>
-      <template #status="{ row }">
-        <ElTag :type="row.status === 1 ? 'success' : 'info'">
-          {{ row.status === 1 ? (pageKind === 'home' ? '使用中' : '已发布') : '未启用' }}
-        </ElTag>
-      </template>
-      <template #action="{ row }">
-        <ElButton v-if="canManage" link type="primary" @click="openEditor(row.id)">装修</ElButton>
-        <ElButton
-          v-if="canManage && pageKind === 'home' && row.status !== 1"
-          link
-          type="success"
-          @click="onActive(row)"
-        >
-          设为首页
-        </ElButton>
-        <ElButton v-if="canManage" link @click="onCopy(row)">复制</ElButton>
-        <ElButton v-if="canManage" link type="warning" @click="onRecovery(row)">恢复</ElButton>
-        <ElButton v-if="canManage" link type="danger" @click="onDelete(row)">删除</ElButton>
-      </template>
-    </Grid>
+  <Page auto-content-height content-class="!p-0">
+    <section class="diy-page-list" :aria-label="pageTitle">
+      <aside class="diy-page-list__preview" aria-label="移动端预览">
+        <div v-if="previewPage" class="diy-page-list__phone">
+          <DiyPreview
+            :compact="true"
+            :default-data="{}"
+            :diy-data="previewDoc"
+            diy-type=""
+            :form="previewForm"
+          />
+        </div>
+        <ElEmpty v-else description="暂无页面模板" />
+      </aside>
+
+      <section class="diy-page-list__content">
+        <header class="diy-page-list__toolbar">
+          <ElButton v-if="canManage" :icon="Plus" type="primary" @click="openEditor()">
+            {{ createLabel }}
+          </ElButton>
+          <p v-if="pageKind === 'home'" class="diy-page-list__tip">
+            系统默认模板仅支持预览和复制；复制后可编辑并设为首页。
+          </p>
+        </header>
+
+        <Grid>
+          <template #action="{ row }">
+            <ElButton v-if="canManage && !isSystemDefaultTemplate(row)" link type="primary" @click="openEditor(row.id)">编辑</ElButton>
+            <ElButton v-if="canManage && !isSystemDefaultTemplate(row)" link type="danger" @click="onDelete(row)">删除</ElButton>
+            <ElButton
+              v-if="canManage && pageKind === 'home' && row.status !== 1 && !isSystemDefaultTemplate(row)"
+              link
+              type="primary"
+              @click="onActive(row)"
+            >
+              设为首页
+            </ElButton>
+            <ElButton link type="primary" @click="selectPreview(row)">预览</ElButton>
+            <ElButton v-if="canManage" link type="primary" @click="onCopy(row)">复制</ElButton>
+          </template>
+        </Grid>
+      </section>
+    </section>
   </Page>
 </template>
+
+<style scoped>
+.diy-page-list {
+  display: grid;
+  grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
+  min-height: calc(100vh - 148px);
+  overflow: hidden;
+  background: var(--vben-bg-color-overlay, #fff);
+}
+
+.diy-page-list__preview {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  overflow: auto;
+  border-right: 1px solid var(--el-border-color-lighter);
+  background: #f7f8fa;
+  padding: 24px 20px 32px;
+}
+
+.diy-page-list__phone {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.diy-page-list__content {
+  min-width: 0;
+  padding: 24px;
+}
+
+.diy-page-list__toolbar {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.diy-page-list__tip {
+  margin: 0;
+  color: var(--el-color-danger);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+@media (max-width: 1180px) {
+  .diy-page-list {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .diy-page-list__preview {
+    max-height: 620px;
+    border-right: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+}
+
+@media (max-width: 720px) {
+  .diy-page-list__content {
+    padding: 16px;
+  }
+
+  .diy-page-list__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>

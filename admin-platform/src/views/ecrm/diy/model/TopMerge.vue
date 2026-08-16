@@ -9,7 +9,10 @@
 		</div>
 		<div class="diy-TopMerge">
 			<div class="navigation d-s-c">
-				<img class="logo-img" v-img-url="item.params.topLogo" alt="" />
+				<div v-if="item.params.showLocation" class="location-chip">
+					<span>⌖</span>{{ item.params.locationText || '定位中' }}<b>›</b>
+				</div>
+				<img v-else class="logo-img" v-img-url="item.params.topLogo" alt="" />
 				<div class="phone-top-search-box d-s-c">
 					<el-icon class="mr10" color="#999">
 						<Search />
@@ -126,6 +129,21 @@
 			display: block;
 			width: 39px;
 			height: 32px;
+		}
+
+		.location-chip {
+			display: flex;
+			max-width: 100px;
+			align-items: center;
+			gap: 3px;
+			overflow: hidden;
+			color: #4a5261;
+			font-size: 12px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+
+			span { color: #1677ff; font-size: 16px; }
+			b { color: #8b95a7; font-size: 16px; font-weight: 400; }
 		}
 
 		.phone-top-search-box {

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/crmlive/pte-live-ecrm/api-business/internal/pkg/response"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +18,7 @@ func NewHandler(db *gorm.DB) *Handler { return &Handler{db: db} }
 
 func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/diy/home", h.Home)
+	r.GET("/diy/category", h.Category)
 	r.GET("/diy/pages/:id", h.Get)
 }
 
@@ -55,6 +56,45 @@ func (h *Handler) Home(c *gin.Context) {
 		return
 	}
 	response.OK(c, payload(row))
+}
+
+// Category 返回平台已发布的分类布局。该布局通过 DIY 事件投影到业务库，
+// 因此 C 端不需要跨库读取后台配置。
+func (h *Handler) Category(c *gin.Context) {
+	var row pageView
+	err := h.db.WithContext(c.Request.Context()).
+		Where("source = ? AND store_id = ? AND page_type = ? AND name = ? AND status = ?", "platform", 0, "custom", "__category_decoration__", "published").
+		First(&row).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			response.OK(c, gin.H{"layout": "list"})
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "查询分类装修失败")
+		return
+	}
+	var doc struct {
+		Items []struct {
+			Type   string `json:"type"`
+			Params struct {
+				Layout string `json:"layout"`
+			} `json:"params"`
+		} `json:"items"`
+	}
+	layout := "list"
+	if json.Unmarshal(row.Document, &doc) == nil {
+		for _, item := range doc.Items {
+			if item.Type == "categoryLayout" && item.Params.Layout == "waterfall" {
+				layout = "grid"
+				break
+			}
+			if item.Type == "categoryLayout" && (item.Params.Layout == "grid" || item.Params.Layout == "list" || item.Params.Layout == "card") {
+				layout = item.Params.Layout
+				break
+			}
+		}
+	}
+	response.OK(c, gin.H{"layout": layout})
 }
 
 func (h *Handler) Get(c *gin.Context) {

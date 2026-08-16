@@ -2,9 +2,29 @@
 import { appRequest } from '../../common/request'
 
 type Category = { id: number; name: string; pid: number }
+type CategoryLayout = 'grid' | 'list' | 'card'
+type Product = { id: number; title: string; store_name: string; image: string; price: string; sales: number }
+type ProductPage = { list: Product[]; total: number; page: number }
 const categories = ref<Category[]>([])
 const activeID = ref(0)
+const activeChildID = ref(0)
 const loading = ref(true)
+const layout = ref<CategoryLayout>('list')
+const showAllPrimary = ref(false)
+const products = ref<Product[]>([])
+const productPage = ref(1)
+const productTotal = ref(0)
+const productsLoading = ref(false)
+const productsLoadingMore = ref(false)
+
+const categoryImages = [
+  '/static/demo/product-fragrance-v1.png',
+  '/static/demo/product-bag-v1.png',
+  '/static/demo/product-tumbler-v1.png',
+  '/static/demo/product-knit-v1.png',
+  '/static/demo/product-shoes-v1.png',
+  '/static/demo/product-scarf-v1.png',
+]
 
 const demoCategories: Category[] = [
   { id: 10, name: "服饰鞋包", pid: 0 }, { id: 20, name: "美妆个护", pid: 0 }, { id: 30, name: "家居生活", pid: 0 }, { id: 40, name: "食品茶饮", pid: 0 },
@@ -26,42 +46,96 @@ function childRows(): Category[][] {
   }
   return rows
 }
+function isTextRootLayout(): boolean { return layout.value == 'grid' }
+function togglePrimaryCategories(): void { showAllPrimary.value = !showAllPrimary.value }
 function activeName(): string {
   const target = roots().find((item) => item.id == activeID.value)
   return target == null ? '商品分类' : target.name
 }
-function select(category: Category): void { activeID.value = category.id }
+function categoryImage(id: number): string { return categoryImages[id % categoryImages.length] }
+function select(category: Category): void {
+  activeID.value = category.id
+  const first = children()[0]
+  activeChildID.value = first == null ? 0 : first.id
+  showAllPrimary.value = false
+  loadProducts(true)
+}
+function openChild(category: Category): void {
+  activeChildID.value = category.id
+  loadProducts(true)
+}
+function productName(product: Product): string { return product.title || product.store_name || '商品' }
+function productImage(product: Product): string { return String(product.image || '').trim() }
+function canLoadMoreProducts(): boolean { return products.value.length < productTotal.value }
+function loadProducts(reset: boolean): void {
+  if (activeChildID.value <= 0 || productsLoading.value || productsLoadingMore.value) return
+  if (!reset && !canLoadMoreProducts()) return
+  const nextPage = reset ? 1 : productPage.value + 1
+  if (reset) productsLoading.value = true
+  else productsLoadingMore.value = true
+  appRequest(`/catalog/products?page=${nextPage}&limit=10&cate_id=${activeChildID.value}`, 'GET', null, false).then((data) => {
+    const result = data as ProductPage
+    const nextItems = result.list || []
+    products.value = reset ? nextItems : products.value.concat(nextItems)
+    productPage.value = Number(result.page || nextPage)
+    productTotal.value = Number(result.total || 0)
+  }).catch(() => {
+    if (reset) { products.value = []; productPage.value = 1; productTotal.value = 0 }
+  }).finally(() => { productsLoading.value = false; productsLoadingMore.value = false })
+}
+function refreshProducts(): void { loadProducts(true) }
+function loadMoreProducts(): void { if (layout.value != 'grid') loadProducts(false) }
+function openProduct(product: Product): void { uni.navigateTo({ url: `/pages/goods/detail?id=${product.id}` }) }
 function goods(id: number): void { uni.navigateTo({ url: `/pages/goods/list?cate_id=${id}` }) }
 function allGoods(): void { uni.navigateTo({ url: '/pages/goods/list' }) }
+function switchTab(url: string): void { uni.switchTab({ url }) }
+function loadDecoration(): void {
+  appRequest('/diy/category', 'GET', null, false).then((data) => {
+    const value = String((data as UTSJSONObject)['layout'] || 'list')
+    if (value == 'grid' || value == 'list' || value == 'card') layout.value = value as CategoryLayout
+    else if (value == 'waterfall') layout.value = 'grid'
+  }).catch(() => { layout.value = 'list' })
+}
 function load(): void {
   loading.value = true
   appRequest('/catalog/categories', 'GET', null, false).then((data) => {
-    categories.value = data as Category[]
+    const list = data as Category[]
+    categories.value = list.length > 0 ? list : demoCategories
     const rootsList = roots()
-    if (rootsList.length > 0 && activeID.value == 0) activeID.value = rootsList[0].id
+    if (rootsList.length > 0 && activeID.value == 0) select(rootsList[0])
   }).catch(() => {
     categories.value = demoCategories
-    activeID.value = demoCategories[0].id
+    select(demoCategories[0])
   }).finally(() => { loading.value = false })
 }
-onShow(() => load())
+onShow(() => { loadDecoration(); load() })
 </script>
 
 <template>
   <view class="category-page">
-    <view class="category-header"><text class="category-header__title">分类</text><view class="category-header__search" @click="allGoods"><text>⌕</text><text>搜索商品</text></view></view>
+    <view class="category-header"><view class="category-header__search" @click="allGoods"><text>⌕</text><text>请输入商品名称</text></view><view class="category-header__actions"><text>•••</text><text class="category-header__line"></text><text>◉</text></view></view>
     <view v-if="loading" class="category-loading">正在加载分类…</view>
     <view v-else-if="roots().length == 0" class="category-empty"><text class="category-empty__title">暂未发布商品分类</text><text class="category-empty__hint">分类由店铺商品发布后同步展示</text><button class="category-empty__button" @click="allGoods">浏览全部商品</button></view>
-    <view v-else class="category-content">
-      <scroll-view class="category-aside" scroll-y><view v-for="category in roots()" :key="category.id" class="category-aside__item" :class="{ 'category-aside__item--active': category.id == activeID }" @click="select(category)"><text>{{ category.name }}</text></view></scroll-view>
-      <scroll-view class="category-main" scroll-y><view class="category-main__head"><text>{{ activeName() }}</text><text @click="goods(activeID)">查看全部 ›</text></view><view v-if="children().length == 0" class="category-main__empty"><text>该分类暂无子分类</text><button @click="goods(activeID)">查看商品</button></view><view v-else class="category-grid"><view v-for="(row, rowIndex) in childRows()" :key="rowIndex" class="category-grid__row"><view v-for="category in row" :key="category.id" class="category-grid__item" @click="goods(category.id)"><view class="category-grid__image"><text>{{ category.name.slice(0, 1) }}</text></view><text>{{ category.name }}</text></view></view></view></scroll-view>
+    <view v-else class="category-screen">
+      <view class="category-root-wrap"><scroll-view class="category-root-rail" :class="{ 'category-root-rail--text': isTextRootLayout() }" scroll-x scroll-with-animation :show-scrollbar="false"><view v-if="isTextRootLayout()" class="category-root-rail__items"><view class="category-root-rail__item category-root-rail__item--recommend" @click="allGoods"><text>推荐</text></view><view v-for="category in roots()" :key="category.id" class="category-root-rail__item" :class="{ 'category-root-rail__item--active': category.id == activeID }" @click="select(category)"><text>{{ category.name }}</text></view></view><view v-else class="category-root-rail__items"><view v-for="category in roots()" :key="category.id" class="category-root-rail__item" :class="{ 'category-root-rail__item--active': category.id == activeID }" @click="select(category)"><image :src="categoryImage(category.id)" mode="aspectFill"></image><text>{{ category.name }}</text></view></view></scroll-view><view v-if="!isTextRootLayout()" class="category-root-all" @click="togglePrimaryCategories"><text>全部</text><text>分类</text></view></view>
+      <view v-if="showAllPrimary && !isTextRootLayout()" class="category-primary-panel"><view v-for="category in roots()" :key="category.id" class="category-primary-panel__item" @click="select(category)"><image :src="categoryImage(category.id)" mode="aspectFill"></image><text>{{ category.name }}</text></view></view>
+      <view class="category-content">
+        <scroll-view class="category-aside" scroll-y><view v-for="category in isTextRootLayout() ? roots() : children()" :key="category.id" class="category-aside__item" :class="{ 'category-aside__item--active': isTextRootLayout() ? category.id == activeID : category.id == activeChildID }" @click="isTextRootLayout() ? select(category) : openChild(category)"><text>{{ category.name }}</text></view></scroll-view>
+        <scroll-view class="category-main" :class="{ 'category-main--card': layout == 'card' }" scroll-y :refresher-enabled="layout != 'grid'" :refresher-triggered="productsLoading" @refresherrefresh="refreshProducts" @scrolltolower="loadMoreProducts" lower-threshold="90"><view class="category-main__head"><text>{{ activeName() }}</text><text v-if="layout == 'grid'" @click="goods(activeID)">查看全部 ›</text><text v-else>第 {{ productPage }} 页</text></view><view v-if="layout == 'grid' && children().length == 0" class="category-main__empty"><text>该分类暂无二级分类</text></view><view v-else-if="layout == 'grid'" class="category-grid"><view v-for="(row, rowIndex) in childRows()" :key="rowIndex" class="category-grid__row"><view v-for="category in row" :key="category.id" class="category-grid__item" @click="goods(category.id)"><image class="category-grid__image" :src="categoryImage(category.id)" mode="aspectFill"></image><text>{{ category.name }}</text></view></view></view><view v-else-if="products.length == 0 && !productsLoading" class="category-main__empty"><text>该二级分类暂无商品</text></view><view v-else-if="layout == 'list'" class="category-list"><view v-for="product in products" :key="product.id" class="category-list__item" @click="openProduct(product)"><image :src="productImage(product)" mode="aspectFill"></image><view><text>{{ productName(product) }}</text><text>品质保障 · 已售 {{ product.sales }}</text><text>¥{{ product.price }}</text></view><text>⌑</text></view></view><view v-else class="category-card"><view v-for="product in products" :key="product.id" class="category-card__product" @click="openProduct(product)"><image :src="productImage(product)" mode="aspectFill"></image><view><text>{{ productName(product) }}</text><text>品质好物 · 已售 {{ product.sales }}</text><view><text>¥{{ product.price }}</text><text>VIP 专享</text></view></view><button>加入购物车</button></view></view><view v-if="productsLoadingMore" class="category-load-more">正在加载更多…</view><view v-else-if="!canLoadMoreProducts() && products.length > 0 && layout != 'grid'" class="category-load-more">没有更多商品了</view></scroll-view>
+      </view>
     </view>
+    <view class="category-tabbar"><view class="category-tabbar__item" @click="switchTab('/pages/index/index')"><text>⌂</text><text>首页</text></view><view class="category-tabbar__item category-tabbar__item--active"><text>▦</text><text>分类</text></view><view class="category-tabbar__item" @click="switchTab('/pages/cart/index')"><text>🛒</text><text>购物车</text></view><view class="category-tabbar__item" @click="switchTab('/pages/user/index')"><text>♙</text><text>我的</text></view></view>
   </view>
 </template>
 
 <style>
-.category-page { height: 100vh; display: flex; flex-direction: column; background-color: #ffffff; }.category-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 16px; padding-left: 15px; padding-right: 15px; box-sizing: content-box; border-bottom: 1px solid #eeeeee; }.category-header__title { color: #1f2329; font-size: 18px; font-weight: 700; }.category-header__search { height: 31px; flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 16px; color: #999999; background-color: #f5f5f5; font-size: 13px; }.category-header__search text:first-child { color: #666666; font-size: 18px; }
-.category-content { min-height: 0; flex: 1; display: flex; }.category-aside { width: 94px; flex-shrink: 0; background-color: #f7f7f7; }.category-aside__item { min-height: 49px; padding: 0 9px; display: flex; align-items: center; justify-content: center; color: #666666; font-size: 14px; text-align: center; }.category-aside__item--active { position: relative; color: #d72828; background-color: #ffffff; font-weight: 700; }.category-aside__item--active::before { position: absolute; left: 0; width: 3px; height: 20px; border-radius: 2px; background-color: #d72828; content: ''; }
-.category-main { min-width: 0; flex: 1; padding: 17px 14px; box-sizing: border-box; }.category-main__head { display: flex; align-items: center; justify-content: space-between; color: #222222; font-size: 16px; font-weight: 700; }.category-main__head text:last-child { color: #999999; font-size: 12px; font-weight: 400; }.category-grid { margin-top: 19px; }.category-grid__row { width: 100%; display: flex; flex-direction: row; }.category-grid__item { width: 0; flex: 1; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; color: #555555; font-size: 12px; }.category-grid__image { width: 54px; height: 54px; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; border-radius: 27px; color: #d72828; background-color: #fff0ee; font-size: 20px; font-weight: 700; }.category-main__empty { padding: 50px 0; display: flex; flex-direction: column; align-items: center; color: #999999; font-size: 13px; }.category-main__empty button, .category-empty__button { margin-top: 13px; color: #d72828; border: 1px solid #d72828; border-radius: 16px; background-color: #ffffff; font-size: 13px; }
+.category-page { height: 100vh; display: flex; flex-direction: column; background-color: #ffffff; }.category-header { height: 44px; padding-top: var(--status-bar-height); display: flex; align-items: center; gap: 10px; padding-left: 15px; padding-right: 15px; box-sizing: content-box; border-bottom: 1px solid #eeeeee; }.category-header__search { height: 31px; flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 16px; color: #aaaaaa; background-color: #f5f5f5; font-size: 13px; }.category-header__search text:first-child { color: #888888; font-size: 18px; }.category-header__actions { width: 66px; height: 29px; border: 1px solid #eeeeee; border-radius: 15px; display: flex; align-items: center; justify-content: space-around; color: #222222; font-size: 12px; font-weight: 700; }.category-header__line { width: 1px; height: 14px; background: #eeeeee; }
+.category-screen { min-height: 0; flex: 1; display: flex; flex-direction: column; }.category-root-rail { height: 100px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #f1f1f1; white-space: nowrap; }.category-root-rail__items { display: flex; padding: 8px 10px 0; }.category-root-rail__item { width: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; color: #555555; font-size: 11px; }.category-root-rail__item image { width: 47px; height: 47px; margin-bottom: 5px; border: 2px solid transparent; border-radius: 50%; background: #f2f2f2; }.category-root-rail__item--active { color: #f24a3d; font-weight: 700; }.category-root-rail__item--active image { border-color: #ff5a4f; }.category-root-rail--text { height: 47px; }.category-root-rail--text .category-root-rail__items { height: 47px; align-items: center; padding: 0 10px; }.category-root-rail--text .category-root-rail__item { width: auto; min-width: 72px; height: 31px; padding: 0 9px; justify-content: center; box-sizing: border-box; }.category-root-rail--text .category-root-rail__item--active { border-left: 3px solid #ff5a4f; }
+.category-content { min-height: 0; flex: 1; display: flex; }.category-aside { width: 94px; flex-shrink: 0; background-color: #f7f7f7; }.category-aside__item { min-height: 49px; padding: 0 9px; display: flex; align-items: center; justify-content: center; color: #666666; font-size: 14px; text-align: center; }.category-aside__item--active { position: relative; color: #f04438; background-color: #ffffff; font-weight: 700; }.category-aside__item--active::before { position: absolute; left: 0; width: 3px; height: 20px; border-radius: 2px; background-color: #ff5a50; content: ''; }
+.category-main { min-width: 0; flex: 1; padding: 17px 14px; box-sizing: border-box; }.category-main__head { display: flex; align-items: center; justify-content: space-between; color: #222222; font-size: 16px; font-weight: 700; }.category-main__head text:last-child { color: #999999; font-size: 12px; font-weight: 400; }.category-grid { margin-top: 19px; }.category-grid__row { width: 100%; display: flex; flex-direction: row; }.category-grid__item { width: 0; flex: 1; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; color: #555555; font-size: 12px; }.category-grid__image { width: 54px; height: 54px; margin-bottom: 7px; border-radius: 8px; background-color: #fff0ee; }.category-list { margin-top: 10px; }.category-list__item { min-height: 82px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f3f3f3; }.category-list__item image { width: 70px; height: 70px; flex-shrink: 0; border-radius: 8px; background: #f7f7f7; }.category-list__item view { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }.category-list__item view text:first-child { overflow: hidden; color: #333333; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }.category-list__item view text:nth-child(2) { color: #ff7368; font-size: 11px; }.category-list__item view text:last-child { color: #ff5147; font-size: 16px; font-weight: 700; }.category-list__item > text:last-child { color: #ff5147; font-size: 22px; }.category-main--card { padding: 12px; }.category-main--card .category-main__head { display: none; }.category-card { display: flex; flex-direction: column; gap: 12px; }.category-card__product { min-height: 192px; padding: 10px; display: flex; flex-direction: column; gap: 9px; border-radius: 10px; background: #fafafa; box-sizing: border-box; }.category-card__product image { width: 100%; height: 103px; border-radius: 8px; background: #f1f3f6; }.category-card__product > view { display: flex; flex-direction: column; gap: 4px; }.category-card__product > view > text:first-child { overflow: hidden; color: #333333; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }.category-card__product > view > text:nth-child(2) { color: #888888; font-size: 11px; }.category-card__product > view > view { display: flex; align-items: center; gap: 8px; }.category-card__product > view > view text:first-child { color: #ff5147; font-size: 17px; font-weight: 700; }.category-card__product > view > view text:last-child { padding: 1px 4px; border-radius: 4px; color: #ffffff; background: #555555; font-size: 9px; }.category-card__product button { align-self: flex-end; margin-top: -31px; padding: 5px 9px; border: 0; border-radius: 13px; color: #ffffff; background: #ff5147; font-size: 11px; }.category-waterfall { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; }.category-waterfall__item { width: calc(50% - 5px); padding-bottom: 10px; overflow: hidden; border-radius: 9px; background: #f8f8f8; }.category-waterfall__item image { width: 100%; height: 128px; background: #f1f1f1; }.category-waterfall__item text { display: block; margin: 7px 8px 0; color: #333333; font-size: 13px; }.category-waterfall__item text:nth-child(3) { margin-top: 3px; color: #999999; font-size: 10px; }.category-waterfall__item text:last-child { color: #ff5147; font-size: 15px; font-weight: 700; }.category-main__empty { padding: 50px 0; display: flex; flex-direction: column; align-items: center; color: #999999; font-size: 13px; }.category-main__empty button, .category-empty__button { margin-top: 13px; color: #d72828; border: 1px solid #d72828; border-radius: 16px; background-color: #ffffff; font-size: 13px; }
 .category-loading, .category-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 14px; }.category-empty__title { color: #555555; font-size: 16px; font-weight: 600; }.category-empty__hint { margin-top: 8px; color: #999999; font-size: 12px; }
+.category-root-wrap { position: relative; flex-shrink: 0; }.category-root-wrap .category-root-rail:not(.category-root-rail--text) .category-root-rail__items { padding-right: 62px; }.category-root-all { position: absolute; top: 8px; right: 0; width: 54px; height: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555555; border-left: 1px solid #eeeeee; background: #ffffff; font-size: 11px; line-height: 17px; }.category-primary-panel { display: flex; flex-wrap: wrap; gap: 8px; padding: 9px 12px; border-bottom: 1px solid #f0f0f0; background: #ffffff; }.category-primary-panel__item { width: calc(33.333% - 6px); height: 29px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; color: #555555; background: #f7f7f7; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.category-root-rail--text .category-root-rail__item--active, .category-root-rail--text .category-root-rail__item--recommend { border-left: 3px solid #ff5a4f; color: #f24a3d; font-weight: 700; }.category-load-more { padding: 14px 0 18px; color: #999999; font-size: 12px; text-align: center; }
+.category-tabbar { height: 56px; padding-bottom: env(safe-area-inset-bottom); display: flex; flex-shrink: 0; border-top: 1px solid #eeeeee; background: #ffffff; }.category-tabbar__item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #4b4b4b; font-size: 10px; }.category-tabbar__item text:first-child { font-size: 22px; line-height: 22px; }.category-tabbar__item--active { color: #ff4d43; }
+.category-root-rail--text .category-root-rail__item--recommend { position: sticky; z-index: 2; left: 0; background: #ffffff; }
+.category-screen { position: relative; }.category-root-rail--text .category-root-rail__items { padding-left: 0; }.category-primary-panel { position: absolute; z-index: 5; top: 100px; right: 0; left: 0; display: flex; gap: 9px 4px; padding: 10px 12px; border-top: 1px solid #eeeeee; border-bottom: 1px solid #e5e5e5; background: #ffffff; box-shadow: 0 8px 16px rgb(15 23 42 / 12%); }.category-primary-panel__item { width: calc(25% - 3px); height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; overflow: hidden; padding: 0; border-radius: 0; background: transparent; font-size: 10px; }.category-primary-panel__item image { width: 38px; height: 38px; border-radius: 50%; background: #f2f2f2; }.category-primary-panel__item text { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
 </style>

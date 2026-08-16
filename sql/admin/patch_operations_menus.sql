@@ -16,15 +16,17 @@ WHERE `id`=110 OR `code`='operations';
 
 -- 二级：叶子 + 页面链接目录
 INSERT INTO `qixi_crm_a_menu` (`id`,`parent_id`,`code`,`title`,`icon`,`route_path`,`kind`,`sort`,`status`) VALUES
-  (111,110,'operations.diy','页面装修','lucide:paintbrush','/setting/diy/list','page',1,1),
-  (800,110,'operations.merchant_diy','店铺模板','lucide:store','/setting/merchant/diyList','page',2,1),
-  (801,110,'operations.product_detail','商品详情','lucide:package','/setting/diy/product_detail','page',3,1),
-  (802,110,'operations.page_config','页面配置','lucide:sliders-horizontal','/setting/system_visualization_data','page',4,1),
-  (803,110,'operations.page_links','页面链接','lucide:link','/setting/page','directory',5,1),
-  (804,110,'operations.material','素材管理','lucide:images','/config/picture','page',6,1),
-  (212,110,'operations.system_form','系统表单','lucide:clipboard-pen','/systemForm/form_list','page',7,1),
-  (805,110,'operations.fab','悬浮菜单','lucide:circle-dot','/setting/fab','page',8,1),
-  (806,110,'operations.product_category','商品分类','lucide:folder-tree','/setting/product_category','page',9,1)
+  (111,110,'operations.diy','首页装修','lucide:house','/setting/diy/list','page',1,1),
+  (806,110,'operations.product_category','分类装修','lucide:folder-tree','/setting/product_category','page',2,1),
+  (811,110,'operations.cart_diy','购物车装修','lucide:shopping-cart','/setting/diy/cart','page',3,1),
+  (812,110,'operations.member_diy','我的装修','lucide:circle-user-round','/setting/diy/personal','page',4,1),
+  (801,110,'operations.product_detail','详情装修','lucide:package','/setting/diy/product_detail','page',5,1),
+  (800,110,'operations.merchant_diy','店铺装修','lucide:store','/setting/merchant/diyList','page',6,1),
+  (802,110,'operations.page_config','页面配置','lucide:sliders-horizontal','/setting/system_visualization_data','page',7,1),
+  (212,110,'operations.system_form','表单配置','lucide:clipboard-pen','/systemForm/form_list','page',8,1),
+  (805,110,'operations.fab','悬浮菜单','lucide:circle-dot','/setting/fab','page',9,1),
+  (803,110,'operations.page_links','页面链接','lucide:link','/setting/page','directory',10,1),
+  (804,110,'operations.material','素材管理','lucide:images','/config/picture','page',11,1)
 ON DUPLICATE KEY UPDATE
   `parent_id`=110,
   `code`=VALUES(`code`),
@@ -58,5 +60,5 @@ INSERT IGNORE INTO `qixi_crm_a_role_menu` (`role_id`,`menu_id`)
 SELECT r.id, m.id
 FROM `qixi_crm_a_role` AS r
 CROSS JOIN `qixi_crm_a_menu` AS m
-WHERE r.code = 'platform'
-  AND m.id IN (110,111,212,800,801,802,803,804,805,806,807,808,809,810);
+WHERE r.code IN ('platform','operations')
+  AND m.id IN (110,111,212,800,801,802,803,804,805,806,807,808,809,810,811,812);

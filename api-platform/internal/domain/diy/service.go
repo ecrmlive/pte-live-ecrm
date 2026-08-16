@@ -30,6 +30,8 @@ type Store interface {
 	CreateLink(ctx context.Context, link *PageLink) error
 	UpdateLink(ctx context.Context, link *PageLink) error
 	DeleteLink(ctx context.Context, id uint) error
+	GetCategoryDecoration(ctx context.Context) (*Page, error)
+	GetProductDetailDecoration(ctx context.Context) (*Page, error)
 }
 
 type Service struct {
@@ -83,6 +85,130 @@ func (s *Service) GetActiveHome(ctx context.Context, merID uint) (*Page, error) 
 	return p, nil
 }
 
+func (s *Service) GetCategoryDecoration(ctx context.Context) (*CategoryDecoration, error) {
+	p, err := s.store.GetCategoryDecoration(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &CategoryDecoration{Layout: "list"}, nil
+		}
+		return nil, err
+	}
+	doc := p.ParseDoc()
+	layout := "list"
+	for _, item := range doc.Items {
+		if item["type"] != "categoryLayout" {
+			continue
+		}
+		if params, ok := item["params"].(map[string]any); ok {
+			if value, ok := params["layout"].(string); ok {
+				if value == "waterfall" {
+					layout = "grid"
+				} else if isCategoryLayout(value) {
+					layout = value
+				}
+			}
+		}
+	}
+	return &CategoryDecoration{Layout: layout}, nil
+}
+
+func (s *Service) SaveCategoryDecoration(ctx context.Context, layout string) (*CategoryDecoration, error) {
+	if !isCategoryLayout(layout) {
+		return nil, ErrBadParam
+	}
+	doc := PageDoc{
+		Page: map[string]any{
+			"type":   "page",
+			"params": map[string]any{"name": "分类装修", "title": "分类装修"},
+		},
+		Items: []map[string]any{{"type": "categoryLayout", "name": "分类布局", "params": map[string]any{"layout": layout}}},
+	}
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	p, err := s.store.GetCategoryDecoration(ctx)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if p == nil {
+		p = &Page{
+			Version: "2.0", Name: CategoryDecorationPageName, Title: "分类装修",
+			TemplateName: "category", Status: 1, IsShow: 1, IsDiy: 0, Value: raw,
+		}
+		if err := s.store.Create(ctx, p); err != nil {
+			return nil, err
+		}
+	} else {
+		p.Value, p.Status, p.IsShow, p.TemplateName = raw, 1, 1, "category"
+		if err := s.store.Update(ctx, p); err != nil {
+			return nil, err
+		}
+	}
+	return &CategoryDecoration{Layout: layout}, nil
+}
+
+func isCategoryLayout(layout string) bool {
+	return layout == "grid" || layout == "list" || layout == "card"
+}
+
+func (s *Service) GetProductDetailDecoration(ctx context.Context) (*ProductDetailDecoration, error) {
+	p, err := s.store.GetProductDetailDecoration(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ProductDetailDecoration{Config: map[string]any{}}, nil
+		}
+		return nil, err
+	}
+	for _, item := range p.ParseDoc().Items {
+		if item["type"] != "productDetailDecoration" {
+			continue
+		}
+		if config, ok := item["params"].(map[string]any); ok {
+			return &ProductDetailDecoration{Config: cloneMap(config)}, nil
+		}
+	}
+	return &ProductDetailDecoration{Config: map[string]any{}}, nil
+}
+
+func (s *Service) SaveProductDetailDecoration(ctx context.Context, config map[string]any) (*ProductDetailDecoration, error) {
+	if config == nil {
+		return nil, ErrBadParam
+	}
+	doc := PageDoc{
+		Page: map[string]any{
+			"type":   "page",
+			"params": map[string]any{"name": "详情装修", "title": "详情装修"},
+		},
+		Items: []map[string]any{{
+			"type": "productDetailDecoration", "name": "商品详情装修", "params": cloneMap(config),
+		}},
+	}
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	p, err := s.store.GetProductDetailDecoration(ctx)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if p == nil {
+		p = &Page{
+			Version: "2.0", Name: ProductDetailDecorationPageName, Title: "详情装修",
+			TemplateName: "product-detail", Status: 1, IsShow: 1, IsDiy: 0, Value: raw,
+		}
+		if err := s.store.Create(ctx, p); err != nil {
+			return nil, err
+		}
+	} else {
+		p.Value, p.Status, p.IsShow, p.TemplateName = raw, 1, 1, "product-detail"
+		if err := s.store.Update(ctx, p); err != nil {
+			return nil, err
+		}
+	}
+	return &ProductDetailDecoration{Config: cloneMap(config)}, nil
+}
+
 func (s *Service) EditorBootstrap(ctx context.Context, id, merID uint) (*EditorBootstrap, error) {
 	defs := loadDefaults()
 	out := &EditorBootstrap{
@@ -103,6 +229,9 @@ func (s *Service) EditorBootstrap(ctx context.Context, id, merID uint) (*EditorB
 	}
 	if p.MerID != merID {
 		return nil, ErrNotFound
+	}
+	if IsSystemDefaultHomePage(p) {
+		return nil, ErrSystemDefaultReadOnly
 	}
 	if p.Doc != nil {
 		out.JSONData = *p.Doc
@@ -178,6 +307,9 @@ func (s *Service) Update(ctx context.Context, id, merID uint, in SaveInput) (*Pa
 	if p.MerID != merID {
 		return nil, ErrNotFound
 	}
+	if IsSystemDefaultHomePage(p) {
+		return nil, ErrSystemDefaultReadOnly
+	}
 	doc, err := resolveDoc(in)
 	if err != nil {
 		return nil, err
@@ -229,6 +361,9 @@ func (s *Service) SetActive(ctx context.Context, id, merID uint) (*Page, error) 
 	}
 	if p.MerID != merID {
 		return nil, ErrNotFound
+	}
+	if IsSystemDefaultHomePage(p) {
+		return nil, ErrSystemDefaultReadOnly
 	}
 	if p.IsDiy == 0 {
 		return nil, ErrBadParam
@@ -310,6 +445,9 @@ func (s *Service) Recovery(ctx context.Context, id, merID uint) (*Page, error) {
 	if p.MerID != merID {
 		return nil, ErrNotFound
 	}
+	if IsSystemDefaultHomePage(p) {
+		return nil, ErrSystemDefaultReadOnly
+	}
 	defs := loadDefaults()
 	doc := PageDoc{Page: cloneMap(defs.DefaultPage), Items: []map[string]any{}}
 	raw, err := marshalDoc(doc)
@@ -331,6 +469,9 @@ func (s *Service) Delete(ctx context.Context, id, merID uint) error {
 	}
 	if p.MerID != merID {
 		return ErrNotFound
+	}
+	if IsSystemDefaultHomePage(p) {
+		return ErrSystemDefaultReadOnly
 	}
 	if p.IsDiy == 1 && p.Status == 1 {
 		return ErrBadParam

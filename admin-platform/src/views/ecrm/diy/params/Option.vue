@@ -1,231 +1,369 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '#/adapter/form';
 
+import { ArrowRight, CloseBold } from '@element-plus/icons-vue';
+import { ElIcon } from 'element-plus';
 import { computed, ref } from 'vue';
+import draggable from 'vuedraggable';
 
-import { diyInput, diySlider } from './shared/schema-helpers';
+import { getShopLinkProductCategoryApi } from '#/api/core/shop-link';
+import DiyLinkPickerDialog from '#/components/shop/diy-link-picker-dialog.vue';
+
+import {
+  diyBgColors,
+  diyColor,
+  diyRadioGroup,
+  diySection,
+  diySlider,
+} from './shared/schema-helpers';
 import { useDiyCurItemForm } from './shared/use-diy-cur-item-form';
-import DiyColorField from './shared/diy-color-field.vue';
 import DiyInputField from './shared/diy-input-field.vue';
-import DiyLinkInputField from './shared/diy-link-input-field.vue';
-import DiySliderField from './shared/diy-slider-field.vue';
 import { useDiyAdapterComponents } from './shared/use-diy-adapter-components';
 import { useDiyEditor } from './shared/use-diy-editor';
 
 defineOptions({ name: 'DiyParamsOption' });
 
-const { PrimaryButton, RadioGroup, Checkbox } = useDiyAdapterComponents();
+type DiyRecord = Record<string, unknown>;
+type OptionDataType = 'category' | 'page';
+
+const { PrimaryButton, RadioGroup } = useDiyAdapterComponents();
 
 const props = defineProps<{
-  curItem: Record<string, unknown>;
-  opts?: unknown;
+  curItem: DiyRecord & {
+    data?: DiyRecord[];
+    params?: DiyRecord;
+    style?: DiyRecord;
+  };
   selectedIndex?: number;
 }>();
 
 const editor = useDiyEditor();
-
-import { getShopLinkProductCategoryApi } from '#/api/core/shop-link';
-import draggable from 'vuedraggable';
-import { resetStyleColors } from './shared/marketing-helpers';
-
 const styleType = ref<'content' | 'style'>('content');
-const loading = ref(true);
-const CategoryList = ref<Array<Record<string, unknown>>>([]);
+const stylePickerVisible = ref(false);
+const categoryLoading = ref(false);
+const categoryList = ref<DiyRecord[]>([]);
+const isLinkset = ref(false);
+const linkIndex = ref(0);
+const linkData = ref<DiyRecord | null>(null);
 
-async function getData() {
-  loading.value = true;
+const tabs = computed<DiyRecord[]>({
+  get: () => props.curItem.data ?? [],
+  set: (value) => {
+    props.curItem.data = value;
+  },
+});
+
+function ensureOptionDefaults(item: DiyRecord) {
+  const params = (item.params ??= {}) as DiyRecord;
+  const style = (item.style ??= {}) as DiyRecord;
+
+  if (!params.type) params.type = '2';
+  if (params.topUp === undefined) params.topUp = '0';
+  if (!style.themeType) style.themeType = 'theme';
+  if (!style.activeColor) style.activeColor = style.active_color1 ?? '#ff4d7d';
+  if (!style.activeText) style.activeText = '#ffffff';
+  if (!style.background) style.background = 'rgba(255, 255, 255, 0)';
+  if (!style.bgcolor) style.bgcolor = '#ffffff';
+  if (style.float === undefined) style.float = 0;
+  if (style.marginTop === undefined) style.marginTop = 0;
+  if (style.paddingTop === undefined) style.paddingTop = 0;
+  if (style.paddingBottom === undefined) style.paddingBottom = 0;
+  if (style.paddingLeft === undefined) style.paddingLeft = 0;
+  if (style.paddingRight === undefined) style.paddingRight = style.paddingLeft;
+  if (!style.radiusMode) style.radiusMode = 'all';
+  if (style.radius === undefined) style.radius = style.topRadio ?? 0;
+  if (style.topLeftRadius === undefined) style.topLeftRadius = style.radius;
+  if (style.topRightRadius === undefined) style.topRightRadius = style.radius;
+  if (style.bottomRightRadius === undefined) style.bottomRightRadius = style.bottomRadio ?? style.radius;
+  if (style.bottomLeftRadius === undefined) style.bottomLeftRadius = style.bottomRadio ?? style.radius;
+  if (!style.shadow) style.shadow = 'off';
+
+  if (!Array.isArray(item.data) || item.data.length === 0) {
+    item.data = [
+      {
+        dataType: 'page',
+        linkName: '微页面',
+        linkUrl: '/pages/index/index',
+        text: '首页',
+      },
+    ];
+  }
+
+  item.data.forEach((tab) => {
+    if (!tab.dataType) tab.dataType = tab.category_id ? 'category' : 'page';
+    if (!tab.text) tab.text = '选项卡';
+    if (tab.dataType === 'page' && !tab.linkName) tab.linkName = tab.name ?? '选择微页面';
+  });
+}
+
+async function loadCategories() {
+  if (categoryList.value.length > 0 || categoryLoading.value) return;
+  categoryLoading.value = true;
   try {
-    const res = await getShopLinkProductCategoryApi();
-    CategoryList.value = res.list ?? [];
+    const response = await getShopLinkProductCategoryApi();
+    categoryList.value = response.list ?? [];
   } finally {
-    loading.value = false;
+    categoryLoading.value = false;
   }
 }
 
-function changeCategory(_e: unknown, index: number, cascaderRef: { getCheckedNodes: () => Array<{ data: { category_id: number; name: string } }> }) {
-  const item = cascaderRef.getCheckedNodes();
-  const row = (props.curItem.data as Array<Record<string, unknown>>)[index];
-  row.name = item[0]?.data.name;
-  row.category_id = item[0]?.data.category_id;
+function selectedStyleLabel() {
+  const type = String(props.curItem.params?.type ?? '2');
+  return type === '1' ? '样式一' : type === '3' ? '样式三' : '样式二';
 }
 
-function ResetColor(titleColor1: string, titleColor2?: string) {
-  resetStyleColors(editor, props.curItem, titleColor1, titleColor2);
+function addTab() {
+  tabs.value.push({
+    dataType: 'page',
+    linkName: '选择微页面',
+    linkUrl: '',
+    text: '选项卡',
+  });
 }
 
-void getData();
+function changeLink(index: number) {
+  isLinkset.value = true;
+  linkIndex.value = index;
+  linkData.value = tabs.value[index] ?? null;
+}
 
+function closeLinkset(value: { name?: string; type?: string; url?: string } | null) {
+  isLinkset.value = false;
+  const tab = tabs.value[linkIndex.value];
+  if (!value || !tab) return;
+  tab.linkeType = value.type;
+  tab.linkName = value.name;
+  tab.linkUrl = value.url;
+}
 
-const schema = computed((): VbenFormSchema[] => [
-  { component: 'Input', fieldName: 'params.data', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'params.topUp', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'params.type', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.activeText', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.active_color1', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.active_color2', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.background', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.bgcolor_color1', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.bgcolor_color2', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.bottomRadio', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.marginTop', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.paddingBottom', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.paddingLeft', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.paddingTop', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.themeType', hideLabel: true, formItemClass: 'hidden' },
-  { component: 'Input', fieldName: 'style.topRadio', hideLabel: true, formItemClass: 'hidden' },
+function findCategory(nodes: DiyRecord[], target: unknown): DiyRecord | undefined {
+  for (const node of nodes) {
+    if (String(node.category_id) === String(target)) return node;
+    const nested = Array.isArray(node.child) ? (node.child as DiyRecord[]) : [];
+    const match = findCategory(nested, target);
+    if (match) return match;
+  }
+}
+
+function changeCategory(value: unknown, index: number) {
+  const tab = tabs.value[index];
+  if (!tab) return;
+  const category = findCategory(categoryList.value, value);
+  tab.category_id = value as string | number;
+  tab.categoryName = category?.name ?? '';
+}
+
+function changeDataType(tab: DiyRecord, value: OptionDataType) {
+  tab.dataType = value;
+  if (value === 'page') {
+    tab.category_id = undefined;
+    tab.categoryName = undefined;
+  } else {
+    tab.linkUrl = undefined;
+    tab.linkName = undefined;
+  }
+}
+
+const contentSchema = computed((): VbenFormSchema[] => [
+  diySection('展示设置'),
+  diyRadioGroup(
+    'params.topUp',
+    '滑动置顶：',
+    [
+      { label: '启用', value: '1' },
+      { label: '不启用', value: '0' },
+    ],
+  ),
 ]);
 
-const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["params.data","params.topUp","params.type","style.activeText","style.active_color1","style.active_color2","style.background","style.bgcolor_color1","style.bgcolor_color2","style.bottomRadio","style.marginTop","style.paddingBottom","style.paddingLeft","style.paddingTop","style.themeType","style.topRadio"] });
+const styleSchema = computed((): VbenFormSchema[] => {
+  const style = props.curItem.style ?? {};
+  return [
+    diySection('选项卡样式'),
+    diyRadioGroup(
+      'style.themeType',
+      '色调：',
+      [
+        { label: '跟随主题风格', value: 'theme' },
+        { label: '自定义', value: 'custom' },
+      ],
+    ),
+    ...(style.themeType === 'custom'
+      ? [
+          diyColor('style.activeColor', '选中颜色：', '#ff4d7d'),
+          diyColor('style.activeText', '选中文字：', '#ffffff'),
+        ]
+      : []),
+    diySection('卡片样式'),
+    diySlider('style.float', '组件上浮：', { max: 48, min: 0 }),
+    ...diyBgColors('rgba(255, 255, 255, 0)', '#ffffff'),
+    diySlider('style.paddingTop', '上边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingBottom', '下边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingLeft', '左右边距：', { max: 48, min: 0 }),
+    diySlider('style.marginTop', '页面上间距：', { max: 96, min: 0 }),
+    diyRadioGroup(
+      'style.radiusMode',
+      '背景圆角：',
+      [
+        { label: '全部', value: 'all' },
+        { label: '分别设置', value: 'individual' },
+      ],
+      true,
+    ),
+    ...(style.radiusMode === 'individual'
+      ? [
+          diySlider('style.topLeftRadius', '左上圆角：', { max: 48, min: 0 }),
+          diySlider('style.topRightRadius', '右上圆角：', { max: 48, min: 0 }),
+          diySlider('style.bottomRightRadius', '右下圆角：', { max: 48, min: 0 }),
+          diySlider('style.bottomLeftRadius', '左下圆角：', { max: 48, min: 0 }),
+        ]
+      : [diySlider('style.radius', '圆角值：', { max: 48, min: 0 })]),
+    diyRadioGroup(
+      'style.shadow',
+      '开启阴影：',
+      [
+        { label: '关闭', value: 'off' },
+        { label: '开启', value: 'on' },
+      ],
+    ),
+  ];
+});
+
+const { Form: ContentForm } = useDiyCurItemForm(() => props.curItem, contentSchema, {
+  onInit: ensureOptionDefaults,
+});
+const { Form: StyleForm } = useDiyCurItemForm(() => props.curItem, styleSchema, {
+  onInit: ensureOptionDefaults,
+});
+
+void loadCategories();
 </script>
 
 <template>
-	<div>
-		<div class="diy-vben-params">
-		<Form class="hidden" />
-			<div class="common-form common-form-new">
-				<span>{{ curItem.name }}</span>
-				<div class="diy-changes">
-					<div class="diy-change" :class="{active:styleType == 'content'}" @click="styleType = 'content'">内容
-					</div>
-					<div class="diy-change" :class="{active:styleType == 'style'}" @click="styleType = 'style'">样式</div>
-				</div>
-			</div>
-			<div v-if="styleType == 'content'">
-				<div class="f16 gray3 form-subtitle">展示设置</div>
-				<!--选择风格-->
-				<div class="form-vben-item" label="选择风格：">
-					<component :is="RadioGroup" v-model="curItem.params.type">
-						<el-radio label="1">风格一</el-radio>
-						<el-radio label="2"> 风格二</el-radio>
-						<el-radio label="3">风格三</el-radio>
-					</component>
-				</div>
-				<!-- <div class="form-vben-item" label="滑动置顶：">
-					<component :is="RadioGroup" v-model="curItem.params.topUp">
-						<el-radio label="1">开启</el-radio>
-						<el-radio label="0">关闭</el-radio>
-					</component>
-				</div> -->
-				<div class="form-chink"></div>
-				<div class="f16 gray3 form-subtitle">
-					选项卡设置
-					<span class="gray f12">鼠标拖拽版块可调整选项卡顺序</span>
-				</div>
-				<template v-if="curItem.data && curItem.data.length > 0">
-					<draggable v-model="curItem.data" group="people" item-key="index" class="draggable-list">
-						<template #item="{ element,index }">
-							<div class="d-c-c param-img-item navbar" v-if="index!=0">
-								<div class="right">
-									<el-icon class="el-icon-DeleteFilled"
-										@click="editor.onEditorDeleleData(index, selectedIndex)">
-										<CloseBold />
-									</el-icon>
-									<div class="url-box mb16 flex-1 d-s-c ww100">
-										<span class="key-name">显示文字</span>
-										<DiyInputField maxlength="6" show-word-limit v-model="element.text"></DiyInputField>
-									</div>
-									<div class="d-s-c  ww100">
-										<div class="url-box flex-1 d-s-c">
-											<span class="key-name">商品分类</span>
-											<el-cascader class="ww100" v-model="element.currCategory"
-												:ref="'cascader'+index" :options="CategoryList"
-												:props="{ checkStrictly: true, children: 'child', value: 'category_id', label: 'name' }"
-												@change="changeCategory($event,index)"></el-cascader>
-										</div>
-									</div>
-								</div>
-							</div>
-						</template>
-					</draggable>
-				</template>
-				<div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="editor.onEditorAddData">+新增</component>
-				</div>
-			</div>
-			<div v-if="styleType == 'style'">
-				<div class="f16 gray3 form-subtitle">
-					选项卡样式
-				</div>
-				<!--色调-->
-				<!-- <div class="form-vben-item" label="色调：">
-					<component :is="RadioGroup" v-model="curItem.style.themeType">
-						<el-radio label="theme">跟随主题</el-radio>
-						<el-radio label="custom">自定义</el-radio>
-					</component>
-				</div> -->
-				<div class="form-item">
-					<div class="form-label">装饰元素：</div>
-					<div class="flex-1 d-s-c" style="height: 36px;">
-						<DiyInputField class="ml10" v-model="curItem.style.active_color1" placeholder="透明" />
-						<DiyInputField v-if="curItem.params.type!=3" class="ml10" v-model="curItem.style.active_color2"
-							placeholder="透明" />
-						<component :is="PrimaryButton" link type="primary" style="margin-left: 10px;"  @click.stop="ResetColor('active_color1', 'active_color2')">重置</component>
-					</div>
-				</div>
-				<div class="form-item">
-					<div class="form-label">选中文字：</div>
-					<div class="flex-1 d-s-c" style="height: 36px;">
-						<DiyColorField v-model="curItem.style.activeText" default-color="#ffffff" />
-					</div>
-				</div>
-				<div class="form-chink"></div>
-				<div class="f16 gray3 form-subtitle">
-					通用样式
-				</div>
-				<div class="form-item">
-					<div class="form-label">组件背景：</div>
-					<div class="flex-1 d-s-c" style="height: 36px;">
-						<DiyInputField class="ml10" v-model="curItem.style.bgcolor_color1" placeholder="透明" />
-						<DiyInputField class="ml10" v-model="curItem.style.bgcolor_color2" placeholder="透明" />
-						<component :is="PrimaryButton" link type="primary" style="margin-left: 10px;"
-							 @click.stop="ResetColor('bgcolor_color1', 'bgcolor_color2')">重置</component>
-					</div>
-				</div>
-				<div class="form-item">
-					<div class="form-label">底部背景：</div>
-					<div class="flex-1 d-s-c" style="height: 36px;">
-						<DiyColorField v-model="curItem.style.background" default-color="#ffffff" />
-					</div>
-				</div>
-				<!--上下边距-->
-				<div class="form-item">
-					<div class="form-label">上边距：</div>
-					<DiySliderField v-model="curItem.style.paddingTop" size="small" show-input :show-input-controls="false"
-						input-size="small"></DiySliderField>
-				</div>
-				<!--上下边距-->
-				<div class="form-item">
-					<div class="form-label">下边距：</div>
-					<DiySliderField v-model="curItem.style.paddingBottom" size="small" show-input
-						:show-input-controls="false" input-size="small"></DiySliderField>
-				</div>
-				<!--左右边距-->
-				<div class="form-item">
-					<div class="form-label">左右边距：</div>
-					<DiySliderField v-model="curItem.style.paddingLeft" size="small" show-input :show-input-controls="false"
-						input-size="small"></DiySliderField>
-				</div>
-				<!--页面上间距:-->
-				<div class="form-item">
-					<div class="form-label">页面上间距：</div>
-					<DiySliderField v-model="curItem.style.marginTop" size="small" show-input :show-input-controls="false"
-						input-size="small"></DiySliderField>
-				</div>
-				<!--上圆角-->
-				<div class="form-item">
-					<div class="form-label">上圆角：</div>
-					<DiySliderField v-model="curItem.style.topRadio" size="small" show-input :show-input-controls="false"
-						input-size="small"></DiySliderField>
-				</div>
-				<!--下圆角-->
-				<div class="form-item">
-					<div class="form-label">下圆角：</div>
-					<DiySliderField v-model="curItem.style.bottomRadio" size="small" show-input :show-input-controls="false"
-						input-size="small"></DiySliderField>
-				</div>
-			</div>
+  <div>
+    <div class="common-form common-form-new">
+      <span>{{ curItem.name }}</span>
+      <div class="diy-changes">
+        <div class="diy-change" :class="{ active: styleType === 'content' }" @click="styleType = 'content'">
+          内容
+        </div>
+        <div class="diy-change" :class="{ active: styleType === 'style' }" @click="styleType = 'style'">
+          样式
+        </div>
+      </div>
+    </div>
 
-		</div>
-	</div>
+    <div v-show="styleType === 'content'">
+      <ContentForm />
+      <div class="form-vben-item option-style-picker" label="选择风格：">
+        <component :is="PrimaryButton" plain size="small" @click="stylePickerVisible = !stylePickerVisible">
+          修改风格
+        </component>
+        <span class="option-style-picker__current">当前：{{ selectedStyleLabel() }}</span>
+      </div>
+      <div v-if="stylePickerVisible" class="form-vben-item" label="风格样式：">
+        <component :is="RadioGroup" v-model="curItem.params!.type">
+          <el-radio label="1">样式一</el-radio>
+          <el-radio label="2">样式二</el-radio>
+          <el-radio label="3">样式三</el-radio>
+        </component>
+      </div>
+
+      <div class="form-chink"></div>
+      <div class="f16 gray3 form-subtitle">
+        选项卡设置
+        <span class="gray f12">鼠标拖拽版块可调整选项卡顺序</span>
+      </div>
+      <draggable v-model="tabs" class="draggable-list" group="option-tabs" item-key="index">
+        <template #item="{ element, index }">
+          <div class="d-c-c param-img-item option-tab-item">
+            <div class="right pr">
+              <ElIcon
+                class="el-icon-DeleteFilled"
+                @click.stop="editor.onEditorDeleleData(index, selectedIndex ?? 0)"
+              >
+                <CloseBold />
+              </ElIcon>
+              <div class="url-box mb16 flex-1 d-s-c ww100">
+                <span class="key-name">显示文字</span>
+                <DiyInputField v-model="element.text" maxlength="6" show-word-limit />
+              </div>
+              <div class="url-box mb16 flex-1 d-s-c ww100">
+                <span class="key-name">数据类型</span>
+                <component
+                  :is="RadioGroup"
+                  :model-value="element.dataType"
+                  @update:model-value="changeDataType(element, $event as OptionDataType)"
+                >
+                  <el-radio label="page">微页面</el-radio>
+                  <el-radio label="category">商品分类</el-radio>
+                </component>
+              </div>
+              <div v-if="element.dataType === 'page'" class="url-box flex-1 d-s-c ww100">
+                <span class="key-name">微页面</span>
+                <DiyInputField :model-value="String(element.linkName ?? element.linkUrl ?? '')" readonly>
+                  <template #suffix>
+                    <ElIcon color="#98a2b3" size="16px" @click.stop="changeLink(index)">
+                      <ArrowRight />
+                    </ElIcon>
+                  </template>
+                </DiyInputField>
+              </div>
+              <div v-else class="url-box flex-1 d-s-c ww100">
+                <span class="key-name">商品分类</span>
+                <el-cascader
+                  v-model="element.category_id"
+                  class="ww100"
+                  clearable
+                  :loading="categoryLoading"
+                  :options="categoryList"
+                  :props="{
+                    checkStrictly: true,
+                    children: 'child',
+                    emitPath: false,
+                    label: 'name',
+                    value: 'category_id',
+                  }"
+                  @change="changeCategory($event, index)"
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+      </draggable>
+      <div class="d-c-c pb16">
+        <component :is="PrimaryButton" plain @click="addTab">+ 添加选项卡</component>
+      </div>
+    </div>
+
+    <div v-show="styleType === 'style'">
+      <StyleForm />
+    </div>
+
+    <DiyLinkPickerDialog
+      v-if="isLinkset"
+      :is_linkset="isLinkset"
+      :link-data="linkData"
+      @close-dialog="closeLinkset"
+    >
+      选择微页面
+    </DiyLinkPickerDialog>
+  </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.option-style-picker {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.option-style-picker__current {
+  color: #98a2b3;
+  font-size: 13px;
+}
+
+.option-tab-item {
+  margin-bottom: 16px;
+}
+</style>

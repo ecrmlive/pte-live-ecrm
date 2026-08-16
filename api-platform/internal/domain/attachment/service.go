@@ -17,10 +17,11 @@ type Store interface {
 	GetCategory(ctx context.Context, id uint) (*Category, error)
 	GetCategoryByEnname(ctx context.Context, merID uint, enname string) (*Category, error)
 
-	List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) ([]Attachment, int64, error)
+	List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, keyword string, page, limit int) ([]Attachment, int64, error)
 	Get(ctx context.Context, id uint) (*Attachment, error)
 	Create(ctx context.Context, a *Attachment) error
 	Delete(ctx context.Context, id uint, userType int) error
+	Move(ctx context.Context, ids []uint, userType int, categoryID uint) error
 }
 
 type Service struct{ store Store }
@@ -166,18 +167,46 @@ func (s *Service) DeleteCategory(ctx context.Context, merID, id uint) error {
 	return s.store.DeleteCategory(ctx, id, merID)
 }
 
-func (s *Service) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) (*PageResult[Attachment], error) {
+func (s *Service) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, keyword string, page, limit int) (*PageResult[Attachment], error) {
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	list, total, err := s.store.List(ctx, userType, cateID, systemOnly, attachmentType, page, limit)
+	list, total, err := s.store.List(ctx, userType, cateID, systemOnly, attachmentType, strings.TrimSpace(keyword), page, limit)
 	if err != nil {
 		return nil, err
 	}
 	return &PageResult[Attachment]{List: list, Total: total, Page: page, Limit: limit}, nil
+}
+
+// Move 将同一素材库中的普通素材批量归类。系统预置素材必须保留在固定分类内。
+func (s *Service) Move(ctx context.Context, userType int, ids []uint, categoryID uint) error {
+	if len(ids) == 0 || categoryID == 0 {
+		return ErrBadParam
+	}
+	category, err := s.store.GetCategory(ctx, categoryID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	wantMerID := uint(0)
+	if userType > 0 {
+		wantMerID = uint(userType)
+	}
+	if category.MerID != wantMerID {
+		return ErrForbidden
+	}
+	if err := s.store.Move(ctx, ids, userType, categoryID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) CreateFile(ctx context.Context, userType int, userID, cateID uint, name, src string, attachmentType int8, isSystem bool) (*Attachment, error) {

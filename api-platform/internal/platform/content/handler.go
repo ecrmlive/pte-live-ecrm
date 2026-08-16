@@ -98,6 +98,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	integralManage := middleware.RequireAdminMenu(h.adminDB, "marketing.integral.config")
 	r.GET("/setting/integral", integralSetting, integralManage, h.GetIntegral)
 	r.PUT("/setting/integral", integralSetting, integralManage, h.SaveIntegral)
+	visualizationSetting := middleware.RequireAdminRoles("platform", "operations")
+	visualizationManage := middleware.RequireAdminMenu(h.adminDB, "operations.diy.manage")
+	r.GET("/setting/page-visualization", visualizationSetting, visualizationManage, h.GetPageVisualization)
+	r.PUT("/setting/page-visualization", visualizationSetting, visualizationManage, h.SavePageVisualization)
 	balanceSetting := middleware.RequireAdminRoles("platform", "operations")
 	balanceRead := middleware.RequireAdminMenu(h.adminDB, "marketing.balance.settings.read")
 	balanceManage := middleware.RequireAdminMenu(h.adminDB, "marketing.balance.settings.manage")
@@ -503,6 +507,14 @@ func (h *Handler) GetIntegral(c *gin.Context) {
 
 func (h *Handler) SaveIntegral(c *gin.Context) {
 	h.saveJSONSetting(c, h.svc.SaveIntegralConfig)
+}
+
+func (h *Handler) GetPageVisualization(c *gin.Context) {
+	h.getJSONSetting(c, h.svc.GetPageVisualizationConfig, "首页轮播、连续签到、积分范围与开屏广告配置")
+}
+
+func (h *Handler) SavePageVisualization(c *gin.Context) {
+	h.saveJSONSetting(c, h.svc.SavePageVisualizationConfig)
 }
 
 func (h *Handler) GetBalance(c *gin.Context) {

@@ -6,6 +6,9 @@ export function changeSeckillColumn(
   curItem: Record<string, unknown>,
   column: number,
 ) {
+  const params = (curItem.params as Record<string, unknown>) || {};
+  params.column = column;
+  curItem.params = params;
   const config = {
     linePrice: 1,
     productName: 1,
@@ -35,45 +38,35 @@ export function changeProductColumn(
   curItem: Record<string, unknown>,
   column: number,
 ) {
-  const params = curItem.params as Record<string, unknown>;
-  const style = curItem.style as Record<string, unknown>;
+  const params = (curItem.params ?? {}) as Record<string, unknown>;
+  const style = (curItem.style ?? {}) as Record<string, unknown>;
+  curItem.params = params;
+  curItem.style = style;
   params.column = column;
   style.column = column;
 
-  const config = {
+  const defaults = {
+    cartAction: 'detail',
+    cartType: 2,
     comment: 1,
+    filterVisible: 0,
     linePrice: 1,
+    memberPrice: 1,
+    productComment: 1,
+    productLabel: 1,
     productName: 1,
     productPrice: 1,
     productSales: 1,
+    productScore: 1,
     showCart: 1,
+    storeDistance: 1,
   };
-  switch (column) {
-    case 2: {
-      config.comment = 0;
-      break;
-    }
-    case 3: {
-      config.comment = 0;
-      config.linePrice = 0;
-      config.productSales = 0;
-      break;
-    }
-    case 4: {
-      config.comment = 0;
-      config.linePrice = 0;
-      config.productSales = 0;
-      config.showCart = 0;
-      break;
-    }
-    case 6: {
-      config.comment = 0;
-      config.linePrice = 0;
-      config.productSales = 0;
-      break;
+
+  for (const [key, value] of Object.entries(defaults)) {
+    if (params[key] === undefined || params[key] === null) {
+      params[key] = value;
     }
   }
-  Object.assign(curItem.params as Record<string, unknown>, config);
 }
 
 export function resetStyleColors(
@@ -124,7 +117,10 @@ export function resolveMarketingPreviewProducts(
       product_image: '',
       product_name: '此处是商品',
     };
-  return Array.from({ length: showNum }, (_, index) => data[index] ?? { ...template });
+  return Array.from(
+    { length: showNum },
+    (_, index) => data[index] ?? defaultData[index] ?? { ...template },
+  );
 }
 
 /** Editor preview: auto/choice source lists with params.auto.showNum. */
@@ -160,9 +156,14 @@ export function resolveProductPreviewProducts(
   return resolveAutoSourcePreviewItems(item, {
     image: '',
     line_price: 0,
+    member_price: '89.00',
+    product_comment: 12,
+    product_label: '精选',
     product_name: '此处是商品',
     product_price: '99.00',
+    product_score: '5.0',
     product_sales: 0,
+    store_distance: '1.2km',
   });
 }
 

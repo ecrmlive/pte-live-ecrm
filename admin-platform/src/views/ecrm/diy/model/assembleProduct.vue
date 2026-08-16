@@ -12,11 +12,14 @@
 		}">
 		<div class="diy-product o-h" :style="borderStyle">
 			<div class="diy-head d-b-c" :style="{
-					background:item.params.titleBgType == 2?`linear-gradient(to right, ${item.style.titleBg_color1 || '#fff'}, ${item.style.titleBg_color2 || '#fff'})` :'url(' + item.params.bgimage + ')'
+					background:item.params.titleBgType == 2?`linear-gradient(to right, ${item.style.titleBg_color1 || '#fff'}, ${item.style.titleBg_color2 || '#fff'})` :'url(' + item.params.bgimage + ')',
+					backgroundPosition: 'center',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: '100% 100%'
 				}">
 				<div class="left d-s-c">
 					<div v-if="item.params.titleType == 1" class="name" :style="{
-							color: themeColor,
+							color: item.style.titleColor || themeColor,
 							fontSize: item.style.titleSize + 'px',
 							fontWeight:item.style.titleWeight == 1?'bold':'',
 							fontStyle:item.style.titleWeight == 2?'italic':''
@@ -26,7 +29,9 @@
 					<img v-if="item.params.titleType == 2" class="titleImgt" :src="item.params.titleimage" alt="" />
 				</div>
 				<div class="right white d-c-c" style="line-height: 1;" :style="{
-						color: themeColor,
+						color: item.style.moreColor || themeColor,
+						borderLeft: item.params.title && item.params.more ? `1px solid ${item.style.dividerColor || '#DDDDDD'}` : '',
+						paddingLeft: item.params.title && item.params.more ? '8px' : '',
 						fontSize: item.style.moreSize + 'px'
 					}">
 					{{ item.params.more }}
@@ -81,7 +86,7 @@
 								<div v-if="productFlags.product_btn && (productColumn == 1 || productColumn == 2)"
 									class="cart-btn"
 									:style="{color:item.style.btn_text_color,backgroundImage: 'linear-gradient(to right, ' + (item.style.productBtn_color1 || '#fff') + ', ' + (item.style.productBtn_color2 || '#fff') + ')'}">
-									<span class="cart-text">去开团</span>
+									<span class="cart-text">{{ item.params.btntext || '去开团' }}</span>
 								</div>
 							</div>
 						</div>

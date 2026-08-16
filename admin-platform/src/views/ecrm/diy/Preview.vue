@@ -1,12 +1,15 @@
 <template>
 	<DevicePreviewFrame
+		:device="compact ? 'ios' : undefined"
 		:title="previewTitle"
-		:show-back="true"
+		nav-mode="location-search"
+		:show-back="!compact"
+		:show-device-switcher="!compact"
 		:side-gutter="0"
 	>
 	<div class="diy-phone-container">
 		<div class="wrapper">
-			<div class="diy-phone-item" v-for="(item, index) in diyData.items" :key="item.id">
+			<div class="diy-phone-item" v-for="(item, index) in diyData.items" :key="item._diyUid || item.id || index">
 				<!-- 搜索栏 -->
 				<template v-if="item.type == 'search'">
 					<Search :item="item" :index="index" :selectedIndex="form.selectedIndex"></Search>
@@ -24,9 +27,19 @@
 					<Window :item="item" :index="index" :selectedIndex="form.selectedIndex"></Window>
 				</template>
 				<!--热区-->
-				<template v-if="item.type == 'hotspot'">
-					<Hotspot :item="item" :selectedIndex="form.selectedIndex"></Hotspot>
-				</template>
+			<template v-if="item.type == 'hotspot'">
+				<Hotspot :item="item" :selectedIndex="form.selectedIndex"></Hotspot>
+			</template>
+			<!--折扣组-->
+			<template v-else-if="item.type == 'discountGroup'">
+				<DiscountGroup :item="item" :selectedIndex="form.selectedIndex"></DiscountGroup>
+			</template>
+			<template v-else-if="item.type == 'ranking'">
+				<Ranking :item="item" :index="index" :selectedIndex="form.selectedIndex"></Ranking>
+			</template>
+			<template v-else-if="item.type == 'community'">
+				<Community :item="item" :index="index" :selectedIndex="form.selectedIndex"></Community>
+			</template>
 				<!-- 视频组-->
 				<template v-else-if="item.type == 'video'">
 					<Video :item="item" :index="index" :selectedIndex="form.selectedIndex"></Video>
@@ -46,6 +59,17 @@
 				<!--导航组-->
 				<template v-else-if="item.type == 'navBar'">
 					<NavBar :item="item" :index="index" :selectedIndex="form.selectedIndex"></NavBar>
+				</template>
+				<template v-else-if="item.type == 'bottomNav'">
+					<BottomNav :item="item" :index="index" :selectedIndex="form.selectedIndex"></BottomNav>
+				</template>
+				<!--首页组合专区-->
+				<template v-else-if="item.type == 'homeFeatureArea'">
+					<HomeFeatureArea :item="item" :index="index" :selectedIndex="form.selectedIndex"></HomeFeatureArea>
+				</template>
+				<!--首页营销模块-->
+				<template v-else-if="item.type == 'homeMarketingSection'">
+					<HomeMarketingSection :item="item" :index="index" :selectedIndex="form.selectedIndex"></HomeMarketingSection>
 				</template>
 				<!--商品组-->
 				<template v-else-if="item.type == 'product'">
@@ -142,11 +166,17 @@
 	import ImageSingle from './model/ImageSingle.vue';
 	import Window from './model/Window.vue';
 	import Hotspot from './model/Hotspot.vue';
+	import DiscountGroup from './model/DiscountGroup.vue';
+	import Ranking from './model/Ranking.vue';
+	import Community from './model/Community.vue';
 	import Video from './model/Video.vue';
 	import Articleindex from './model/Article.vue';
 	import Special from './model/Special.vue';
 	import Notice from './model/Notice.vue';
 	import NavBar from './model/NavBar.vue';
+	import BottomNav from './model/BottomNav.vue';
+	import HomeFeatureArea from './model/HomeFeatureArea.vue';
+	import HomeMarketingSection from './model/HomeMarketingSection.vue';
 	import ProductIndex from './model/Product.vue';
 	import Coupon from './model/Coupon.vue';
 	import Store from './model/Store.vue';
@@ -181,6 +211,9 @@
 			Window,
 			/*热区*/
 			Hotspot,
+			DiscountGroup,
+			Ranking,
+			Community,
 			/*视频*/
 			Video,
 			/*文章*/
@@ -191,6 +224,9 @@
 			Notice,
 			/*导航组*/
 			NavBar,
+			BottomNav,
+			HomeFeatureArea,
+			HomeMarketingSection,
 			/*商品组*/
 			ProductIndex,
 			/*优惠券*/
@@ -231,6 +267,10 @@
 			return {};
 		},
 		props: {
+			compact: {
+				type: Boolean,
+				default: false
+			},
 			form: Object,
 			defaultData: Object,
 			diyData: Object,

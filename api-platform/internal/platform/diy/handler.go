@@ -28,6 +28,10 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/diy/pages/:id", h.Get)
 	r.GET("/diy/editor/bootstrap", h.Bootstrap)
 	r.GET("/diy/editor/bootstrap/:id", h.Bootstrap)
+	r.GET("/diy/category-decoration", h.GetCategoryDecoration)
+	r.PUT("/diy/category-decoration", write, manage, h.SaveCategoryDecoration)
+	r.GET("/diy/product-detail-decoration", h.GetProductDetailDecoration)
+	r.PUT("/diy/product-detail-decoration", write, manage, h.SaveProductDetailDecoration)
 	r.POST("/diy/pages", write, manage, h.Create)
 	r.PUT("/diy/pages/:id", write, manage, h.Update)
 	r.POST("/diy/pages/:id/active", write, manage, h.SetActive)
@@ -42,6 +46,52 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.POST("/diy/page-links", write, manage, h.CreateLink)
 	r.PUT("/diy/page-links/:id", write, manage, h.UpdateLink)
 	r.DELETE("/diy/page-links/:id", write, manage, h.DeleteLink)
+}
+
+func (h *Handler) GetCategoryDecoration(c *gin.Context) {
+	decoration, err := h.svc.GetCategoryDecoration(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询分类装修失败")
+		return
+	}
+	response.OK(c, decoration)
+}
+
+func (h *Handler) SaveCategoryDecoration(c *gin.Context) {
+	var input diy.CategoryDecoration
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	decoration, err := h.svc.SaveCategoryDecoration(c.Request.Context(), input.Layout)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, decoration)
+}
+
+func (h *Handler) GetProductDetailDecoration(c *gin.Context) {
+	decoration, err := h.svc.GetProductDetailDecoration(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询详情装修失败")
+		return
+	}
+	response.OK(c, decoration)
+}
+
+func (h *Handler) SaveProductDetailDecoration(c *gin.Context) {
+	var input diy.ProductDetailDecoration
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	decoration, err := h.svc.SaveProductDetailDecoration(c.Request.Context(), input.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, decoration)
 }
 
 func platformLinkScope(c *gin.Context) int8 {
@@ -276,7 +326,7 @@ func writeErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, diy.ErrNotFound):
 		response.Fail(c, http.StatusNotFound, err.Error())
-	case errors.Is(err, diy.ErrBadParam):
+	case errors.Is(err, diy.ErrBadParam), errors.Is(err, diy.ErrSystemDefaultReadOnly):
 		response.Fail(c, http.StatusBadRequest, err.Error())
 	default:
 		response.Fail(c, http.StatusInternalServerError, "操作失败")

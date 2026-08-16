@@ -35,6 +35,8 @@
 		<div class="scroll-ybox phone-frame-host">
 			<DevicePreviewFrame
 				:title="previewTitle"
+				fit-to-container
+				nav-mode="location-search"
 				:show-back="diyType != 'center'"
 				:nav-active="form.selectedIndex < 0"
 				:side-gutter="96"
@@ -51,9 +53,10 @@
 					:options="{ animation: 120, filter: '.drag__nomove' }" draggable=".draggable">
 					<template #item="{ element, index }">
 						<div class="diy-phone-item" :class="{ active: form.selectedIndex == index,pstatic:element.type == 'surface'||element.type == 'service' || element.type == 'videoLive',
-						 drag__nomove: element.type === 'option'
+							 drag__nomove: element.type === 'option'
                    || element.type === 'search'
-                   || element.type === 'topMerge',
+								   || element.type === 'topMerge'
+								   || element.type === 'bottomNav',
 				   draggable: index>1
 						}">
 							<div @click="onEditer(index)"
@@ -83,6 +86,15 @@
 							<template v-else-if="element.type == 'hotspot'">
 								<Hotspot :item="element" :index="index" :selectedIndex="form.selectedIndex"></Hotspot>
 							</template>
+							<template v-else-if="element.type == 'discountGroup'">
+								<DiscountGroup :item="element" :index="index" :selectedIndex="form.selectedIndex"></DiscountGroup>
+							</template>
+							<template v-else-if="element.type == 'ranking'">
+								<Ranking :item="element" :index="index" :selectedIndex="form.selectedIndex"></Ranking>
+							</template>
+							<template v-else-if="element.type == 'community'">
+								<Community :item="element" :index="index" :selectedIndex="form.selectedIndex"></Community>
+							</template>
 							<!-- 视频组-->
 							<template v-else-if="element.type == 'video'">
 								<Video :item="element" :index="index" :selectedIndex="form.selectedIndex"></Video>
@@ -103,6 +115,9 @@
 							<!--导航组-->
 							<template v-else-if="element.type == 'navBar'">
 								<NavBar :item="element" :index="index" :selectedIndex="form.selectedIndex"></NavBar>
+							</template>
+							<template v-else-if="element.type == 'bottomNav'">
+								<BottomNav :item="element" :index="index" :selectedIndex="form.selectedIndex"></BottomNav>
 							</template>
 							<!--商品组-->
 							<template v-else-if="element.type == 'product'">
@@ -217,11 +232,15 @@
 	import ImageSingle from './model/ImageSingle.vue';
 	import Window from './model/Window.vue';
 	import Hotspot from './model/Hotspot.vue';
+	import DiscountGroup from './model/DiscountGroup.vue';
+	import Ranking from './model/Ranking.vue';
+	import Community from './model/Community.vue';
 	import Video from './model/Video.vue';
 	import ArticleIndex from './model/Article.vue';
 	import Special from './model/Special.vue';
 	import Notice from './model/Notice.vue';
 	import NavBar from './model/NavBar.vue';
+	import BottomNav from './model/BottomNav.vue';
 	import ProductIndex from './model/Product.vue';
 	import Coupon from './model/Coupon.vue';
 	import Store from './model/Store.vue';
@@ -261,6 +280,9 @@
 			Window,
 			/*热区*/
 			Hotspot,
+			DiscountGroup,
+			Ranking,
+			Community,
 			/*视频*/
 			Video,
 			/*文章*/
@@ -271,6 +293,7 @@
 			Notice,
 			/*导航组*/
 			NavBar,
+			BottomNav,
 			/*商品组*/
 			ProductIndex,
 			/*优惠券*/

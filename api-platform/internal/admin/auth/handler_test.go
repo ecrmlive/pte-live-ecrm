@@ -14,6 +14,35 @@ func TestProfileDerivesRegionCompatibilityFlag(t *testing.T) {
 	}
 }
 
+func TestResolveMenuScopeKeepsPortalMenusSeparated(t *testing.T) {
+	tests := []struct {
+		name      string
+		roleTypes []string
+		requested string
+		want      string
+		wantErr   error
+	}{
+		{name: "platform", roleTypes: []string{"platform"}, want: "platform"},
+		{name: "merchant", roleTypes: []string{"merchant"}, want: "merchant"},
+		{name: "region", roleTypes: []string{"region"}, want: "region"},
+		{name: "platform wins by default", roleTypes: []string{"merchant", "platform"}, want: "platform"},
+		{name: "explicit merchant", roleTypes: []string{"merchant", "platform"}, requested: "merchant", want: "merchant"},
+		{name: "forbid unassigned scope", roleTypes: []string{"platform"}, requested: "region", wantErr: errMenuScopeForbidden},
+		{name: "reject invalid scope", roleTypes: []string{"platform"}, requested: "all", wantErr: errInvalidMenuScope},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveMenuScope(tt.roleTypes, tt.requested)
+			if err != tt.wantErr {
+				t.Fatalf("error = %v, want %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Fatalf("scope = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCircleAgentIDNullability(t *testing.T) {
 	if got := derefCircleAgentID(nil); got != 0 {
 		t.Fatalf("nil circle agent ID = %d, want 0", got)

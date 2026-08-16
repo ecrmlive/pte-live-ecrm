@@ -2,6 +2,7 @@ package attachmentpersist
 
 import (
 	"context"
+	"strings"
 
 	"github.com/crmlive/pte-live-ecrm/api-platform/internal/domain/attachment"
 	"gorm.io/gorm"
@@ -72,7 +73,7 @@ func (r *Repo) GetCategory(ctx context.Context, id uint) (*attachment.Category, 
 	return &row, nil
 }
 
-func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, page, limit int) ([]attachment.Attachment, int64, error) {
+func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly bool, attachmentType *int8, keyword string, page, limit int) ([]attachment.Attachment, int64, error) {
 	q := r.db.WithContext(ctx).Model(&attachment.Attachment{}).Where("user_type = ?", userType)
 	if cateID > 0 {
 		q = q.Where("attachment_category_id = ?", cateID)
@@ -94,6 +95,9 @@ func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly b
 	if attachmentType != nil {
 		q = q.Where("attachment_type = ?", *attachmentType)
 	}
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
+		q = q.Where("attachment_name LIKE ?", "%"+keyword+"%")
+	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -101,6 +105,19 @@ func (r *Repo) List(ctx context.Context, userType int, cateID uint, systemOnly b
 	var rows []attachment.Attachment
 	err := q.Order("attachment_id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	return rows, total, err
+}
+
+func (r *Repo) Move(ctx context.Context, ids []uint, userType int, categoryID uint) error {
+	result := r.db.WithContext(ctx).Model(&attachment.Attachment{}).
+		Where("attachment_id IN ? AND user_type = ? AND is_system = ?", ids, userType, 0).
+		Update("attachment_category_id", categoryID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != int64(len(ids)) {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *Repo) Get(ctx context.Context, id uint) (*attachment.Attachment, error) {

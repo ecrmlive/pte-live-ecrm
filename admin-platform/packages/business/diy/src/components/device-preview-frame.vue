@@ -8,7 +8,7 @@
  *
  * 切换器吸附在预览工作区（灰底 host）右上角，非机身右缘；偏好持久化到 localStorage。
  */
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import {
   DEVICE_PREVIEW_METRICS,
@@ -24,8 +24,12 @@ const props = withDefaults(
     device?: PreviewDevice;
     /** 是否显示外壳切换器 */
     showDeviceSwitcher?: boolean;
+    /** 在编辑器中按可用画布等比缩放整机，保证完整可见 */
+    fitToContainer?: boolean;
     /** 导航栏标题 */
     title?: string;
+    /** 导航栏内容形态；装修页使用定位与搜索，不展示页面名称 */
+    navMode?: 'location-search' | 'title';
     /** 是否显示返回箭头 */
     showBack?: boolean;
     /** 是否显示右侧「点击展开」快捷菜单按钮 */
@@ -46,7 +50,9 @@ const props = withDefaults(
   }>(),
   {
     showDeviceSwitcher: true,
+    fitToContainer: false,
     title: '页面标题',
+    navMode: 'title',
     showBack: true,
     showExpand: false,
     hideNav: false,
@@ -67,6 +73,9 @@ const emit = defineEmits<{
 }>();
 
 const expandOpen = ref(false);
+const previewHostRef = ref<HTMLElement>();
+const previewScale = ref(1);
+let previewResizeObserver: ResizeObserver | undefined;
 const expandMenus = [
   { key: 'home', label: '首页', icon: '⌂' },
   { key: 'search', label: '搜索', icon: '⌕' },
@@ -128,11 +137,57 @@ const outerStyle = computed(() => {
     ['--device-side-gutter-left' as string]: `${props.sideGutterLeft}px`,
   };
 });
+
+const previewNaturalWidth = computed(
+  () => metrics.value.screenWidth + props.sideGutter + props.sideGutterLeft + 16,
+);
+const previewNaturalHeight = computed(() => metrics.value.screenHeight + 16);
+
+const previewStageStyle = computed(() => ({
+  width: `${previewNaturalWidth.value * previewScale.value}px`,
+  height: `${previewNaturalHeight.value * previewScale.value}px`,
+}));
+
+const previewTransformStyle = computed(() => ({
+  ...outerStyle.value,
+  transform: `scale(${previewScale.value})`,
+  transformOrigin: 'top left',
+}));
+
+function updatePreviewScale() {
+  if (!props.fitToContainer) {
+    previewScale.value = 1;
+    return;
+  }
+  const canvas = previewHostRef.value?.parentElement;
+  if (!canvas) return;
+
+  const availableWidth = Math.max(0, canvas.clientWidth - 24);
+  const availableHeight = Math.max(0, canvas.clientHeight - 24);
+  if (!availableWidth || !availableHeight) return;
+
+  previewScale.value = Math.min(
+    1,
+    availableWidth / previewNaturalWidth.value,
+    availableHeight / previewNaturalHeight.value,
+  );
+}
+
+onMounted(() => {
+  nextTick(updatePreviewScale);
+  const canvas = previewHostRef.value?.parentElement;
+  if (!canvas || !props.fitToContainer) return;
+  previewResizeObserver = new ResizeObserver(updatePreviewScale);
+  previewResizeObserver.observe(canvas);
+});
+
+onBeforeUnmount(() => previewResizeObserver?.disconnect());
 </script>
 
 <template>
   <!-- 铺满灰底预览区：切换器相对此 host 右上吸附；机身仍水平居中 -->
   <div
+    ref="previewHostRef"
     class="device-preview-host"
     :class="{ 'device-preview-host--with-switcher': showDeviceSwitcher }"
   >
@@ -160,11 +215,12 @@ const outerStyle = computed(() => {
       </div>
     </div>
 
-    <div
-      class="device-preview"
-      :class="[`device-preview--${activeDevice}`]"
-      :style="outerStyle"
-    >
+    <div class="device-preview__stage" :style="previewStageStyle">
+      <div
+        class="device-preview"
+        :class="[`device-preview--${activeDevice}`]"
+        :style="previewTransformStyle"
+      >
       <div class="device-preview__device">
         <div class="device-preview__screen">
           <!-- 1. 状态栏 -->
@@ -258,6 +314,13 @@ const outerStyle = computed(() => {
           :class="{ 'is-active': navActive }"
           @click="emit('nav-click')"
         >
+          <template v-if="navMode === 'location-search'">
+            <div class="device-preview__location-search">
+              <span class="device-preview__location">⌖ 定位中 ›</span>
+              <span class="device-preview__search">搜索商品</span>
+            </div>
+          </template>
+          <template v-else>
           <div class="device-preview__nav-left">
             <button
               v-if="showBack"
@@ -292,6 +355,7 @@ const outerStyle = computed(() => {
           </div>
           <div class="device-preview__title">{{ title }}</div>
           <div class="device-preview__nav-right" />
+          </template>
 
           <div
             v-if="showExpand && expandOpen"
@@ -336,8 +400,9 @@ const outerStyle = computed(() => {
           <div class="device-preview__home-bar" />
         </div>
       </div>
+      </div>
     </div>
-    </div>
+  </div>
   </div>
 </template>
 
@@ -383,6 +448,11 @@ const outerStyle = computed(() => {
   padding-right: var(--device-side-gutter, 52px);
   padding-left: var(--device-side-gutter-left, 0px);
   overflow: visible;
+}
+
+.device-preview__stage {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 /* 灰底工作区右上角分段切换：轨道 + 等高胶囊，激活仅改色不改布局 */
@@ -720,6 +790,30 @@ const outerStyle = computed(() => {
 
 .device-preview__nav.is-active {
   box-shadow: inset 0 0 0 2px hsl(var(--primary));
+}
+
+.device-preview__location-search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  color: #7d8490;
+  font-size: 13px;
+}
+
+.device-preview__location {
+  flex: none;
+  color: hsl(var(--primary));
+  font-weight: 500;
+}
+
+.device-preview__search {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: 16px;
+  background: #f5f6f8;
+  color: #9aa3af;
 }
 
 .device-preview__nav-left {

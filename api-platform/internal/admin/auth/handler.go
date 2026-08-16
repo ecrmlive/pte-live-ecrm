@@ -18,6 +18,8 @@ var (
 	errInvalidCredentials = errors.New("账号或密码错误")
 	errAccountNotFound    = errors.New("账号不存在")
 	errNoRole             = errors.New("账号未分配后台角色")
+	errInvalidMenuScope   = errors.New("菜单身份仅支持平台、商户或区域")
+	errMenuScopeForbidden = errors.New("当前账号无此身份菜单权限")
 	errDisplayNameExists  = errors.New("昵称已存在")
 	errDisplayNameEmpty   = errors.New("昵称不能为空")
 )
@@ -234,16 +236,16 @@ func (h *Handler) Me(c *gin.Context) {
 }
 
 func (h *Handler) Menus(c *gin.Context) {
-	rows, err := h.menus(c, uint64(middleware.AdminID(c)), "")
+	rows, scope, err := h.menus(c, uint64(middleware.AdminID(c)), "")
 	if err != nil {
 		writeError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"menus": rows})
+	response.OK(c, gin.H{"menus": rows, "menu_scope": scope})
 }
 
 func (h *Handler) Permissions(c *gin.Context) {
-	rows, err := h.menus(c, uint64(middleware.AdminID(c)), "button")
+	rows, scope, err := h.menus(c, uint64(middleware.AdminID(c)), "button")
 	if err != nil {
 		writeError(c, err)
 		return
@@ -252,7 +254,7 @@ func (h *Handler) Permissions(c *gin.Context) {
 	for _, row := range rows {
 		permissions = append(permissions, row.Code)
 	}
-	response.OK(c, gin.H{"permissions": permissions})
+	response.OK(c, gin.H{"permissions": permissions, "menu_scope": scope})
 }
 
 func (h *Handler) ChangePassword(c *gin.Context) {
@@ -328,21 +330,74 @@ func (h *Handler) roles(c *gin.Context, userID uint64) ([]string, error) {
 	return rows, err
 }
 
-func (h *Handler) menus(c *gin.Context, userID uint64, kind string) ([]menu, error) {
+// menuScopeForUser 返回当前后台会话的单一菜单域。平台、商户、区域是三套
+// 独立菜单树，绝不能因为角色菜单表的历史关联而混合返回。
+func (h *Handler) menuScopeForUser(c *gin.Context, userID uint64) (string, error) {
+	var roleTypes []string
+	err := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_role AS r").
+		Select("DISTINCT r.role_type").
+		Joins("INNER JOIN qixi_crm_a_admin_user_role AS ur ON ur.role_id = r.id").
+		Where("ur.admin_user_id = ? AND r.status = 1", userID).
+		Order("r.role_type ASC").Scan(&roleTypes).Error
+	if err != nil {
+		return "", err
+	}
+	return resolveMenuScope(roleTypes, c.Query("scope"))
+}
+
+func resolveMenuScope(roleTypes []string, requested string) (string, error) {
+	requested = strings.TrimSpace(requested)
+	if requested != "" {
+		if !isMenuScope(requested) {
+			return "", errInvalidMenuScope
+		}
+		if !containsMenuScope(roleTypes, requested) {
+			return "", errMenuScopeForbidden
+		}
+		return requested, nil
+	}
+
+	// 没有显式指定身份时，统一后台优先展示平台菜单；其余账号只展示各自范围。
+	for _, scope := range []string{"platform", "merchant", "region"} {
+		if containsMenuScope(roleTypes, scope) {
+			return scope, nil
+		}
+	}
+	return "", errNoRole
+}
+
+func isMenuScope(scope string) bool {
+	return scope == "platform" || scope == "merchant" || scope == "region"
+}
+
+func containsMenuScope(scopes []string, expected string) bool {
+	for _, scope := range scopes {
+		if scope == expected {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *Handler) menus(c *gin.Context, userID uint64, kind string) ([]menu, string, error) {
+	scope, err := h.menuScopeForUser(c, userID)
+	if err != nil {
+		return nil, "", err
+	}
 	query := h.db.WithContext(c.Request.Context()).Table("qixi_crm_a_menu AS m").
 		Select("DISTINCT m.id,m.parent_id,m.code,m.title,m.icon,m.route_path,m.kind,m.sort").
 		Joins("INNER JOIN qixi_crm_a_role_menu AS rm ON rm.menu_id = m.id").
 		Joins("INNER JOIN qixi_crm_a_admin_user_role AS ur ON ur.role_id = rm.role_id").
-		Where("ur.admin_user_id = ? AND m.status = 1", userID)
+		Where("ur.admin_user_id = ? AND m.status = 1 AND m.menu_scope = ?", userID, scope)
 	if kind != "" {
 		query = query.Where("m.kind = ?", kind)
 	}
 	var rows []menu
 	if err := query.Order("m.sort ASC,m.id ASC").Scan(&rows).Error; err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	sort.SliceStable(rows, func(i, j int) bool { return rows[i].Sort < rows[j].Sort })
-	return rows, nil
+	return rows, scope, nil
 }
 
 func (h *Handler) profile(user *adminUser, roles []string) profile {
@@ -377,6 +432,14 @@ func writeError(c *gin.Context, err error) {
 	}
 	if errors.Is(err, errNoRole) {
 		response.Fail(c, http.StatusForbidden, err.Error())
+		return
+	}
+	if errors.Is(err, errMenuScopeForbidden) {
+		response.Fail(c, http.StatusForbidden, err.Error())
+		return
+	}
+	if errors.Is(err, errInvalidMenuScope) {
+		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if errors.Is(err, errDisplayNameExists) || errors.Is(err, errDisplayNameEmpty) {

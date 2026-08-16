@@ -66,6 +66,51 @@ final result: blocked
 
 ---
 
+# 商品详情装修视觉验收
+
+## 对照目标
+
+- Source visual truth：用户提供的详情装修配置与预览截图：
+  `/var/folders/yn/8j0yr4gs2pzg508td1q42cv00000gn/T/codex-clipboard-3d4fe468-4f9f-4d6c-8984-36b40c73f285.png`、
+  `/var/folders/yn/8j0yr4gs2pzg508td1q42cv00000gn/T/codex-clipboard-b809edff-ff99-43c2-bbb9-24bcefd35f88.png`、
+  `/var/folders/yn/8j0yr4gs2pzg508td1q42cv00000gn/T/codex-clipboard-f76ec7bf-c4ff-4856-b0cd-4952f559e55f.png`、
+  `/var/folders/yn/8j0yr4gs2pzg508td1q42cv00000gn/T/codex-clipboard-363abe3f-aa11-4502-9391-44c3f8ca26a7.png`。
+- Implementation URL：`http://localhost:15124/#/setting/diy/product_detail`。
+- Implementation screenshot：`/private/tmp/ecrm-product-detail-diy-20260816.png`。
+- Viewport：当前已登录平台后台视口 1700 × 900 CSS px；源图为页面局部截图，按手机预览 375px 宽、右侧配置 400px 宽进行区域对齐。
+- State：商品信息模块选中；导航菜单展开；全部默认配置启用。
+
+## 比较与修正记录
+
+- [P1 已修正] 预览模块与右侧配置没有模块级联动。
+  修正：商品信息、排行榜、优惠券、商品参数、优惠套餐、商品评价、种草秀、店铺信息、底部菜单都成为独立可选模块；选中项切换对应配置。
+- [P1 已修正] 顶部导航缺少参考页的展开菜单和可配置导航项。
+  修正：复刻返回、菜单、刷新、更多、圆点控制区；菜单默认展开，并与“菜单内容”多选框同步。
+- [P1 已修正] 右侧配置区字段结构、间距和字体层级不一致。
+  修正：按参考顺序实现顶部导航、商品主图、收藏/分享、商品信息、SVIP 等分段，使用 400px 固定右栏、57px 标题行、15px 内容内距。
+- [P1 已修正] 底部保存区及页面模块缺少固定/选择状态。
+  修正：保存区固定于内容区底部；选中模块显示蓝色边框和左侧箭头提示。
+
+## 交互验证
+
+- 点击“优惠券”预览模块后，右栏标题切换为“优惠券”。
+- 在“是否显示”切换为“隐藏”后，预览中的优惠券模块立即消失；页面刷新后默认状态恢复。
+- 导航、轮播点、主图模式、收藏/分享、商品信息、各模块显示状态、数量滑杆和底部菜单均由同一响应式配置驱动。
+
+## 必查保真面
+
+- 字体与层级：后台既有 PingFang SC / Microsoft YaHei 回退栈；预览标题、模块标题、说明文字和右栏配置标题分别建立层级。
+- 间距与布局：手机宽度 375px，右栏宽度 400px，预览模块与配置分段按参考页面固定节奏排列。
+- 颜色与状态：选中边框 #1890ff、活动锚点 #4073fa、页面底色 #f0f2f5，与参考页面蓝灰体系一致。
+- 图片与内容：使用 CRMEB 参考页面同源商品主图、菜单图、评价图、种草图及店铺图，不使用占位图。
+- 文案：配置项与预览文案按参考页保留。
+
+## 结论
+
+final result: passed
+
+---
+
 # 协议设置 iPhone 17 DIY 预览视觉验收
 
 ## 对照目标

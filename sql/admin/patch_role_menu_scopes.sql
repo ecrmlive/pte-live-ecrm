@@ -62,3 +62,11 @@ FROM `qixi_crm_a_role` r
 JOIN `qixi_crm_a_menu` m
   ON (r.code = 'merchant' AND m.menu_scope = 'merchant')
   OR (r.code = 'region' AND m.menu_scope = 'region');
+
+-- 身份菜单树严格隔离。历史初始化曾把平台、商户、区域树同时授权给同一身份，
+-- 会造成侧栏出现多个“首页/控制台”。角色类型只能拥有同类型菜单。
+DELETE rm
+FROM `qixi_crm_a_role_menu` AS rm
+INNER JOIN `qixi_crm_a_role` AS r ON r.id = rm.role_id
+INNER JOIN `qixi_crm_a_menu` AS m ON m.id = rm.menu_id
+WHERE m.menu_scope <> r.role_type;

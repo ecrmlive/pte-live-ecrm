@@ -1,276 +1,358 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '#/adapter/form';
+import type { PlatformProduct } from '#/api/core/platform-catalog';
 
-import { ArrowRight } from '@element-plus/icons-vue';
-import { ElIcon } from 'element-plus';
-import { computed, onUnmounted, ref } from 'vue';
+import { ArrowRight, Picture } from '@element-plus/icons-vue';
+import { ElIcon, ElSwitch } from 'element-plus';
+import { computed, ref } from 'vue';
 
+import ProductPickerDialog from '#/components/shop/product-picker-dialog.vue';
 import DiyLinkPickerDialog from '#/components/shop/diy-link-picker-dialog.vue';
 
 import {
-  diyBgColors,
+  diyColor,
+  diyRadioGroup,
   diySection,
-  DIY_PADDING_FIELDS,
-  DIY_RADIUS_FIELDS,
+  diySlider,
 } from './shared/schema-helpers';
 import { useDiyCurItemForm } from './shared/use-diy-cur-item-form';
-import DiyColorField from './shared/diy-color-field.vue';
 import DiyInputField from './shared/diy-input-field.vue';
-import DiyLinkInputField from './shared/diy-link-input-field.vue';
-import DiySliderField from './shared/diy-slider-field.vue';
 import { useDiyAdapterComponents } from './shared/use-diy-adapter-components';
 import { useDiyEditor } from './shared/use-diy-editor';
 
 defineOptions({ name: 'DiyParamsHotspot' });
 
-const { PrimaryButton, RadioGroup, Checkbox } = useDiyAdapterComponents();
+type DiyRecord = Record<string, any>;
+type HotModuleKey = 'category' | 'groupbuy' | 'newcomer' | 'seckill';
+
+interface HotProduct {
+  image: string;
+  name: string;
+  price: string;
+  productId?: number;
+}
+
+interface HotModule {
+  enabled: boolean;
+  image: string;
+  linkUrl: string;
+  linkeType?: string;
+  products?: HotProduct[];
+  subtitle: string;
+  title: string;
+}
+
+type HotModules = Record<HotModuleKey, HotModule>;
+
+const hotModuleKeys: HotModuleKey[] = ['seckill', 'groupbuy', 'category', 'newcomer'];
+
+const hotModuleMeta: Record<HotModuleKey, { hint: string; label: string; type: 'icon' | 'products' }> = {
+  category: { hint: '图标与跳转链接独立配置', label: '热门分类', type: 'icon' },
+  groupbuy: { hint: '选择 2 个团购商品', label: '热销团购', type: 'products' },
+  newcomer: { hint: '图标与跳转链接独立配置', label: '新人专享', type: 'icon' },
+  seckill: { hint: '选择 2 个秒杀商品', label: '限时秒杀', type: 'products' },
+};
+
+const { PrimaryButton } = useDiyAdapterComponents();
 
 const props = defineProps<{
-  curItem: Record<string, unknown> & {
-    data?: Array<Record<string, unknown>>;
-    params?: Record<string, unknown>;
+  curItem: DiyRecord & {
+    params?: DiyRecord;
+    style?: DiyRecord;
   };
-  selectedIndex?: number;
 }>();
 
 const editor = useDiyEditor();
-const editorRef = ref<HTMLElement | null>(null);
-const currentHotspotIndex = ref(-1);
+const styleType = ref<'content' | 'style'>('content');
+const productPickerOpen = ref(false);
+const productTarget = ref<{ index: number; key: HotModuleKey } | null>(null);
 const isLinkset = ref(false);
-const linkData = ref<Record<string, unknown> | null>(null);
+const linkTarget = ref<HotModuleKey | null>(null);
+const linkData = ref<DiyRecord | null>(null);
 
-const dragState = ref({
-  containerHeight: 0,
-  containerWidth: 0,
-  index: -1,
-  isDragging: false,
-  startHeight: 0,
-  startLeft: 0,
-  startTop: 0,
-  startWidth: 0,
-  startX: 0,
-  startY: 0,
-  type: null as 'move' | 'resize' | null,
+function defaultProduct(slot: number): HotProduct {
+  return {
+    image: '',
+    name: `商品${slot}`,
+    price: '',
+  };
+}
+
+function defaultHotspotModules(): HotModules {
+  return {
+    category: {
+      enabled: true,
+      image: '',
+      linkUrl: '',
+      subtitle: '全屋｜厨卫｜保洁',
+      title: '日常保洁',
+    },
+    groupbuy: {
+      enabled: true,
+      image: '',
+      linkUrl: '',
+      products: [defaultProduct(1), defaultProduct(2)],
+      subtitle: '超低价 随时退',
+      title: '热销团购',
+    },
+    newcomer: {
+      enabled: true,
+      image: '',
+      linkUrl: '',
+      subtitle: '下单咨询即领取45元券',
+      title: '新人专享',
+    },
+    seckill: {
+      enabled: true,
+      image: '',
+      linkUrl: '',
+      products: [defaultProduct(1), defaultProduct(2)],
+      subtitle: '4折秒杀',
+      title: '限时秒杀',
+    },
+  };
+}
+
+function ensureHotspotDefaults(item: DiyRecord) {
+  const params = (item.params ??= {}) as DiyRecord;
+  const style = (item.style ??= {}) as DiyRecord;
+  const defaults = defaultHotspotModules();
+  const savedModules = (params.modules ?? {}) as Partial<HotModules>;
+  const modules = {} as HotModules;
+
+  hotModuleKeys.forEach((key) => {
+    const fallback = defaults[key];
+    const saved = (savedModules[key] ?? {}) as Partial<HotModule>;
+    modules[key] = { ...fallback, ...saved };
+    if (fallback.products) {
+      const savedProducts = Array.isArray(saved.products) ? saved.products : [];
+      modules[key].products = fallback.products.map((product, index) => ({
+        ...product,
+        ...(savedProducts[index] ?? {}),
+      }));
+    }
+  });
+  params.modules = modules;
+
+  if (style.float === undefined) style.float = 18;
+  if (!style.background) style.background = 'rgba(255, 255, 255, 0)';
+  if (!style.bgcolor) style.bgcolor = '#ffffff';
+  if (style.paddingTop === undefined) style.paddingTop = 9;
+  if (style.paddingBottom === undefined) style.paddingBottom = 0;
+  if (style.paddingLeft === undefined) style.paddingLeft = 10;
+  if (style.paddingRight === undefined) style.paddingRight = style.paddingLeft;
+  if (style.marginTop === undefined) style.marginTop = 0;
+  if (!style.radiusMode) style.radiusMode = 'all';
+  if (style.cardRadius === undefined) style.cardRadius = 0;
+  if (style.topLeftRadio === undefined) style.topLeftRadio = 0;
+  if (style.topRightRadio === undefined) style.topRightRadio = 0;
+  if (style.bottomLeftRadio === undefined) style.bottomLeftRadio = 0;
+  if (style.bottomRightRadio === undefined) style.bottomRightRadio = 0;
+  if (!style.cardShadow) style.cardShadow = 'off';
+}
+
+const modules = computed(() => {
+  ensureHotspotDefaults(props.curItem);
+  return props.curItem.params!.modules as HotModules;
 });
 
-const schema = computed((): VbenFormSchema[] => [
-  diySection('边距设置'),
-  ...diyBgColors('#ffffff', '#F2F2F2'),
-  ...DIY_PADDING_FIELDS,
-  ...DIY_RADIUS_FIELDS,
+const contentSchema = computed((): VbenFormSchema[] => [
+  diySection('内容设置', '四个模块分别独立配置；商品、图标和跳转页面均通过选择器关联。'),
 ]);
 
-const { Form } = useDiyCurItemForm(() => props.curItem, schema);
+const styleSchema = computed((): VbenFormSchema[] => {
+  const style = props.curItem.style ?? {};
+  return [
+    diySection('卡片样式'),
+    diySlider('style.float', '组件上浮：', { max: 48, min: 0 }),
+    diyColor('style.background', '底部背景：', 'rgba(255, 255, 255, 0)', '透明'),
+    diyColor('style.bgcolor', '组件背景：', '#ffffff', '透明'),
+    diySlider('style.paddingTop', '上边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingBottom', '下边距：', { max: 48, min: 0 }),
+    diySlider('style.paddingLeft', '左右边距：', { max: 48, min: 0 }),
+    diySlider('style.marginTop', '页面上间距：', { max: 96, min: 0 }),
+    diyRadioGroup(
+      'style.radiusMode',
+      '背景圆角：',
+      [
+        { label: '全部', value: 'all' },
+        { label: '分别设置', value: 'individual' },
+      ],
+      true,
+    ),
+    ...(style.radiusMode === 'individual'
+      ? [
+          diySlider('style.topLeftRadio', '左上圆角：', { max: 48, min: 0 }),
+          diySlider('style.topRightRadio', '右上圆角：', { max: 48, min: 0 }),
+          diySlider('style.bottomLeftRadio', '左下圆角：', { max: 48, min: 0 }),
+          diySlider('style.bottomRightRadio', '右下圆角：', { max: 48, min: 0 }),
+        ]
+      : [diySlider('style.cardRadius', '圆角值：', { max: 48, min: 0 })]),
+    diyRadioGroup(
+      'style.cardShadow',
+      '开启阴影：',
+      [
+        { label: '关闭', value: 'off' },
+        { label: '开启', value: 'on' },
+      ],
+    ),
+  ];
+});
 
-function addHotspot() {
-  props.curItem.data = props.curItem.data ?? [];
-  props.curItem.data.push({
-    height: 20,
-    left: 0,
-    linkUrl: '',
-    top: 0,
-    width: 20,
+const { Form: ContentForm } = useDiyCurItemForm(() => props.curItem, contentSchema, {
+  onInit: ensureHotspotDefaults,
+});
+const { Form: StyleForm } = useDiyCurItemForm(() => props.curItem, styleSchema, {
+  onInit: ensureHotspotDefaults,
+});
+
+function openProductPicker(key: HotModuleKey, index: number) {
+  productTarget.value = { index, key };
+  productPickerOpen.value = true;
+}
+
+function onProductPicked(product: PlatformProduct) {
+  const target = productTarget.value;
+  if (!target) return;
+  const productSlot = modules.value[target.key].products?.[target.index];
+  if (!productSlot) return;
+  Object.assign(productSlot, {
+    image: String(product.image ?? ''),
+    name: String(product.store_name ?? '未命名商品'),
+    price: String(product.price ?? ''),
+    productId: Number(product.product_id),
   });
-  currentHotspotIndex.value = props.curItem.data.length - 1;
+  productTarget.value = null;
 }
 
-function deleteHotspot(index: number) {
-  props.curItem.data?.splice(index, 1);
-  if (currentHotspotIndex.value === index) {
-    currentHotspotIndex.value = -1;
-  } else if (currentHotspotIndex.value > index) {
-    currentHotspotIndex.value--;
-  }
+function clearProduct(key: HotModuleKey, index: number) {
+  modules.value[key].products?.splice(index, 1, defaultProduct(index + 1));
 }
 
-function onMouseDown(e: MouseEvent, index: number, type: 'move' | 'resize') {
-  const container = editorRef.value;
-  if (!container || !props.curItem.data?.[index]) return;
-  const rect = container.getBoundingClientRect();
-  const hotspot = props.curItem.data[index]!;
-
-  dragState.value = {
-    containerHeight: rect.height,
-    containerWidth: rect.width,
-    index,
-    isDragging: true,
-    startHeight: Number.parseFloat(String(hotspot.height)),
-    startLeft: Number.parseFloat(String(hotspot.left)),
-    startTop: Number.parseFloat(String(hotspot.top)),
-    startWidth: Number.parseFloat(String(hotspot.width)),
-    startX: e.clientX,
-    startY: e.clientY,
-    type,
-  };
-  currentHotspotIndex.value = index;
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+function selectModuleImage(key: HotModuleKey) {
+  editor.onEditorSelectImage(modules.value[key], 'image');
 }
 
-function onMouseMove(e: MouseEvent) {
-  if (!dragState.value.isDragging || !props.curItem.data) return;
-  const {
-    containerHeight,
-    containerWidth,
-    index,
-    startHeight,
-    startLeft,
-    startTop,
-    startWidth,
-    startX,
-    startY,
-    type,
-  } = dragState.value;
-  const hotspot = props.curItem.data[index]!;
-  const deltaXPercent = ((e.clientX - startX) / containerWidth) * 100;
-  const deltaYPercent = ((e.clientY - startY) / containerHeight) * 100;
-
-  if (type === 'move') {
-    hotspot.left = Math.max(
-      0,
-      Math.min(100 - Number(hotspot.width), startLeft + deltaXPercent),
-    );
-    hotspot.top = Math.max(
-      0,
-      Math.min(100 - Number(hotspot.height), startTop + deltaYPercent),
-    );
-  } else if (type === 'resize') {
-    hotspot.width = Math.max(
-      5,
-      Math.min(100 - Number(hotspot.left), startWidth + deltaXPercent),
-    );
-    hotspot.height = Math.max(
-      5,
-      Math.min(100 - Number(hotspot.top), startHeight + deltaYPercent),
-    );
-  }
-}
-
-function onMouseUp() {
-  dragState.value.isDragging = false;
-  document.removeEventListener('mousemove', onMouseMove);
-  document.removeEventListener('mouseup', onMouseUp);
-}
-
-function changeLink(index: number) {
+function changeLink(key: HotModuleKey) {
+  linkTarget.value = key;
+  linkData.value = modules.value[key];
   isLinkset.value = true;
-  currentHotspotIndex.value = index;
-  linkData.value = props.curItem.data?.[index] ?? null;
 }
 
 function closeLinkset(e: { name?: string; type?: string; url?: string } | null) {
   isLinkset.value = false;
-  if (e && props.curItem.data?.[currentHotspotIndex.value]) {
-    const hotspot = props.curItem.data[currentHotspotIndex.value]!;
-    hotspot.linkeType = e.type;
-    hotspot.linkUrl = e.url;
-    hotspot.name = e.name;
-  }
+  const key = linkTarget.value;
+  if (!e || !key) return;
+  Object.assign(modules.value[key], {
+    linkUrl: e.url ?? '',
+    linkeType: e.type,
+  });
 }
-
-onUnmounted(() => {
-  document.removeEventListener('mousemove', onMouseMove);
-  document.removeEventListener('mouseup', onMouseUp);
-});
 </script>
 
 <template>
   <div>
-    <div class="common-form">
+    <div class="common-form common-form-new">
       <span>{{ curItem.name }}</span>
-    </div>
-    <Form />
-    <div class="form-chink" />
-    <div class="f16 gray3 form-subtitle mb-2 px-4">热区设置</div>
-    <div class="form-item ml-[100px]">
-      <div class="form-label mb-2">背景图片：</div>
-      <div
-        class="img-box flex cursor-pointer items-center justify-center"
-        style="width: 100px; height: 100px; border: 1px dashed #ccc"
-        @click="editor.onEditorSelectImage(curItem.params!, 'image')"
-      >
-        <img
-          v-if="curItem.params?.image"
-          v-img-url="curItem.params.image"
-          style="max-width: 100%; max-height: 100%"
-        />
-        <div v-else class="upload-btn" style="font-size: 30px; color: #ccc">+</div>
-      </div>
-    </div>
-    <div class="form-item ml-5 block">
-      <div class="form-label mb-2">热区编辑：</div>
-      <div
-        ref="editorRef"
-        class="hotspot-editor relative w-full select-none border border-[#ccc]"
-      >
-        <img
-          v-img-url="curItem.params?.image || ''"
-          draggable="false"
-          style="width: 100%; display: block"
-        />
-        <div
-          v-for="(hotspot, index) in curItem.data"
-          :key="index"
-          class="hotspot-box"
-          :class="{ active: currentHotspotIndex === index }"
-          :style="{
-            width: `${hotspot.width}%`,
-            height: `${hotspot.height}%`,
-            top: `${hotspot.top}%`,
-            left: `${hotspot.left}%`,
-          }"
-          @click.stop="currentHotspotIndex = index"
-          @mousedown.stop="onMouseDown($event, index, 'move')"
-        >
-          <span class="index-label">{{ index + 1 }}</span>
-          <div
-            class="resize-handle"
-            @mousedown.stop="onMouseDown($event, index, 'resize')"
-          />
-          <div class="delete-btn" @click.stop="deleteHotspot(index)">×</div>
+      <div class="diy-changes">
+        <div class="diy-change" :class="{ active: styleType === 'content' }" @click="styleType = 'content'">
+          内容
+        </div>
+        <div class="diy-change" :class="{ active: styleType === 'style' }" @click="styleType = 'style'">
+          样式
         </div>
       </div>
-      <div class="d-c-c mt-2">
-        <component :is="PrimaryButton" plain size="small" @click="addHotspot">新增热区</component>
-      </div>
     </div>
-    <div v-if="curItem.data && curItem.data.length > 0" class="mt-2">
-      <div class="f16 gray3 form-subtitle px-4">链接设置</div>
-      <div
-        v-for="(hotspot, index) in curItem.data"
-        :key="index"
-        class="form-item mb-2 ml-5 p-2"
-        :style="{
-          background: '#f5f5f5',
-          border:
-            currentHotspotIndex === index
-              ? '1px solid #409eff'
-              : '1px solid transparent',
-        }"
-        @click="currentHotspotIndex = index"
-      >
-        <div class="d-s-c">
-          <div class="form-label" style="width: auto">热区 {{ index + 1 }}：</div>
-        </div>
-        <div class="d-s-c">
-          <DiyLinkInputField
-            v-model="hotspot.linkUrl"
-            placeholder="选择链接"
-            readonly
-            @click="changeLink(index)"
-          >
-<template #suffix>
-<ElIcon color="#333" size="16px"><ArrowRight /></ElIcon>
-</template>
-</DiyLinkInputField>
-        </div>
-        <div class="d-s-c">
-          <div class="flex-1 tr">
-            <component :is="PrimaryButton" link size="small" class="!text-destructive" @click.stop="deleteHotspot(index)">删除</component>
+
+    <div v-show="styleType === 'content'">
+      <ContentForm />
+      <div class="hotspot-module-list">
+        <section v-for="key in hotModuleKeys" :key="key" class="hotspot-module-card">
+          <header class="hotspot-module-header">
+            <div>
+              <h4>{{ hotModuleMeta[key].label }}</h4>
+              <p>{{ hotModuleMeta[key].hint }}</p>
+            </div>
+            <ElSwitch v-model="modules[key].enabled" aria-label="启用模块" />
+          </header>
+
+          <div class="hotspot-field-grid">
+            <label class="hotspot-input-field">
+              <span>主标题</span>
+              <DiyInputField v-model="modules[key].title" :maxlength="8" />
+            </label>
+            <label class="hotspot-input-field">
+              <span>副标题</span>
+              <DiyInputField v-model="modules[key].subtitle" :maxlength="20" />
+            </label>
           </div>
-        </div>
+
+          <template v-if="hotModuleMeta[key].type === 'products'">
+            <div class="hotspot-product-list">
+              <article
+                v-for="(product, productIndex) in modules[key].products"
+                :key="productIndex"
+                class="hotspot-product-slot"
+              >
+                <div class="hotspot-product-cover" @click="openProductPicker(key, productIndex)">
+                  <img v-if="product.image" v-img-url="product.image" :alt="product.name" />
+                  <div v-else class="hotspot-product-empty">
+                    <ElIcon><Picture /></ElIcon>
+                    <span>选择商品</span>
+                  </div>
+                </div>
+                <div class="hotspot-product-copy">
+                  <span>{{ product.name || '未选择商品' }}</span>
+                  <strong v-if="product.price">¥{{ product.price }}</strong>
+                </div>
+                <div class="hotspot-product-actions">
+                  <component :is="PrimaryButton" link size="small" @click="openProductPicker(key, productIndex)">
+                    {{ product.productId ? '更换' : '选择商品' }}
+                  </component>
+                  <component
+                    v-if="product.productId"
+                    :is="PrimaryButton"
+                    link
+                    size="small"
+                    @click="clearProduct(key, productIndex)"
+                  >
+                    清除
+                  </component>
+                </div>
+              </article>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="hotspot-icon-config">
+              <button class="hotspot-image-selector" type="button" @click="selectModuleImage(key)">
+                <img v-if="modules[key].image" v-img-url="modules[key].image" :alt="modules[key].title" />
+                <template v-else>
+                  <ElIcon><Picture /></ElIcon>
+                  <span>选择图标</span>
+                </template>
+              </button>
+              <div class="hotspot-link-field">
+                <span>跳转链接</span>
+                <DiyInputField v-model="modules[key].linkUrl" placeholder="选择页面链接" readonly>
+                  <template #suffix>
+                    <ElIcon color="#333" size="16px" @click="changeLink(key)">
+                      <ArrowRight />
+                    </ElIcon>
+                  </template>
+                </DiyInputField>
+              </div>
+            </div>
+          </template>
+        </section>
       </div>
     </div>
+
+    <div v-show="styleType === 'style'">
+      <StyleForm />
+    </div>
+
+    <ProductPickerDialog v-model:open="productPickerOpen" @select="onProductPicked" />
     <DiyLinkPickerDialog
       v-if="isLinkset"
       :is_linkset="isLinkset"
@@ -283,52 +365,170 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.hotspot-box {
-  position: absolute;
-  border: 1px dashed #409eff;
-  background: rgba(64, 158, 255, 0.3);
-  cursor: move;
+.hotspot-module-list {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
 }
-.hotspot-box.active {
-  border: 2px solid #409eff;
-  background: rgba(64, 158, 255, 0.5);
-  z-index: 10;
-}
-.index-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: #409eff;
-  color: #fff;
-  font-size: 12px;
-  padding: 0 4px;
-}
-.resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
+
+.hotspot-module-card {
+  border: 1px solid #e6eaf2;
+  border-radius: 10px;
   background: #fff;
-  border: 1px solid #409eff;
-  cursor: se-resize;
+  padding: 14px;
 }
-.delete-btn {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 16px;
-  height: 16px;
-  background: #f56c6c;
-  color: #fff;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 14px;
+
+.hotspot-module-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  h4 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+}
+
+.hotspot-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hotspot-input-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #667085;
+  font-size: 12px;
+}
+
+.hotspot-product-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.hotspot-product-slot {
+  min-width: 0;
+  border: 1px solid #edf0f5;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.hotspot-product-cover {
+  display: flex;
+  height: 88px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f7f9fc;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.hotspot-product-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #98a2b3;
+  font-size: 12px;
+
+  .el-icon {
+    font-size: 20px;
+  }
+}
+
+.hotspot-product-copy {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 7px;
+  color: #475467;
+  font-size: 12px;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    flex: none;
+    color: #ef4444;
+    font-weight: 600;
+  }
+}
+
+.hotspot-product-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hotspot-icon-config {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.hotspot-image-selector {
+  display: flex;
+  width: 76px;
+  height: 76px;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  overflow: hidden;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #98a2b3;
+  background: #f8fafc;
   font-size: 12px;
   cursor: pointer;
-  display: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .el-icon {
+    font-size: 20px;
+  }
 }
-.hotspot-box:hover .delete-btn {
-  display: block;
+
+.hotspot-link-field {
+  min-width: 0;
+  flex: 1;
+
+  > span {
+    display: block;
+    margin-bottom: 6px;
+    color: #667085;
+    font-size: 12px;
+  }
 }
 </style>

@@ -8,9 +8,10 @@ import { getShopLinkArticleCategoryApi } from '#/api/core/shop-link';
 
 import {
   diyBgColors,
-  diyInput,
+  diyColor,
   diyRadioGroup,
   diySection,
+  diySlider,
   DIY_PADDING_FIELDS,
   DIY_RADIUS_FIELDS,
 } from './shared/schema-helpers';
@@ -29,10 +30,12 @@ const router = useRouter();
 const category = ref<Array<{ category_id: number; name: string }>>([]);
 
 const schema = computed((): VbenFormSchema[] => [
-  diySection('边距设置'),
-  ...diyBgColors('#ffffff', '#F2F2F2'),
-  ...DIY_PADDING_FIELDS,
-  ...DIY_RADIUS_FIELDS,
+  diySection('展示设置'),
+  diyRadioGroup('params.layout', '选择风格：', [
+    { label: '大图展示', value: 'list' },
+    { label: '两列展示（纵向）', value: 'grid' },
+    { label: '两列展示（横向）', value: 'scroll' },
+  ]),
   diySection('文章设置'),
   {
     component: 'Select',
@@ -56,10 +59,19 @@ const schema = computed((): VbenFormSchema[] => [
     label: '显示数量：',
     help: '文章数据请到内容管理 - 文章列表中管理',
   },
-  diyRadioGroup('style.display', '显示类型：', [
-    { label: '有图模式', value: 10 },
-    { label: '无图模式', value: 20 },
-  ]),
+  diyRadioGroup('params.showDate', '时间日期：', [{ label: '显示', value: true }, { label: '隐藏', value: false }]),
+  diyRadioGroup('params.showViews', '浏览量：', [{ label: '显示', value: true }, { label: '隐藏', value: false }]),
+  diySection('列表样式'),
+  diySlider('style.imageRadius', '图片圆角：', { min: 0, max: 32 }),
+  diyRadioGroup('style.titleWeight', '文章标题：', [{ label: '加粗', value: 'bold' }, { label: '常规', value: 'normal' }]),
+  diyColor('style.titleColor', '文章标题：', '#333333'),
+  diyColor('style.metaColor', '时间日期：', '#999999'),
+  diyColor('style.viewColor', '浏览元素：', '#999999'),
+  diyRadioGroup('style.shadow', '开启阴影：', [{ label: '关闭', value: 'off' }, { label: '开启', value: 'on' }]),
+  diySection('卡片样式'),
+  ...diyBgColors('#ffffff', '#F5F5F5'),
+  ...DIY_PADDING_FIELDS,
+  ...DIY_RADIUS_FIELDS,
 ]);
 
 const { Form } = useDiyCurItemForm(
@@ -67,7 +79,11 @@ const { Form } = useDiyCurItemForm(
   schema,
   {
     onInit(item) {
-      parseIntFields(item, ['style.display']);
+      item.params = item.params ?? {};
+      item.style = item.style ?? {};
+      Object.assign(item.params as Record<string, unknown>, { layout: 'list', showNum: 3, showDate: true, showViews: true, ...(item.params as Record<string, unknown>) });
+      Object.assign(item.style as Record<string, unknown>, { bgcolor: '#F5F5F5', background: '#ffffff', paddingTop: 0, paddingBottom: 0, paddingLeft: 10, marginTop: 10, radius: 0, imageRadius: 0, titleColor: '#333333', metaColor: '#999999', viewColor: '#999999', titleWeight: 'normal', shadow: 'off', ...(item.style as Record<string, unknown>) });
+      parseIntFields(item, ['style.imageRadius']);
     },
     onValuesChange(values, fieldsChanged) {
       const item = props.curItem;

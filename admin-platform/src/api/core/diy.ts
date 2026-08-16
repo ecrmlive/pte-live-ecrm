@@ -1,6 +1,7 @@
 import { requestClient } from '#/api/request';
 
 export interface DiyPageRow {
+  doc?: DiyPageDoc;
   id: number;
   name: string;
   title: string;
@@ -22,6 +23,16 @@ export interface DiyEditorBootstrap {
   defaultPage?: Record<string, unknown>;
   jsonData: DiyPageDoc;
   opts?: Record<string, unknown>;
+}
+
+export type CategoryDecorationLayout = 'card' | 'grid' | 'list';
+
+export interface CategoryDecoration {
+  layout: CategoryDecorationLayout;
+}
+
+export interface ProductDetailDecoration {
+  config: Record<string, unknown>;
 }
 
 export type DiyLinkScope = 'merchant' | 'platform';
@@ -76,6 +87,22 @@ export async function listDiyPagesApi(params: {
 
 export async function listDiyDefaultsApi(params?: { page?: number; limit?: number }) {
   return requestClient.get<{ list: DiyPageRow[]; total: number }>('/diy/defaults', { params });
+}
+
+export async function getCategoryDecorationApi() {
+  return requestClient.get<CategoryDecoration>('/diy/category-decoration');
+}
+
+export async function saveCategoryDecorationApi(layout: CategoryDecorationLayout) {
+  return requestClient.put<CategoryDecoration>('/diy/category-decoration', { layout });
+}
+
+export async function getProductDetailDecorationApi() {
+  return requestClient.get<ProductDetailDecoration>('/diy/product-detail-decoration');
+}
+
+export async function saveProductDetailDecorationApi(config: Record<string, unknown>) {
+  return requestClient.put<ProductDetailDecoration>('/diy/product-detail-decoration', { config });
 }
 
 export async function applyDiyDefaultApi(id: number) {

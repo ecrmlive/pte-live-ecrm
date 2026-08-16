@@ -34,6 +34,7 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.DELETE("/attachments/categories/:id", write, manage, h.DeleteCategory)
 	r.GET("/attachments", h.List)
 	r.POST("/attachments/upload", write, manage, h.Upload)
+	r.PATCH("/attachments/move", write, manage, h.Move)
 	r.DELETE("/attachments/:id", write, manage, h.Delete)
 }
 
@@ -99,12 +100,28 @@ func (h *Handler) List(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "素材类型错误")
 		return
 	}
-	res, err := h.svc.List(c.Request.Context(), 0, uint(cateID), systemOnly, typeValue, page, limit)
+	res, err := h.svc.List(c.Request.Context(), 0, uint(cateID), systemOnly, typeValue, c.Query("keyword"), page, limit)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "查询失败")
 		return
 	}
 	response.OK(c, res)
+}
+
+func (h *Handler) Move(c *gin.Context) {
+	var in struct {
+		AttachmentIDs []uint `json:"attachment_ids"`
+		CategoryID    uint   `json:"category_id"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	if err := h.svc.Move(c.Request.Context(), 0, in.AttachmentIDs, in.CategoryID); err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"ok": true})
 }
 
 func (h *Handler) Upload(c *gin.Context) {

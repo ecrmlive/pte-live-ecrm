@@ -32,6 +32,7 @@ function ResetColor(name1: string, name2?: string) { resetStyleColors(editor, pr
 
 const schema = computed((): VbenFormSchema[] => [
   { component: 'Input', fieldName: 'params.assembleNum', hideLabel: true, formItemClass: 'hidden' },
+  { component: 'Input', fieldName: 'params.btntext', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'params.column', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'params.linePrice', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'params.more', hideLabel: true, formItemClass: 'hidden' },
@@ -50,6 +51,7 @@ const schema = computed((): VbenFormSchema[] => [
   { component: 'Input', fieldName: 'style.bgcolor_color2', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.bottomRadio', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.btn_text_color', hideLabel: true, formItemClass: 'hidden' },
+  { component: 'Input', fieldName: 'style.dividerColor', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.marginTop', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.moreColor', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.moreSize', hideLabel: true, formItemClass: 'hidden' },
@@ -73,7 +75,7 @@ const schema = computed((): VbenFormSchema[] => [
   { component: 'Input', fieldName: 'style.topRadio', hideLabel: true, formItemClass: 'hidden' },
 ]);
 
-const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["params.assembleNum","params.column","params.linePrice","params.more","params.productName","params.productPrice","params.productSales","params.product_btn","params.showNum","params.title","params.titleBgType","params.titleType","style.assemble_numbtn_color","style.assemble_numtext_color","style.background","style.bgcolor_color1","style.bgcolor_color2","style.bottomRadio","style.btn_text_color","style.marginTop","style.moreColor","style.moreSize","style.nameWeight","style.paddingBottom","style.paddingLeft","style.paddingTop","style.productBottomRadio","style.productBtn_color1","style.productBtn_color2","style.productLine_color","style.productName_color","style.productPrice_color","style.productTopRadio","style.product_sales_color","style.titleBg_color1","style.titleBg_color2","style.titleColor","style.titleSize","style.titleWeight","style.topRadio"] });
+const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["params.assembleNum","params.btntext","params.column","params.linePrice","params.more","params.productName","params.productPrice","params.productSales","params.product_btn","params.showNum","params.title","params.titleBgType","params.titleType","style.assemble_numbtn_color","style.assemble_numtext_color","style.background","style.bgcolor_color1","style.bgcolor_color2","style.bottomRadio","style.btn_text_color","style.dividerColor","style.marginTop","style.moreColor","style.moreSize","style.nameWeight","style.paddingBottom","style.paddingLeft","style.paddingTop","style.productBottomRadio","style.productBtn_color1","style.productBtn_color2","style.productLine_color","style.productName_color","style.productPrice_color","style.productTopRadio","style.product_sales_color","style.titleBg_color1","style.titleBg_color2","style.titleColor","style.titleSize","style.titleWeight","style.topRadio"] });
 </script>
 
 <template>
@@ -142,8 +144,9 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 					<div class="form-label">按钮文字：</div>
 					<DiyInputField maxlength="6" show-word-limit v-model="curItem.params.more"></DiyInputField>
 				</div>
-				<div class="diy-field-hint gray f12 px-4">
-					标题和按钮文字颜色跟随主题色
+				<div class="form-item">
+					<div class="form-label">拼团按钮文字：</div>
+					<DiyInputField maxlength="6" show-word-limit v-model="curItem.params.btntext" placeholder="去开团"></DiyInputField>
 				</div>
 				<div class="form-chink"></div>
 				<div class="f16 gray3 form-subtitle">商品列表</div>
@@ -225,6 +228,24 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 					<div class="form-label">按钮字号：</div>
 					<DiySliderField v-model="curItem.style.moreSize" :min="12" :max="40" size="small" show-input
 						:show-input-controls="false" input-size="small"></DiySliderField>
+				</div>
+				<div class="form-item">
+					<div class="form-label">按钮颜色：</div>
+					<div class="flex-1 d-s-c" style="height: 36px;">
+						<DiyColorField v-model="curItem.style.moreColor" default-color="#ffffff" placeholder="透明" />
+					</div>
+				</div>
+				<div class="form-item" v-if="curItem.params.titleType == 1">
+					<div class="form-label">提示文字：</div>
+					<div class="flex-1 d-s-c" style="height: 36px;">
+						<DiyColorField v-model="curItem.style.titleColor" default-color="#ffffff" placeholder="透明" />
+					</div>
+				</div>
+				<div class="form-item">
+					<div class="form-label">分割线：</div>
+					<div class="flex-1 d-s-c" style="height: 36px;">
+						<DiyColorField v-model="curItem.style.dividerColor" default-color="#DDDDDD" placeholder="透明" />
+					</div>
 				</div>
 				<!--组件样式-->
 				<div class="form-chink"></div>

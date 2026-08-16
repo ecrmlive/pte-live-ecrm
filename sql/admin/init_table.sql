@@ -397,7 +397,8 @@ CREATE TABLE IF NOT EXISTS `qixi_crm_a_serve_meal` (
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_page` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT, `page_type` enum('home','store_street','member','custom') NOT NULL,
   `name` varchar(128) NOT NULL, `document` json NOT NULL, `status` enum('draft','published') NOT NULL DEFAULT 'draft',
-  `updated_by` bigint unsigned NOT NULL, `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updated_by` bigint unsigned NOT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`), KEY `idx_type_status` (`page_type`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS `qixi_crm_a_diy_link_category` (

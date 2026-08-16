@@ -46,6 +46,8 @@ const schema = computed((): VbenFormSchema[] => [
   { component: 'Input', fieldName: 'params.title', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'params.titleBgType', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'params.titleType', hideLabel: true, formItemClass: 'hidden' },
+  { component: 'Input', fieldName: 'params.bgimage', hideLabel: true, formItemClass: 'hidden' },
+  { component: 'Input', fieldName: 'params.titleimage', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.background', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.bgcolor_color1', hideLabel: true, formItemClass: 'hidden' },
   { component: 'Input', fieldName: 'style.bgcolor_color2', hideLabel: true, formItemClass: 'hidden' },
@@ -80,7 +82,7 @@ const schema = computed((): VbenFormSchema[] => [
   { component: 'Input', fieldName: 'style.topRadio', hideLabel: true, formItemClass: 'hidden' },
 ]);
 
-const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["params.column","params.linePrice","params.more","params.productName","params.productPrice","params.productSales","params.product_btn","params.showNum","params.title","params.titleBgType","params.titleType","style.background","style.bgcolor_color1","style.bgcolor_color2","style.bottomRadio","style.btn_text_color","style.color","style.marginTop","style.moreColor","style.moreSize","style.nameWeight","style.number_color","style.paddingBottom","style.paddingLeft","style.paddingTop","style.productBottomRadio","style.productBtn_color1","style.productBtn_color2","style.productLine_color","style.productName_color","style.productPrice_color","style.productSlider_color","style.productSlider_color1","style.productSlider_color2","style.productTopRadio","style.titleBg_color1","style.titleBg_color2","style.titleColor","style.titleSize","style.titleWeight","style.title_color1","style.title_color2","style.topRadio"] });
+const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["params.column","params.linePrice","params.more","params.productName","params.productPrice","params.productSales","params.product_btn","params.showNum","params.title","params.titleBgType","params.titleType","params.bgimage","params.titleimage","style.background","style.bgcolor_color1","style.bgcolor_color2","style.bottomRadio","style.btn_text_color","style.color","style.marginTop","style.moreColor","style.moreSize","style.nameWeight","style.number_color","style.paddingBottom","style.paddingLeft","style.paddingTop","style.productBottomRadio","style.productBtn_color1","style.productBtn_color2","style.productLine_color","style.productName_color","style.productPrice_color","style.productSlider_color","style.productSlider_color1","style.productSlider_color2","style.productTopRadio","style.titleBg_color1","style.titleBg_color2","style.titleColor","style.titleSize","style.titleWeight","style.title_color1","style.title_color2","style.topRadio"] });
 </script>
 
 <template>
@@ -180,7 +182,7 @@ const { Form } = useDiyCurItemForm(() => props.curItem, schema, { fieldPaths: ["
 							:true-value="1" :false-value="0" size="small" />
 						<component :is="Checkbox" v-model="curItem.params.productPrice" label="商品价格" :true-value="1" :false-value="0"
 							size="small" />
-						<component :is="Checkbox" v-model="curItem.params.linePrice" label="划线价格" :true-value="1" :false-value="0"
+          <component :is="Checkbox" v-model="curItem.params.linePrice" label="商品原价" :true-value="1" :false-value="0"
 							size="small" />
 					</div>
 				</div>

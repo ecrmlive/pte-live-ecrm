@@ -69,6 +69,35 @@
 	backdrop-filter: blur(8px);
 }
 
+/* 购物车装修：按三栏编辑器的固定工作区布局展示。 */
+.diy-editor-shell--cart {
+	.diy-editor-header {
+		padding: 12px 16px 0;
+	}
+
+	.diy-editor-body {
+		min-height: 0;
+	}
+
+	.diy-menu {
+		width: 300px;
+	}
+
+	.diy-info {
+		width: 640px;
+	}
+
+	.diy-phone {
+		padding: 16px 72px;
+		background: hsl(var(--muted) / 22%);
+	}
+
+	.form-footer {
+		height: 64px;
+		padding: 12px 16px;
+	}
+}
+
 .diy-container {
 	display: flex;
 	flex: 1;

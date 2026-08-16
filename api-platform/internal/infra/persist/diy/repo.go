@@ -25,6 +25,7 @@ type pageRow struct {
 	Document  json.RawMessage `gorm:"column:document"`
 	Status    string          `gorm:"column:status"`
 	UpdatedBy uint            `gorm:"column:updated_by"`
+	CreatedAt time.Time       `gorm:"column:created_at"`
 	UpdatedAt time.Time       `gorm:"column:updated_at"`
 }
 
@@ -53,6 +54,7 @@ func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, e
 		limit = 20
 	}
 	q := r.db.WithContext(ctx).Model(&pageRow{})
+	q = q.Where("name <> ?", diy.CategoryDecorationPageName)
 	if f.IsDiy != nil {
 		if *f.IsDiy == 1 {
 			q = q.Where("page_type = ?", "home")
@@ -75,6 +77,10 @@ func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, e
 		return nil, 0, err
 	}
 	var rows []pageRow
+	if f.IsDiy != nil && *f.IsDiy == 1 {
+		// 系统默认模板始终保持列表第一项，避免更新时间改变后被普通模板挤走。
+		q = q.Order("CASE WHEN id = 4001 THEN 0 ELSE 1 END ASC")
+	}
 	err := q.Order("updated_at DESC, id DESC").Offset((page - 1) * limit).Limit(limit).Find(&rows).Error
 	pages := make([]diy.Page, 0, len(rows))
 	for _, row := range rows {
@@ -100,6 +106,28 @@ func (r *Repo) GetActiveHome(ctx context.Context, merID uint) (*diy.Page, error)
 		Order("id DESC").
 		First(&row).Error
 	if err != nil {
+		return nil, err
+	}
+	p := toPage(row)
+	return &p, nil
+}
+
+func (r *Repo) GetCategoryDecoration(ctx context.Context) (*diy.Page, error) {
+	var row pageRow
+	if err := r.db.WithContext(ctx).
+		Where("page_type = ? AND name = ?", "custom", diy.CategoryDecorationPageName).
+		First(&row).Error; err != nil {
+		return nil, err
+	}
+	p := toPage(row)
+	return &p, nil
+}
+
+func (r *Repo) GetProductDetailDecoration(ctx context.Context) (*diy.Page, error) {
+	var row pageRow
+	if err := r.db.WithContext(ctx).
+		Where("page_type = ? AND name = ?", "custom", diy.ProductDetailDecorationPageName).
+		First(&row).Error; err != nil {
 		return nil, err
 	}
 	p := toPage(row)
@@ -189,7 +217,7 @@ func fromPage(p *diy.Page) (pageRow, error) {
 	return pageRow{ID: p.ID, PageType: pageType, Name: p.Name, Document: raw, Status: status}, nil
 }
 func toPage(row pageRow) diy.Page {
-	p := diy.Page{ID: row.ID, Name: row.Name, Value: string(row.Document), Status: 0, IsShow: 1, Type: 0, IsDiy: 0, UpdateTime: row.UpdatedAt, AddTime: row.UpdatedAt}
+	p := diy.Page{ID: row.ID, Name: row.Name, Value: string(row.Document), Status: 0, IsShow: 1, Type: 0, IsDiy: 0, UpdateTime: row.UpdatedAt, AddTime: row.CreatedAt}
 	if row.Status == "published" {
 		p.Status = 1
 	}

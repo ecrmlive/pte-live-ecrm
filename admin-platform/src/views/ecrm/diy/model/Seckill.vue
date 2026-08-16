@@ -11,19 +11,17 @@
 			
 		}">
 		<div class="diy-product o-h" :style="borderStyle">
-			<div class="diy-head d-b-c" :style="{
-					background:item.params.titleBgType == 2?`linear-gradient(to right, ${item.style.titleBg_color1 || '#fff'}, ${item.style.titleBg_color2 || '#fff'})` :'url(' + item.params.bgimage + ')'
-				}">
+			<div class="diy-head d-b-c" :style="headerStyle">
 				<div class="left d-s-c">
-					<div v-if="item.params.titleType == 1" class="name" :style="{
+					<div v-if="item.params.titleType == 1 || !hasTitleImage" class="name" :style="{
 							color: themeColor,
 							fontSize: item.style.titleSize + 'px',
 							fontWeight:item.style.titleWeight == 1?'bold':'',
 							fontStyle:item.style.titleWeight == 2?'italic':''
 						}">
-						{{ item.params.title }}
+						{{ item.params.title || '限时秒杀' }}
 					</div>
-					<img v-if="item.params.titleType == 2" class="titleImgt" :src="item.params.titleimage" alt="" />
+					<img v-else class="titleImgt" :src="item.params.titleimage" alt="" />
 					<div class="datetime d-s-c">
 						<text class="text" :style="{ color: item.style.color }">距结束仅剩</text>
 						<span class="hour" :style="{
@@ -152,6 +150,25 @@
 			},
 			previewProducts() {
 				return resolveMarketingPreviewProducts(this.item);
+			},
+			hasTitleImage() {
+				return Boolean(String((this.item.params || {}).titleimage || '').trim());
+			},
+			headerStyle() {
+				const params = this.item.params || {};
+				const style = this.item.style || {};
+				const backgroundImage = String(params.bgimage || '').trim();
+				const gradient = `linear-gradient(to right, ${style.titleBg_color1 || '#fff'}, ${style.titleBg_color2 || '#fff'})`;
+
+				return {
+					background:
+						Number(params.titleBgType) === 1 && backgroundImage
+							? `url(${backgroundImage})`
+							: gradient,
+					backgroundPosition: 'center',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: '100% 100%',
+				};
 			},
 			productFlags() {
 				const params = this.item.params || {};
