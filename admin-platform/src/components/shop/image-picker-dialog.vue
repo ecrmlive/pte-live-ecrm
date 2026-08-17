@@ -18,7 +18,7 @@ const SYSTEM_ROOT_ID = -1;
 const open = defineModel<boolean>('open', { default: false });
 const props = withDefaults(
   defineProps<{
-    /** @deprecated 打开时始终默认「全部素材」；保留 prop 以免调用方报错 */
+    /** 弹窗初始素材库；DIY 场景默认从系统素材开始选择。 */
     defaultLibrary?: 'merchant' | 'system';
     kind?: 'image' | 'video';
     limit?: number;
@@ -206,9 +206,9 @@ function confirm() {
 
 async function initialize() {
   selected.value = [];
-  // 打开时始终默认「全部素材」，不落在子分类或系统素材根入口
-  libraryMode.value = 'all';
-  categoryID.value = 0;
+  // 按调用方指定的初始素材库打开；系统素材使用根入口筛选全部系统预置。
+  libraryMode.value = props.defaultLibrary === 'system' ? 'system' : 'all';
+  categoryID.value = props.defaultLibrary === 'system' ? SYSTEM_ROOT_ID : 0;
   page.value = 1;
   await loadCategories();
   await loadFiles();

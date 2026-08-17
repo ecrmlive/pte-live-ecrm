@@ -61,12 +61,19 @@ function ensureNavBarDefaults(item: DiyRecord) {
   if (style.iconBottomRightRadius === undefined) style.iconBottomRightRadius = style.iconRadius;
   if (style.iconBottomLeftRadius === undefined) style.iconBottomLeftRadius = style.iconRadius;
   if (!style.iconShadow) style.iconShadow = 'off';
+  if (!style.iconShadowColor) style.iconShadowColor = 'rgba(20, 37, 63, 0.16)';
+  if (style.iconShadowX === undefined) style.iconShadowX = 0;
+  if (style.iconShadowY === undefined) style.iconShadowY = 4;
+  if (style.iconShadowBlur === undefined) style.iconShadowBlur = 10;
+  if (style.iconShadowSpread === undefined) style.iconShadowSpread = 0;
 
   if (style.float === undefined) style.float = 0;
   if (style.bgcolor === undefined) style.bgcolor = 'rgba(255, 255, 255, 0)';
   if (style.bgcolorEnd === undefined) style.bgcolorEnd = 'rgba(255, 255, 255, 0)';
   if (style.background === undefined) style.background = 'rgba(255, 0, 0, 0)';
   if (!style.textColor) style.textColor = '#333333';
+  if (style.cardBorderWidth === undefined) style.cardBorderWidth = 0;
+  if (!style.cardBorderColor) style.cardBorderColor = 'rgba(0, 0, 0, 0)';
   if (style.paddingTop === undefined) style.paddingTop = 0;
   if (style.paddingBottom === undefined) style.paddingBottom = 10;
   if (style.paddingLeft === undefined) style.paddingLeft = 0;
@@ -79,8 +86,14 @@ function ensureNavBarDefaults(item: DiyRecord) {
   if (style.cardBottomRightRadius === undefined) style.cardBottomRightRadius = style.cardRadius;
   if (style.cardBottomLeftRadius === undefined) style.cardBottomLeftRadius = style.cardRadius;
   if (!style.cardShadow) style.cardShadow = 'off';
+  if (!style.cardShadowColor) style.cardShadowColor = 'rgba(20, 37, 63, 0.12)';
+  if (style.cardShadowX === undefined) style.cardShadowX = 0;
+  if (style.cardShadowY === undefined) style.cardShadowY = 8;
+  if (style.cardShadowBlur === undefined) style.cardShadowBlur = 18;
+  if (style.cardShadowSpread === undefined) style.cardShadowSpread = 0;
 
   item.data.forEach((entry) => {
+    if (!entry._navUid) entry._navUid = `nav-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     if (!entry.text) entry.text = '导航名称';
     if (entry.hide === undefined) entry.hide = false;
   });
@@ -130,12 +143,23 @@ const styleSchema = computed((): VbenFormSchema[] => {
       { label: '关闭', value: 'off' },
       { label: '开启', value: 'on' },
     ]),
+    ...(style.iconShadow === 'on'
+      ? [
+          diyColor('style.iconShadowColor', '阴影颜色：', 'rgba(20, 37, 63, 0.16)'),
+          diySlider('style.iconShadowX', '横轴：', { max: 24, min: -24 }),
+          diySlider('style.iconShadowY', '纵轴：', { max: 24, min: -24 }),
+          diySlider('style.iconShadowBlur', '宽度：', { max: 48, min: 0 }),
+          diySlider('style.iconShadowSpread', '扩散：', { max: 48, min: -24 }),
+        ]
+      : []),
     diySection('卡片样式'),
     diySlider('style.float', '组件上浮：', { max: 48, min: 0 }),
     diyColor('style.bgcolor', '组件背景：', 'rgba(255, 255, 255, 0)', '透明'),
     diyColor('style.bgcolorEnd', '组件背景渐变：', 'rgba(255, 255, 255, 0)', '透明'),
     diyColor('style.background', '底部背景：', 'rgba(255, 0, 0, 0)', '透明'),
     diyColor('style.textColor', '文字颜色：', '#333333'),
+    diySlider('style.cardBorderWidth', '边框宽度：', { max: 8, min: 0 }),
+    diyColor('style.cardBorderColor', '边框颜色：', 'rgba(0, 0, 0, 0)', '透明'),
     diySlider('style.paddingTop', '上边距：', { max: 48, min: 0 }),
     diySlider('style.paddingBottom', '下边距：', { max: 48, min: 0 }),
     diySlider('style.paddingLeft', '左右边距：', { max: 48, min: 0 }),
@@ -161,6 +185,15 @@ const styleSchema = computed((): VbenFormSchema[] => {
       { label: '关闭', value: 'off' },
       { label: '开启', value: 'on' },
     ]),
+    ...(style.cardShadow === 'on'
+      ? [
+          diyColor('style.cardShadowColor', '阴影颜色：', 'rgba(20, 37, 63, 0.12)'),
+          diySlider('style.cardShadowX', '横轴：', { max: 24, min: -24 }),
+          diySlider('style.cardShadowY', '纵轴：', { max: 24, min: -24 }),
+          diySlider('style.cardShadowBlur', '宽度：', { max: 48, min: 0 }),
+          diySlider('style.cardShadowSpread', '扩散：', { max: 48, min: -24 }),
+        ]
+      : []),
   ];
 });
 
@@ -184,6 +217,7 @@ function closeLinkset(value: { name?: string; type?: string; url?: string } | nu
   item.linkeType = value.type;
   item.linkUrl = value.url;
   item.name = value.name;
+  item.text = value.name || item.text;
 }
 
 function addNavigationItem() {
@@ -192,11 +226,20 @@ function addNavigationItem() {
     return;
   }
   navigationItems.value.push({
+    _navUid: `nav-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     hide: false,
     imgUrl: '',
     linkUrl: '',
     text: '导航名称',
   });
+}
+
+function removeNavigationItem(index: number) {
+  if (navigationItems.value.length <= 1) {
+    ElMessage.warning('导航组至少保留 1 项');
+    return;
+  }
+  navigationItems.value.splice(index, 1);
 }
 
 function setItemEnabled(item: DiyRecord, enabled: boolean) {
@@ -220,7 +263,14 @@ function setItemEnabled(item: DiyRecord, enabled: boolean) {
 
     <div v-show="styleType === 'content'">
       <ContentForm />
-      <draggable v-model="navigationItems" class="draggable-list" group="navigation-items" item-key="index">
+    <draggable
+      v-model="navigationItems"
+      class="draggable-list"
+      group="navigation-items"
+      item-key="_navUid"
+      :animation="180"
+      handle=".nav-item-card__drag"
+    >
         <template #item="{ element, index }">
           <div class="d-c-c param-img-item navbar nav-item-card">
             <div class="nav-item-card__drag" title="拖拽调整顺序">
@@ -238,7 +288,7 @@ function setItemEnabled(item: DiyRecord, enabled: boolean) {
             <div class="right nav-item-card__fields">
               <ElIcon
                 class="el-icon-DeleteFilled"
-                @click.stop="editor.onEditorDeleleData(index, selectedIndex ?? 0)"
+                @click.stop="removeNavigationItem(index)"
               >
                 <CloseBold />
               </ElIcon>

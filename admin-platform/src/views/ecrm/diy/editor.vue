@@ -8,15 +8,21 @@ import {
   isCenterDiyMode,
   isHomeDiyMode,
   loadDiyEditorApi,
-  resolveDiyEditorMode,
+  loadDiySingletonApi,
   saveDiyEditorApi,
+  saveDiySingletonApi,
   type DiyEditorMode,
+  type DiySingletonScope,
 } from '#/api/core/diy';
 import { normalizeCenterDiyItems } from '#/utils/diy/center-diy-normalize';
 
 import Model from './Model.vue';
 import Params from './Params.vue';
 import Type from './Type.vue';
+import {
+  createSingletonFallbackBootstrap,
+  saveSingletonFallbackDraft,
+} from './singleton-fallback';
 
 export default {
   name: 'NativeDiyEditorPage',
@@ -43,21 +49,41 @@ export default {
       mode: 'custom-add' as DiyEditorMode,
       opts: {},
       pageId: 0,
+      activeConfigTab: 'content',
     };
   },
   computed: {
+    selectedConfigTitle() {
+      return this.form.curItem?.name || this.form.curItem?.title || '页面设置';
+    },
     diyType() {
       return isCenterDiyMode(this.mode) ? 'center' : '';
     },
     isDiy() {
-      return isHomeDiyMode(this.mode);
+      return this.isSingletonEditor || isHomeDiyMode(this.mode);
+    },
+    singletonScope(): DiySingletonScope | null {
+      const path = this.$route.path;
+      if (path === '/setting/diy/cart') return 'cart';
+      if (path === '/setting/diy/store') return 'store';
+      if (path === '/setting/diy/list' || path === '/setting/diy/index') return 'home';
+      return null;
+    },
+    isSingletonEditor() {
+      return this.singletonScope !== null;
     },
     isCartEditor() {
-      return this.$route.path === '/setting/diy/cart';
+      return this.singletonScope === 'cart';
     },
     pageTitle() {
-      if (this.isCartEditor) {
+      if (this.singletonScope === 'home') {
+        return '首页装修';
+      }
+      if (this.singletonScope === 'cart') {
         return '购物车装修';
+      }
+      if (this.singletonScope === 'store') {
+        return '店铺装修';
       }
       const titles: Record<DiyEditorMode, string> = {
         'center-add': '新增个人中心页',
@@ -70,7 +96,7 @@ export default {
       return titles[this.mode] ?? '页面装修';
     },
     isHeaderBackLink() {
-      return true;
+      return !this.isSingletonEditor;
     },
     listPath() {
       const p = this.$route.path || '';
@@ -78,6 +104,7 @@ export default {
       return '/setting/diy/list';
     },
     headerBackRoute() {
+      if (this.isSingletonEditor) return null;
       if (this.mode.startsWith('custom')) return '/setting/micro/list';
       if (this.mode.startsWith('home')) return this.listPath;
       return null;
@@ -85,6 +112,11 @@ export default {
   },
   async created() {
     this.pageId = Number(this.$route.query.id ?? this.$route.query.page_id ?? 0);
+    if (this.singletonScope) {
+      this.mode = 'home-edit';
+      await this.loadData();
+      return;
+    }
     const types = String(this.$route.query.types ?? '1');
     if (this.pageId > 0) {
       this.mode = types === '0' ? 'custom-edit' : 'home-edit';
@@ -97,22 +129,57 @@ export default {
     deepClone<T>(obj: T): T {
       return JSON.parse(JSON.stringify(obj)) as T;
     },
+    async loadEditorBootstrap() {
+      const scope = this.singletonScope;
+      if (!scope) {
+        return loadDiyEditorApi(this.mode, this.pageId || undefined);
+      }
+
+      try {
+        return await loadDiySingletonApi(scope);
+      } catch {
+        try {
+          // 旧服务尚未提供 singleton 接口时，仍使用通用编辑器配置渲染完整工作台。
+          return await loadDiyEditorApi('home-edit');
+        } catch {
+          // 接口断网或 404 时，不让单例装修页退化为三个空白区域。
+          return createSingletonFallbackBootstrap(scope);
+        }
+      }
+    },
     async loadData() {
       this.loading = true;
       try {
-        const res = await loadDiyEditorApi(this.mode, this.pageId || undefined);
+        const scope = this.singletonScope;
+        const res = await this.loadEditorBootstrap();
+        const fallback = scope
+          ? createSingletonFallbackBootstrap(scope)
+          : null;
         const data = res as {
           defaultData?: Record<string, unknown>;
           jsonData?: { items?: Array<Record<string, unknown>>; page?: Record<string, unknown> };
           opts?: Record<string, unknown>;
+          pageId?: number;
         };
-        this.defaultData = data.defaultData ?? {};
-        const jsonData = data.jsonData ?? { items: [], page: {} };
+        const pageId = Number(data.pageId ?? 0);
+        if (Number.isFinite(pageId) && pageId > 0) {
+          this.pageId = pageId;
+        }
+        this.defaultData = {
+          ...(fallback?.defaultData ?? {}),
+          ...(data.defaultData ?? {}),
+        };
+        const jsonData = this.deepClone(
+          data.jsonData ?? fallback?.jsonData ?? { items: [], page: {} },
+        ) as { items?: Array<Record<string, unknown>>; page?: Record<string, unknown> };
         if (!Array.isArray(jsonData.items)) {
           jsonData.items = [];
         }
         if (!jsonData.page || typeof jsonData.page !== 'object') {
           jsonData.page = {};
+        }
+        if (this.isSingletonEditor && jsonData.items.length === 0) {
+          jsonData.items = this.createSingletonDefaultItems();
         }
         this.diyData = jsonData;
         this.ensureDiyItemKeys(this.diyData.items);
@@ -120,7 +187,10 @@ export default {
           normalizeCenterDiyItems(this.diyData);
         }
         this.form.curItem = this.diyData.page ?? {};
-        this.opts = data.opts ?? {};
+        this.opts = {
+          ...(fallback?.opts ?? {}),
+          ...(data.opts ?? {}),
+        };
       } finally {
         this.loading = false;
       }
@@ -136,7 +206,7 @@ export default {
         }
       });
     },
-    resolveDefaultItem(key: string) {
+  resolveDefaultItem(key: string) {
       const source = this.defaultData[key];
       if (source) {
         return this.deepClone(source);
@@ -147,10 +217,37 @@ export default {
           return this.deepClone(candidate);
         }
       }
-      return null;
-    },
-    onAddItem(key: string) {
-      if (isHomeDiyMode(this.mode) || this.mode === 'custom-add' || this.mode === 'custom-edit') {
+    return null;
+  },
+  singletonDefaultItemKeys() {
+    switch (this.singletonScope) {
+      case 'home':
+        return ['search', 'banner', 'navBar', 'product', 'bottomNav'];
+      case 'cart':
+        return ['search', 'title', 'product', 'bottomNav'];
+      case 'store':
+        return ['search', 'banner', 'store', 'product', 'bottomNav'];
+      default:
+        return [];
+    }
+  },
+  createSingletonDefaultItems() {
+    const items: Array<Record<string, unknown>> = [];
+    this.singletonDefaultItemKeys().forEach((key) => {
+      const item = this.resolveDefaultItem(key);
+      if (item && typeof item === 'object') {
+        items.push(this.stampDiyItem(item as Record<string, unknown>, key));
+      }
+    });
+    return items;
+  },
+  onAddItem(key: string) {
+    if (
+      this.isSingletonEditor ||
+      isHomeDiyMode(this.mode) ||
+      this.mode === 'custom-add' ||
+      this.mode === 'custom-edit'
+    ) {
         this.onAddItemWithRules(key);
         return;
       }
@@ -238,6 +335,22 @@ export default {
       }
       this.loading = true;
       try {
+        const scope = this.singletonScope;
+        if (scope) {
+          saveSingletonFallbackDraft(scope, this.diyData);
+          try {
+            const result = await saveDiySingletonApi(
+              scope,
+              JSON.stringify(this.diyData),
+            );
+            this.pageId = Number(result?.page_id ?? this.pageId);
+            ElMessage.success('保存成功');
+          } catch {
+            ElMessage.warning('服务暂不可用，已保存到本机草稿');
+          }
+          this.form.selectedIndex = -1;
+          return;
+        }
         const res = await saveDiyEditorApi(
           this.mode,
           JSON.stringify(this.diyData),
@@ -283,11 +396,7 @@ export default {
     auto-content-height
     content-class="diy-editor-page flex min-h-0 flex-col overflow-hidden !p-0"
   >
-    <div
-      v-loading="loading"
-      class="diy-editor-shell native-form-page native-form-shell"
-      :class="{ 'diy-editor-shell--cart': isCartEditor }"
-    >
+    <div v-loading="loading" class="diy-editor-shell native-form-page native-form-shell">
       <div class="diy-editor-header flex-shrink-0">
         <div
           class="common-form"
@@ -301,7 +410,6 @@ export default {
       <div class="diy-editor-body">
         <div class="diy-container flex min-h-0 flex-1">
           <aside class="diy-menu diy-panel">
-            <div class="diy-panel__head">组件库</div>
             <div class="diy-panel__scroll">
               <Type v-if="!loading" :default-data="defaultData" @add-item="onAddItem" />
             </div>
@@ -316,11 +424,32 @@ export default {
               :diy-type="diyType"
               :form="form"
               :is-diy="isDiy"
+              @select-item="activeConfigTab = 'content'"
             />
           </main>
 
           <aside class="diy-info diy-panel">
-            <div class="diy-panel__head">页面设置</div>
+            <div class="diy-config-head">
+              <div class="diy-config-title">{{ selectedConfigTitle }}</div>
+              <div class="diy-config-tabs" role="tablist" aria-label="组件配置">
+                <button
+                  type="button"
+                  class="diy-config-tab"
+                  :class="{ 'is-active': activeConfigTab === 'content' }"
+                  @click="activeConfigTab = 'content'"
+                >
+                  内容
+                </button>
+                <button
+                  type="button"
+                  class="diy-config-tab"
+                  :class="{ 'is-active': activeConfigTab === 'style' }"
+                  @click="activeConfigTab = 'style'"
+                >
+                  样式
+                </button>
+              </div>
+            </div>
             <div class="diy-panel__scroll">
               <Params
                 v-if="!loading"
@@ -330,6 +459,7 @@ export default {
                 :form="form"
                 :is-diy="isDiy"
                 :opts="opts"
+                :config-tab="activeConfigTab"
               />
             </div>
           </aside>

@@ -1,4 +1,4 @@
-import { requestClient } from '#/api/request';
+import { publicRequestClient, requestClient } from '#/api/request';
 
 export interface DiyPageRow {
   doc?: DiyPageDoc;
@@ -23,7 +23,11 @@ export interface DiyEditorBootstrap {
   defaultPage?: Record<string, unknown>;
   jsonData: DiyPageDoc;
   opts?: Record<string, unknown>;
+  pageId?: number;
+  scope?: DiySingletonScope;
 }
+
+export type DiySingletonScope = 'cart' | 'home' | 'store';
 
 export type CategoryDecorationLayout = 'card' | 'grid' | 'list';
 
@@ -32,6 +36,11 @@ export interface CategoryDecoration {
 }
 
 export interface ProductDetailDecoration {
+  config: Record<string, unknown>;
+}
+
+/** 我的装修页配置，字段由 C 端个人中心按原样消费。 */
+export interface PersonalDecoration {
   config: Record<string, unknown>;
 }
 
@@ -103,6 +112,15 @@ export async function getProductDetailDecorationApi() {
 
 export async function saveProductDetailDecorationApi(config: Record<string, unknown>) {
   return requestClient.put<ProductDetailDecoration>('/diy/product-detail-decoration', { config });
+}
+
+export async function getPersonalDecorationApi() {
+  // 兼容仍在升级中的后端：首次打开时由页面使用默认装修配置，避免 404 破坏编辑体验。
+  return publicRequestClient.get<PersonalDecoration>('/diy/personal-decoration');
+}
+
+export async function savePersonalDecorationApi(config: Record<string, unknown>) {
+  return publicRequestClient.put<PersonalDecoration>('/diy/personal-decoration', { config });
 }
 
 export async function applyDiyDefaultApi(id: number) {
@@ -180,6 +198,16 @@ export async function loadDiyEditorApi(mode: DiyEditorMode, pageId?: number) {
   const id = pageId && pageId > 0 ? pageId : 0;
   const path = id > 0 ? `/diy/editor/bootstrap/${id}` : '/diy/editor/bootstrap';
   return requestClient.get<DiyEditorBootstrap>(path);
+}
+
+/** 固定页面装修：首页、购物车、店铺各自只有一份可编辑配置。 */
+export async function loadDiySingletonApi(scope: DiySingletonScope) {
+  return requestClient.get<DiyEditorBootstrap>(`/diy/editor/singleton/${scope}`);
+}
+
+export async function saveDiySingletonApi(scope: DiySingletonScope, paramsJson: string) {
+  const doc = JSON.parse(paramsJson) as DiyPageDoc;
+  return requestClient.put<{ page_id: number }>(`/diy/editor/singleton/${scope}`, { doc });
 }
 
 export async function saveDiyEditorApi(

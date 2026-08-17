@@ -13,11 +13,13 @@
       <div v-else-if="leadingMode === 'location'" class="search-leading search-leading--location" :style="titleStyle">
         <el-icon><Location /></el-icon>
         <span>{{ params.locationText }}</span>
+        <el-icon class="location-arrow"><ArrowRight /></el-icon>
       </div>
       <div class="phone-top-search-box d-s-c" :style="searchBoxStyle">
-        <el-icon class="mr10" :color="searchIconColor"><Search /></el-icon>
-        <span class="search-placeholder" :style="placeholderStyle">{{ searchText }}</span>
-        <span v-if="activeHotWord" class="search-hotword" :style="hotWordStyle">{{ activeHotWord }}</span>
+        <el-icon class="search-icon" :color="searchIconColor"><Search /></el-icon>
+        <span class="search-keyword" :style="activeHotWord ? hotWordStyle : placeholderStyle">
+          {{ activeHotWord || searchText }}
+        </span>
       </div>
     </div>
     <div class="btn-edit-del">
@@ -27,10 +29,10 @@
 </template>
 
 <script>
-import { Location, Search } from '@element-plus/icons-vue';
+import { ArrowRight, Location, Search } from '@element-plus/icons-vue';
 
 export default {
-  components: { Location, Search },
+  components: { ArrowRight, Location, Search },
   inject: ['diyModel'],
   props: ['item', 'index', 'selectedIndex'],
   data() {
@@ -50,10 +52,12 @@ export default {
       return this.params.display_mode === 'fixed';
     },
     leadingMode() {
-      if (this.params.title_type === 'search') return 'search';
-      if (this.params.style_type === 'logo' || (!this.params.style_type && this.params.title_type === 'image')) return 'logo';
-      if (this.params.style_type === 'location' || this.params.title_type === 'location') return 'location';
-      return 'title';
+      if (this.params.style_type === 'logo') return 'logo';
+      if (this.params.style_type === 'location') return 'location';
+      if (this.params.style_type === 'title') return 'title';
+      if (this.params.title_type === 'image') return 'logo';
+      if (this.params.title_type === 'title' || this.params.title_type === 'text') return 'title';
+      return 'location';
     },
     searchText() {
       return this.params.searchText || '搜索商品';
@@ -70,7 +74,7 @@ export default {
       const float = Number(this.style.float || 0);
       const paddingRight = this.style.paddingRight ?? this.style.paddingLeft ?? 0;
       return {
-        background: this.style.background || 'transparent',
+        background: this.style.background || '#fff1f0',
         paddingLeft: `${Number(this.style.paddingLeft || 0)}px`,
         paddingRight: `${Number(paddingRight || 0)}px`,
         paddingTop: `${Number(this.style.paddingTop || 0)}px`,
@@ -83,7 +87,7 @@ export default {
       const allRadius = Number(this.style.topRadio || 0);
       const individual = this.style.radiusMode === 'individual';
       return {
-        background: this.style.bgcolor || 'transparent',
+        background: this.style.bgcolor || '#fff1f0',
         borderTopLeftRadius: `${individual ? Number(this.style.topLeftRadio || 0) : allRadius}px`,
         borderTopRightRadius: `${individual ? Number(this.style.topRightRadio || 0) : allRadius}px`,
         borderBottomLeftRadius: `${individual ? Number(this.style.bottomLeftRadio || 0) : Number(this.style.bottomRadio ?? allRadius)}px`,
@@ -168,8 +172,8 @@ export default {
 }
 
 .diy-search {
-  min-height: 48px;
-  padding: 8px 12px;
+  min-height: 58px;
+  padding: 10px 12px;
 
   .logo-img {
     display: block;
@@ -194,35 +198,43 @@ export default {
   }
 
   .search-leading--location {
-    max-width: 38%;
-    gap: 3px;
+    max-width: 42%;
+    gap: 4px;
 
     span {
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .location-arrow {
+      flex: 0 0 auto;
+      margin-left: -2px;
+      font-size: 14px;
     }
   }
 
   .phone-top-search-box {
     flex: 1;
     min-width: 0;
-    height: 30px;
-    border-radius: 30px;
-    font-size: 13px;
-    line-height: 30px;
-    padding: 0 10px;
+    height: 38px;
+    border-radius: 22px;
+    font-size: 14px;
+    line-height: 38px;
+    padding: 0 14px;
   }
 
-  .search-placeholder,
-  .search-hotword {
+  .search-icon {
+    flex: 0 0 auto;
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  .search-keyword {
+    display: block;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .search-hotword {
-    margin-left: 6px;
-    font-weight: 500;
   }
 }
 </style>

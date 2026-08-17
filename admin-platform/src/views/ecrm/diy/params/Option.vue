@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { ArrowRight, CloseBold } from '@element-plus/icons-vue';
+import { ArrowRight, CloseBold, Rank } from '@element-plus/icons-vue';
 import { ElIcon } from 'element-plus';
 import { computed, ref } from 'vue';
 import draggable from 'vuedraggable';
@@ -19,7 +19,6 @@ import {
 import { useDiyCurItemForm } from './shared/use-diy-cur-item-form';
 import DiyInputField from './shared/diy-input-field.vue';
 import { useDiyAdapterComponents } from './shared/use-diy-adapter-components';
-import { useDiyEditor } from './shared/use-diy-editor';
 
 defineOptions({ name: 'DiyParamsOption' });
 
@@ -34,10 +33,8 @@ const props = defineProps<{
     params?: DiyRecord;
     style?: DiyRecord;
   };
-  selectedIndex?: number;
 }>();
 
-const editor = useDiyEditor();
 const styleType = ref<'content' | 'style'>('content');
 const stylePickerVisible = ref(false);
 const categoryLoading = ref(false);
@@ -53,6 +50,20 @@ const tabs = computed<DiyRecord[]>({
   },
 });
 
+let nextTabId = 0;
+
+function createTab(overrides: DiyRecord = {}): DiyRecord {
+  nextTabId += 1;
+  return {
+    _diyTabId: `option-tab-${Date.now()}-${nextTabId}`,
+    dataType: 'page',
+    linkName: '微页面',
+    linkUrl: '/pages/small_page/index',
+    text: '选项卡',
+    ...overrides,
+  };
+}
+
 function ensureOptionDefaults(item: DiyRecord) {
   const params = (item.params ??= {}) as DiyRecord;
   const style = (item.style ??= {}) as DiyRecord;
@@ -63,7 +74,7 @@ function ensureOptionDefaults(item: DiyRecord) {
   if (!style.activeColor) style.activeColor = style.active_color1 ?? '#ff4d7d';
   if (!style.activeText) style.activeText = '#ffffff';
   if (!style.background) style.background = 'rgba(255, 255, 255, 0)';
-  if (!style.bgcolor) style.bgcolor = '#ffffff';
+  if (!style.bgcolor) style.bgcolor = '#fff0f3';
   if (style.float === undefined) style.float = 0;
   if (style.marginTop === undefined) style.marginTop = 0;
   if (style.paddingTop === undefined) style.paddingTop = 0;
@@ -80,16 +91,16 @@ function ensureOptionDefaults(item: DiyRecord) {
 
   if (!Array.isArray(item.data) || item.data.length === 0) {
     item.data = [
-      {
-        dataType: 'page',
-        linkName: '微页面',
-        linkUrl: '/pages/index/index',
-        text: '首页',
-      },
+      createTab({ linkName: '首页', linkUrl: '/pages/index/index', text: '首页' }),
+      createTab({ text: '果蔬生鲜' }),
+      createTab({ text: '健康医疗' }),
+      createTab({ text: '非遗文创' }),
+      createTab({ text: '优选茶叶' }),
     ];
   }
 
   item.data.forEach((tab) => {
+    if (!tab._diyTabId) tab._diyTabId = createTab()._diyTabId;
     if (!tab.dataType) tab.dataType = tab.category_id ? 'category' : 'page';
     if (!tab.text) tab.text = '选项卡';
     if (tab.dataType === 'page' && !tab.linkName) tab.linkName = tab.name ?? '选择微页面';
@@ -113,12 +124,12 @@ function selectedStyleLabel() {
 }
 
 function addTab() {
-  tabs.value.push({
-    dataType: 'page',
-    linkName: '选择微页面',
-    linkUrl: '',
-    text: '选项卡',
-  });
+  tabs.value.push(createTab());
+}
+
+function removeTab(index: number) {
+  if (tabs.value.length <= 1) return;
+  tabs.value.splice(index, 1);
 }
 
 function changeLink(index: number) {
@@ -196,7 +207,7 @@ const styleSchema = computed((): VbenFormSchema[] => {
       : []),
     diySection('卡片样式'),
     diySlider('style.float', '组件上浮：', { max: 48, min: 0 }),
-    ...diyBgColors('rgba(255, 255, 255, 0)', '#ffffff'),
+    ...diyBgColors('rgba(255, 255, 255, 0)', '#fff0f3'),
     diySlider('style.paddingTop', '上边距：', { max: 48, min: 0 }),
     diySlider('style.paddingBottom', '下边距：', { max: 48, min: 0 }),
     diySlider('style.paddingLeft', '左右边距：', { max: 48, min: 0 }),
@@ -274,13 +285,24 @@ void loadCategories();
         选项卡设置
         <span class="gray f12">鼠标拖拽版块可调整选项卡顺序</span>
       </div>
-      <draggable v-model="tabs" class="draggable-list" group="option-tabs" item-key="index">
+      <draggable
+        v-model="tabs"
+        class="draggable-list"
+        item-key="_diyTabId"
+        handle=".option-tab-item__handle"
+        :animation="180"
+      >
         <template #item="{ element, index }">
           <div class="d-c-c param-img-item option-tab-item">
+            <ElIcon class="option-tab-item__handle" size="20">
+              <Rank />
+            </ElIcon>
             <div class="right pr">
               <ElIcon
                 class="el-icon-DeleteFilled"
-                @click.stop="editor.onEditorDeleleData(index, selectedIndex ?? 0)"
+                :class="{ 'is-disabled': tabs.length <= 1 }"
+                :title="tabs.length <= 1 ? '至少保留一个选项卡' : '删除选项卡'"
+                @click.stop="removeTab(index)"
               >
                 <CloseBold />
               </ElIcon>
@@ -356,6 +378,7 @@ void loadCategories();
   align-items: center;
   display: flex;
   gap: 12px;
+  margin: 0 0 16px;
 }
 
 .option-style-picker__current {
@@ -364,6 +387,43 @@ void loadCategories();
 }
 
 .option-tab-item {
-  margin-bottom: 16px;
+  align-items: flex-start;
+  background: #f8fafc;
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px 12px;
+
+  .right {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .url-box {
+    margin-bottom: 12px;
+  }
+
+  .url-box:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.option-tab-item__handle {
+  color: #c7cfdd;
+  cursor: grab;
+  flex: none;
+  margin-top: 11px;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.el-icon-DeleteFilled.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
 }
 </style>

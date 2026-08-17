@@ -28,10 +28,14 @@ func (h *Handler) Register(r gin.IRoutes) {
 	r.GET("/diy/pages/:id", h.Get)
 	r.GET("/diy/editor/bootstrap", h.Bootstrap)
 	r.GET("/diy/editor/bootstrap/:id", h.Bootstrap)
+	r.GET("/diy/editor/singleton/:scope", h.SingletonBootstrap)
+	r.PUT("/diy/editor/singleton/:scope", write, manage, h.SaveSingleton)
 	r.GET("/diy/category-decoration", h.GetCategoryDecoration)
 	r.PUT("/diy/category-decoration", write, manage, h.SaveCategoryDecoration)
 	r.GET("/diy/product-detail-decoration", h.GetProductDetailDecoration)
 	r.PUT("/diy/product-detail-decoration", write, manage, h.SaveProductDetailDecoration)
+	r.GET("/diy/personal-decoration", h.GetPersonalDecoration)
+	r.PUT("/diy/personal-decoration", write, manage, h.SavePersonalDecoration)
 	r.POST("/diy/pages", write, manage, h.Create)
 	r.PUT("/diy/pages/:id", write, manage, h.Update)
 	r.POST("/diy/pages/:id/active", write, manage, h.SetActive)
@@ -92,6 +96,54 @@ func (h *Handler) SaveProductDetailDecoration(c *gin.Context) {
 		return
 	}
 	response.OK(c, decoration)
+}
+
+func (h *Handler) GetPersonalDecoration(c *gin.Context) {
+	decoration, err := h.svc.GetPersonalDecoration(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "查询我的装修失败")
+		return
+	}
+	response.OK(c, decoration)
+}
+
+func (h *Handler) SavePersonalDecoration(c *gin.Context) {
+	var input diy.PersonalDecoration
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	decoration, err := h.svc.SavePersonalDecoration(c.Request.Context(), input.Config)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, decoration)
+}
+
+func (h *Handler) SingletonBootstrap(c *gin.Context) {
+	bootstrap, err := h.svc.SingletonEditorBootstrap(c.Request.Context(), c.Param("scope"))
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, bootstrap)
+}
+
+func (h *Handler) SaveSingleton(c *gin.Context) {
+	var input struct {
+		Doc diy.PageDoc `json:"doc"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Fail(c, http.StatusBadRequest, "参数错误")
+		return
+	}
+	page, err := h.svc.SaveSingletonEditor(c.Request.Context(), c.Param("scope"), input.Doc)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"page_id": page.ID})
 }
 
 func platformLinkScope(c *gin.Context) int8 {

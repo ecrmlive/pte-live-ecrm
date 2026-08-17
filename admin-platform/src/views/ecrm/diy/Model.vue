@@ -52,7 +52,7 @@
 				<draggable class="wrapper" v-model="diyData.items" item-key="_diyUid" :move="checkMove"
 					:options="{ animation: 120, filter: '.drag__nomove' }" draggable=".draggable">
 					<template #item="{ element, index }">
-						<div class="diy-phone-item" :class="{ active: form.selectedIndex == index,pstatic:element.type == 'surface'||element.type == 'service' || element.type == 'videoLive',
+						<div class="diy-phone-item" :style="getItemStyle(element)" :class="{ active: form.selectedIndex == index,pstatic:element.type == 'surface'||element.type == 'service' || element.type == 'videoLive',
 							 drag__nomove: element.type === 'option'
                    || element.type === 'search'
 								   || element.type === 'topMerge'
@@ -118,6 +118,14 @@
 							</template>
 							<template v-else-if="element.type == 'bottomNav'">
 								<BottomNav :item="element" :index="index" :selectedIndex="form.selectedIndex"></BottomNav>
+							</template>
+							<!-- 首页组合专区 -->
+							<template v-else-if="element.type == 'homeFeatureArea'">
+								<HomeFeatureArea :item="element" :index="index" :selectedIndex="form.selectedIndex"></HomeFeatureArea>
+							</template>
+							<!-- 首页营销模块 -->
+							<template v-else-if="element.type == 'homeMarketingSection'">
+								<HomeMarketingSection :item="element" :index="index" :selectedIndex="form.selectedIndex"></HomeMarketingSection>
 							</template>
 							<!--商品组-->
 							<template v-else-if="element.type == 'product'">
@@ -241,6 +249,8 @@
 	import Notice from './model/Notice.vue';
 	import NavBar from './model/NavBar.vue';
 	import BottomNav from './model/BottomNav.vue';
+	import HomeFeatureArea from './model/HomeFeatureArea.vue';
+	import HomeMarketingSection from './model/HomeMarketingSection.vue';
 	import ProductIndex from './model/Product.vue';
 	import Coupon from './model/Coupon.vue';
 	import Store from './model/Store.vue';
@@ -294,6 +304,8 @@
 			/*导航组*/
 			NavBar,
 			BottomNav,
+			HomeFeatureArea,
+			HomeMarketingSection,
 			/*商品组*/
 			ProductIndex,
 			/*优惠券*/
@@ -371,6 +383,24 @@
 		},
 		created() {},
 		methods: {
+			getItemStyle(item) {
+				const style = item?.commonStyle;
+				if (!style || ['bottomNav', 'surface', 'service', 'videoLive'].includes(item.type)) {
+					return {};
+				}
+				const px = (value, fallback = 0) => `${Number.isFinite(Number(value)) ? Number(value) : fallback}px`;
+				return {
+					backgroundColor: style.cardBackground || style.contentBackground || undefined,
+					color: style.contentTextColor || undefined,
+					fontSize: style.fontSize ? px(style.fontSize) : undefined,
+					borderRadius: px(style.radius),
+					margin: `${px(style.verticalGap)} ${px(style.horizontalGap)}`,
+					overflow: 'hidden',
+					boxShadow: style.shadow
+						? `${px(style.shadowX)} ${px(style.shadowY)} ${px(style.shadowBlur)} ${style.shadowColor || '#888888'}`
+						: undefined,
+				};
+			},
 			checkMove(evt) {
 				const draggedType = evt.draggedContext.element.type;
 				const toIndex = evt.relatedContext.index; // 目标位置索引
@@ -471,6 +501,7 @@
 				// 当前选中的元素数据
 				self.form.curItem = self.form.selectedIndex < 0 ? self.diyData.page : self.diyData.items[self.form
 					.selectedIndex];
+				self.$emit('select-item', index);
 				// 注册编辑器事件
 				//self.initEditor();
 			},

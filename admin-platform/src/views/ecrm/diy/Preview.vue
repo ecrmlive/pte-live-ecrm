@@ -28,11 +28,11 @@
 				</template>
 				<!--热区-->
 			<template v-if="item.type == 'hotspot'">
-				<Hotspot :item="item" :selectedIndex="form.selectedIndex"></Hotspot>
+				<Hotspot :item="item" :index="index" :selectedIndex="form.selectedIndex"></Hotspot>
 			</template>
 			<!--折扣组-->
 			<template v-else-if="item.type == 'discountGroup'">
-				<DiscountGroup :item="item" :selectedIndex="form.selectedIndex"></DiscountGroup>
+				<DiscountGroup :item="item" :index="index" :selectedIndex="form.selectedIndex"></DiscountGroup>
 			</template>
 			<template v-else-if="item.type == 'ranking'">
 				<Ranking :item="item" :index="index" :selectedIndex="form.selectedIndex"></Ranking>

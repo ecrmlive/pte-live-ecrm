@@ -13,6 +13,7 @@ import (
 type Store interface {
 	List(ctx context.Context, f ListFilter) ([]Page, int64, error)
 	Get(ctx context.Context, id uint) (*Page, error)
+	GetSingletonPage(ctx context.Context, name string) (*Page, error)
 	GetActiveHome(ctx context.Context, merID uint) (*Page, error)
 	Create(ctx context.Context, p *Page) error
 	Update(ctx context.Context, p *Page) error
@@ -32,6 +33,7 @@ type Store interface {
 	DeleteLink(ctx context.Context, id uint) error
 	GetCategoryDecoration(ctx context.Context) (*Page, error)
 	GetProductDetailDecoration(ctx context.Context) (*Page, error)
+	GetPersonalDecoration(ctx context.Context) (*Page, error)
 }
 
 type Service struct {
@@ -209,6 +211,63 @@ func (s *Service) SaveProductDetailDecoration(ctx context.Context, config map[st
 	return &ProductDetailDecoration{Config: cloneMap(config)}, nil
 }
 
+func (s *Service) GetPersonalDecoration(ctx context.Context) (*PersonalDecoration, error) {
+	p, err := s.store.GetPersonalDecoration(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &PersonalDecoration{Config: map[string]any{}}, nil
+		}
+		return nil, err
+	}
+	for _, item := range p.ParseDoc().Items {
+		if item["type"] != "personalDecoration" {
+			continue
+		}
+		if config, ok := item["params"].(map[string]any); ok {
+			return &PersonalDecoration{Config: cloneMap(config)}, nil
+		}
+	}
+	return &PersonalDecoration{Config: map[string]any{}}, nil
+}
+
+func (s *Service) SavePersonalDecoration(ctx context.Context, config map[string]any) (*PersonalDecoration, error) {
+	if config == nil {
+		return nil, ErrBadParam
+	}
+	doc := PageDoc{
+		Page: map[string]any{
+			"type":   "page",
+			"params": map[string]any{"name": "我的装修", "title": "我的装修"},
+		},
+		Items: []map[string]any{{
+			"type": "personalDecoration", "name": "我的装修", "params": cloneMap(config),
+		}},
+	}
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	p, err := s.store.GetPersonalDecoration(ctx)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if p == nil {
+		p = &Page{
+			Version: "2.0", Name: PersonalDecorationPageName, Title: "我的装修",
+			TemplateName: "personal", Status: 1, IsShow: 1, IsDiy: 0, Value: raw,
+		}
+		if err := s.store.Create(ctx, p); err != nil {
+			return nil, err
+		}
+	} else {
+		p.Value, p.Status, p.IsShow, p.TemplateName = raw, 1, 1, "personal"
+		if err := s.store.Update(ctx, p); err != nil {
+			return nil, err
+		}
+	}
+	return &PersonalDecoration{Config: cloneMap(config)}, nil
+}
+
 func (s *Service) EditorBootstrap(ctx context.Context, id, merID uint) (*EditorBootstrap, error) {
 	defs := loadDefaults()
 	out := &EditorBootstrap{
@@ -237,6 +296,194 @@ func (s *Service) EditorBootstrap(ctx context.Context, id, merID uint) (*EditorB
 		out.JSONData = *p.Doc
 	}
 	return out, nil
+}
+
+func singletonPageMeta(scope string) (name, title, template string, isHome, ok bool) {
+	switch scope {
+	case "home":
+		return HomeDecorationPageName, "首页装修", "home", true, true
+	case "cart":
+		return CartDecorationPageName, "购物车装修", "cart", false, true
+	case "store":
+		return StoreDecorationPageName, "店铺装修", "store", false, true
+	default:
+		return "", "", "", false, false
+	}
+}
+
+func normalizeSingletonDoc(doc *PageDoc, title string) {
+	if doc.Page == nil {
+		doc.Page = map[string]any{}
+	}
+	params, ok := doc.Page["params"].(map[string]any)
+	if !ok || params == nil {
+		params = map[string]any{}
+		doc.Page["params"] = params
+	}
+	doc.Page["type"] = "page"
+	params["name"] = title
+	params["title"] = title
+	if _, exists := params["share_title"]; !exists {
+		params["share_title"] = title
+	}
+	if doc.Items == nil {
+		doc.Items = []map[string]any{}
+	}
+}
+
+// singletonDefaultItemKeys keeps the three fixed decoration pages usable on
+// their first visit (and repairs historical empty documents).  The items are
+// deliberately sourced from the same defaults returned to the web editor so
+// the persisted document and the preview stay in sync.
+func singletonDefaultItemKeys(scope string) []string {
+	switch scope {
+	case "home":
+		return []string{"search", "banner", "navBar", "product", "bottomNav"}
+	case "cart":
+		return []string{"search", "title", "product", "bottomNav"}
+	case "store":
+		return []string{"search", "banner", "store", "product", "bottomNav"}
+	default:
+		return nil
+	}
+}
+
+func singletonDefaultItems(scope string, defaults map[string]any) []map[string]any {
+	keys := singletonDefaultItemKeys(scope)
+	items := make([]map[string]any, 0, len(keys))
+	for _, key := range keys {
+		raw, ok := defaults[key]
+		if !ok {
+			continue
+		}
+		item, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		items = append(items, cloneMap(item))
+	}
+	return items
+}
+
+func ensureSingletonDefaultItems(doc *PageDoc, scope string, defaults map[string]any) bool {
+	if len(doc.Items) > 0 {
+		return false
+	}
+	items := singletonDefaultItems(scope, defaults)
+	if len(items) == 0 {
+		return false
+	}
+	doc.Items = items
+	return true
+}
+
+func (s *Service) ensureSingletonEditorPage(ctx context.Context, scope string) (*Page, error) {
+	name, title, template, isHome, ok := singletonPageMeta(scope)
+	if !ok {
+		return nil, ErrBadParam
+	}
+	p, err := s.store.GetSingletonPage(ctx, name)
+	if err == nil {
+		defs := loadDefaults()
+		doc := p.ParseDoc()
+		normalizeSingletonDoc(&doc, title)
+		if ensureSingletonDefaultItems(&doc, scope, defs.DefaultItems) {
+			raw, marshalErr := marshalDoc(doc)
+			if marshalErr != nil {
+				return nil, marshalErr
+			}
+			p.Value = raw
+			if updateErr := s.store.Update(ctx, p); updateErr != nil {
+				return nil, updateErr
+			}
+		}
+		p.Doc = &doc
+		return p, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	defs := loadDefaults()
+	doc := PageDoc{Page: cloneMap(defs.DefaultPage), Items: []map[string]any{}}
+	if isHome {
+		active, activeErr := s.GetActiveHome(ctx, 0)
+		if activeErr != nil && !errors.Is(activeErr, ErrNotFound) {
+			return nil, activeErr
+		}
+		if active != nil {
+			doc = active.ParseDoc()
+		}
+	}
+	normalizeSingletonDoc(&doc, title)
+	ensureSingletonDefaultItems(&doc, scope, defs.DefaultItems)
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	p = &Page{Version: "2.0", Name: name, Title: title, TemplateName: template, Status: 1, IsShow: 1, Value: raw}
+	if err := s.store.Create(ctx, p); err != nil {
+		return nil, err
+	}
+	if isHome {
+		if err := s.store.ClearActive(ctx, 0, 1); err != nil {
+			return nil, err
+		}
+		p.IsDiy, p.IsDefault = 1, 1
+		if err := s.store.Update(ctx, p); err != nil {
+			return nil, err
+		}
+	}
+	p.Doc = &doc
+	return p, nil
+}
+
+// SingletonEditorBootstrap 返回固定页面的唯一编辑配置；首次访问会自动创建默认页面。
+func (s *Service) SingletonEditorBootstrap(ctx context.Context, scope string) (*EditorBootstrap, error) {
+	p, err := s.ensureSingletonEditorPage(ctx, scope)
+	if err != nil {
+		return nil, err
+	}
+	defs := loadDefaults()
+	doc := p.ParseDoc()
+	return &EditorBootstrap{
+		PageID:      p.ID,
+		Scope:       scope,
+		DefaultData: defs.DefaultItems,
+		DefaultPage: defs.DefaultPage,
+		JSONData:    doc,
+		Opts:        map[string]any{},
+	}, nil
+}
+
+// SaveSingletonEditor 直接覆盖对应页面的唯一配置，不产生方案副本。
+func (s *Service) SaveSingletonEditor(ctx context.Context, scope string, doc PageDoc) (*Page, error) {
+	name, title, template, isHome, ok := singletonPageMeta(scope)
+	if !ok {
+		return nil, ErrBadParam
+	}
+	p, err := s.ensureSingletonEditorPage(ctx, scope)
+	if err != nil {
+		return nil, err
+	}
+	normalizeSingletonDoc(&doc, title)
+	raw, err := marshalDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+	p.Name, p.Title, p.TemplateName = name, title, template
+	p.Status, p.IsShow, p.IsDiy, p.IsDefault, p.Value = 1, 1, 0, 0, raw
+	if isHome {
+		if err := s.store.ClearActive(ctx, 0, 1); err != nil {
+			return nil, err
+		}
+		p.IsDiy, p.IsDefault = 1, 1
+	}
+	if err := s.store.Update(ctx, p); err != nil {
+		return nil, err
+	}
+	p.Doc = &doc
+	return p, nil
 }
 
 func (s *Service) Create(ctx context.Context, merID uint, in SaveInput) (*Page, error) {

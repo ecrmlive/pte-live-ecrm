@@ -54,7 +54,15 @@ func (r *Repo) List(ctx context.Context, f diy.ListFilter) ([]diy.Page, int64, e
 		limit = 20
 	}
 	q := r.db.WithContext(ctx).Model(&pageRow{})
-	q = q.Where("name <> ?", diy.CategoryDecorationPageName)
+	// 这些页面是固定单例装修入口，不属于可复制的方案列表。
+	q = q.Where("name NOT IN ?", []string{
+		diy.CategoryDecorationPageName,
+		diy.ProductDetailDecorationPageName,
+		diy.PersonalDecorationPageName,
+		diy.HomeDecorationPageName,
+		diy.CartDecorationPageName,
+		diy.StoreDecorationPageName,
+	})
 	if f.IsDiy != nil {
 		if *f.IsDiy == 1 {
 			q = q.Where("page_type = ?", "home")
@@ -99,6 +107,15 @@ func (r *Repo) Get(ctx context.Context, id uint) (*diy.Page, error) {
 	return &p, nil
 }
 
+func (r *Repo) GetSingletonPage(ctx context.Context, name string) (*diy.Page, error) {
+	var row pageRow
+	if err := r.db.WithContext(ctx).Where("name = ?", name).First(&row).Error; err != nil {
+		return nil, err
+	}
+	p := toPage(row)
+	return &p, nil
+}
+
 func (r *Repo) GetActiveHome(ctx context.Context, merID uint) (*diy.Page, error) {
 	var row pageRow
 	err := r.db.WithContext(ctx).
@@ -127,6 +144,17 @@ func (r *Repo) GetProductDetailDecoration(ctx context.Context) (*diy.Page, error
 	var row pageRow
 	if err := r.db.WithContext(ctx).
 		Where("page_type = ? AND name = ?", "custom", diy.ProductDetailDecorationPageName).
+		First(&row).Error; err != nil {
+		return nil, err
+	}
+	p := toPage(row)
+	return &p, nil
+}
+
+func (r *Repo) GetPersonalDecoration(ctx context.Context) (*diy.Page, error) {
+	var row pageRow
+	if err := r.db.WithContext(ctx).
+		Where("page_type = ? AND name = ?", "custom", diy.PersonalDecorationPageName).
 		First(&row).Error; err != nil {
 		return nil, err
 	}

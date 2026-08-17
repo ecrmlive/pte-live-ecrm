@@ -1,7 +1,50 @@
 <template>
 
 	<div id="diy-editor" ref="diy-editor" class="diy-editor form-horizontal">
-		<template v-if="form.curItem">
+		<section v-if="configTab === 'style' && form.curItem" class="diy-unified-style">
+			<h3>头部样式</h3>
+			<div class="diy-unified-style__row">
+				<label>背景颜色</label><input v-model="styleConfig.headerBackground" type="color" /><input v-model="styleConfig.headerBackground" type="text" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>文字颜色</label><input v-model="styleConfig.headerTextColor" type="color" /><input v-model="styleConfig.headerTextColor" type="text" />
+			</div>
+
+			<h3>内容样式</h3>
+			<div class="diy-unified-style__row">
+				<label>内容背景</label><input v-model="styleConfig.contentBackground" type="color" /><input v-model="styleConfig.contentBackground" type="text" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>文字颜色</label><input v-model="styleConfig.contentTextColor" type="color" /><input v-model="styleConfig.contentTextColor" type="text" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>文字字号</label><input v-model.number="styleConfig.fontSize" type="range" min="12" max="24" /><input v-model.number="styleConfig.fontSize" type="number" min="12" max="24" />
+			</div>
+
+			<h3>卡片样式</h3>
+			<div class="diy-unified-style__row">
+				<label>卡片背景</label><input v-model="styleConfig.cardBackground" type="color" /><input v-model="styleConfig.cardBackground" type="text" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>圆角大小</label><input v-model.number="styleConfig.radius" type="range" min="0" max="32" /><input v-model.number="styleConfig.radius" type="number" min="0" max="32" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>上下间距</label><input v-model.number="styleConfig.verticalGap" type="range" min="0" max="40" /><input v-model.number="styleConfig.verticalGap" type="number" min="0" max="40" />
+			</div>
+			<div class="diy-unified-style__row">
+				<label>左右间距</label><input v-model.number="styleConfig.horizontalGap" type="range" min="0" max="40" /><input v-model.number="styleConfig.horizontalGap" type="number" min="0" max="40" />
+			</div>
+			<div class="diy-unified-style__row diy-unified-style__row--switch">
+				<label>开启阴影</label><input v-model="styleConfig.shadow" type="checkbox" />
+			</div>
+			<template v-if="styleConfig.shadow">
+				<div class="diy-unified-style__row"><label>阴影颜色</label><input v-model="styleConfig.shadowColor" type="color" /><input v-model="styleConfig.shadowColor" type="text" /></div>
+				<div class="diy-unified-style__row"><label>横轴</label><input v-model.number="styleConfig.shadowX" type="range" min="-20" max="20" /><input v-model.number="styleConfig.shadowX" type="number" min="-20" max="20" /></div>
+				<div class="diy-unified-style__row"><label>纵轴</label><input v-model.number="styleConfig.shadowY" type="range" min="-20" max="20" /><input v-model.number="styleConfig.shadowY" type="number" min="-20" max="20" /></div>
+				<div class="diy-unified-style__row"><label>扩散</label><input v-model.number="styleConfig.shadowBlur" type="range" min="0" max="40" /><input v-model.number="styleConfig.shadowBlur" type="number" min="0" max="40" /></div>
+			</template>
+		</section>
+		<template v-else-if="form.curItem">
 			<!--顶部设置-->
 			<template v-if="form.curItem.type == 'page'&&diyType != 'center'">
 				<SetpagesIndex :isDiy="isDiy" :curItem="form.curItem"></SetpagesIndex>
@@ -304,7 +347,24 @@
 				excludeStoreIds: [],
 			};
 		},
-		props: ['form', 'defaultData', 'diyData', 'opts', 'diyType', 'isDiy'],
+		props: ['form', 'defaultData', 'diyData', 'opts', 'diyType', 'isDiy', 'configTab'],
+		computed: {
+			styleConfig() {
+				const item = this.form?.curItem;
+				if (!item) return {};
+				const defaults = {
+					headerBackground: '#ffffff', headerTextColor: '#333333', contentBackground: '#f5f5f5',
+					contentTextColor: '#333333', fontSize: 14, cardBackground: '#ffffff', radius: 8,
+					verticalGap: 10, horizontalGap: 10, shadow: false, shadowColor: '#888888',
+					shadowX: 0, shadowY: 0, shadowBlur: 0,
+				};
+				if (!item.commonStyle) this.$set ? this.$set(item, 'commonStyle', {}) : (item.commonStyle = {});
+				Object.keys(defaults).forEach((key) => {
+					if (item.commonStyle[key] === undefined) item.commonStyle[key] = defaults[key];
+				});
+				return item.commonStyle;
+			},
+		},
 		provide() {
 			const self = this;
 			return {

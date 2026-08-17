@@ -15,7 +15,7 @@
 						class="item"
 						@click="onAdd(item.type)"
 					>
-						<p class="p-icon icon iconfont" :class="item.icon"></p>
+						<p class="p-icon icon iconfont" :class="componentIcon(item)"></p>
 						<p class="p-text">{{ item.name }}</p>
 					</div>
 				</div>
@@ -25,8 +25,27 @@
 </template>
 
 <script>
-const GROUP_ORDER = ['media', 'tools', 'shop', 'page'];
+const GROUPS = [
+	{ key: 'media', name: '媒体组件' },
+	{ key: 'shop', name: '商城组件' },
+	{ key: 'marketing', name: '营销组件' },
+	{ key: 'tools', name: '工具组件' },
+	{ key: 'page', name: '页面组件' },
+];
 const HIDDEN_DIY_TYPES = new Set(['wxlive']);
+
+/**
+ * 仅为历史数据或新增组件缺失 icon/group 时兜底。
+ * 正常情况下始终使用接口下发的真实 name、icon 和 group，避免前端映射
+ * 覆盖组件本身的语义或把实际组件从组件库中漏掉。
+ */
+const COMPONENT_FALLBACKS = {
+	discountGroup: { group: 'marketing', icon: 'icon-zhekou' },
+	community: { group: 'marketing', icon: 'icon-huodongtuiguang' },
+	bottomNav: { group: 'tools', icon: 'icon-daohang' },
+	ranking: { group: 'shop', icon: 'icon-paihangbang' },
+};
+const DEFAULT_DIY_COMPONENT_ICON = 'icon-yingyong';
 
 export default {
 	data() {
@@ -45,48 +64,44 @@ export default {
 	},
 	filters: {},
 	methods: {
+		componentIcon(item) {
+			return item?.icon || COMPONENT_FALLBACKS[item?.type]?.icon || DEFAULT_DIY_COMPONENT_ICON;
+		},
+		componentGroup(item) {
+			return item?.group || COMPONENT_FALLBACKS[item?.type]?.group || 'tools';
+		},
 		onAdd(type) {
 			this.$emit('add-item', type);
 		},
 		/*初始化数据*/
 		init() {
-			const tempList = {};
+			const groupedItems = {};
 			for (const key in this.defaultData) {
 				const item = this.defaultData[key];
-				if (!item || HIDDEN_DIY_TYPES.has(item.type) || HIDDEN_DIY_TYPES.has(key)) {
-					continue;
+				if (item?.type && !HIDDEN_DIY_TYPES.has(item.type) && !HIDDEN_DIY_TYPES.has(key)) {
+					const group = this.componentGroup(item);
+					if (!groupedItems[group]) {
+						groupedItems[group] = { children: [] };
+					}
+					groupedItems[group].children.push(item);
 				}
-				if (!tempList[item.group]) {
-					tempList[item.group] = { children: [] };
-				}
-				tempList[item.group].children.push(item);
 			}
 
 			const orderedList = {};
-			for (const groupKey of GROUP_ORDER) {
-				if (tempList[groupKey]) {
-					orderedList[groupKey] = tempList[groupKey];
+			for (const group of GROUPS) {
+				if (groupedItems[group.key]) {
+					orderedList[group.key] = groupedItems[group.key];
 				}
 			}
-			for (const groupKey in tempList) {
+			for (const groupKey in groupedItems) {
 				if (!orderedList[groupKey]) {
-					orderedList[groupKey] = tempList[groupKey];
+					orderedList[groupKey] = groupedItems[groupKey];
 				}
 			}
 			this.typeList = orderedList;
 		},
 		typename(type) {
-			let name = '';
-			if (type == 'media') {
-				name = '媒体组件';
-			} else if (type == 'shop') {
-				name = '商城组件';
-			} else if (type == 'tools') {
-				name = '工具组件';
-			} else if (type == 'page') {
-				name = '页面组件';
-			}
-			return name;
+			return GROUPS.find((group) => group.key === type)?.name ?? '其他组件';
 		},
 	},
 };

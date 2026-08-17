@@ -37,7 +37,10 @@ func defaultCommunity() map[string]any {
 		return map[string]any{"title": title, "author": author, "images": images, "image": ""}
 	}
 	return map[string]any{
-		"name": "种草社区", "type": "community", "group": "marketing", "icon": "icon-zhongcaoshequ",
+		// icon-zhongcaoshequ is not included in the current DIY icon font.
+		// Use the existing promotion icon so the component library never renders
+		// an empty glyph for this component.
+		"name": "种草社区", "type": "community", "group": "marketing", "icon": "icon-huodongtuiguang",
 		"params": map[string]any{"title": "种草社区", "more": "好物分享", "titleType": "text", "titleImage": "", "layout": "scroll", "showNum": 3, "showTitle": true, "showAvatar": true, "showAuthor": true},
 		"style":  map[string]any{"background": "#f5f5f5", "cardBackground": "#ffffff", "headStart": "#e93323", "headEnd": "#ff7931", "buttonColor": "#ffffff", "buttonSize": 12, "contentGap": 10, "contentRadius": 8, "contentShadow": "off", "paddingTop": 10, "paddingBottom": 10, "paddingLeft": 10, "marginTop": 10, "radius": 10, "shadow": "off"},
 		"data":   []any{post("把春天装进生活里", "浅笑回眸", 8), post("像我这种乐形身材又怎样", "国宝小熊猫", 6), post("发现日常里的美好瞬间", "阿秋", 3)},
@@ -67,7 +70,7 @@ func defaultBottomNav() map[string]any {
 		"name":   "底部导航",
 		"type":   "bottomNav",
 		"group":  "tools",
-		"icon":   "icon-daohanglan",
+		"icon":   "icon-daohang",
 		"params": map[string]any{"activeIndex": 0},
 		"style": map[string]any{
 			"navigationType": "icon-text", "positionType": "fixed", "themeMode": "system",
@@ -213,7 +216,9 @@ func defaultPreviewProduct() map[string]any {
 
 func defaultDiscountGroup() map[string]any {
 	return map[string]any{
-		"name": "折扣组",
+		"name":  "折扣组",
+		"group": "marketing",
+		"icon":  "icon-zhekou",
 		"params": map[string]any{
 			"iconImage": "",
 			"items": []any{

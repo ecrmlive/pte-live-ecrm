@@ -20,6 +20,7 @@ type AnchorKey =
   | 'bottom';
 
 const activeAnchor = ref<AnchorKey>('product');
+const activeConfigTab = ref<'content' | 'style'>('content');
 const activeImageIndex = ref(0);
 const menuOpen = ref(true);
 const saving = ref(false);
@@ -74,6 +75,22 @@ const config = reactive({
   ],
   menuList: [0, 1, 2],
   showCart: 1,
+  style: {
+    headerBackground: '#ffffff',
+    headerTextColor: '#222222',
+    contentBackground: '#f5f5f5',
+    contentTextColor: '#303133',
+    fontSize: 14,
+    cardBackground: '#ffffff',
+    radius: 14,
+    verticalGap: 10,
+    horizontalGap: 10,
+    shadow: false,
+    shadowColor: '#888888',
+    shadowX: 0,
+    shadowY: 0,
+    shadowBlur: 0,
+  },
 });
 
 const anchors: Array<{ key: AnchorKey; label: string }> = [
@@ -109,6 +126,19 @@ const visibleBottomItems = computed(() => config.bottomList.filter((item) => con
 const heroImages = [heroImage, productImageOne, productImageTwo];
 const activeHeroImage = computed(() => heroImages[activeImageIndex.value] ?? heroImage);
 const panelTitle = computed(() => anchors.find((item) => item.key === activeAnchor.value)?.label ?? '商品信息');
+const previewCardStyle = computed(() => ({
+  backgroundColor: config.style.cardBackground,
+  borderRadius: `${config.style.radius}px`,
+  margin: `0 ${config.style.horizontalGap}px ${config.style.verticalGap}px`,
+  boxShadow: config.style.shadow
+    ? `${config.style.shadowX}px ${config.style.shadowY}px ${config.style.shadowBlur}px ${config.style.shadowColor}`
+    : 'none',
+}));
+const previewScreenStyle = computed(() => ({
+  backgroundColor: config.style.contentBackground,
+  color: config.style.contentTextColor,
+  fontSize: `${config.style.fontSize}px`,
+}));
 const activeModuleVisible = computed({
   get() {
     switch (activeAnchor.value) {
@@ -141,6 +171,7 @@ const previewMenuItems = computed(() => [
 ].filter(Boolean) as Array<{ icon: string; label: string }>);
 
 async function selectSection(key: AnchorKey) {
+  activeConfigTab.value = 'content';
   activeAnchor.value = key;
   await nextTick();
   configScrollRef.value?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -235,8 +266,8 @@ async function save() {
     <div class="detail-editor">
       <main class="detail-editor__canvas">
         <section class="detail-phone" aria-label="商品详情预览">
-          <div class="detail-phone__title">商品详情</div>
-          <div class="detail-phone__screen">
+          <div class="detail-phone__title" :style="{ backgroundColor: config.style.headerBackground, color: config.style.headerTextColor }">商品详情</div>
+          <div class="detail-phone__screen" :style="previewScreenStyle">
             <section data-anchor="product" class="detail-preview__product detail-preview__module" :class="{ 'is-active': activeAnchor === 'product' }" @click="selectSection('product')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'product' }" type="button" @click.stop="selectSection('product')">商品信息</button>
               <div class="detail-preview__hero-wrap">
@@ -263,7 +294,7 @@ async function save() {
                   <button v-for="item in previewMenuItems" :key="item.label" type="button" @click="handlePreviewMenuAction(item.label)"><IconifyIcon :icon="item.icon" />{{ item.label }}</button>
                 </div>
               </div>
-              <div class="detail-preview__product-card">
+              <div class="detail-preview__product-card" :style="previewCardStyle">
                 <div class="detail-preview__price-row">
                   <strong>¥199<small>.00</small></strong>
                   <span v-if="config.isOpen.includes(0)">¥234.00</span>
@@ -280,28 +311,28 @@ async function save() {
               </div>
             </section>
 
-            <section v-if="config.showRank === 1" data-anchor="ranking" class="detail-preview__card detail-preview__ranking detail-preview__module" :class="{ 'is-active': activeAnchor === 'ranking' }" @click="selectSection('ranking')">
+            <section v-if="config.showRank === 1" data-anchor="ranking" class="detail-preview__card detail-preview__ranking detail-preview__module" :class="{ 'is-active': activeAnchor === 'ranking' }" :style="previewCardStyle" @click="selectSection('ranking')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'ranking' }" type="button" @click.stop="selectSection('ranking')">排行榜</button>
               <b>TOP 榜单</b><span>紧致抗皱套装·第2名</span><IconifyIcon icon="lucide:chevron-right" />
             </section>
 
-            <section v-if="config.showCoupon === 1" data-anchor="coupon" class="detail-preview__card detail-preview__coupon detail-preview__module" :class="{ 'is-active': activeAnchor === 'coupon' }" @click="selectSection('coupon')">
+            <section v-if="config.showCoupon === 1" data-anchor="coupon" class="detail-preview__card detail-preview__coupon detail-preview__module" :class="{ 'is-active': activeAnchor === 'coupon' }" :style="previewCardStyle" @click="selectSection('coupon')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'coupon' }" type="button" @click.stop="selectSection('coupon')">优惠券</button>
               <span>优惠券：</span><b>满100减10</b><IconifyIcon icon="lucide:chevron-right" />
             </section>
 
-            <section data-anchor="params" class="detail-preview__card detail-preview__params detail-preview__module" :class="{ 'is-active': activeAnchor === 'params' }" @click="selectSection('params')">
+            <section data-anchor="params" class="detail-preview__card detail-preview__params detail-preview__module" :class="{ 'is-active': activeAnchor === 'params' }" :style="previewCardStyle" @click="selectSection('params')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'params' }" type="button" @click.stop="selectSection('params')">商品参数</button>
               <p v-for="item in visibleServiceItems" :key="item.value"><span>{{ item.previewLabel }}</span><b>{{ item.previewValue }}</b><IconifyIcon icon="lucide:chevron-right" /></p>
             </section>
 
-            <section v-if="config.showMatch === 1" data-anchor="package" class="detail-preview__card detail-preview__package detail-preview__module" :class="{ 'is-active': activeAnchor === 'package' }" @click="selectSection('package')">
+            <section v-if="config.showMatch === 1" data-anchor="package" class="detail-preview__card detail-preview__package detail-preview__module" :class="{ 'is-active': activeAnchor === 'package' }" :style="previewCardStyle" @click="selectSection('package')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'package' }" type="button" @click.stop="selectSection('package')">优惠套餐</button>
               <h3>优惠套餐({{ config.matchNum }})<IconifyIcon icon="lucide:chevron-right" /></h3>
               <div><img v-for="(image, index) in visibleMatchImages" :key="`${image}-${index}`" :src="image" alt="套餐商品" /><span>共{{ config.matchNum }}件<br /><em>省 ¥32.00</em></span></div>
             </section>
 
-            <section v-if="config.showReply === 1" data-anchor="review" class="detail-preview__card detail-preview__review detail-preview__module" :class="{ 'is-active': activeAnchor === 'review' }" @click="selectSection('review')">
+            <section v-if="config.showReply === 1" data-anchor="review" class="detail-preview__card detail-preview__review detail-preview__module" :class="{ 'is-active': activeAnchor === 'review' }" :style="previewCardStyle" @click="selectSection('review')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'review' }" type="button" @click.stop="selectSection('review')">商品评价</button>
               <h3>用户评价(20)<span>99%<i>好评率</i> ›</span></h3>
               <p>👨🏻　 一*兔　 <b>★★★★★</b></p>
@@ -310,13 +341,13 @@ async function save() {
               <div><img v-for="(image, index) in visibleReviewImages" :key="`${image}-${index}`" :src="image" alt="用户评价图片" /></div>
             </section>
 
-            <section v-if="config.showCommunity === 1" data-anchor="show" class="detail-preview__card detail-preview__gallery-card detail-preview__module" :class="{ 'is-active': activeAnchor === 'show' }" @click="selectSection('show')">
+            <section v-if="config.showCommunity === 1" data-anchor="show" class="detail-preview__card detail-preview__gallery-card detail-preview__module" :class="{ 'is-active': activeAnchor === 'show' }" :style="previewCardStyle" @click="selectSection('show')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'show' }" type="button" @click.stop="selectSection('show')">种草秀</button>
               <h3>种草秀(3)<span>查看全部 ›</span></h3>
               <div><img v-for="(image, index) in visibleCommunityImages" :key="`${image}-${index}`" :src="image" alt="种草秀图片" /></div>
             </section>
 
-            <section v-if="config.showStore === 1" data-anchor="store" class="detail-preview__card detail-preview__store detail-preview__module" :class="{ 'is-active': activeAnchor === 'store' }" @click="selectSection('store')">
+            <section v-if="config.showStore === 1" data-anchor="store" class="detail-preview__card detail-preview__store detail-preview__module" :class="{ 'is-active': activeAnchor === 'store' }" :style="previewCardStyle" @click="selectSection('store')">
               <button class="detail-preview__module-tip" :class="{ 'is-active': activeAnchor === 'store' }" type="button" @click.stop="selectSection('store')">店铺信息</button>
               <div class="detail-preview__store-head"><img :src="storeLogoImage" alt="店铺" /><p><b>爱花屋</b><span>41.6万人关注</span></p><button type="button" @click.stop="showPreviewNotice('已进入爱花屋店铺')">进店</button></div>
               <div class="detail-preview__scores"><span>商品描述 <b>5.0</b></span><span>卖家服务 <b>5.0</b></span><span>物流服务 <b>5.0</b></span></div>
@@ -334,8 +365,38 @@ async function save() {
       </main>
 
       <aside class="detail-editor__config">
-        <div class="detail-config__title">{{ panelTitle }}</div>
+        <div class="detail-config__head">
+          <div class="detail-config__title">{{ activeConfigTab === 'style' ? `${panelTitle}样式` : panelTitle }}</div>
+          <div class="detail-config__tabs" role="tablist" aria-label="详情组件配置">
+            <button class="detail-config__tab" :class="{ 'is-active': activeConfigTab === 'content' }" type="button" @click="activeConfigTab = 'content'">内容</button>
+            <button class="detail-config__tab" :class="{ 'is-active': activeConfigTab === 'style' }" type="button" @click="activeConfigTab = 'style'">样式</button>
+          </div>
+        </div>
         <div ref="configScrollRef" class="detail-config__scroll">
+          <section v-if="activeConfigTab === 'style'" class="detail-config__section detail-config__style">
+            <h3>头部样式</h3>
+            <label class="detail-config__style-row"><span>背景颜色</span><input v-model="config.style.headerBackground" type="color" /><input v-model="config.style.headerBackground" type="text" /></label>
+            <label class="detail-config__style-row"><span>文字颜色</span><input v-model="config.style.headerTextColor" type="color" /><input v-model="config.style.headerTextColor" type="text" /></label>
+
+            <h3>内容样式</h3>
+            <label class="detail-config__style-row"><span>内容背景</span><input v-model="config.style.contentBackground" type="color" /><input v-model="config.style.contentBackground" type="text" /></label>
+            <label class="detail-config__style-row"><span>内容文字</span><input v-model="config.style.contentTextColor" type="color" /><input v-model="config.style.contentTextColor" type="text" /></label>
+            <label class="detail-config__style-row"><span>文字字号</span><input v-model.number="config.style.fontSize" type="range" min="12" max="20" /><ElInputNumber v-model="config.style.fontSize" :min="12" :max="20" controls-position="right" /></label>
+
+            <h3>卡片样式</h3>
+            <label class="detail-config__style-row"><span>卡片背景</span><input v-model="config.style.cardBackground" type="color" /><input v-model="config.style.cardBackground" type="text" /></label>
+            <label class="detail-config__style-row"><span>圆角大小</span><input v-model.number="config.style.radius" type="range" min="0" max="32" /><ElInputNumber v-model="config.style.radius" :min="0" :max="32" controls-position="right" /></label>
+            <label class="detail-config__style-row"><span>上下间距</span><input v-model.number="config.style.verticalGap" type="range" min="0" max="30" /><ElInputNumber v-model="config.style.verticalGap" :min="0" :max="30" controls-position="right" /></label>
+            <label class="detail-config__style-row"><span>左右边距</span><input v-model.number="config.style.horizontalGap" type="range" min="0" max="30" /><ElInputNumber v-model="config.style.horizontalGap" :min="0" :max="30" controls-position="right" /></label>
+            <div class="detail-config__style-row"><span>开启阴影</span><ElRadioGroup v-model="config.style.shadow"><ElRadio :value="false">关闭</ElRadio><ElRadio :value="true">开启</ElRadio></ElRadioGroup></div>
+            <template v-if="config.style.shadow">
+              <label class="detail-config__style-row"><span>阴影颜色</span><input v-model="config.style.shadowColor" type="color" /><input v-model="config.style.shadowColor" type="text" /></label>
+              <label class="detail-config__style-row"><span>横轴</span><input v-model.number="config.style.shadowX" type="range" min="-20" max="20" /><ElInputNumber v-model="config.style.shadowX" :min="-20" :max="20" controls-position="right" /></label>
+              <label class="detail-config__style-row"><span>纵轴</span><input v-model.number="config.style.shadowY" type="range" min="-20" max="20" /><ElInputNumber v-model="config.style.shadowY" :min="-20" :max="20" controls-position="right" /></label>
+              <label class="detail-config__style-row"><span>扩散</span><input v-model.number="config.style.shadowBlur" type="range" min="0" max="40" /><ElInputNumber v-model="config.style.shadowBlur" :min="0" :max="40" controls-position="right" /></label>
+            </template>
+          </section>
+          <template v-else>
           <template v-if="activeAnchor === 'product'">
           <section class="detail-config__section detail-config__section--nav">
             <h3>顶部导航</h3>
@@ -425,6 +486,7 @@ async function save() {
             <h3>显示状态</h3>
             <div class="detail-config__row"><span>是否显示</span><ElRadioGroup v-model="activeModuleVisible"><ElRadio :value="1">显示</ElRadio><ElRadio :value="0">隐藏</ElRadio></ElRadioGroup></div>
           </section>
+          </template>
         </div>
       </aside>
     </div>
@@ -489,5 +551,24 @@ async function save() {
 .detail-config__section--image h3 { margin-bottom: 16px; }
 .detail-config__section--image .detail-config__row { margin-bottom: 12px; }
 .detail-config__section--image .detail-config__row:last-child { margin-bottom: 0; }
+.detail-editor { padding-right: 450px; }
+.detail-editor__config { width: 450px; }
+.detail-config__head { display: flex; height: 64px; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #edf0f5; background: #fff; }
+.detail-config__head .detail-config__title { height: auto; margin: 0; padding: 0; border: 0; color: #303133; font-size: 16px; font-weight: 600; line-height: 1; }
+.detail-config__tabs { display: flex; padding: 3px; border-radius: 21px; background: #f4f5f7; }
+.detail-config__tab { min-width: 70px; height: 34px; padding: 0 14px; border: 0; border-radius: 18px; background: transparent; color: #303133; font-size: 14px; cursor: pointer; }
+.detail-config__tab.is-active { background: #4073fa; color: #fff; }
+.detail-config__head + .detail-config__scroll { height: calc(100% - 64px); }
+.detail-config__style { min-height: 100%; padding: 24px 30px; }
+.detail-config__style h3 { margin: 0 0 18px; color: #303133; font-size: 15px; font-weight: 600; }
+.detail-config__style h3:not(:first-child) { margin-top: 28px; }
+.detail-config__style-row { display: grid; grid-template-columns: 84px 34px minmax(0, 1fr); gap: 10px; align-items: center; min-height: 38px; margin-top: 14px; }
+.detail-config__style-row > span { color: #909399; font-size: 14px; white-space: nowrap; }
+.detail-config__style-row input[type='color'] { width: 34px; height: 34px; padding: 3px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; cursor: pointer; }
+.detail-config__style-row input[type='text'] { width: 100%; height: 34px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; color: #303133; outline: none; }
+.detail-config__style-row input[type='range'] { min-width: 0; width: 100%; accent-color: #4073fa; }
+.detail-config__style-row :deep(.el-input-number) { width: 100%; }
+.detail-config__style-row :deep(.el-radio-group) { grid-column: 2 / -1; }
+.detail-preview__module :is(button, img) { pointer-events: none; }
 @media (max-width: 1240px) { .detail-editor { padding-right: 360px; }.detail-editor__config { width: 360px; }.detail-editor__canvas { padding-right: 145px; padding-left: 145px; }.detail-preview__module-tip { left: -106px; min-width: 72px; padding: 8px; font-size: 12px; }.detail-config__section { padding-right: 20px; padding-left: 20px; }.detail-config__row > span { flex-basis: 70px; } }
 </style>

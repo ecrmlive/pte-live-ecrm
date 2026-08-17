@@ -46,13 +46,13 @@ function ensureDefaults(item: DiyRecord) {
 
 const contentSchema = computed((): VbenFormSchema[] => [
   diySection('展示设置'),
+  diyRadioGroup('style.themeMode', '展示效果：', [{ label: '系统默认', value: 'system' }, { label: '自定义', value: 'custom' }]),
   diyRadioGroup('style.positionType', '导航类型：', [{ label: '底部固定', value: 'fixed' }, { label: '底部悬浮', value: 'float' }]),
   diyRadioGroup('style.navigationType', '导航样式：', [{ label: '图片+文字', value: 'icon-text' }, { label: '文字', value: 'text' }, { label: '图片', value: 'icon' }]),
-  diySection('导航内容', '拖拽左侧圆点可调整导航顺序；最多 5 项'),
+  diySection('导航内容', '图标建议尺寸 81 × 81 px；拖拽左侧圆点可调整导航顺序；最多 5 项'),
 ]);
 const styleSchema = computed((): VbenFormSchema[] => [
   diySection('颜色设置'),
-  diyRadioGroup('style.themeMode', '色调：', [{ label: '跟随主题风格', value: 'system' }, { label: '自定义', value: 'custom' }]),
   ...(props.curItem.style?.themeMode === 'custom' ? [diyColor('style.activeColor', '选中文字颜色：', '#f62c2c'), diyColor('style.textColor', '文字颜色：', '#282828')] : []),
   diySection('卡片样式'),
   diyColor('style.background', '背景颜色：', 'rgba(255,255,255,0.96)'),
@@ -76,7 +76,30 @@ function removeItem(index: number) { if (navigationItems.value.length <= 2) { El
   <div class="bottom-nav-params">
     <div class="common-form common-form-new"><span>{{ curItem.name }}</span><div class="diy-changes"><div class="diy-change" :class="{ active: tab === 'content' }" @click="tab = 'content'">内容</div><div class="diy-change" :class="{ active: tab === 'style' }" @click="tab = 'style'">样式</div></div></div>
     <div v-show="tab === 'content'"><ContentForm />
-      <draggable v-model="navigationItems" class="draggable-list" item-key="text"><template #item="{ element, index }"><div class="d-c-c param-img-item navbar nav-item-card"><div class="nav-item-card__drag"><ElIcon><Rank /></ElIcon></div><div class="nav-images"><div class="icon"><img v-img-url="element.selectedImgUrl" alt="" @click="editor.onEditorSelectImage(element, 'selectedImgUrl')" /><small>选中</small></div><div class="icon"><img v-img-url="element.unselectedImgUrl" alt="" @click="editor.onEditorSelectImage(element, 'unselectedImgUrl')" /><small>未选中</small></div></div><div class="right nav-item-card__fields"><ElIcon class="el-icon-DeleteFilled" @click.stop="removeItem(index)"><CloseBold /></ElIcon><div class="url-box mb16 flex-1 d-s-c ww100"><span class="key-name">名称</span><DiyInputField v-model="element.text" :maxlength="6" show-word-limit /></div><div class="url-box mb16 flex-1 d-s-c ww100"><span class="key-name">链接</span><DiyLinkInputField v-model="element.linkUrl" @click="changeLink(index)"><template #suffix><ElIcon color="#333" size="16px"><ArrowRight /></ElIcon></template></DiyLinkInputField></div><div class="url-box flex-1 d-s-c ww100"><span class="key-name">状态</span><ElSwitch :model-value="!element.hide" @update:model-value="element.hide = !$event" /></div></div></div></template></draggable>
+      <draggable v-model="navigationItems" class="draggable-list" item-key="text">
+        <template #item="{ element, index }">
+          <div class="d-c-c param-img-item navbar nav-item-card">
+            <div class="nav-item-card__drag"><ElIcon><Rank /></ElIcon></div>
+            <div class="nav-images">
+              <div class="icon">
+                <button type="button" class="nav-image-picker" @click="editor.onEditorSelectImage(element, 'selectedImgUrl')">
+                  <img v-if="element.selectedImgUrl" v-img-url="element.selectedImgUrl" alt="选中图标" />
+                  <span v-else>图标</span><b>替换</b>
+                </button>
+                <small>选中</small>
+              </div>
+              <div class="icon">
+                <button type="button" class="nav-image-picker" @click="editor.onEditorSelectImage(element, 'unselectedImgUrl')">
+                  <img v-if="element.unselectedImgUrl" v-img-url="element.unselectedImgUrl" alt="未选中图标" />
+                  <span v-else>图标</span><b>替换</b>
+                </button>
+                <small>未选中</small>
+              </div>
+            </div>
+            <div class="right nav-item-card__fields"><ElIcon class="el-icon-DeleteFilled" @click.stop="removeItem(index)"><CloseBold /></ElIcon><div class="url-box mb16 flex-1 d-s-c ww100"><span class="key-name">名称</span><DiyInputField v-model="element.text" :maxlength="6" show-word-limit /></div><div class="url-box mb16 flex-1 d-s-c ww100"><span class="key-name">链接</span><DiyLinkInputField v-model="element.linkUrl" @click="changeLink(index)"><template #suffix><ElIcon color="#333" size="16px"><ArrowRight /></ElIcon></template></DiyLinkInputField></div><div class="url-box flex-1 d-s-c ww100"><span class="key-name">状态</span><ElSwitch :model-value="!element.hide" @update:model-value="element.hide = !$event" /></div></div>
+          </div>
+        </template>
+      </draggable>
       <div class="d-c-c pb16"><component :is="PrimaryButton" plain @click="addItem">+ 添加导航</component></div>
     </div>
     <div v-show="tab === 'style'"><StyleForm /></div>
@@ -85,5 +108,5 @@ function removeItem(index: number) { if (navigationItems.value.length <= 2) { El
 </template>
 
 <style scoped>
-.nav-images { display: flex; gap: 8px; margin-right: 12px; }.nav-images .icon { width: 48px; text-align: center; }.nav-images img { width: 42px; height: 42px; object-fit: contain; cursor: pointer; }.nav-images small { display: block; color: #86909c; font-size: 11px; }.nav-item-card__drag { margin-right: 10px; color: #86909c; cursor: grab; }
+.nav-images { display: flex; gap: 12px; margin-right: 12px; }.nav-images .icon { width: 64px; text-align: center; }.nav-images small { display: block; margin-top: 5px; color: #86909c; font-size: 11px; }.nav-image-picker { position: relative; display: flex; width: 64px; height: 64px; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; color: #9ca3af; cursor: pointer; }.nav-image-picker img { width: 100%; height: 100%; object-fit: contain; }.nav-image-picker b { position: absolute; right: 0; bottom: 0; left: 0; padding: 3px 0; background: rgba(0, 0, 0, .52); color: #fff; font-size: 12px; font-weight: 400; }.nav-item-card__drag { margin-right: 10px; color: #86909c; cursor: grab; }
 </style>

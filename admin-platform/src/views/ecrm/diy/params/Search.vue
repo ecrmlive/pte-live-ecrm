@@ -2,6 +2,8 @@
 import type { VbenFormSchema } from '#/adapter/form';
 
 import { computed, ref } from 'vue';
+import { Close, Rank } from '@element-plus/icons-vue';
+import draggable from 'vuedraggable';
 
 import {
   diyBgColors,
@@ -37,13 +39,13 @@ function ensureSearchDefaults(item: DiyRecord) {
   // 兼容旧版 image/text/search 配置，同时让已有页面无需手工重建组件即可使用新选项。
   if (params.title_type === 'image') params.title_type = 'location';
   if (params.title_type === 'text') params.title_type = 'title';
-  if (!params.title_type) params.title_type = 'location';
+  if (!params.title_type) params.title_type = 'search';
   if (!params.style_type) {
     params.style_type = params.toplogo ? 'logo' : params.title_type === 'title' ? 'title' : 'location';
   }
   if (!params.display_mode) params.display_mode = 'normal';
   if (!params.title) params.title = '首页';
-  if (!params.locationText) params.locationText = '定位中';
+  if (!params.locationText) params.locationText = '金湾大厦';
   if (!params.searchText) params.searchText = '搜索商品';
   if (!Array.isArray(params.hotWords)) params.hotWords = ['雅诗兰黛', 'Only澳白瓶'];
   if (!params.hotWordInterval) params.hotWordInterval = 3;
@@ -56,9 +58,9 @@ function ensureSearchDefaults(item: DiyRecord) {
   if (!style.titleAlign) style.titleAlign = 'left';
   if (!style.titleTextStyle) style.titleTextStyle = 'normal';
   if (style.float === undefined) style.float = 0;
-  if (!style.background) style.background = 'rgba(255, 255, 255, 0)';
-  if (!style.bgcolor) style.bgcolor = 'rgba(255, 255, 255, 0)';
-  if (style.paddingTop === undefined) style.paddingTop = 2;
+  if (!style.background || style.background === '#fd642a') style.background = '#fff1f0';
+  if (!style.bgcolor || style.bgcolor === '#fd642a') style.bgcolor = '#fff1f0';
+  if (style.paddingTop === undefined) style.paddingTop = 0;
   if (style.paddingBottom === undefined) style.paddingBottom = 0;
   if (style.paddingLeft === undefined) style.paddingLeft = 0;
   if (style.paddingRight === undefined) style.paddingRight = style.paddingLeft;
@@ -69,29 +71,39 @@ function ensureSearchDefaults(item: DiyRecord) {
 }
 
 function addHotWord() {
-  const params = props.curItem.params as DiyRecord;
-  const hotWords = Array.isArray(params.hotWords) ? params.hotWords : [];
-  hotWords.push('');
-  params.hotWords = hotWords;
+  hotWords.value = [...hotWords.value, `热词${hotWords.value.length + 1}`];
 }
 
 function removeHotWord(index: number) {
-  const params = props.curItem.params as DiyRecord;
-  const hotWords = Array.isArray(params.hotWords) ? params.hotWords : [];
-  if (hotWords.length <= 1) return;
-  hotWords.splice(index, 1);
+  if (hotWords.value.length <= 1) return;
+  hotWords.value = hotWords.value.filter((_, currentIndex) => currentIndex !== index);
 }
 
-const hotWords = computed<string[]>(() => {
-  const words = props.curItem.params?.hotWords;
-  return Array.isArray(words) ? (words as string[]) : [];
+const hotWords = computed<string[]>({
+  get() {
+    const words = props.curItem.params?.hotWords;
+    return Array.isArray(words) ? [...(words as string[])] : [];
+  },
+  set(words) {
+    const params = (props.curItem.params ??= {}) as DiyRecord;
+    params.hotWords = words;
+  },
+});
+
+const hotWordInterval = computed<number>({
+  get() {
+    return Number(props.curItem.params?.hotWordInterval ?? 3);
+  },
+  set(value) {
+    const params = (props.curItem.params ??= {}) as DiyRecord;
+    params.hotWordInterval = Math.min(10, Math.max(1, Number(value) || 3));
+  },
 });
 
 function updateHotWord(index: number, value: string) {
-  const params = props.curItem.params as DiyRecord;
-  const words = Array.isArray(params.hotWords) ? (params.hotWords as string[]) : [];
+  const words = [...hotWords.value];
   words[index] = value;
-  params.hotWords = words;
+  hotWords.value = words;
 }
 
 const contentSchema = computed((): VbenFormSchema[] => [
@@ -128,7 +140,6 @@ const contentSchema = computed((): VbenFormSchema[] => [
     : []),
   diySection('搜索内容'),
   diyInput('params.searchText', '提示文字：'),
-  diySlider('params.hotWordInterval', '显示时间：', { max: 10, min: 1 }),
 ]);
 
 const styleSchema = computed((): VbenFormSchema[] => {
@@ -229,31 +240,32 @@ const { Form: StyleForm } = useDiyCurItemForm(() => props.curItem, styleSchema, 
       </div>
       <div class="form-chink"></div>
       <div class="f16 gray3 form-subtitle">搜索热词</div>
-      <div
-        v-for="(_word, index) in hotWords"
-        :key="`hot-word-${index}`"
-        class="form-item"
-      >
-        <div class="form-label">热词{{ index + 1 }}：</div>
-        <el-input
-          :model-value="hotWords[index]"
-          maxlength="20"
-          show-word-limit
-          @update:model-value="updateHotWord(index, $event)"
-        />
-        <component
-          :is="PrimaryButton"
-          class="ml-2"
-          link
-          type="primary"
-          :disabled="hotWords.length <= 1"
-          @click="removeHotWord(index)"
-        >
-          删除
-        </component>
-      </div>
-      <div class="flex justify-center pb-4">
-        <component :is="PrimaryButton" plain @click="addHotWord">+ 添加热词</component>
+      <div class="search-hotword-panel">
+        <draggable v-model="hotWords" item-key="index" handle=".hotword-grip" animation="180">
+          <template #item="{ index }">
+            <div class="search-hotword-row">
+              <el-icon class="hotword-grip"><Rank /></el-icon>
+              <el-input
+                :model-value="hotWords[index]"
+                maxlength="20"
+                @update:model-value="updateHotWord(index, $event)"
+              />
+              <el-icon
+                class="hotword-remove"
+                :class="{ 'is-disabled': hotWords.length <= 1 }"
+                @click="removeHotWord(index)"
+              >
+                <Close />
+              </el-icon>
+            </div>
+          </template>
+        </draggable>
+        <component :is="PrimaryButton" class="search-hotword-add" plain @click="addHotWord">+ 添加</component>
+        <div class="hotword-duration">
+          <span>显示时间</span>
+          <el-input-number v-model="hotWordInterval" :max="10" :min="1" controls-position="right" />
+          <em>秒</em>
+        </div>
       </div>
     </div>
     <div v-show="styleType === 'style'">
@@ -266,5 +278,60 @@ const { Form: StyleForm } = useDiyCurItemForm(() => props.curItem, styleSchema, 
 .diy-setpages-cover > img {
   width: 60px;
   height: 60px;
+}
+
+.search-hotword-panel {
+  padding: 0 20px 24px;
+}
+
+.search-hotword-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+
+  :deep(.el-input) {
+    flex: 1;
+  }
+}
+
+.hotword-grip,
+.hotword-remove {
+  flex: 0 0 auto;
+  color: var(--el-text-color-placeholder);
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.hotword-grip {
+  cursor: grab;
+}
+
+.hotword-remove.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.search-hotword-add {
+  width: 100%;
+  min-height: 42px;
+  margin: 2px 0 20px;
+}
+
+.hotword-duration {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--el-border-color-lighter);
+  color: var(--el-text-color-secondary);
+
+  :deep(.el-input-number) {
+    flex: 1;
+  }
+
+  em {
+    font-style: normal;
+  }
 }
 </style>

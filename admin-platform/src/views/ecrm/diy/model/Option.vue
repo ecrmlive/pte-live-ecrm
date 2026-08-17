@@ -10,13 +10,12 @@
         v-for="(tab, tabIndex) in tabs"
         :key="tab._diyTabId ?? `${tab.text}-${tabIndex}`"
         class="diy-option__item"
-        :class="{ 'diy-option__item--active': activeIndex === tabIndex }"
+        :class="{ 'diy-option__item--active': tabIndex === 0 }"
         :style="tabStyle(tabIndex)"
         type="button"
-        @click.stop="setActive(tabIndex)"
       >
         <span>{{ tab.text || '选项卡' }}</span>
-        <i v-if="displayStyle === '3' && activeIndex === tabIndex" class="diy-option__arc" :style="arcStyle"></i>
+        <i v-if="displayStyle === '2' && tabIndex === 0" class="diy-option__arc" :style="arcStyle"></i>
       </button>
     </div>
     <div class="btn-edit-del">
@@ -29,9 +28,6 @@
 export default {
   inject: ['diyModel'],
   props: ['item', 'index', 'selectedIndex'],
-  data() {
-    return { activeIndex: 0 };
-  },
   computed: {
     style() {
       return this.item?.style || {};
@@ -41,7 +37,9 @@ export default {
     },
     tabs() {
       const data = Array.isArray(this.item?.data) ? this.item.data : [];
-      return data.length > 0 ? data : [{ text: '首页' }];
+      return data.length > 0
+        ? data
+        : [{ text: '首页' }, { text: '果蔬生鲜' }, { text: '健康医疗' }, { text: '非遗文创' }, { text: '优选茶叶' }];
     },
     displayStyle() {
       return String(this.params.type || '2');
@@ -82,21 +80,13 @@ export default {
     },
     listStyle() {
       return {
-        background: this.style.bgcolor || '#ffffff',
+        background: this.style.bgcolor || '#fff0f3',
         borderRadius: this.radius,
         boxShadow: this.style.shadow === 'on' ? '0 4px 14px rgba(15, 23, 42, 0.12)' : 'none',
       };
     },
     arcStyle() {
       return { borderColor: this.activeColor };
-    },
-  },
-  watch: {
-    tabs: {
-      deep: true,
-      handler(tabs) {
-        if (this.activeIndex >= tabs.length) this.activeIndex = 0;
-      },
     },
   },
   methods: {
@@ -106,19 +96,15 @@ export default {
     diyDeleteItem(index) {
       this.diyModel?.onDeleleItem(index);
     },
-    setActive(index) {
-      this.activeIndex = index;
-    },
     tabStyle(index) {
-      const active = this.activeIndex === index;
-      if (!active) return {};
+      if (index !== 0) return {};
       if (this.displayStyle === '1') {
         return { borderBottomColor: this.activeColor, color: this.activeColor };
       }
       if (this.displayStyle === '2') {
-        return { background: this.activeColor, color: this.activeText };
+        return { color: this.activeColor };
       }
-      return { color: this.activeColor };
+      return { background: this.activeColor, color: this.activeText };
     },
   },
 };
@@ -137,10 +123,10 @@ export default {
   &__list {
     align-items: center;
     display: flex;
-    gap: 4px;
-    min-height: 43px;
+    gap: 28px;
+    min-height: 56px;
     overflow-x: auto;
-    padding: 4px 12px;
+    padding: 7px 16px;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -153,14 +139,15 @@ export default {
     background: transparent;
     border: 0;
     color: #333;
-    cursor: pointer;
+    cursor: default;
     display: inline-flex;
     flex: none;
-    font-size: 14px;
-    height: 30px;
+    font-size: 16px;
+    height: 42px;
     justify-content: center;
     line-height: 1;
-    padding: 0 12px;
+    padding: 0;
+    pointer-events: none;
     position: relative;
     white-space: nowrap;
   }
@@ -178,30 +165,39 @@ export default {
   }
 
   &__list--2 {
+    gap: 28px;
+
     .diy-option__item {
-      border-radius: 999px;
+      font-size: 17px;
+      font-weight: 500;
+    }
+
+    .diy-option__item--active {
+      font-weight: 600;
     }
   }
 
   &__list--3 {
+    gap: 10px;
+
     .diy-option__item {
+      border-radius: 999px;
       font-size: 15px;
       font-weight: 500;
+      padding: 0 14px;
     }
   }
 
   &__arc {
-    border: 2px solid;
-    border-left-color: transparent !important;
-    border-radius: 50%;
-    border-right-color: transparent !important;
-    border-top-color: transparent !important;
-    bottom: 0;
-    height: 10px;
-    left: 50%;
+    border: 0;
+    border-bottom: 3px solid;
+    border-radius: 0 0 50% 50%;
+    bottom: 1px;
+    height: 8px;
+    left: 18%;
     position: absolute;
-    transform: translateX(-50%);
-    width: 24px;
+    transform: none;
+    width: 64%;
   }
 }
 </style>

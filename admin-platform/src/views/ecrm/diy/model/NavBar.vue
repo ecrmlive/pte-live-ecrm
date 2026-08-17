@@ -6,8 +6,6 @@
         <ul
           class="list"
           :class="[`column-${rowsNum}`, `mode-${navigationType}`]"
-          @touchend="onTouchEnd"
-          @touchstart="onTouchStart"
         >
           <li v-for="(navBar, navIndex) in currentItems" :key="navIndex" class="item">
             <div v-if="navigationType !== 'text'" class="item-image" :style="iconStyle">
@@ -30,8 +28,7 @@
           <span
             v-for="page in totalPages"
             :key="page"
-            :class="{ active: page - 1 === currentPage }"
-            @click.stop="currentPage = page - 1"
+            :class="{ active: page === 1 }"
           ></span>
         </div>
       </div>
@@ -41,12 +38,18 @@
 </template>
 
 <script>
+function getShadow(style, prefix, fallbackColor, fallbackY, fallbackBlur) {
+  const getValue = (name, fallback) => {
+    const value = Number(style?.[`${prefix}${name}`]);
+    return Number.isFinite(value) ? value : fallback;
+  };
+
+  return `${getValue('X', 0)}px ${getValue('Y', fallbackY)}px ${getValue('Blur', fallbackBlur)}px ${getValue('Spread', 0)}px ${style?.[`${prefix}Color`] || fallbackColor}`;
+}
+
 export default {
   inject: ['diyModel'],
   props: ['item', 'index', 'selectedIndex'],
-  data() {
-    return { currentPage: 0, touchStartX: 0 };
-  },
   computed: {
     style() {
       return this.item?.style || {};
@@ -75,8 +78,7 @@ export default {
     },
     currentItems() {
       if (!this.isPaged) return this.visibleItems;
-      const page = Math.min(this.currentPage, this.totalPages - 1);
-      return this.visibleItems.slice(page * this.pageSize, (page + 1) * this.pageSize);
+      return this.visibleItems.slice(0, this.pageSize);
     },
     textColor() {
       return this.style.textColor || '#333333';
@@ -98,11 +100,15 @@ export default {
       const all = this.style.cardRadiusMode !== 'individual';
       return {
         background: start === end ? start : `linear-gradient(180deg, ${start} 0%, ${end} 100%)`,
+        border: `${Math.max(0, Number(this.style.cardBorderWidth) || 0)}px solid ${this.style.cardBorderColor || 'transparent'}`,
+        boxSizing: 'border-box',
         borderTopLeftRadius: `${all ? radius : this.style.cardTopLeftRadius || 0}px`,
         borderTopRightRadius: `${all ? radius : this.style.cardTopRightRadius || 0}px`,
         borderBottomRightRadius: `${all ? radius : this.style.cardBottomRightRadius || 0}px`,
         borderBottomLeftRadius: `${all ? radius : this.style.cardBottomLeftRadius || 0}px`,
-        boxShadow: this.style.cardShadow === 'on' ? '0 8px 18px rgba(20, 37, 63, 0.12)' : 'none',
+        boxShadow: this.style.cardShadow === 'on'
+          ? getShadow(this.style, 'cardShadow', 'rgba(20, 37, 63, 0.12)', 8, 18)
+          : 'none',
         transform: `translateY(-${this.style.float || 0}px)`,
       };
     },
@@ -114,13 +120,10 @@ export default {
         borderTopRightRadius: `${all ? radius : this.style.iconTopRightRadius || 0}px`,
         borderBottomRightRadius: `${all ? radius : this.style.iconBottomRightRadius || 0}px`,
         borderBottomLeftRadius: `${all ? radius : this.style.iconBottomLeftRadius || 0}px`,
-        boxShadow: this.style.iconShadow === 'on' ? '0 4px 10px rgba(20, 37, 63, 0.16)' : 'none',
+        boxShadow: this.style.iconShadow === 'on'
+          ? getShadow(this.style, 'iconShadow', 'rgba(20, 37, 63, 0.16)', 4, 10)
+          : 'none',
       };
-    },
-  },
-  watch: {
-    visibleItems() {
-      if (this.currentPage >= this.totalPages) this.currentPage = 0;
     },
   },
   methods: {
@@ -129,22 +132,6 @@ export default {
     },
     diyDeleteItem(index) {
       this.diyModel?.onDeleleItem(index);
-    },
-    previousPage() {
-      this.currentPage = (this.currentPage - 1 + this.totalPages) % this.totalPages;
-    },
-    nextPage() {
-      this.currentPage = (this.currentPage + 1) % this.totalPages;
-    },
-    onTouchStart(event) {
-      this.touchStartX = event.changedTouches?.[0]?.clientX || 0;
-    },
-    onTouchEnd(event) {
-      if (!this.isPaged) return;
-      const endX = event.changedTouches?.[0]?.clientX || this.touchStartX;
-      const delta = endX - this.touchStartX;
-      if (Math.abs(delta) < 32 || this.totalPages <= 1) return;
-      delta > 0 ? this.previousPage() : this.nextPage();
     },
   },
 };
@@ -155,10 +142,11 @@ export default {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
+  padding: 8px 8px 10px;
 }
 
 .nav-title {
-  padding: 10px 12px 0;
+  padding: 12px 12px 0;
   font-size: 14px;
   font-weight: 600;
   color: #252b3a;
@@ -167,7 +155,7 @@ export default {
 .diy-navBar .list .item {
   display: flex;
   min-width: 0;
-  padding: 10px 0;
+  padding: 8px 0 6px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -179,11 +167,12 @@ export default {
 
 .diy-navBar .list .item-image {
   display: flex;
-  width: min(60%, 58px);
+  width: min(64%, 66px);
   aspect-ratio: 1;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: #f5f7fb;
 }
 
 .diy-navBar .list .item-image img,
@@ -191,6 +180,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit;
 }
 
 .diy-navBar .list .item-icon {
@@ -211,6 +201,7 @@ export default {
   background: #f1f5fb;
   color: #a9b4c6;
   font-size: 10px;
+  border-radius: inherit;
 }
 
 .diy-navBar .list .item-text {
@@ -239,7 +230,7 @@ export default {
 .nav-pagination span {
   width: 5px;
   height: 5px;
-  cursor: pointer;
+  pointer-events: none;
   border-radius: 999px;
   background: #d8deea;
 }
